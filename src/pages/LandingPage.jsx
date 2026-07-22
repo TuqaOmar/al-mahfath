@@ -129,51 +129,78 @@ const LandingPage = () => {
               </div>
             </motion.div>
 
-            {/* Mockup Preview */}
+            {/* Mockup Preview with Holy Quran Image and AI overlays */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
+              style={{ position: 'relative' }}
             >
-              <div className="glass-card" style={{ padding: '32px', background: 'var(--bg-surface)', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: -15, left: -15, width: 60, height: 60, background: 'var(--primary)', borderRadius: '12px', zIndex: -1, opacity: 0.1 }}></div>
-                <div style={{ position: 'absolute', bottom: -15, right: -15, width: 80, height: 80, background: 'var(--accent)', borderRadius: '50%', zIndex: -1, opacity: 0.1 }}></div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '32px' }}>
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-                    <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                      <BrainCircuit size={24} />
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: '16px', color: 'var(--text-secondary)', margin: 0 }}>مؤشر الذاكرة (AI)</h3>
-                      <p style={{ color: 'var(--text-primary)', fontSize: '24px', margin: 0, fontWeight: 'bold' }}>94% <span style={{ fontSize: '14px', color: 'var(--success)' }}>ممتاز</span></p>
-                    </div>
-                  </div>
-                </div>
+              {/* Main Quran Card */}
+              <div className="glass-card" style={{ padding: '12px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: '24px', overflow: 'hidden', boxShadow: 'var(--shadow-lg)', position: 'relative' }}>
+                <img 
+                  src="/quran_holy_book.jpg" 
+                  alt="مصحف شريف ذكي" 
+                  style={{ width: '100%', height: 'auto', borderRadius: '18px', display: 'block', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.05)' }} 
+                />
                 
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px', position: 'relative' }}>
-                  <div style={{ position: 'relative', width: '200px', height: '200px' }}>
-                    <svg viewBox="0 0 100 100" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
-                      <circle cx="50" cy="50" r="45" fill="none" stroke="var(--glass-border)" strokeWidth="8" />
-                      <circle cx="50" cy="50" r="45" fill="none" stroke="var(--primary)" strokeWidth="8" strokeDasharray="283" strokeDashoffset="70" strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease-in-out' }} />
-                    </svg>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                      <span style={{ fontSize: '40px', fontWeight: 'bold', color: 'var(--text-primary)' }}>75%</span>
-                      <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>إنجاز اليوم</span>
-                    </div>
+                {/* Floating AI Stat 1: Memory Score */}
+                <motion.div 
+                  initial={{ y: 20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.8 }}
+                  style={{
+                    position: 'absolute',
+                    top: '24px',
+                    right: '24px',
+                    background: 'rgba(10, 14, 26, 0.75)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    padding: '12px 18px',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                  }}
+                >
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                    <BrainCircuit size={18} />
                   </div>
-                </div>
+                  <div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>مؤشر الذاكرة الذكي</span>
+                    <span style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 'bold' }}>94% <span style={{ fontSize: '11px', color: '#10B981' }}>ممتاز</span></span>
+                  </div>
+                </motion.div>
 
-                <div style={{ display: 'flex', gap: '16px' }}>
-                  <div style={{ flex: 1, padding: '16px', textAlign: 'center', borderRadius: '12px', background: 'var(--bg-color)' }}>
-                    <Shield size={24} color="var(--primary)" style={{ margin: '0 auto 12px' }} />
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>الحصون الخمسة</span>
+                {/* Floating AI Stat 2: Daily Progress */}
+                <motion.div 
+                  initial={{ y: -20, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  style={{
+                    position: 'absolute',
+                    bottom: '24px',
+                    left: '24px',
+                    background: 'rgba(10, 14, 26, 0.75)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(59, 130, 246, 0.3)',
+                    padding: '12px 18px',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.37)'
+                  }}
+                >
+                  <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary)' }}>
+                    <BookOpen size={18} />
                   </div>
-                  <div style={{ flex: 1, padding: '16px', textAlign: 'center', borderRadius: '12px', background: 'var(--bg-color)' }}>
-                    <CheckCircle size={24} color="var(--primary)" style={{ margin: '0 auto 12px' }} />
-                    <span style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>وسام الحفاظ</span>
+                  <div>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>إنجاز خطة اليوم</span>
+                    <span style={{ color: 'var(--text-primary)', fontSize: '16px', fontWeight: 'bold' }}>75% مكتمل</span>
                   </div>
-                </div>
+                </motion.div>
               </div>
             </motion.div>
           </div>
