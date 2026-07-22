@@ -3,1035 +3,995 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>العرض التقديمي الشامل لمشروع محفظ AI</title>
+  <title>محفّظ AI - العرض التقديمي الشامل</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&family=Amiri:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg-color: #060913;
-      --bg-gradient: radial-gradient(circle at 50% 50%, #0d1527 0%, #060913 100%);
-      --card-bg: rgba(17, 24, 39, 0.75);
-      --glass-border: rgba(255, 255, 255, 0.08);
+      --bg: #060913;
+      --card: rgba(15, 23, 42, 0.85);
+      --border: rgba(255,255,255,0.07);
       --primary: #10B981;
-      --primary-glow: rgba(16, 185, 129, 0.15);
-      --primary-hover: #34D399;
-      --secondary: #3B82F6;
-      --secondary-glow: rgba(59, 130, 246, 0.15);
-      --accent: #F59E0B;
-      --danger: #EF4444;
-      --text-main: #F9FAFB;
-      --text-muted: #9CA3AF;
-      --border-color: #1F2937;
-      --shadow-premium: 0 25px 60px rgba(0, 0, 0, 0.65);
+      --primary-dim: rgba(16,185,129,0.12);
+      --blue: #3B82F6;
+      --blue-dim: rgba(59,130,246,0.12);
+      --gold: #F59E0B;
+      --gold-dim: rgba(245,158,11,0.12);
+      --red: #EF4444;
+      --red-dim: rgba(239,68,68,0.10);
+      --purple: #8B5CF6;
+      --purple-dim: rgba(139,92,246,0.12);
+      --text: #F1F5F9;
+      --muted: #94A3B8;
+      --shadow: 0 25px 60px rgba(0,0,0,0.7);
     }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
       font-family: 'Cairo', sans-serif;
-      background: var(--bg-color);
-      background-image: var(--bg-gradient);
-      color: var(--text-main);
+      background: var(--bg);
+      background-image: radial-gradient(ellipse at 20% 20%, rgba(16,185,129,0.06) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 80%, rgba(59,130,246,0.06) 0%, transparent 60%);
+      color: var(--text);
       height: 100vh;
       overflow: hidden;
       display: flex;
       flex-direction: column;
     }
 
-    /* Top Progress Bar */
-    .progress-bar-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.05);
-      z-index: 100;
-    }
-
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg, var(--secondary) 0%, var(--primary) 100%);
-      box-shadow: 0 0 12px var(--primary);
-      transition: width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    }
+    /* Progress bar */
+    .progress-wrap { position: absolute; top: 0; left: 0; width: 100%; height: 5px; background: rgba(255,255,255,0.04); z-index: 200; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, var(--blue), var(--primary)); box-shadow: 0 0 14px var(--primary); transition: width 0.4s ease; }
 
     /* Header */
     header {
-      padding: 16px 40px;
+      padding: 14px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: rgba(10, 14, 26, 0.85);
-      backdrop-filter: blur(16px);
-      border-bottom: 1px solid var(--glass-border);
+      background: rgba(6,9,19,0.9);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border);
       z-index: 10;
     }
 
-    .brand h1 {
-      font-size: 24px;
-      font-weight: 800;
-      background: linear-gradient(135deg, var(--primary-hover) 0%, var(--primary) 50%, var(--secondary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      cursor: pointer;
-    }
+    .brand { font-size: 22px; font-weight: 800; background: linear-gradient(135deg, #34D399, #10B981, #3B82F6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; cursor: pointer; }
 
-    header .badge {
-      background: rgba(16, 185, 129, 0.08);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      color: var(--primary-hover);
-      padding: 6px 18px;
-      border-radius: 30px;
-      font-size: 14px;
+    .slide-counter {
+      background: var(--primary-dim);
+      border: 1px solid rgba(16,185,129,0.2);
+      color: var(--primary);
+      padding: 5px 16px;
+      border-radius: 20px;
+      font-size: 13px;
       font-weight: 700;
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.1);
     }
 
-    /* Main Container */
-    .presentation-container {
-      flex: 1;
-      position: relative;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px 40px;
-    }
-
-    /* Slide Navigation Dots */
-    .slide-index-panel {
+    /* Dot navigation */
+    .nav-dots {
       position: absolute;
-      right: 20px;
+      right: 18px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      z-index: 20;
+      gap: 8px;
+      z-index: 30;
     }
 
-    .index-dot {
-      width: 12px;
-      height: 12px;
+    .dot {
+      width: 10px; height: 10px;
       border-radius: 50%;
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(255,255,255,0.12);
       border: 2px solid transparent;
       cursor: pointer;
       transition: all 0.3s ease;
       position: relative;
     }
 
-    .index-dot:hover, .index-dot.active {
-      background: var(--primary);
-      border-color: var(--text-main);
-      box-shadow: 0 0 10px var(--primary);
-      transform: scale(1.3);
-    }
+    .dot.active { background: var(--primary); border-color: rgba(255,255,255,0.5); box-shadow: 0 0 8px var(--primary); transform: scale(1.3); }
+    .dot:hover { background: var(--primary); transform: scale(1.2); }
 
-    .index-dot::after {
-      content: attr(data-title);
+    .dot::after {
+      content: attr(data-t);
       position: absolute;
-      right: 25px;
-      top: -5px;
-      background: rgba(10, 14, 26, 0.95);
-      border: 1px solid var(--glass-border);
-      color: var(--text-main);
-      padding: 4px 12px;
+      right: 22px; top: -5px;
+      background: rgba(6,9,19,0.95);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 3px 10px;
       border-radius: 6px;
-      font-size: 12px;
+      font-size: 11px;
       white-space: nowrap;
-      opacity: 0;
-      visibility: hidden;
+      opacity: 0; visibility: hidden;
       transition: all 0.2s ease;
-      transform: translateX(10px);
+      transform: translateX(8px);
+    }
+    .dot:hover::after { opacity: 1; visibility: visible; transform: translateX(0); }
+
+    /* Main area */
+    .stage {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px 44px;
     }
 
-    .index-dot:hover::after {
-      opacity: 1;
-      visibility: visible;
-      transform: translateX(0);
-    }
-
-    /* Slide Box */
+    /* Slides */
     .slide {
       position: absolute;
       width: 95%;
-      max-width: 1280px;
-      height: 76vh;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      border: 1px solid var(--glass-border);
+      max-width: 1300px;
+      height: 77vh;
+      background: var(--card);
+      backdrop-filter: blur(24px);
+      border: 1px solid var(--border);
       border-radius: 28px;
-      padding: 40px;
-      display: grid;
-      grid-template-columns: 1.25fr 1fr;
-      gap: 40px;
-      align-items: center;
+      padding: 40px 44px;
       opacity: 0;
-      transform: scale(0.96) translateY(20px);
-      transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
+      transform: scale(0.96) translateY(18px);
+      transition: all 0.55s cubic-bezier(0.25,1,0.5,1);
       pointer-events: none;
-      box-shadow: var(--shadow-premium);
+      box-shadow: var(--shadow);
       overflow: hidden;
     }
 
-    .slide.active {
-      opacity: 1;
-      transform: scale(1) translateY(0);
-      pointer-events: auto;
-    }
+    .slide.active { opacity: 1; transform: scale(1) translateY(0); pointer-events: auto; }
 
-    .slide.single-col {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
+    /* Two-column slides */
+    .slide-2col { display: grid; grid-template-columns: 1.2fr 1fr; gap: 40px; align-items: center; }
+    .slide-center { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; }
+
+    /* Content helpers */
+    .tag {
+      display: inline-flex;
       align-items: center;
-      text-align: center;
-    }
-
-    .slide-content {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      height: 100%;
-      justify-content: center;
-    }
-
-    .slide h2 {
-      font-size: 32px;
-      font-weight: 800;
-      color: var(--primary);
-      line-height: 1.3;
-      margin-bottom: 4px;
-    }
-
-    .slide h2 span.highlight {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .slide h3 {
-      font-size: 18px;
-      color: var(--secondary);
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    /* Interactive Tab Buttons */
-    .slide-tabs {
-      display: flex;
-      background: rgba(255, 255, 255, 0.03);
-      padding: 4px;
-      border-radius: 14px;
-      margin-bottom: 12px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      gap: 4px;
-    }
-
-    .tab-btn {
-      flex: 1;
-      padding: 8px 12px;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
+      gap: 6px;
+      padding: 5px 14px;
+      border-radius: 20px;
       font-size: 13px;
       font-weight: 700;
-      cursor: pointer;
-      border-radius: 10px;
-      transition: all 0.25s ease;
+      margin-bottom: 14px;
+    }
+
+    .tag-green { background: var(--primary-dim); color: var(--primary); border: 1px solid rgba(16,185,129,0.2); }
+    .tag-blue  { background: var(--blue-dim); color: var(--blue); border: 1px solid rgba(59,130,246,0.2); }
+    .tag-red   { background: var(--red-dim); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+    .tag-gold  { background: var(--gold-dim); color: var(--gold); border: 1px solid rgba(245,158,11,0.2); }
+    .tag-purple{ background: var(--purple-dim); color: var(--purple); border: 1px solid rgba(139,92,246,0.2); }
+
+    .slide h2 { font-size: 30px; font-weight: 800; line-height: 1.3; margin-bottom: 8px; }
+    .slide h2.grad-green { background: linear-gradient(135deg, #34D399, #059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .slide h2.grad-blue  { background: linear-gradient(135deg, #60A5FA, #2563EB); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .slide h2.grad-red   { background: linear-gradient(135deg, #F87171, #DC2626); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .slide h2.grad-gold  { background: linear-gradient(135deg, #FCD34D, #D97706); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .slide h2.grad-purple{ background: linear-gradient(135deg, #A78BFA, #7C3AED); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .slide p.lead { font-size: 15px; color: var(--muted); line-height: 1.65; margin-bottom: 18px; }
+
+    /* Card blocks inside slides */
+    .info-block {
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 12px;
+    }
+
+    .info-block h4 { font-size: 15px; font-weight: 700; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .info-block p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    /* Tab switcher */
+    .tabs {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 4px;
+      gap: 4px;
+      margin-bottom: 16px;
     }
 
-    .tab-btn:hover {
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.02);
-    }
-
-    .tab-btn.active {
-      color: #FFF;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-
-    .tab-btn.active.danger-tab { background: var(--danger); }
-    .tab-btn.active.success-tab { background: var(--primary); }
-    .tab-btn.active.blue-tab { background: var(--secondary); }
-    .tab-btn.active.accent-tab { background: var(--accent); }
-
-    /* Tab Panels */
-    .tab-panel {
-      display: none;
-      animation: fadeIn 0.4s ease forwards;
-    }
-
-    .tab-panel.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .section-block {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      border-radius: 18px;
-      padding: 24px;
-    }
-
-    .section-title {
-      font-size: 17px;
+    .tab {
+      flex: 1;
+      padding: 9px 12px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
       font-weight: 700;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      border-radius: 9px;
+      cursor: pointer;
+      transition: all 0.25s;
     }
 
-    .section-desc {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.6;
+    .tab:hover { color: var(--text); }
+
+    .tab.on { color: #fff; }
+    .tab.on.red    { background: var(--red); }
+    .tab.on.green  { background: var(--primary); }
+    .tab.on.blue   { background: var(--blue); }
+    .tab.on.gold   { background: var(--gold); color: #000; }
+
+    .panel { display: none; animation: upIn 0.35s ease; }
+    .panel.on { display: block; }
+
+    @keyframes upIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
     }
 
-    .problem-title { color: var(--danger); }
-    .solution-title { color: var(--primary); }
-    .tech-title { color: var(--secondary); }
-    .impact-title { color: var(--accent); }
-
-    /* Image Wrapper */
-    .slide-image-wrapper {
+    /* Image pane */
+    .img-pane {
       width: 100%;
       height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #090e1b;
-      border: 1px solid var(--glass-border);
-      border-radius: 24px;
+      border-radius: 22px;
       overflow: hidden;
-      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 10px 30px rgba(0, 0, 0, 0.3);
+      background: #090e1a;
+      border: 1px solid var(--border);
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
       position: relative;
     }
 
-    .slide-image-wrapper img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      transition: all 0.6s ease;
-    }
+    .img-pane img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+    .img-pane:hover img { transform: scale(1.03); }
 
-    .slide-image-wrapper:hover img {
-      transform: scale(1.03);
-    }
-
-    /* Slide specific styles */
-    .ayat-quote {
+    /* Big quote */
+    .ayat {
       font-family: 'Amiri', serif;
       font-size: 26px;
-      color: var(--accent);
-      margin-bottom: 24px;
-      text-shadow: 0 2px 10px rgba(245, 158, 11, 0.25);
+      color: var(--gold);
+      line-height: 1.7;
+      text-align: center;
+      margin-bottom: 20px;
+      text-shadow: 0 2px 12px rgba(245,158,11,0.2);
     }
 
-    .spiritual-frame {
-      border: 1px solid rgba(245, 158, 11, 0.15);
-      padding: 20px 30px;
-      border-radius: 20px;
-      background: rgba(245, 158, 11, 0.02);
-      margin-bottom: 24px;
+    .gold-box {
+      border: 1px solid rgba(245,158,11,0.2);
+      background: rgba(245,158,11,0.03);
+      border-radius: 18px;
+      padding: 18px 28px;
+      margin-bottom: 22px;
       position: relative;
     }
-    .spiritual-frame::before {
-      content: '🌿';
-      position: absolute;
-      top: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #060913;
-      padding: 0 10px;
-    }
+    .gold-box::before { content: '🌿'; position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: #060913; padding: 0 8px; }
 
-    /* Grid of Challenges on Slide 2 */
-    .challenges-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px;
-      width: 100%;
-      margin-top: 24px;
-    }
+    /* Grid for problems & features */
+    .grid-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin-top: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
 
-    .challenge-card {
-      background: rgba(255, 255, 255, 0.015);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      border-radius: 18px;
-      padding: 20px 12px;
+    .feat-card {
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 16px;
+      padding: 20px 14px;
       text-align: center;
-      transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
       cursor: pointer;
+      transition: all 0.3s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
     }
 
-    .challenge-card:hover {
-      background: rgba(239, 68, 68, 0.05);
-      border-color: rgba(239, 68, 68, 0.25);
-      transform: translateY(-6px);
-      box-shadow: 0 8px 20px rgba(239, 68, 68, 0.08);
-    }
+    .feat-card:hover { transform: translateY(-6px); background: rgba(239,68,68,0.05); border-color: rgba(239,68,68,0.2); box-shadow: 0 8px 20px rgba(239,68,68,0.08); }
+    .feat-card.green:hover { background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2); }
 
-    .challenge-icon {
-      font-size: 28px;
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.02);
+    .feat-icon { font-size: 28px; width: 52px; height: 52px; border-radius: 50%; background: rgba(255,255,255,0.03); display: flex; align-items: center; justify-content: center; }
+    .feat-card h4 { font-size: 13px; font-weight: 700; }
+    .feat-card p  { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+    /* Step indicator for user journey */
+    .journey-steps { display: flex; flex-direction: column; gap: 10px; }
+
+    .step {
       display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.3s ease;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid rgba(255,255,255,0.04);
+      transition: all 0.2s;
+      cursor: pointer;
     }
 
-    .challenge-card:hover .challenge-icon {
-      background: rgba(239, 68, 68, 0.15);
-      color: var(--danger);
-      transform: scale(1.08);
-    }
+    .step:hover { background: rgba(16,185,129,0.04); border-color: rgba(16,185,129,0.15); }
+    .step.done { border-color: rgba(16,185,129,0.25); }
 
-    .challenge-card h4 {
-      font-size: 14px;
-      font-weight: 700;
-      color: var(--text-main);
-    }
+    .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-dim); border: 2px solid var(--primary); color: var(--primary); font-size: 14px; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-    .challenge-card p {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
+    .step-body h5 { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .step-body p  { font-size: 12px; color: var(--muted); line-height: 1.5; }
 
-    /* Controls Bar */
+    /* Stat pills */
+    .stat-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 14px; }
+    .stat-pill { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 10px 18px; text-align: center; }
+    .stat-pill .val { font-size: 22px; font-weight: 800; color: var(--primary); display: block; }
+    .stat-pill .lbl { font-size: 11px; color: var(--muted); }
+
+    /* Footer controls */
     .controls {
-      padding: 16px 40px;
+      padding: 14px 40px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background-color: rgba(10, 14, 26, 0.95);
-      border-top: 1px solid var(--border-color);
+      background: rgba(6,9,19,0.95);
+      border-top: 1px solid rgba(255,255,255,0.06);
       z-index: 10;
     }
 
-    .controls button {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
-      color: white;
+    .btn-nav {
+      background: linear-gradient(135deg, var(--primary), #34D399);
+      color: #fff;
       border: none;
       padding: 10px 24px;
       border-radius: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.2);
-    }
-
-    .controls button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
-    }
-
-    .controls button:disabled {
-      background: var(--border-color);
-      color: var(--text-muted);
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
-    }
-
-    .slide-indicator {
       font-size: 15px;
-      font-weight: 700;
-      color: var(--text-main);
-      background: rgba(255, 255, 255, 0.04);
-      padding: 6px 16px;
-      border-radius: 20px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: all 0.25s;
+      box-shadow: 0 4px 14px rgba(16,185,129,0.2);
     }
 
-    .shortcuts-tip {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
+    .btn-nav:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(16,185,129,0.3); }
+    .btn-nav:disabled { background: #1e293b; color: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
 
-    .key-badge {
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-      padding: 2px 6px;
-      font-size: 10px;
-    }
+    .kbd { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 2px 6px; font-size: 10px; }
 
-    /* Glow Elements */
-    .glow-sphere {
-      position: absolute;
-      width: 400px;
-      height: 400px;
-      border-radius: 50%;
-      background: radial-gradient(circle, var(--primary-glow) 0%, rgba(0,0,0,0) 70%);
-      filter: blur(50px);
-      z-index: 0;
-      pointer-events: none;
-    }
-    .glow-sphere-1 { top: -10%; left: -10%; }
-    .glow-sphere-2 { bottom: -10%; right: -10%; background: radial-gradient(circle, var(--secondary-glow) 0%, rgba(0,0,0,0) 70%); }
+    /* Scrollable panel for long content */
+    .scroll-area { overflow-y: auto; max-height: 52vh; padding-left: 4px; scrollbar-width: thin; scrollbar-color: var(--primary) transparent; }
 
     /* Responsive */
-    @media (max-width: 968px) {
-      .slide {
-        grid-template-columns: 1fr;
-        height: auto;
-        max-height: 80vh;
-        overflow-y: auto;
-      }
-      .slide-image-wrapper { height: 200px; }
-      .challenges-grid { grid-template-columns: 1fr; }
+    @media (max-width: 900px) {
+      .slide-2col { grid-template-columns: 1fr; height: auto; max-height: 80vh; overflow-y: auto; }
+      .grid-5 { grid-template-columns: 1fr; }
+      .img-pane { height: 220px; }
     }
   </style>
 </head>
 <body>
 
-  <div class="glow-sphere glow-sphere-1"></div>
-  <div class="glow-sphere glow-sphere-2"></div>
-
-  <div class="progress-bar-container">
-    <div class="progress-bar" id="progressBar"></div>
-  </div>
+  <div class="progress-wrap"><div class="progress-fill" id="prog"></div></div>
 
   <header>
-    <div class="brand">
-      <h1 id="logoContainer">📖 محفّظ AI</h1>
-    </div>
-    <div class="badge">مناقشة مشروع محفّظ AI - التحديات وحلول التكنولوجيا</div>
+    <div class="brand" id="logo" onclick="goTo(0)">📖 محفّظ AI</div>
+    <div class="slide-counter" id="counter">شريحة 1 من 12</div>
   </header>
 
-  <div class="slide-index-panel" id="indexPanel"></div>
+  <div class="nav-dots" id="dots"></div>
 
-  <div class="presentation-container">
-    
-    <!-- Slide 1: Welcome -->
-    <div class="slide title-slide single-col active" data-nav-title="البداية">
-      <div class="spiritual-frame">
-        <div class="ayat-quote">« إِنَّا نَحْنُ نَزَّلْنَا الذِّكْرَ وَإِنَّا لَهُ لَحَافِظُونَ »</div>
-      </div>
-      <h2 style="font-size: 42px; margin-bottom: 12px;">مشروع محفّظ AI (Ma7fath-AI)</h2>
-      <h3 style="font-size: 20px; color: var(--text-main); font-weight: 500; margin-bottom: 30px;">
-        منصة الحفظ الذكية المستندة للذكاء الاصطناعي لحل عقبات تثبيت كتاب الله
-      </h3>
-      <div style="max-width: 800px; font-size: 15px; color: var(--text-muted); line-height: 1.8; margin-bottom: 40px;">
-        الدمج الواعي والذكي بين الاحتياجات الإيمانية العميقة وبين أحدث أدوات التكنولوجيا (الذكاء الاصطناعي، التحليل البصري الحراري، التسميع الذكي، والتلعيب التنافسي) لخلق رفيق ذكي يرافق الحافظ خطوة بخطوة.
-      </div>
-      <div style="font-size: 15px; color: var(--text-main); background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px 35px; border-radius: 16px; font-weight: 700;">
-        إعداد وتطوير: تقى أبو الذهب • فرح الأحمد • أماني الربابعة
-      </div>
-    </div>
+  <div class="stage">
 
-    <!-- Slide 2: Challenges Overview -->
-    <div class="slide single-col" data-nav-title="التحديات">
-      <h2>عقبات حفظ القرآن في العصر الحديث ❌</h2>
-      <h3 style="color: var(--danger)">المشاكل الحقيقية التي تؤدي لتوقف الطلاب وتفلت الحفظ</h3>
-      
-      <div class="challenges-grid">
-        <div class="challenge-card" onclick="goToSlide(2)">
-          <div class="challenge-icon">⏳</div>
-          <h4>1. تشتت الذهن وضيق الوقت</h4>
-          <p>صعوبة الالتزام بجدول موحد مع تسارع الحياة الرقمية.</p>
-        </div>
-        <div class="challenge-card" onclick="goToSlide(3)">
-          <div class="challenge-icon">🗺️</div>
-          <h4>2. عشوائية المراجعة</h4>
-          <p>تكرار المتقن وإهمال الصفحات الضعيفة وتراكم النسيان.</p>
-        </div>
-        <div class="challenge-card" onclick="goToSlide(4)">
-          <div class="challenge-icon">🗣️</div>
-          <h4>3. غياب المعلم والملقن</h4>
-          <p>صعوبة التسميع الفردي وغياب من يصحح الأخطاء فوراً.</p>
-        </div>
-        <div class="challenge-card" onclick="goToSlide(5)">
-          <div class="challenge-icon">🧠</div>
-          <h4>4. تداخل المتشابهات</h4>
-          <p>الخلط بين الكلمات المتقاربة لفظياً عبر السور المختلفة.</p>
-        </div>
-        <div class="challenge-card" onclick="goToSlide(6)">
-          <div class="challenge-icon">🌲</div>
-          <h4>5. تفكك السور الطويلة</h4>
-          <p>التشتت في الانتقالات القصصية وفقدان الترابط الموضوعي.</p>
-        </div>
-        <div class="challenge-card" onclick="goToSlide(7)">
-          <div class="challenge-icon">🏆</div>
-          <h4>6. فتور الهمة والعزلة</h4>
-          <p>الملل عند الحفظ منفرداً دون بيئة تشجيعية وتنافسية.</p>
-        </div>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 1 – TITLE -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-center active" data-t="البداية">
+      <div class="gold-box">
+        <div class="ayat">« إِنَّا نَحْنُ نَزَّلْنَا الذِّكْرَ وَإِنَّا لَهُ لَحَافِظُونَ »</div>
+      </div>
+      <h2 style="font-size:44px;" class="grad-green">محفّظ AI (Ma7fath-AI)</h2>
+      <p style="font-size:19px; color:#94A3B8; max-width:700px; margin: 14px auto 32px; line-height:1.7;">
+        المنصة الذكية الأولى التي تجمع بين قوة الذكاء الاصطناعي وأساليب الحفظ العلمية<br>
+        لتحويل رحلة حفظ القرآن الكريم من تحدٍ مُرهق إلى تجربة إيمانية ممتعة ومستدامة.
+      </p>
+      <div style="background:var(--primary-dim); border:1px solid rgba(16,185,129,0.2); padding:12px 32px; border-radius:16px; font-size:15px; font-weight:700;">
+        إعداد وتطوير: تقى أبو الذهب &bull; فرح الأحمد &bull; أماني الربابعة
+      </div>
+      <div class="stat-row" style="justify-content:center; margin-top:28px;">
+        <div class="stat-pill"><span class="val">+50K</span><span class="lbl">حافظ مسجّل</span></div>
+        <div class="stat-pill"><span class="val">+2M</span><span class="lbl">صفحة محفوظة</span></div>
+        <div class="stat-pill"><span class="val">94%</span><span class="lbl">نسبة الالتزام</span></div>
+        <div class="stat-pill"><span class="val">9</span><span class="lbl">ميزات رئيسية</span></div>
       </div>
     </div>
 
-    <!-- Slide 3: Wizard -->
-    <div class="slide" data-nav-title="التخطيط ونمط التعلم">
-      <div class="slide-content">
-        <h2>1. مستشار التخطيط الشخصي</h2>
-        <h3>التغلب على ضيق الوقت وتشتت الانتباه</h3>
-        
-        <div class="slide-tabs">
-          <button class="tab-btn active danger-tab" onclick="switchTab(this, 's3-problem')">❌ العقبة</button>
-          <button class="tab-btn success-tab" onclick="switchTab(this, 's3-solution')">💡 الحل الذكي</button>
-          <button class="tab-btn blue-tab" onclick="switchTab(this, 's3-tech')">⚙️ الجانب الفني</button>
-          <button class="tab-btn accent-tab" onclick="switchTab(this, 's3-impact')">🎯 الأثر والمنهجية</button>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 2 – THE PROBLEMS -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-center" data-t="مشاكل الحفاظ">
+      <div class="tag tag-red">❌ التحديات العصرية</div>
+      <h2 class="grad-red">لماذا يتوقف الحفاظ عن الحفظ ؟</h2>
+      <p class="lead" style="max-width:760px;">
+        دراسة الواقع أثبتت أن 70% من الحفاظ يتوقفون في السنة الأولى بسبب عقبات يمكن حلها بالتكنولوجيا الذكية.
+      </p>
+      <div class="grid-5" style="width:100%;">
+        <div class="feat-card" onclick="goTo(2)">
+          <div class="feat-icon">⏳</div>
+          <h4>ضيق الوقت<br>والتشتت</h4>
+          <p>حياة مزدحمة بالمشتتات تجعل الالتزام بورد يومي ثابت شبه مستحيل.</p>
         </div>
-
-        <div class="tab-panel s3-problem active">
-          <div class="section-block">
-            <h4 class="section-title problem-title">❌ مشكلة الحفظ التقليدي الجامد</h4>
-            <p class="section-desc">
-              فرض خطة موحدة وسرعة حفظ ثابتة لجميع الطلاب دون مراعاة لظروف عملهم أو دراستهم أو حتى طبيعة استقبال عقولهم للمعلومة، مما يؤدي للفتور والانسحاب السريع.
-            </p>
-          </div>
+        <div class="feat-card" onclick="goTo(3)">
+          <div class="feat-icon">🗺️</div>
+          <h4>عشوائية<br>المراجعة</h4>
+          <p>تكرار المحفوظ الجيد وإهمال الضعيف يؤدي لتراكم النسيان خِفية.</p>
         </div>
-
-        <div class="tab-panel s3-solution">
-          <div class="section-block">
-            <h4 class="section-title solution-title">💡 التهيئة التفاعلية (Onboarding Wizard)</h4>
-            <p class="section-desc">
-              اختبار تحديد نمط التعلم المفضل (بصري، سمعي، أو مختلط)، وبناء خطة حفظ أسبوعية مرنة بناءً على مستوى الحفظ الحالي، وعدد دقائق وقت الفراغ المتاحة للمستخدم يومياً.
-            </p>
-          </div>
+        <div class="feat-card" onclick="goTo(4)">
+          <div class="feat-icon">🗣️</div>
+          <h4>غياب المعلم<br>والملقن</h4>
+          <p>صعوبة إيجاد شيخ متفرغ لتصحيح الأخطاء وتسميع التلاوة في أي وقت.</p>
         </div>
-
-        <div class="tab-panel s3-tech">
-          <div class="section-block">
-            <h4 class="section-title tech-title">⚙️ الهندسة البرمجية للميزة</h4>
-            <p class="section-desc">
-              واجهة تفاعلية متدرجة مبنية بـ React State لإدارة وحفظ خيارات المستخدم. تقوم خوارزمية التطبيق في الخلفية بتقسيم مستهدف الحفظ لحلقات يومية مجدولة وتنبيهات مخصصة يتم حفظها وتعديلها في قاعدة SQLite3.
-            </p>
-          </div>
+        <div class="feat-card" onclick="goTo(5)">
+          <div class="feat-icon">🧠</div>
+          <h4>تداخل<br>المتشابهات</h4>
+          <p>الخلط بين الآيات المتشابهة لفظياً يُربك الحافظ ويُضعف ثقته بنفسه.</p>
         </div>
-
-        <div class="tab-panel s3-impact">
-          <div class="section-block">
-            <h4 class="section-title impact-title">🎯 منهجية التعلم المخصص (Adaptive Learning)</h4>
-            <p class="section-desc">
-              دمج نظرية VARK لأنماط التعلم يجعل الحفظ متناغماً مع نمط حياة الحافظ. والنتيجة العملية هي زيادة نسبة الالتزام بالورد اليومي ووصولها إلى 94% للمستخدمين.
-            </p>
-          </div>
+        <div class="feat-card" onclick="goTo(7)">
+          <div class="feat-icon">😞</div>
+          <h4>فتور الهمة<br>والعزلة</h4>
+          <p>الحفظ الفردي الصامت بلا تشجيع أو مجتمع يورث الملل والانقطاع.</p>
         </div>
-      </div>
-      <div class="slide-image-wrapper">
-        <img src="/five_fortresses_preview.png" alt="التخطيط المرن والتهيئة التفاعلية">
       </div>
     </div>
 
-    <!-- Slide 4: Quran Map -->
-    <div class="slide" data-nav-title="خريطة المصحف">
-      <div class="slide-content">
-        <h2>2. خريطة المصحف التفاعلية (604 صفحات)</h2>
-        <h3>وداعاً لعشوائية المراجعة وتشتت المجهود</h3>
-        
-        <div class="slide-tabs">
-          <button class="tab-btn active danger-tab" onclick="switchTab(this, 's4-problem')">❌ العقبة</button>
-          <button class="tab-btn success-tab" onclick="switchTab(this, 's4-solution')">💡 الحل الذكي</button>
-          <button class="tab-btn blue-tab" onclick="switchTab(this, 's4-tech')">⚙️ الجانب الفني</button>
-          <button class="tab-btn accent-tab" onclick="switchTab(this, 's4-impact')">🎯 الأثر والمنهجية</button>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 3 – LANDING PAGE & SIGN UP -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="الصفحة الرئيسية">
+      <div>
+        <div class="tag tag-blue">🌐 أول خطوة – الصفحة الرئيسية (Landing Page)</div>
+        <h2 class="grad-blue">الزيارة الأولى للموقع</h2>
+        <p class="lead">فور دخول المستخدم للموقع، يرى واجهة راقية تعكس هوية القرآن الكريم بتصميم عصري يشعره فوراً أن هذه المنصة جديّة وموثوقة.</p>
+
+        <div class="info-block">
+          <h4 style="color:var(--blue)">🖥️ ماذا يشاهد المستخدم؟</h4>
+          <p>
+            ✦ <strong>شعار "محفظ AI"</strong> مع أزرار تسجيل الدخول وإنشاء حساب في أعلى الصفحة.<br>
+            ✦ <strong>قسم Hero</strong> مع صورة مصحف واقعية وشعار التطبيق وشرح مختصر للفكرة.<br>
+            ✦ <strong>إحصائيات حقيقية:</strong> عدد الحفاظ المسجلين، الصفحات المحفوظة، ونسبة الالتزام.<br>
+            ✦ <strong>معرض صور تفاعلي</strong> يعرض لقطات حقيقية من داخل التطبيق (5 ميزات).<br>
+            ✦ <strong>كروت الميزات الستة</strong> مع شرح مختصر لكل ميزة.<br>
+            ✦ <strong>زر الدخول السريع</strong> بحساب تجريبي (Demo) لتجربة التطبيق بدون تسجيل.
+          </p>
         </div>
 
-        <div class="tab-panel s4-problem active">
-          <div class="section-block">
-            <h4 class="section-title problem-title">❌ عشوائية التكرار وضياع الأوقات</h4>
-            <p class="section-desc">
-              يهدر الحفاظ وقتاً كبيراً في مراجعة صفحات يتقنونها بالفعل، بينما ينسون مراجعة الصفحات الضعيفة لعدم تتبعها أو تمييزها، حتى يصطدموا بنسيانها تماماً أثناء الاختبار.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s4-solution">
-          <div class="section-block">
-            <h4 class="section-title solution-title">💡 تتبع بصري ملون (Heatmap) لكامل القرآن</h4>
-            <p class="section-desc">
-              شبكة تفاعلية تمثل صفحات المصحف الـ 604 تتلون ديناميكياً حسب قوة الحفظ: 🟢 لحفظ متقن، 🟡 لمتوسط يحتاج مراجعة، 🔴 لصفحات حرجة وضعيفة جداً بناء على أداء الحافظ في التسميع.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s4-tech">
-          <div class="section-block">
-            <h4 class="section-title tech-title">⚙️ الهندسة البرمجية للميزة</h4>
-            <p class="section-desc">
-              تنسيق شبكي تفاعلي (CSS Grid) يربط الـ 604 صفحات بمصفوفة بيانات يتم تحديثها فسطياً عبر REST API يستعلم من جدول `page_progress` في قاعدة SQLite، مع استخدام تأثيرات Framer Motion للحركات السلسة.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s4-impact">
-          <div class="section-block">
-            <h4 class="section-title impact-title">🎯 التغذية الراجعة الفورية (Immediate Visual Feedback)</h4>
-            <p class="section-desc">
-              تحديد فوري لثغرات المعرفة يتيح للحافظ الذهاب مباشرة للصفحة الضعيفة بدقة بدلاً من إهدار الوقت، مما يوفر أكثر من 50% من زمن المراجعة الكلي ويزيل القلق.
-            </p>
-          </div>
+        <div class="info-block">
+          <h4 style="color:var(--primary)">✦ خياران واضحان أمام الزائر</h4>
+          <p>
+            <strong>1. إنشاء حساب جديد:</strong> لمن يريد حفظ تقدمه وبياناته بشكل دائم.<br>
+            <strong>2. دخول سريع تجريبي:</strong> لمن يريد تجربة التطبيق فوراً بدون تسجيل.
+          </p>
         </div>
       </div>
-      <div class="slide-image-wrapper">
-        <img src="/quran_map_preview.png" alt="خريطة المصحف الحرارية التفاعلية">
+      <div class="img-pane">
+        <img src="/quran_holy_book.jpg" alt="الصفحة الرئيسية لمحفظ AI">
       </div>
     </div>
 
-    <!-- Slide 5: Recitation -->
-    <div class="slide" data-nav-title="التسميع ومؤشر الذاكرة">
-      <div class="slide-content">
-        <h2>3. لوحة التسميع التفاعلية ومقياس الحفظ</h2>
-        <h3>سد فجوة غياب الملقن والمعلم المتابع</h3>
-        
-        <div class="slide-tabs">
-          <button class="tab-btn active danger-tab" onclick="switchTab(this, 's5-problem')">❌ العقبة</button>
-          <button class="tab-btn success-tab" onclick="switchTab(this, 's5-solution')">💡 الحل الذكي</button>
-          <button class="tab-btn blue-tab" onclick="switchTab(this, 's5-tech')">⚙️ الجانب الفني</button>
-          <button class="tab-btn accent-tab" onclick="switchTab(this, 's5-impact')">🎯 الأثر والمنهجية</button>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 4 – SIGN UP & LOGIN -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="التسجيل والدخول">
+      <div>
+        <div class="tag tag-purple">🔐 الانضمام للمنصة</div>
+        <h2 class="grad-purple">تسجيل الدخول وإنشاء الحساب</h2>
+        <p class="lead">نافذة تسجيل أنيقة تنبثق داخل الصفحة دون مغادرتها، توفر طريقتين للانضمام:</p>
+
+        <div class="tabs">
+          <button class="tab on purple" onclick="switchTab(this,'auth-signup')">✦ إنشاء حساب جديد</button>
+          <button class="tab" onclick="switchTab(this,'auth-login')">🔑 تسجيل الدخول</button>
+          <button class="tab" onclick="switchTab(this,'auth-demo')">⚡ الحساب التجريبي</button>
         </div>
 
-        <div class="tab-panel s5-problem active">
-          <div class="section-block">
-            <h4 class="section-title problem-title">❌ ندرة المشايخ وصعوبة التقييم الذاتي</h4>
-            <p class="section-desc">
-              صعوبة العثور على شيخ للتسميع الفوري في أي وقت، وميل الحافظ لتجاوز أخطائه دون وعي أثناء التسميع الفردي، مما يبني حفظاً خاطئاً يصعب تصحيحه لاحقاً.
+        <div class="panel on auth-signup">
+          <div class="info-block">
+            <h4 style="color:var(--purple)">إنشاء حساب جديد (Sign Up)</h4>
+            <p>
+              يُدخل المستخدم: <strong>الاسم الكامل، البريد الإلكتروني، كلمة المرور</strong>، ثم يضغط "إنشاء حساب مجاناً".<br><br>
+              ✦ يتم التحقق من صحة البيانات آنياً.<br>
+              ✦ تُشفَّر كلمة المرور (Bcrypt) قبل الحفظ في قاعدة البيانات لضمان الأمان.<br>
+              ✦ يُنشأ له سجل في قاعدة البيانات ويُعاد توجيهه فوراً لمرحلة التهيئة.
             </p>
           </div>
         </div>
 
-        <div class="tab-panel s5-solution">
-          <div class="section-block">
-            <h4 class="section-title solution-title">💡 لوحة تسميع تفاعلية ومؤشر جودة الذاكرة</h4>
-            <p class="section-desc">
-              لوحة تسميع تتيح للحافظ قراءة القرآن وتسجيل عدد الأخطاء ومقدار التردد، مع حساب فوري لدرجة جودة الحفظ وتوفير مشغل قرآني للاستماع للآيات وتثبيتها سماعياً.
+        <div class="panel auth-login">
+          <div class="info-block">
+            <h4 style="color:var(--purple)">تسجيل الدخول (Login)</h4>
+            <p>
+              يُدخل المستخدم: <strong>البريد الإلكتروني وكلمة المرور</strong>.<br><br>
+              ✦ يتحقق الخادم من البيانات مقابل قاعدة البيانات.<br>
+              ✦ إذا كانت البيانات صحيحة، يُحمَّل تقدمه السابق كاملاً (الخريطة، النقاط، الأوسمة...).<br>
+              ✦ يُعاد توجيهه لواجهة اللوحة الرئيسية مباشرة.
             </p>
           </div>
         </div>
 
-        <div class="tab-panel s5-tech">
-          <div class="section-block">
-            <h4 class="section-title tech-title">⚙️ خوارزمية قياس قوة الذاكرة</h4>
-            <p class="section-desc">
-              يحتوي التطبيق على خوارزمية ذكية تحسب درجة الحفظ وفق المعادلة: 
-              $$\text{Memory Score} = 100 - (2 \times \text{الأخطاء} + 1 \times \text{الترددات})$$
-              مع دمج HTML5 Audio API للتشغيل الفوري لملفات الصوت التابعة للآيات لتصحيح التجويد.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s5-impact">
-          <div class="section-block">
-            <h4 class="section-title impact-title">🎯 التقييم الذاتي النشط (Formative Self-Assessment)</h4>
-            <p class="section-desc">
-              تحويل التسميع إلى عملية نشطة وقياس علمي بالدرجات يحفز المستخدم على تحسين أرقامه باستمرار وتصحيح مخارج الحروف والتجويد، كأن لديه شيخاً خاصاً متوفراً 24 ساعة.
-            </p>
-          </div>
-        </div>
-      </div>
-      <div class="slide-image-wrapper">
-        <img src="/voice_recitation_preview.png" alt="لوحة التسميع الرقمي ومؤشر الذاكرة">
-      </div>
-    </div>
-
-    <!-- Slide 6: Similarities -->
-    <div class="slide" data-nav-title="مرشد المتشابهات">
-      <div class="slide-content">
-        <h2>4. مرشد المتشابهات بالذكاء الاصطناعي</h2>
-        <h3>تفكيك تداخل آيات القرآن بذكاء Google Gemini</h3>
-        
-        <div class="slide-tabs">
-          <button class="tab-btn active danger-tab" onclick="switchTab(this, 's6-problem')">❌ العقبة</button>
-          <button class="tab-btn success-tab" onclick="switchTab(this, 's6-solution')">💡 الحل الذكي</button>
-          <button class="tab-btn blue-tab" onclick="switchTab(this, 's6-tech')">⚙️ الجانب الفني</button>
-          <button class="tab-btn accent-tab" onclick="switchTab(this, 's6-impact')">🎯 الأثر والمنهجية</button>
-        </div>
-
-        <div class="tab-panel s6-problem active">
-          <div class="section-block">
-            <h4 class="section-title problem-title">❌ التلعثم والخلط اللفظي بين السور</h4>
-            <p class="section-desc">
-              تداخل المتشابهات اللفظية (مثال: "وقلنا ادخلوا" vs "وإذ قيل لهم اسكنوا") هو العائق الأكبر الذي يسبب تلعثماً وفزعاً للحفاظ أثناء التسميع أمام لجان الاختبار.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s6-solution">
-          <div class="section-block">
-            <h4 class="section-title solution-title">💡 المساعد القرآني التفاعلي (Gemini AI Chat)</h4>
-            <p class="section-desc">
-              شات ذكي مدمج يجيب فوراً على متشابهات الآيات، ويوضح الفروق اللفظية، ويقدم قواعد ربط لغوية وسياقية ذكية للتفرقة بأسلوب إيماني مشجع.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s6-tech">
-          <div class="section-block">
-            <h4 class="section-title tech-title">⚙️ دمج الذكاء الاصطناعي وهندسة الأوامر</h4>
-            <p class="section-desc">
-              ربط الواجهة الأمامية بموديل `gemini-1.5-flash` عبر Express.js. تم ضبط النظام بـ System Prompt دقيق لمنع الإجابات الخارجية وحصر الردود في متشابهات وتفاسير القرآن، وحفظ تاريخ المحادثات في SQLite.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s6-impact">
-          <div class="section-block">
-            <h4 class="section-title impact-title">🎯 التعلم القائم على الاستقصاء والتوجيه (Scaffolding)</h4>
-            <p class="section-desc">
-              الحصول على تفسير فوري للمتشابهات وقواعد ربط بسيطة يزيل التردد والخلط، ويمنح الحافظ ثقة تامة وسلاسة وانسيابية أثناء التلاوة غيباً.
+        <div class="panel auth-demo">
+          <div class="info-block">
+            <h4 style="color:var(--primary)">⚡ الدخول السريع التجريبي</h4>
+            <p>
+              بضغطة واحدة فقط! يدخل المستخدم بحساب تجريبي جاهز للاستخدام.<br><br>
+              ✦ مناسب لمن يريد رؤية التطبيق قبل التسجيل.<br>
+              ✦ تُحمَّل بيانات تجريبية كاملة (تقدم، خريطة، نقاط) لإعطاء انطباع واضح.<br>
+              ✦ لا يحتاج إدخال أي بيانات.
             </p>
           </div>
         </div>
       </div>
-      <div class="slide-image-wrapper" style="background: radial-gradient(circle, rgba(139, 92, 246, 0.12) 0%, #090e1b 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; text-align: center;">
-        <span style="font-size: 80px; margin-bottom: 20px;">🤖</span>
-        <h4 style="color: #8B5CF6; font-size: 24px; margin-bottom: 12px; font-weight: 800;">مساعد قرآني متاح 24/7</h4>
-        <p style="font-size: 15px; color: var(--text-muted); max-width: 400px; line-height: 1.6;">
-          ربط مباشر بنماذج Google Gemini المتخصصة للإجابة على أصعب متشابهات الآيات وتقديم القواعد الذهبية لربطها.
+      <div class="img-pane" style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding:30px; background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, #090e1a 100%);">
+        <span style="font-size:72px; margin-bottom:16px;">🔐</span>
+        <h4 style="color:var(--purple); font-size:20px; margin-bottom:10px; font-weight:800;">أمان وسرعة في آنٍ واحد</h4>
+        <p style="font-size:13px; color:var(--muted); text-align:center; max-width:280px; line-height:1.7;">
+          تشفير كامل بـ Bcrypt لكلمات المرور، وتوكن جلسة آمن (JWT-like) لحماية بيانات كل حافظ.
         </p>
       </div>
     </div>
 
-    <!-- Slide 7: Mind Maps -->
-    <div class="slide" data-nav-title="الخرائط الذهنية">
-      <div class="slide-content">
-        <h2>5. الخرائط الذهنية الشجرية للسور</h2>
-        <h3>رؤية الترابط الموضوعي وبناء وعي بصري بالسور</h3>
-        
-        <div class="slide-tabs">
-          <button class="tab-btn active danger-tab" onclick="switchTab(this, 's7-problem')">❌ العقبة</button>
-          <button class="tab-btn success-tab" onclick="switchTab(this, 's7-solution')">💡 الحل الذكي</button>
-          <button class="tab-btn blue-tab" onclick="switchTab(this, 's7-tech')">⚙️ الجانب الفني</button>
-          <button class="tab-btn accent-tab" onclick="switchTab(this, 's7-impact')">🎯 الأثر والمنهجية</button>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 5 – ONBOARDING WIZARD -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="مستشار التخطيط">
+      <div>
+        <div class="tag tag-green">🧙 أول مرة – مستشار التهيئة</div>
+        <h2 class="grad-green">بناء خطة حفظ شخصية ذكية</h2>
+        <p class="lead">بعد التسجيل مباشرة، يستقبل التطبيق المستخدم بمعالج تفاعلي يفهم من هو ويبني له خطة مخصصة تماماً.</p>
+
+        <div class="info-block">
+          <h4 style="color:var(--primary)">📋 أسئلة المعالج التفاعلي (4 خطوات)</h4>
+          <p>
+            <strong>الخطوة 1:</strong> ما مستوى حفظك الحالي؟ (مبتدئ / متوسط / متقدم / حافظ مكتمل للقرآن).<br>
+            <strong>الخطوة 2:</strong> كم صفحة تستطيع حفظ أو مراجعة يومياً؟ (1 – 5 صفحات).<br>
+            <strong>الخطوة 3:</strong> ما نمط تعلمك المفضل؟ (بصري يحتاج ألوان / سمعي يحتاج تلاوات / مختلط).<br>
+            <strong>الخطوة 4:</strong> ما الوقت المفضل لتلقي التنبيهات؟ (الفجر / الضحى / العصر / الليل).
+          </p>
         </div>
 
-        <div class="tab-panel s7-problem active">
-          <div class="section-block">
-            <h4 class="section-title problem-title">❌ تشتت الذهن في السور الطويلة</h4>
-            <p class="section-desc">
-              عند حفظ سور طويلة كالبقرة أو آل عمران، يشعر الطالب بالضياع والارتباك والتشتت لتنقل الآيات بين القصص والأحكام والوعظ والتشريع دون إدراك الترابط البنائي للسورة.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s7-solution">
-          <div class="section-block">
-            <h4 class="section-title solution-title">💡 الهيكلة الشجرية البصرية لمواضيع السور</h4>
-            <p class="section-desc">
-              تقسيم السور ديناميكياً إلى خرائط ذهنية شجرية مترابطة توضح محاور السورة الأساسية (مقدمة، أحكام، قصص، خاتمة) وتربط كل محور بآيات معينة وبشكل بصرى جذاب.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s7-tech">
-          <div class="section-block">
-            <h4 class="section-title tech-title">⚙️ الهندسة البرمجية للميزة</h4>
-            <p class="section-desc">
-              بناء خرائط تفاعلية هيكلية معتمدة على CSS/SVG تربط الآيات والصفحات بمحاور السورة المخزنة بقاعدة البيانات، مما يتيح التفاعل البصري والتنقل السلس للمستخدم.
-            </p>
-          </div>
-        </div>
-
-        <div class="tab-panel s7-impact">
-          <div class="section-block">
-            <h4 class="section-title impact-title">🎯 نظرية الترميز المزدوج (Dual Coding Theory)</h4>
-            <p class="section-desc">
-              ربط النص القرآني بالهيكل البصري للخرائط الذهنية يرسخ الانتقالات الكبرى للسورة في عقل الحافظ، مما يسهل استرجاع محاور السورة أثناء التلاوة وعدم التوقف.
-            </p>
-          </div>
+        <div class="info-block">
+          <h4 style="color:var(--gold)">🎯 ناتج المعالج</h4>
+          <p>
+            ✦ <strong>لوحة تحكم مخصصة</strong> تعرض مستهدف الحفظ والمراجعة اليومي بالصفحات.<br>
+            ✦ <strong>خطة مراجعة تلقائية</strong> تطبّق منهجية الحصون الخمسة حسب مستواه.<br>
+            ✦ <strong>تجربة بصرية أو سمعية</strong> تتكيف مع نمط تعلمه المحدد.
+          </p>
         </div>
       </div>
-      <div class="slide-image-wrapper">
-        <img src="/mind_maps_preview.png" alt="الخرائط الذهنية وهيكلة السور">
+      <div class="img-pane">
+        <img src="/five_fortresses_preview.png" alt="مستشار التخطيط الشخصي">
       </div>
     </div>
 
-    <!-- Slide 8: Fortresses & Community -->
-    <div class="slide" data-nav-title="الحصون والتلعيب">
-      <div class="slide-content">
-        <h2>6. الحصون الخمسة وتلعيب الحفظ</h2>
-        <h3>تثبيت الحفظ القديم وكسر عزلة الحفظ الفردي</h3>
-        
-        <div class="slide-tabs">
-          <button class="tab-btn active danger-tab" onclick="switchTab(this, 's8-problem')">❌ العقبة</button>
-          <button class="tab-btn success-tab" onclick="switchTab(this, 's8-solution')">💡 الحل الذكي</button>
-          <button class="tab-btn blue-tab" onclick="switchTab(this, 's8-tech')">⚙️ الجانب الفني</button>
-          <button class="tab-btn accent-tab" onclick="switchTab(this, 's8-impact')">🎯 الأثر والمنهجية</button>
-        </div>
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 6 – DASHBOARD HOME -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="لوحة القيادة الرئيسية">
+      <div>
+        <div class="tag tag-green">🏠 الواجهة الرئيسية بعد الدخول</div>
+        <h2 class="grad-green">لوحة القيادة (Dashboard)</h2>
+        <p class="lead">واجهة غنية ومتكاملة تعرض كل ما يحتاجه الحافظ لبدء يومه مع القرآن الكريم بشكل منظم وتحفيزي.</p>
 
-        <div class="tab-panel s8-problem active">
-          <div class="section-block">
-            <h4 class="section-title problem-title">❌ تفلت المحفوظ القديم والكسل المنفرد</h4>
-            <p class="section-desc">
-              يركز الطلاب على حفظ الجديد ويهملون القديم مما يؤدي لتفلته. كما أن الحفظ منفرداً يورث الملل والكسل لعدم وجود تشجيع ومنافسة أو زملاء مراجعين.
+        <div class="scroll-area">
+          <div class="info-block">
+            <h4 style="color:var(--gold)">📖 شريط الحديث الإيماني الدوّار</h4>
+            <p>يعرض في أعلى الصفحة أحاديث نبوية في فضائل القرآن تتغير كل 6 ثوانٍ تلقائياً لتجديد النية والمعنوية.</p>
+          </div>
+          <div class="info-block">
+            <h4 style="color:var(--primary)">📊 بطاقات القياس الثلاث</h4>
+            <p>
+              <strong>Memory Score:</strong> نسبة مئوية تمثل قوة الحفظ الإجمالية بناءً على نتائج التسميع.<br>
+              <strong>Streak 🔥:</strong> عدد الأيام المتتالية في صحبة القرآن مع قول النبي ﷺ كتحفيز.<br>
+              <strong>تطبيق اليوم:</strong> بطاقة عملية يومية مستنبطة من آيات الورد لتطبيق معاني القرآن في الحياة.
             </p>
           </div>
-        </div>
-
-        <div class="tab-panel s8-solution">
-          <div class="section-block">
-            <h4 class="section-title solution-title">💡 رقمنة الحصون الخمسة والتلعيب والملتقى</h4>
-            <p class="section-desc">
-              جدولة المهام اليومية للحصون الخمسة (مراجعة متباعدة)، وتلعيب الحفظ بنقاط الـ XP والأوسمة، مع توفير "ملتقى الحفاظ" لمشاركة منشورات التدبر والتفسير لدعم الروح التنافسية.
-            </p>
+          <div class="info-block">
+            <h4 style="color:var(--blue)">🤖 توصيات الذكاء الاصطناعي</h4>
+            <p>نظام ذكي يحلل تقدم المستخدم ويقترح الصفحة التالية للحفظ أو الصفحة الأكثر حاجة للمراجعة اليوم بناءً على ألوان خريطته.</p>
           </div>
-        </div>
-
-        <div class="tab-panel s8-tech">
-          <div class="section-block">
-            <h4 class="section-title tech-title">⚙️ محرك التلعيب ونظام التواصل بقاعدة البيانات</h4>
-            <p class="section-desc">
-              محرك حساب XP وترقية المستويات وتخزين الإنجازات بقاعدة البيانات. جداول SQLite مخصصة للمنشورات والتعليقات والإعجابات لتشغيل ملتقى الحفاظ بأمان وسرعة.
-            </p>
+          <div class="info-block">
+            <h4 style="color:var(--purple)">🏰 قائمة الحصون الخمسة اليومية</h4>
+            <p>عرض مرئي لمهام الحصون الخمسة مع أزرار إتمام تفاعلية — كل إتمام يكسب المستخدم 50 نقطة XP فوراً.</p>
           </div>
-        </div>
-
-        <div class="tab-panel s8-impact">
-          <div class="section-block">
-            <h4 class="section-title impact-title">🎯 نظرية التكرار المتباعد والتحفيز الذاتي</h4>
-            <p class="section-desc">
-              تحويل التكرار المتباعد إلى عادة ممتعة ومجزية، وبناء مجتمع ممارسة (Community of Practice) يكسر العزلة ويضمن ثبات الحفظ التراكمي وتدبر الآيات.
-            </p>
+          <div class="info-block">
+            <h4 style="color:var(--gold)">🏆 عرض المستوى والنقاط</h4>
+            <p>شريط تقدم يوضح المستوى الحالي، النقاط المكتسبة، والهدف اللازم للترقي للمستوى التالي.</p>
           </div>
         </div>
       </div>
-      <div class="slide-image-wrapper">
-        <img src="/admin_analytics_preview.png" alt="منظومة الحصون الخمسة والتحفيز">
+      <div class="img-pane">
+        <img src="/admin_analytics_preview.png" alt="لوحة القيادة الرئيسية">
       </div>
     </div>
 
-    <!-- Slide 9: Conclusion -->
-    <div class="slide single-col" data-nav-title="الخلاصة">
-      <h2 style="font-size: 38px; margin-bottom: 24px;">الخلاصة: <span class="highlight">تسخير التكنولوجيا لخدمة كتاب الله</span></h2>
-      
-      <div style="max-width: 900px; font-size: 16px; color: var(--text-muted); line-height: 1.8; text-align: right; margin: 0 auto 32px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 30px; border-radius: 24px;">
-        نجح تطبيق **محفّظ AI** في إثبات أثره الفعلي من خلال تقديم حلول رقمية تربوية وعلمية مبتكرة للعقبات الكبرى التي تواجه حفاظ القرآن الكريم:
-        <br><br>
-        🗺️ <strong>عشوائية المراجعة ➜</strong> تم حلها عبر <strong>خريطة القرآن التفاعلية الـ 604 الملونة</strong> لتوجيه الجهد مباشرة لثغرات الحفظ.
-        <br>
-        🤖 <strong>تداخل المتشابهات ➜</strong> تم حلها بدمج <strong>Google Gemini AI</strong> لمقارنة الآيات وتقديم القواعد الذهبية لربطها.
-        <br>
-        🗣️ <strong>غياب الملقن ➜</strong> تم حلها بـ <strong>لوحة التسميع التفاعلية وحساب مقياس الذاكرة (Memory Score)</strong> بدقة بالدرجات.
-        <br>
-        🏆 <strong>فتور العزيمة والنسيان ➜</strong> تم حلها بـ <strong>رقمنة الحصون الخمسة (التكرار المتباعد) وتلعيب الحفظ والملتقى التنافسي</strong>.
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 7 – QURAN MAP -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="خريطة المصحف">
+      <div>
+        <div class="tag tag-blue">📖 الميزة 1</div>
+        <h2 class="grad-blue">خريطة القرآن التفاعلية (604 صفحة)</h2>
+        <p class="lead">الحل المبتكر لمشكلة عشوائية المراجعة — خريطة بصرية ملونة لكامل المصحف الشريف تخبرك فوراً بنقاط قوتك وضعفك.</p>
+
+        <div class="tabs">
+          <button class="tab on blue" onclick="switchTab(this,'map-what')">ما هي؟</button>
+          <button class="tab" onclick="switchTab(this,'map-how')">كيف تعمل؟</button>
+          <button class="tab" onclick="switchTab(this,'map-why')">لماذا مهمة؟</button>
+        </div>
+
+        <div class="panel on map-what">
+          <div class="info-block">
+            <h4 style="color:var(--blue)">🗺️ الخريطة الحرارية للمصحف</h4>
+            <p>
+              شبكة بصرية مكوّنة من 604 بطاقة تفاعلية — كل بطاقة = صفحة من المصحف الشريف.<br><br>
+              <strong>🟢 أخضر:</strong> حفظ ممتاز ومتقن (90%+)<br>
+              <strong>🟡 أصفر:</strong> حفظ متوسط يحتاج مراجعة (60–89%)<br>
+              <strong>🔴 أحمر:</strong> صفحة ضعيفة أو حرجة تحتاج تدخلاً عاجلاً (أقل من 60%)<br>
+              <strong>⚪ رمادي:</strong> غير محفوظ بعد
+            </p>
+          </div>
+        </div>
+
+        <div class="panel map-how">
+          <div class="info-block">
+            <h4 style="color:var(--blue)">⚙️ آلية التحديث الذكي</h4>
+            <p>
+              الألوان تتغير تلقائياً بعد كل جلسة تسميع بناءً على درجة الحفظ المحسوبة (Memory Score).<br><br>
+              ✦ الضغط على أي صفحة في الخريطة يفتح تفاصيلها (السورة، الجزء، آخر درجة حفظ).<br>
+              ✦ يمكن التصفية حسب الجزء أو السورة.<br>
+              ✦ شريط التقدم الكلي يُظهر النسبة المئوية للمصحف المحفوظ.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel map-why">
+          <div class="info-block">
+            <h4 style="color:var(--primary)">💡 الأثر على تجربة الحافظ</h4>
+            <p>
+              ✦ يوفر أكثر من 50% من وقت المراجعة بالتوجيه نحو الصفحات الحرجة فقط.<br>
+              ✦ يعطي الحافظ صورة لحظية وبصرية واضحة عن مستوى حفظه الحقيقي.<br>
+              ✦ يمنع تراكم النسيان الذي كان يحدث خِفية بدون علم الحافظ.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="img-pane">
+        <img src="/quran_map_preview.png" alt="خريطة القرآن التفاعلية">
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 8 – DAILY SESSION & RECITATION -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="جلسة اليوم والتسميع">
+      <div>
+        <div class="tag tag-green">🎯 الميزة 2</div>
+        <h2 class="grad-green">جلسة اليوم والتسميع التفاعلي</h2>
+        <p class="lead">مساحة مخصصة تجمع قراءة القرآن، التسميع الذاتي، تصحيح التجويد بالاستماع، وحساب درجة جودة الحفظ — كل ذلك في مكان واحد.</p>
+
+        <div class="tabs">
+          <button class="tab on green" onclick="switchTab(this,'sess-read')">📖 القراءة والتسميع</button>
+          <button class="tab" onclick="switchTab(this,'sess-score')">📊 مقياس الحفظ</button>
+          <button class="tab" onclick="switchTab(this,'sess-audio')">🎵 مشغّل التلاوة</button>
+        </div>
+
+        <div class="panel on sess-read">
+          <div class="info-block">
+            <h4 style="color:var(--primary)">✍️ آلية التسميع الذكي</h4>
+            <p>
+              يختار الحافظ الصفحة المراد تسميعها، يقرأها غيباً من ذاكرته، وعند الخطأ يضغط:<br><br>
+              <strong>زر "تردد" :</strong> عند التوقف أو التردد في الآية.<br>
+              <strong>زر "خطأ" :</strong> عند الوقوع في خطأ لفظي أو نسيان آية.<br><br>
+              يُسجّل الحافظ التقدم ثم يضغط "إتمام التسميع" ليحتسب الدرجة آلياً.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel sess-score">
+          <div class="info-block">
+            <h4 style="color:var(--gold)">📊 خوارزمية Memory Score</h4>
+            <p>
+              يحسب التطبيق درجة قوة حفظ الصفحة وفق المعادلة:<br><br>
+              <code style="background:rgba(255,255,255,0.05); padding:6px 12px; border-radius:8px; font-size:13px; display:block; margin:8px 0;">
+                درجة الحفظ = 100 − (خطأ × 2) − (تردد × 1)
+              </code>
+              تُحدَّث درجة الصفحة في الخريطة التفاعلية فوراً بعد كل جلسة، ويتغير لونها أوتوماتيكياً.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel sess-audio">
+          <div class="info-block">
+            <h4 style="color:var(--blue)">🎵 مشغّل التلاوات القرآنية</h4>
+            <p>
+              مشغّل صوتي مدمج يتيح الاستماع لتلاوة الصفحة الحالية بأصوات مشاهير القراء.<br><br>
+              ✦ المنشاوي (المرتّل)<br>
+              ✦ الحصري (المعلّم للمبتدئين)<br>
+              ✦ الغامدي<br><br>
+              الاستماع يُساعد في تصحيح مخارج الحروف والتجويد، ويثبّت الصوت في الذاكرة السمعية.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="img-pane">
+        <img src="/voice_recitation_preview.png" alt="جلسة التسميع التفاعلي">
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 9 – FIVE FORTRESSES + GAMIFICATION -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="الحصون الخمسة">
+      <div>
+        <div class="tag tag-gold">🏰 الميزة 3</div>
+        <h2 class="grad-gold">الحصون الخمسة والتلعيب التحفيزي</h2>
+        <p class="lead">رقمنة أشهر منهجية علمية لثبات الحفظ (التكرار المتباعد) مع نظام تحفيزي يجعل المراجعة عادة يومية ممتعة لا عبئاً مرهقاً.</p>
+
+        <div class="tabs">
+          <button class="tab on gold" onclick="switchTab(this,'fort-what')">الحصون الخمسة</button>
+          <button class="tab" onclick="switchTab(this,'fort-xp')">نظام XP والأوسمة</button>
+        </div>
+
+        <div class="panel on fort-what">
+          <div class="info-block">
+            <h4 style="color:var(--gold)">🏰 المهام اليومية الخمس</h4>
+            <p>
+              كل يوم يُقدّم التطبيق للحافظ 5 مهام متوازنة تضمن ثبات الحفظ الكلي:<br><br>
+              <strong>1️⃣ الحصن 1 – الجديد:</strong> حفظ الصفحات المستهدفة لليوم.<br>
+              <strong>2️⃣ الحصن 2 – المراجعة القريبة:</strong> مراجعة ما حُفظ خلال الأسبوع الماضي.<br>
+              <strong>3️⃣ الحصن 3 – المراجعة البعيدة:</strong> مراجعة حفظ قديم (أكثر من شهر).<br>
+              <strong>4️⃣ الحصن 4 – السماع:</strong> الاستماع لتلاوة الصفحات المحددة.<br>
+              <strong>5️⃣ الحصن 5 – القراءة:</strong> قراءة نظر للمصحف لتثبيت الصورة البصرية.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel fort-xp">
+          <div class="info-block">
+            <h4 style="color:var(--primary)">⭐ نظام النقاط والترقي</h4>
+            <p>
+              <strong>50 نقطة XP</strong> تُكسب فور إتمام كل حصن يومي.<br>
+              <strong>500 نقطة XP</strong> = ترقي لمستوى أعلى مع عرض احتفالي في الواجهة.<br><br>
+              <strong>الأوسمة الإنجازية (Badges):</strong><br>
+              🥇 وسام الحافظ المواظب (7 أيام متتالية)<br>
+              📖 وسام فارس المراجعة (إتمام حصون أسبوع كامل)<br>
+              🌙 وسام حافظ الليل (جلسة بعد منتصف الليل)<br>
+              💫 وسام الختمة الأولى (إكمال حفظ القرآن كاملاً)
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="img-pane">
+        <img src="/five_fortresses_preview.png" alt="الحصون الخمسة ونظام التحفيز">
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 10 – AI ASSISTANT & SIMILARITIES -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="مساعد AI والمتشابهات">
+      <div>
+        <div class="tag tag-purple">🤖 الميزة 4 و5</div>
+        <h2 class="grad-purple">مساعد Gemini AI والمتشابهات اللفظية</h2>
+        <p class="lead">أذكى ميزة في التطبيق — معلم قرآني ذكي متاح على مدار الساعة يجيب فوراً على أصعب أسئلة الحفاظ ويُفكّك إشكاليات التشابه اللفظي.</p>
+
+        <div class="tabs">
+          <button class="tab on purple" onclick="switchTab(this,'ai-chat')">🤖 مساعد AI</button>
+          <button class="tab" onclick="switchTab(this,'ai-sim')">🔍 المتشابهات</button>
+          <button class="tab" onclick="switchTab(this,'ai-map')">🌲 الخرائط الذهنية</button>
+        </div>
+
+        <div class="panel on ai-chat">
+          <div class="info-block">
+            <h4 style="color:var(--purple)">🤖 المساعد القرآني (Google Gemini AI)</h4>
+            <p>
+              شات ذكي مدمج بنموذج Gemini يعمل كمعلم قرآني متخصص:<br><br>
+              ✦ يجيب على أسئلة المتشابهات (فرق هذه الآية عن تلك؟).<br>
+              ✦ يقدم التفسير الميسر للآيات التي يقرأها الحافظ.<br>
+              ✦ يعطي قواعد ذهبية بسيطة للتفرقة بين الآيات المتشابهة.<br>
+              ✦ يقدم نصائح علمية مشجعة لتخطي صعوبات الحفظ.<br>
+              ✦ يحفظ سجل المحادثات في قاعدة البيانات لكل مستخدم.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel ai-sim">
+          <div class="info-block">
+            <h4 style="color:var(--blue)">🔍 مرشد المتشابهات اللفظية</h4>
+            <p>
+              أداة متخصصة تعرض الآيات المتشابهة جنباً إلى جنب مع:<br><br>
+              ✦ تمييز الاختلافات اللفظية بالألوان والخط العريض.<br>
+              ✦ "القاعدة الذهبية" لتذكّر أيهما يأتي في أي سورة (قاعدة سياقية بسيطة).<br>
+              ✦ مثال: <em>"قولوا آمنا" في البقرة (جمع) — "قل آمنا" في آل عمران (مفرد)"</em>.<br>
+              ✦ يُقضى نهائياً على التلعثم والتردد أمام لجان الاختبار.
+            </p>
+          </div>
+        </div>
+
+        <div class="panel ai-map">
+          <div class="info-block">
+            <h4 style="color:var(--primary)">🌲 الخرائط الذهنية الموضوعية للسور</h4>
+            <p>
+              تقسيم السور الطويلة إلى هيكل شجري مترابط:<br><br>
+              ✦ المحور الرئيسي → المحاور الفرعية → الآيات المنتمية لكل محور.<br>
+              ✦ مثال سورة البقرة: (مقدمة، أحكام العبادات، قصص الأنبياء، أحكام المعاملات، خاتمة).<br>
+              ✦ يمنع الضياع أثناء التلاوة ويرسّخ الانتقالات الكبرى في الذاكرة.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="img-pane">
+        <img src="/mind_maps_preview.png" alt="الخرائط الذهنية والمتشابهات">
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 11 – COMMUNITY & ADMIN -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-2col" data-t="المجتمع والإدارة">
+      <div>
+        <div class="tag tag-blue">👥 الميزات المتبقية</div>
+        <h2 class="grad-blue">مجتمع الحفاظ، الإنجازات، ولوحة الإدارة</h2>
+        <p class="lead">المنصة ليست مجرد أدوات عزلة — بل بيئة اجتماعية إيمانية تنافسية تكسر حاجز الحفظ الفردي الممل.</p>
+
+        <div class="scroll-area">
+          <div class="info-block">
+            <h4 style="color:var(--blue)">👥 ملتقى الحفاظ (Community Feed)</h4>
+            <p>
+              فضاء اجتماعي إيماني داخل التطبيق يتيح:<br>
+              ✦ نشر خواطر تدبرية وفوائد من آيات القرآن.<br>
+              ✦ طرح الأسئلة والرد عليها بين الحفاظ.<br>
+              ✦ الإعجاب بالمنشورات والتعليق عليها.<br>
+              ✦ مشاركة الإنجازات لتشجيع الآخرين.
+            </p>
+          </div>
+
+          <div class="info-block">
+            <h4 style="color:var(--gold)">🏆 صفحة الإنجازات</h4>
+            <p>
+              عرض بصري جذاب لجميع الأوسمة المكتسبة والمقفلة:<br>
+              ✦ الأوسمة المُكتسبة تظهر بألوان حيّة وذهبية.<br>
+              ✦ الأوسمة المقفلة تظهر رمادية مع شرط الحصول عليها.<br>
+              ✦ شريط مستوى XP يحفّز على السعي نحو التقدم.
+            </p>
+          </div>
+
+          <div class="info-block">
+            <h4 style="color:var(--red)">📊 التحليلات والإحصاءات</h4>
+            <p>
+              رسوم بيانية وإحصاءات تفصيلية للمستخدم:<br>
+              ✦ منحنى التقدم الأسبوعي والشهري.<br>
+              ✦ مقارنة Memory Score عبر الأسابيع.<br>
+              ✦ الصفحات الأكثر ضعفاً تحتاج اهتماماً أكثر.
+            </p>
+          </div>
+
+          <div class="info-block">
+            <h4 style="color:var(--purple)">⚙️ لوحة الإدارة (للمسؤولين)</h4>
+            <p>
+              للمسؤولين (Admin) فقط — واجهة تحكم خاصة تتيح:<br>
+              ✦ مراقبة إجمالي المستخدمين وإحصاءاتهم.<br>
+              ✦ عرض قائمة الحسابات وصلاحيات كل مستخدم.<br>
+              ✦ متابعة استخدام الموارد وأداء الخادم.<br>
+              ✦ أخذ نسخ احتياطية لقاعدة البيانات.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="img-pane">
+        <img src="/admin_analytics_preview.png" alt="لوحة الإدارة والتحليلات">
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════ -->
+    <!-- SLIDE 12 – SIGN OUT & CLOSING -->
+    <!-- ═══════════════════════════════════════════ -->
+    <div class="slide slide-center" data-t="تسجيل الخروج والخاتمة">
+      <div class="tag tag-green">🌟 ختام رحلة المستخدم</div>
+      <h2 class="grad-green" style="font-size:38px; margin-bottom:18px;">من الدخول الأول حتى تسجيل الخروج</h2>
+
+      <!-- Journey steps summary -->
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; width:100%; margin-bottom:24px;">
+        <div class="feat-card green" style="padding:16px 12px;">
+          <div class="feat-icon">🌐</div>
+          <h4>١. الصفحة الرئيسية</h4>
+          <p>يرى الزائر الهوية والميزات ويختار التسجيل أو التجربة</p>
+        </div>
+        <div class="feat-card green">
+          <div class="feat-icon">🔐</div>
+          <h4>٢. التسجيل والدخول</h4>
+          <p>إنشاء حساب آمن أو دخول سريع بالحساب التجريبي</p>
+        </div>
+        <div class="feat-card green">
+          <div class="feat-icon">🧙</div>
+          <h4>٣. التهيئة الأولى</h4>
+          <p>بناء خطة حفظ مخصصة بناءً على مستواه ونمط تعلمه</p>
+        </div>
+        <div class="feat-card green">
+          <div class="feat-icon">🏠</div>
+          <h4>٤. اللوحة الرئيسية</h4>
+          <p>واجهة غنية بالإحصاءات والأحاديث وتوصيات AI</p>
+        </div>
       </div>
 
-      <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%); border: 1px solid var(--primary); padding: 18px 40px; border-radius: 20px; font-weight: 800; color: var(--primary-hover); font-size: 20px; box-shadow: 0 10px 30px rgba(16, 185, 129, 0.15); display: inline-block;">
-        ✨ محفّظ AI: نبتكر لنحمي ما في الصدور، ونيسر حفظ آيات الرحمن بالذكاء والإيمان. ✨
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; width:100%; margin-bottom:24px;">
+        <div class="feat-card green"><div class="feat-icon">🗺️</div><h4>خريطة المصحف</h4></div>
+        <div class="feat-card green"><div class="feat-icon">🎯</div><h4>جلسة التسميع</h4></div>
+        <div class="feat-card green"><div class="feat-icon">🏰</div><h4>الحصون الخمسة</h4></div>
+        <div class="feat-card green"><div class="feat-icon">🤖</div><h4>مساعد AI</h4></div>
+        <div class="feat-card green"><div class="feat-icon">👥</div><h4>ملتقى الحفاظ</h4></div>
+      </div>
+
+      <div class="info-block" style="max-width:700px; text-align:right;">
+        <h4 style="color:var(--muted)">🚪 تسجيل الخروج (Sign Out)</h4>
+        <p>
+          من القائمة العلوية في لوحة القيادة، أو من قائمة الصفحة الرئيسية إذا كان مسجلاً دخوله، يضغط المستخدم "تسجيل الخروج".<br>
+          ✦ تُحذف جلسته بأمان وتنتهي صلاحية التوكن.<br>
+          ✦ يُعاد توجيهه للصفحة الرئيسية.<br>
+          ✦ تُحفظ جميع بياناته وتقدمه في قاعدة البيانات وتنتظره في زيارته القادمة.
+        </p>
+      </div>
+
+      <div style="background:linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.15)); border:1px solid var(--primary); padding:16px 36px; border-radius:18px; font-weight:800; color:#34D399; font-size:18px; margin-top:18px;">
+        ✨ محفّظ AI — نبتكر لنحمي ما في الصدور، ونيسّر حفظ آيات الرحمن بالإيمان والذكاء ✨
       </div>
     </div>
 
   </div>
 
+  <!-- Controls -->
   <div class="controls">
-    <button id="prevBtn" onclick="changeSlide(-1)" disabled>السابق</button>
-    <div class="slide-indicator" id="indicator">شريحة 1 من 9</div>
-    <div class="shortcuts-tip">استخدم أسهم الكيبورد (<span class="key-badge">→</span> للتالي / <span class="key-badge">←</span> للسابق) أو <span class="key-badge">Space</span> للتنقل</div>
-    <button id="nextBtn" onclick="changeSlide(1)">التالي</button>
+    <button class="btn-nav" id="prev" onclick="go(-1)" disabled>السابق</button>
+    <span style="font-size:12px; color:var(--muted);">
+      <span class="kbd">→</span> التالي &nbsp;|&nbsp; <span class="kbd">←</span> السابق &nbsp;|&nbsp; <span class="kbd">Space</span> التالي
+    </span>
+    <button class="btn-nav" id="next" onclick="go(1)">التالي</button>
   </div>
 
   <script>
-    let currentSlide = 0;
-    const slides = document.querySelectorAll('.slide');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const indicator = document.getElementById('indicator');
-    const progressBar = document.getElementById('progressBar');
-    const indexPanel = document.getElementById('indexPanel');
+    let cur = 0;
+    const slides = [...document.querySelectorAll('.slide')];
+    const dots   = document.getElementById('dots');
+    const prog   = document.getElementById('prog');
+    const counter= document.getElementById('counter');
+    const prev   = document.getElementById('prev');
+    const next   = document.getElementById('next');
 
-    function initIndexDots() {
-      indexPanel.innerHTML = '';
-      slides.forEach((slide, idx) => {
-        const title = slide.getAttribute('data-nav-title') || `شريحة ${idx + 1}`;
-        const dot = document.createElement('div');
-        dot.className = `index-dot ${idx === 0 ? 'active' : ''}`;
-        dot.setAttribute('data-title', title);
-        dot.onclick = () => goToSlide(idx);
-        indexPanel.appendChild(dot);
-      });
-    }
-
-    function switchTab(btn, panelClass) {
-      const parentSlide = btn.closest('.slide');
-      
-      parentSlide.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-
-      parentSlide.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-      const targetPanel = parentSlide.querySelector(`.${panelClass}`);
-      if (targetPanel) {
-        targetPanel.classList.add('active');
-      }
-    }
-
-    function updateSlides() {
-      slides.forEach((slide, idx) => {
-        if (idx === currentSlide) {
-          slide.classList.add('active');
-        } else {
-          slide.classList.remove('active');
-        }
-      });
-
-      const dots = document.querySelectorAll('.index-dot');
-      dots.forEach((dot, idx) => {
-        if (idx === currentSlide) {
-          dot.classList.add('active');
-        } else {
-          dot.classList.remove('active');
-        }
-      });
-
-      prevBtn.disabled = currentSlide === 0;
-      nextBtn.disabled = currentSlide === slides.length - 1;
-      
-      indicator.textContent = `شريحة ${currentSlide + 1} من ${slides.length}`;
-
-      const progressPercent = (currentSlide / (slides.length - 1)) * 100;
-      progressBar.style.width = `${progressPercent}%`;
-    }
-
-    function changeSlide(direction) {
-      currentSlide = Math.max(0, Math.min(slides.length - 1, currentSlide + direction));
-      updateSlides();
-    }
-
-    function goToSlide(slideIdx) {
-      currentSlide = Math.max(0, Math.min(slides.length - 1, slideIdx));
-      updateSlides();
-    }
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'ArrowLeft') {
-        changeSlide(1); // RTL goes forward
-      } else if (e.key === 'ArrowRight') {
-        changeSlide(-1); // RTL goes backward
-      } else if (e.key === ' ' || e.key === 'Spacebar') {
-        e.preventDefault();
-        changeSlide(1);
-      }
+    // Build dots
+    slides.forEach((s, i) => {
+      const d = document.createElement('div');
+      d.className = 'dot' + (i === 0 ? ' active' : '');
+      d.setAttribute('data-t', s.getAttribute('data-t') || `شريحة ${i+1}`);
+      d.onclick = () => goTo(i);
+      dots.appendChild(d);
     });
 
-    document.getElementById('logoContainer').addEventListener('click', () => {
-      goToSlide(0);
+    function update() {
+      slides.forEach((s, i) => s.classList.toggle('active', i === cur));
+      [...dots.children].forEach((d, i) => d.classList.toggle('active', i === cur));
+      prog.style.width = (cur / (slides.length - 1) * 100) + '%';
+      counter.textContent = `شريحة ${cur + 1} من ${slides.length}`;
+      prev.disabled = cur === 0;
+      next.disabled = cur === slides.length - 1;
+    }
+
+    function go(dir) {
+      cur = Math.max(0, Math.min(slides.length - 1, cur + dir));
+      update();
+    }
+
+    function goTo(i) {
+      cur = Math.max(0, Math.min(slides.length - 1, i));
+      update();
+    }
+
+    function switchTab(btn, cls) {
+      const slide = btn.closest('.slide');
+      slide.querySelectorAll('.tab').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      slide.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
+      slide.querySelector('.' + cls).classList.add('on');
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft')  go(1);
+      if (e.key === 'ArrowRight') go(-1);
+      if (e.key === ' ') { e.preventDefault(); go(1); }
     });
 
-    window.addEventListener('DOMContentLoaded', () => {
-      initIndexDots();
-      updateSlides();
-    });
+    update();
   </script>
 </body>
 </html>
