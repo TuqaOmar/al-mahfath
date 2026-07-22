@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>العرض التقديمي لمشروع محفظ AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-color: #0A0E1A;
+      --card-bg: #111827;
+      --primary: #10B981;
+      --primary-hover: #059669;
+      --secondary: #3B82F6;
+      --accent: #F59E0B;
+      --text-main: #F9FAFB;
+      --text-muted: #9CA3AF;
+      --border-color: #1F2937;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Cairo', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    header {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      background-color: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(10px);
+      z-index: 10;
+    }
+
+    header h1 {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    header .badge {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--primary);
+      color: var(--primary);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .presentation-container {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 40px;
+    }
+
+    .slide {
+      position: absolute;
+      width: 95%;
+      max-width: 1200px;
+      height: 75vh;
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 24px;
+      padding: 40px;
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 40px;
+      align-items: center;
+      opacity: 0;
+      transform: scale(0.96) translateY(20px);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      pointer-events: none;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+    }
+
+    .slide.active {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+
+    /* Single Column for title/intro */
+    .slide.single-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+    }
+
+    .slide-content {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+      justify-content: center;
+    }
+
+    .slide h2 {
+      font-size: 30px;
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .slide h3 {
+      font-size: 18px;
+      color: var(--secondary);
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .section-block {
+      margin-bottom: 4px;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: bold;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-desc {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      padding-right: 20px;
+    }
+
+    .problem-title { color: #EF4444; }
+    .solution-title { color: #10B981; }
+    .impact-title { color: #3B82F6; }
+
+    .slide-image-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0D1322;
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    .slide-image-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s ease;
+    }
+
+    .slide-image-wrapper:hover img {
+      transform: scale(1.03);
+    }
+
+    /* Controls Bar */
+    .controls {
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: rgba(17, 24, 39, 0.9);
+      border-top: 1px solid var(--border-color);
+      z-index: 10;
+    }
+
+    .controls button {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .controls button:hover {
+      background: var(--primary-hover);
+    }
+
+    .controls button:disabled {
+      background: var(--border-color);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    .slide-indicator {
+      font-size: 16px;
+      font-weight: bold;
+      color: var(--text-muted);
+    }
+
+    .shortcuts-tip {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Slide specific tweaks */
+    .slide.title-slide {
+      background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, var(--card-bg) 75%);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>📖 محفّظ AI</h1>
+    <div class="badge">إثبات الأثر وحل عقبات الحفاظ للجنة المناقشة</div>
+  </header>
+
+  <div class="presentation-container">
+    <!-- Slide 1: Title -->
+    <div class="slide title-slide single-col active">
+      <h2 style="font-size: 46px; background: linear-gradient(135deg, #34D399 0%, #10B981 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">محفّظ AI (Ma7fath-AI)</h2>
+      <h3 style="font-size: 22px; color: var(--text-main); font-weight: 400; margin-bottom: 24px;">منصة الحفظ الذكية المستندة إلى الأثر وحل المشكلات</h3>
+      <p style="max-width: 700px; font-size: 16px; color: var(--text-muted); line-height: 1.7; margin-bottom: 30px;">
+        نعرض لكم كيف تحول التكنولوجيا العقبات اليومية التي تواجه حفظة القرآن الكريم إلى حلول عملية وتأثير ملموس يضمن ثبات الحفظ وعمق التدبر.
+      </p>
+      <div style="margin-bottom: 24px; font-size: 16px; color: var(--text-main); background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); padding: 12px 30px; border-radius: 16px; font-weight: 600;">
+        إعداد فريق العمل: تقى أبو الذهب • فرح الأحمد • أماني الربابعة
+      </div>
+      <div style="font-size: 14px; color: var(--text-muted); display: flex; gap: 20px;">
+        <span>عرض إقناع اللجنة بالحلول الملموسة</span>
+        <span>•</span>
+        <span>2026</span>
+      </div>
+    </div>
+
+    <!-- Slide 2: Quran Map Page -->
+    <div class="slide">
+      <div class="slide-content">
+        <h2>1. خريطة القرآن التفاعلية (604 صفحات)</h2>
+        <h3>المشكلة والحل والأثر البصري</h3>
+        
+        <div class="section-block">
+          <div class="section-title problem-title">❌ المشكلة والعقبة: عشوائية المراجعة وعدم معرفة الثغرات</div>
+          <div class="section-desc">
+            يراجع الحفظة صفحات القرآن بشكل عشوائي دون معيار واضح، ولا يستطيع الطالب تحديد الصفحات الضعيفة أو المنسية بدقة إلا بعد اختبار مفاجئ، مما يسبب إضاعة الوقت وتفلت الحفظ.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title solution-title">💡 الحل الذكي: خريطة بصرية حرارية فورية</div>
+          <div class="section-desc">
+            تحويل الـ 604 صفحات إلى شبكة تفاعلية ملونة: 🟢 للأجزاء الثابتة، 🟡 للمستوى المتوسط، 🔴 للصفحات الضعيفة والحرجة جداً بناء على أخطاء التسميع السابقة.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title impact-title">🎯 الأثر والنتيجة للجنة: توجيه مخصص وموفر للوقت</div>
+          <div class="section-desc">
+            يرى الحافظ نقاط ضعفه فوراً بلمحة بصرية واحدة، مما يمكنه من الذهاب فوراً للصفحات الحمراء لمراجعتها وتصحيحها بدلاً من هدر الوقت في مراجعة ما يتقنه بالفعل.
+          </div>
+        </div>
+      </div>
+      <div class="slide-image-wrapper">
+        <img src="./public/quran_map_preview.png" alt="خريطة القرآن التفاعلية">
+      </div>
+    </div>
+
+    <!-- Slide 3: Interactive Quran View -->
+    <div class="slide">
+      <div class="slide-content">
+        <h2>2. التسميع الصوتي والتفسير بالتدبر</h2>
+        <h3>المشكلة والحل والأثر البصري</h3>
+
+        <div class="section-block">
+          <div class="section-title problem-title">❌ المشكلة والعقبة: الحفظ الصم المنفصل عن الفهم وغياب الملقن</div>
+          <div class="section-desc">
+            حفظ الكلمات كقوالب نصية دون فهم المعنى يسرع من نسيانها ويحرم الطالب من التدبر السلوكي. بالإضافة لصعوبة التسميع الفردي لعدم توفر معلّم أو مساعد يتابع القراءة دائماً.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title solution-title">💡 الحل الذكي: التظليل المتزامن صوتاً والتفسير الفوري</div>
+          <div class="section-desc">
+            تسميع حي يظلل الآيات المقروءة تلقائياً صوتاً، مع إمكانية نقر الآية لجلب تفسيرها الميسر وربطه ببطاقة عمل تدبرية يومية لتطبيق المعنى فوراً.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title impact-title">🎯 الأثر والنتيجة للجنة: حفظ راسخ وتدبر سلوكي حي</div>
+          <div class="section-desc">
+            يرتبط الحفظ الصوتي بالفهم اللفظي للآية، مما يعزز بقاءها في الذاكرة طويلة المدى ويسهل استحضارها وربط الحفظ بالعمل الصالح.
+          </div>
+        </div>
+      </div>
+      <div class="slide-image-wrapper">
+        <img src="./public/voice_recitation_preview.png" alt="التسميع الصوتي والتفسير">
+      </div>
+    </div>
+
+    <!-- Slide 4: Mind Maps -->
+    <div class="slide">
+      <div class="slide-content">
+        <h2>3. الخرائط الذهنية الموضوعية للسور</h2>
+        <h3>المشكلة والحل والأثر البصري</h3>
+
+        <div class="section-block">
+          <div class="section-title problem-title">❌ المشكلة والعقبة: تشتت ذهن الحافظ في السور الطويلة</div>
+          <div class="section-desc">
+            عند حفظ السور الطويلة (مثل البقرة أو آل عمران)، يشعر الحافظ بالتشتت والضياع بين الانتقالات القصصية والتشريعية المتنوعة لعدم قدرته على رؤية الترابط الموضوعي.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title solution-title">💡 الحل الذكي: الهيكلة الشجرية التفاعلية للمحاور</div>
+          <div class="section-desc">
+            تحليل وتقسيم السورة إلى خريطة ذهنية ومحاور موضوعية مترابطة شجرياً بالآيات (مقدمة، قصص، تشريع، خاتمة) لتوضيح البنية الكبرى للسورة.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title impact-title">🎯 الأثر والنتيجة للجنة: إتقان الانتقالات القصصية وبناء وعي بصرى</div>
+          <div class="section-desc">
+            يستحضر الحافظ ترتيب محاور السورة ذهنياً أثناء تلاوته، مما يمنعه من نسيان الانتقالات الكبرى ويسرع ربط المواضيع ببعضها.
+          </div>
+        </div>
+      </div>
+      <div class="slide-image-wrapper">
+        <img src="./public/mind_maps_preview.png" alt="الخرائط الذهنية">
+      </div>
+    </div>
+
+    <!-- Slide 5: Similarities -->
+    <div class="slide">
+      <div class="slide-content">
+        <h2>4. مرشد المتشابهات اللفظية الذكي</h2>
+        <h3>المشكلة والحل والأثر البصري</h3>
+
+        <div class="section-block">
+          <div class="section-title problem-title">❌ المشكلة والعقبة: التلعثم والخلط بين الآيات المتشابهة</div>
+          <div class="section-desc">
+            تداخل الألفاظ والآيات المتشابهة في سور مختلفة هو العدو الأول للحفاظ (مثال: "قولوا آمنا" بالبقرة vs "قل آمنا" بآل عمران) مما يسبب الوقوع بالخطأ والتوتر عند التسميع.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title solution-title">💡 الحل الذكي: المقارنة الثنائية مع القواعد الذهبية للربط</div>
+          <div class="section-desc">
+            عرض الآيات المتشابهة متجاورة مع تزويد الحافظ بـ "قاعدة ربط ذهبية" مبسطة وذكية تشرح الفرق بناء على طول السورة أو السياق العام للآية.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title impact-title">🎯 الأثر والنتيجة للجنة: إنهاء القلق من المتشابهات وثبات التلاوة</div>
+          <div class="section-desc">
+            يستحضر الحافظ قاعدة التفرقة البسيطة فور وصوله للآية المتشابهة، مما يزيل التردد تماماً ويجعله يقرأ بانسيابية وثقة تامة أمام لجان الاختبار.
+          </div>
+        </div>
+      </div>
+      <div class="slide-image-wrapper" style="background: radial-gradient(circle, rgba(139, 92, 246, 0.1) 0%, #111827 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center;">
+        <span style="font-size: 80px; margin-bottom: 20px;">🔍</span>
+        <h4 style="color: #8B5CF6; font-size: 22px; margin-bottom: 10px;">ربط ذكي لمنع التداخل</h4>
+        <p style="font-size: 14px; color: var(--text-muted); padding: 0 20px;">
+          فصل الآيات المتداخلة عن طريق شرح نحوي أو سياقي بسيط يترسخ بذكاء في عقل الحافظ.
+        </p>
+      </div>
+    </div>
+
+    <!-- Slide 6: Five Fortresses -->
+    <div class="slide">
+      <div class="slide-content">
+        <h2>5. نظام المتابعة اليومي للحصون الخمسة</h2>
+        <h3>المشكلة والحل والأثر البصري</h3>
+
+        <div class="section-block">
+          <div class="section-title problem-title">❌ المشكلة والعقبة: فتور الهمة وإهمال التكرار المتباعد</div>
+          <div class="section-desc">
+            الحفظ الجديد دون مراجعة الحفظ القديم مصيره الزوال سريعاً. يواجه الطالب عقبة التكاسل لعدم وجود انضباط يومي في توزيع الجهد ومكافأة التقدم.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title solution-title">💡 الحل الذكي: رقمنة الحصون الخمسة وحساب المستهدفات تلقائياً</div>
+          <div class="section-desc">
+            خطة عمل يومية تقرأ تقدم الطالب وتحدد له مهامه الخمس (قراءة، مراجعة قريبة، حفظ جديد، مراجعة بعيدة) مع نظام تحفيزي بالأوسمة المقفلة ونقاط الـ XP.
+          </div>
+        </div>
+
+        <div class="section-block">
+          <div class="section-title impact-title">🎯 الأثر والنتيجة للجنة: انضباط يومي يمنع النسيان تماماً</div>
+          <div class="section-desc">
+            يتحول الحفظ التراكمي إلى روتين يومي منظم وتفاعلي، مما يضمن ثبات المحفوظ القديم بنسبة 100% ويشجع الطالب على الاستمرار عبر الارتقاء بالمستويات.
+          </div>
+        </div>
+      </div>
+      <div class="slide-image-wrapper">
+        <img src="./public/five_fortresses_preview.png" alt="منهجية الحصون الخمسة اليومية">
+      </div>
+    </div>
+
+    <!-- Slide 7: Conclusion -->
+    <div class="slide single-col">
+      <h2 style="font-size: 38px; color: var(--primary); margin-bottom: 20px;">الخلاصة للجنة: دمج التكنولوجيا لخدمة الوحي الشريف</h2>
+      <p style="max-width: 800px; font-size: 16px; color: var(--text-muted); line-height: 1.8; margin-bottom: 24px;">
+        مشروع **محفظ AI** نجح في إثبات أثره العملي من خلال حل عقبات الحفاظ التقليدية:
+        <br>1. حوّلنا عشوائية التقييم إلى **خريطة بصرية واضحة للثغرات**.
+        <br>2. استبدلنا التلقين الجاف بـ **تسميع متزامن يربط الحفظ بالتدبر**.
+        <br>3. سهّلنا السور الطويلة بـ **خرائط تفاعلية وقواعد لحل المتشابهات اللفظية**.
+        <br>4. حاربنا الكسل والتفلت بـ **رقمنة الحصون الخمسة والتحفيز بالـ XP والأوسمة**.
+      </p>
+      <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid var(--primary); padding: 16px 24px; border-radius: 16px; font-weight: bold; color: var(--primary); font-size: 18px;">
+        ✨ "محفظ AI" هو الرفيق الذكي والأثر الملموس لكل حافظ يطمح لإتقان كتاب الله علماً وعملاً. ✨
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="prevBtn" onclick="changeSlide(-1)" disabled>السابق</button>
+    <div class="slide-indicator" id="indicator">شريحة 1 من 7</div>
+    <div class="shortcuts-tip">استخدم أسهم الكيبورد (→ / ←) للتنقل</div>
+    <button id="nextBtn" onclick="changeSlide(1)">التالي</button>
+  </div>
+
+  <script>
+    let currentSlide = 0;
+    const slides = document.querySelectorAll('.slide');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const indicator = document.getElementById('indicator');
+
+    function updateSlides() {
+      slides.forEach((slide, idx) => {
+        if (idx === currentSlide) {
+          slide.classList.add('active');
+        } else {
+          slide.classList.remove('active');
+        }
+      });
+
+      prevBtn.disabled = currentSlide === 0;
+      nextBtn.disabled = currentSlide === slides.length - 1;
+      indicator.textContent = `شريحة ${currentSlide + 1} من ${slides.length}`;
+    }
+
+    function changeSlide(direction) {
+      currentSlide = Math.max(0, Math.min(slides.length - 1, currentSlide + direction));
+      updateSlides();
+    }
+
+    // Keydown navigation
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') {
+        changeSlide(1); // Since dir is RTL, Left Arrow goes forward
+      } else if (e.key === 'ArrowRight') {
+        changeSlide(-1); // Right Arrow goes backward
+      }
+    });
+  </script>
+</body>
+</html>

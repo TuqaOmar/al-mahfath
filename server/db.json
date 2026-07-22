@@ -1,0 +1,184 @@
+{
+  "users": [
+    {
+      "uid": "demo_user_123",
+      "name": "أحمد محمد",
+      "email": "demo@ma7fath.ai",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad",
+      "hasCompletedWizard": true,
+      "streak": 23,
+      "xp": 2450,
+      "level": 12,
+      "memorizedPagesCount": 45,
+      "memoryScore": 84,
+      "totalJuz": 2.25,
+      "preferences": {
+        "level": "متوسط (أحفظ بعض الأجزاء)",
+        "dailyTarget": "صفحة واحدة يومياً",
+        "learningStyle": "سمعي بصري (مختلط)",
+        "motivation": "تثبيت حفظ سورة البقرة وآل عمران والتقرب إلى الله",
+        "reminder": "بعد صلاة الفجر"
+      },
+      "fortressesPlan": [
+        {
+          "id": 1,
+          "title": "1. القراءة المستمرة",
+          "desc": "قراءة جزء يومياً للاستماع والاستحواذ",
+          "targetPages": "الجزء 3 (الصفحات 42 - 62)",
+          "color": "#3B82F6",
+          "completed": true
+        },
+        {
+          "id": 2,
+          "title": "2. التحضير الأسبوعي",
+          "desc": "قراءة السورة كاملة بتركيز وتدبر للمعاني",
+          "targetPages": "سورة البقرة كاملاً",
+          "color": "#8B5CF6",
+          "completed": true
+        },
+        {
+          "id": 3,
+          "title": "3. التحضير القريب",
+          "desc": "تحضير الصفحة قبل حفظها بـ 15 دقيقة",
+          "targetPages": "الصفحة 45 (البقرة 266-269)",
+          "color": "#EC4899",
+          "completed": false
+        },
+        {
+          "id": 4,
+          "title": "4. الحفظ الجديد",
+          "desc": "حفظ الوجه الجديد بإتقان وتأمل",
+          "targetPages": "الصفحة 46 (البقرة 270-274)",
+          "color": "#10B981",
+          "completed": false
+        },
+        {
+          "id": 5,
+          "title": "5. المراجعة البعيدة",
+          "desc": "مراجعة ما تم حفظه والقراءة به في الصلاة",
+          "targetPages": "الصفحات 1 - 44 في قيام الليل",
+          "color": "#F59E0B",
+          "completed": true
+        }
+      ]
+    },
+    {
+      "uid": "user_ygw316kwf",
+      "name": "تقى عمر ابو الذهب",
+      "email": "tuaa.1999@gmail.com",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=User",
+      "hasCompletedWizard": true,
+      "streak": 1,
+      "xp": 100,
+      "level": 1,
+      "preferences": {
+        "learningStyle": "سمعي (التكرار والاستماع)",
+        "motivation": "نيل رضا الله وتثبيت الحفظ كاملاً",
+        "juzsMemorized": "جزء واحد إلى 3 أجزاء",
+        "dailyTarget": "صفحة واحدة يومياً",
+        "availableDays": "كل أيام الأسبوع",
+        "photoURL": "https://api.dicebear.com/7.x/micah/svg?seed=Ahmad&baseColor=f9c9b6"
+      }
+    }
+  ],
+  "quranPages": [
+    {
+      "pageNumber": 1,
+      "status": "excellent",
+      "score": 98,
+      "surahName": "الفاتحة",
+      "juz": 1,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 2,
+      "status": "review",
+      "score": 72,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ 3 أيام",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 3,
+      "status": "excellent",
+      "score": 95,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 4,
+      "status": "good",
+      "score": 88,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ 4 أيام",
+      "errorsCount": 1
+    },
+    {
+      "pageNumber": 82,
+      "status": "critical",
+      "score": 45,
+      "surahName": "آل عمران",
+      "juz": 3,
+      "lastReviewed": "منذ أسبوع",
+      "errorsCount": 4
+    }
+  ],
+  "communityPosts": [
+    {
+      "id": 1,
+      "author": "عبد الله العتيبي",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Abdullah",
+      "isAnonymous": false,
+      "category": "تدبر",
+      "timeAgo": "منذ ساعتين",
+      "content": "في سورة البقرة آية 152: ﴿ فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ ﴾. ما أثر استحضار هذه الآية أثناء تكرار الحفظ اليومي؟ تشعر بوصل مباشر مع الله سبحانه.",
+      "likes": 24,
+      "answers": [
+        {
+          "id": 101,
+          "author": "د. محمد الشنقيطي",
+          "text": "سبحان الله، الذكر هو روح الحفظ وثبات السورة في القلب."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "author": "هوية مخفية",
+      "avatar": null,
+      "isAnonymous": true,
+      "category": "متشابهات",
+      "timeAgo": "منذ 5 ساعات",
+      "content": "أجد صعوبة في التفرقة بين خاتمة آيات سورة آل عمران وسورة النساء في موضوع التقوى. كيف تفرقون بينهما بطريقة تثبيت سهلة؟",
+      "likes": 18,
+      "answers": [
+        {
+          "id": 102,
+          "author": "أحمد محمد",
+          "text": "ربط الآية بمحور السورة العام؛ آل عمران تركز على الثبات والجهاد، بينما النساء تركز على الأحكام والعدل."
+        }
+      ]
+    }
+  ],
+  "aiChatHistory": [
+    {
+      "id": 1,
+      "sender": "ai",
+      "text": "وعليكم السلام ورحمة الله وبركاته! أهلاً بك يا حافظ كتاب الله. أنا معلمك وموجهك الذكي، أساعدك في تثبيت السور، تبيان المتشابهات، والتدبر في آيات الله للتقرب إليه. كيف يمكنني إعانتك اليوم؟"
+    },
+    {
+      "id": 1784660235885,
+      "sender": "user",
+      "text": "سلام"
+    },
+    {
+      "id": 1784660235886,
+      "sender": "ai",
+      "text": "بارك الله فيك ونفع بك! بناءً على خطتك وتوجيهات الحصون الخمسة، أنصحك بمراجعة الورد اليومي وتلاوته في صلاة النوافل اليوم لتثبيتها في قلبك."
+    }
+  ]
+}
