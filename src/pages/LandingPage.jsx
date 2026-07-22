@@ -14,6 +14,7 @@ const LandingPage = () => {
   const { user, logout, loginWithTestAccount, loading } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState('login'); // 'login' | 'signup'
+  const [activeShowcase, setActiveShowcase] = useState('quran-map');
   const navigate = useNavigate();
 
   const openAuthModal = (mode = 'login') => {
@@ -222,6 +223,101 @@ const LandingPage = () => {
                 <p style={{ color: 'var(--text-secondary)', fontSize: '16px', fontWeight: 600 }}>{stat.label}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* App Screenshots Showcase Gallery */}
+      <section id="showcase" style={{ padding: '100px 0', background: 'var(--bg-color)', borderBottom: '1px solid var(--glass-border)' }}>
+        <div className="container">
+          <div style={{ textAlign: 'center', marginBottom: '48px' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 'var(--radius-full)', marginBottom: '16px', fontSize: '14px', fontWeight: 600 }}>
+              📸 تجربة واقعية وحقيقية
+            </div>
+            <h2 style={{ fontSize: '40px', marginBottom: '16px', color: 'var(--text-primary)' }}>
+              شاهد تطبيق <span className="text-gradient">محفظ AI</span> في العمل
+            </h2>
+            <p style={{ fontSize: '18px', color: 'var(--text-secondary)', maxWidth: '650px', margin: '0 auto' }}>
+              نأخذك في جولة سريعة داخل صفحات التطبيق الحقيقية لتشاهد الواجهات المصممة لتسهيل رحلة الحفظ.
+            </p>
+          </div>
+
+          {/* Gallery Tabs */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '40px' }}>
+            {[
+              { id: 'quran-map', label: '🗺️ خريطة المصحف التفاعلية', img: '/quran_map_preview.png' },
+              { id: 'recitation', label: '🗣️ التسميع ومقياس الحفظ', img: '/voice_recitation_preview.png' },
+              { id: 'mind-maps', label: '🌲 الخرائط الذهنية الموضوعية', img: '/mind_maps_preview.png' },
+              { id: 'fortresses', label: '📊 الحصون الخمسة والتحفيز', img: '/five_fortresses_preview.png' },
+              { id: 'admin', label: '⚙️ لوحة الإدارة والتحليلات', img: '/admin_analytics_preview.png' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveShowcase(tab.id)}
+                style={{
+                  padding: '12px 24px',
+                  borderRadius: '12px',
+                  border: activeShowcase === tab.id ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                  background: activeShowcase === tab.id ? 'var(--primary-light)' : 'var(--bg-surface)',
+                  color: activeShowcase === tab.id ? 'var(--primary)' : 'var(--text-secondary)',
+                  fontWeight: 'bold',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  transition: 'all 0.25s ease'
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Screenshot Display Frame */}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <div style={{
+              width: '100%',
+              maxWidth: '1000px',
+              padding: '12px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '24px',
+              boxShadow: 'var(--shadow-xl)',
+              overflow: 'hidden'
+            }}>
+              <div style={{ 
+                background: 'var(--bg-color)', 
+                borderRadius: '16px', 
+                overflow: 'hidden', 
+                border: '1px solid rgba(255,255,255,0.05)',
+                position: 'relative',
+                aspectRatio: '16/9'
+              }}>
+                {[
+                  { id: 'quran-map', img: '/quran_map_preview.png', alt: 'خريطة المصحف التفاعلية' },
+                  { id: 'recitation', img: '/voice_recitation_preview.png', alt: 'لوحة التسميع ومقياس الحفظ' },
+                  { id: 'mind-maps', img: '/mind_maps_preview.png', alt: 'الخرائط الذهنية الموضوعية' },
+                  { id: 'fortresses', img: '/five_fortresses_preview.png', alt: 'منظومة الحصون الخمسة والتحفيز' },
+                  { id: 'admin', img: '/admin_analytics_preview.png', alt: 'لوحة الإدارة والتحليلات' }
+                ].map((item) => (
+                  <motion.img
+                    key={item.id}
+                    src={item.img}
+                    alt={item.alt}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: activeShowcase === item.id ? 1 : 0 }}
+                    transition={{ duration: 0.4 }}
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      display: activeShowcase === item.id ? 'block' : 'none'
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
