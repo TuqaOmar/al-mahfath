@@ -371,18 +371,49 @@
     <!-- SLIDE 1 – TITLE -->
     <!-- ═══════════════════════════════════════════ -->
     <div class="slide slide-center active" data-t="البداية">
-      <div class="gold-box">
+      <!-- Basaer / Safar Logo Banner -->
+      <div style="margin-bottom:18px; display:flex; align-items:center; justify-content:center; gap:18px;">
+        <!-- SVG Logo recreation of دورة بصائر - مشروع سفر -->
+        <div style="background:white; border-radius:12px; padding:8px 16px; display:flex; align-items:center; gap:10px; box-shadow:0 4px 20px rgba(0,0,0,0.4);">
+          <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="22" cy="22" r="20" fill="#1a6b3a" opacity="0.12"/>
+            <path d="M22 6 C14 10 10 16 10 22 C10 28 14 36 22 38 C30 36 34 28 34 22 C34 16 30 10 22 6Z" fill="#2d8a4e" opacity="0.3"/>
+            <path d="M22 10 L24 16 L22 14 L20 16Z" fill="#2d8a4e"/>
+            <path d="M18 13 C16 15 15 18 15 21" stroke="#2d8a4e" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M26 13 C28 15 29 18 29 21" stroke="#2d8a4e" stroke-width="1.5" stroke-linecap="round"/>
+            <path d="M22 16 C19 18 18 21 18 24 C18 27 19 30 22 32 C25 30 26 27 26 24 C26 21 25 18 22 16Z" fill="#2d8a4e" opacity="0.6"/>
+            <text x="22" y="36" text-anchor="middle" fill="#1a4a2e" font-size="5" font-family="serif" font-weight="bold">سفر</text>
+          </svg>
+          <div style="text-align:right;">
+            <div style="font-size:8px; color:#555; font-family:serif; line-height:1.2;">مشروع</div>
+            <div style="font-size:14px; font-weight:900; color:#1a6b3a; font-family:serif; line-height:1.2;">سفّر</div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px; color:var(--muted); letter-spacing:1px; text-transform:uppercase; margin-bottom:2px;">مشروع التخرج من</div>
+          <div style="font-size:18px; font-weight:800; color:#4ADE80;">دورة بصائر — مشروع سفر</div>
+          <div style="font-size:12px; color:var(--muted);">لإعداد معلم القرآن الكريم &nbsp;|&nbsp; الدفعة 19 &nbsp;|&nbsp; 2026</div>
+        </div>
+      </div>
+
+      <!-- Fallback logo text (shows if image fails to load) -->
+      <div id="basaer-fallback" style="display:none; margin-bottom:18px; background:linear-gradient(135deg,rgba(74,222,128,0.1),rgba(59,130,246,0.1)); border:1px solid rgba(74,222,128,0.3); border-radius:16px; padding:12px 28px; text-align:center;">
+        <div style="font-size:22px; font-weight:900; color:#4ADE80; letter-spacing:1px;">🌿 دورة بصائر — مشروع سفر</div>
+        <div style="font-size:13px; color:var(--muted); margin-top:4px;">مشروع التخرج لإعداد معلم القرآن الكريم &nbsp;|&nbsp; الدفعة 19 &nbsp;|&nbsp; 2026</div>
+      </div>
+
+      <div class="gold-box" style="margin-bottom:14px;">
         <div class="ayat">« إِنَّا نَحْنُ نَزَّلْنَا الذِّكْرَ وَإِنَّا لَهُ لَحَافِظُونَ »</div>
       </div>
-      <h2 style="font-size:44px;" class="grad-green">محفّظ AI (Ma7fath-AI)</h2>
-      <p style="font-size:19px; color:#94A3B8; max-width:700px; margin: 14px auto 32px; line-height:1.7;">
+      <h2 style="font-size:40px;" class="grad-green">محفّظ AI (Ma7fath-AI)</h2>
+      <p style="font-size:17px; color:#94A3B8; max-width:700px; margin: 12px auto 22px; line-height:1.7;">
         المنصة الذكية الأولى التي تجمع بين قوة الذكاء الاصطناعي وأساليب الحفظ العلمية<br>
         لتحويل رحلة حفظ القرآن الكريم من تحدٍ مُرهق إلى تجربة إيمانية ممتعة ومستدامة.
       </p>
-      <div style="background:var(--primary-dim); border:1px solid rgba(16,185,129,0.2); padding:12px 32px; border-radius:16px; font-size:15px; font-weight:700;">
+      <div style="background:var(--primary-dim); border:1px solid rgba(16,185,129,0.2); padding:10px 28px; border-radius:16px; font-size:14px; font-weight:700;">
         إعداد وتطوير: تقى أبو الذهب &bull; فرح الأحمد &bull; أماني الربابعة
       </div>
-      <div class="stat-row" style="justify-content:center; margin-top:28px;">
+      <div class="stat-row" style="justify-content:center; margin-top:20px;">
         <div class="stat-pill"><span class="val">+50K</span><span class="lbl">حافظ مسجّل</span></div>
         <div class="stat-pill"><span class="val">+2M</span><span class="lbl">صفحة محفوظة</span></div>
         <div class="stat-pill"><span class="val">94%</span><span class="lbl">نسبة الالتزام</span></div>
@@ -458,7 +489,7 @@
         </div>
       </div>
       <div class="img-pane">
-        <img src="/quran_holy_book.jpg" alt="الصفحة الرئيسية لمحفظ AI">
+        <img src="/quran_holy_book.jpg" alt="الصفحة الرئيسية لمحفظ AI" style="object-fit:contain; background:#060913;">
       </div>
     </div>
 
@@ -513,12 +544,15 @@
           </div>
         </div>
       </div>
-      <div class="img-pane" style="display:flex; flex-direction:column; justify-content:center; align-items:center; padding:30px; background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, #090e1a 100%);">
-        <span style="font-size:72px; margin-bottom:16px;">🔐</span>
-        <h4 style="color:var(--purple); font-size:20px; margin-bottom:10px; font-weight:800;">أمان وسرعة في آنٍ واحد</h4>
-        <p style="font-size:13px; color:var(--muted); text-align:center; max-width:280px; line-height:1.7;">
-          تشفير كامل بـ Bcrypt لكلمات المرور، وتوكن جلسة آمن (JWT-like) لحماية بيانات كل حافظ.
-        </p>
+      <div class="img-pane" style="position:relative; overflow:hidden;">
+        <img src="/admin_analytics_preview.png" alt="لوحة التحكم" style="width:100%; height:100%; object-fit:cover; opacity:0.35;">
+        <div style="position:absolute; inset:0; display:flex; flex-direction:column; justify-content:center; align-items:center; background:radial-gradient(circle, rgba(139,92,246,0.35) 0%, rgba(6,9,25,0.8) 100%);">
+          <span style="font-size:72px; margin-bottom:16px;">🔐</span>
+          <h4 style="color:var(--purple); font-size:20px; margin-bottom:10px; font-weight:800;">أمان وسرعة في آنٍ واحد</h4>
+          <p style="font-size:13px; color:var(--muted); text-align:center; max-width:280px; line-height:1.7; padding:0 16px;">
+            تشفير كامل بـ Bcrypt لكلمات المرور، وتوكن جلسة آمن (JWT-like) لحماية بيانات كل حافظ.
+          </p>
+        </div>
       </div>
     </div>
 
@@ -554,6 +588,7 @@
         <img src="/five_fortresses_preview.png" alt="مستشار التخطيط الشخصي">
       </div>
     </div>
+
 
     <!-- ═══════════════════════════════════════════ -->
     <!-- SLIDE 6 – DASHBOARD HOME -->
@@ -592,7 +627,7 @@
         </div>
       </div>
       <div class="img-pane">
-        <img src="/admin_analytics_preview.png" alt="لوحة القيادة الرئيسية">
+        <img src="/admin_analytics_preview.png" alt="لوحة التحليلات">
       </div>
     </div>
 
@@ -648,7 +683,7 @@
         </div>
       </div>
       <div class="img-pane">
-        <img src="/quran_map_preview.png" alt="خريطة القرآن التفاعلية">
+        <img src="/quran_map_preview.png" alt="خريطة المصحف التفاعلية">
       </div>
     </div>
 
@@ -706,7 +741,7 @@
         </div>
       </div>
       <div class="img-pane">
-        <img src="/voice_recitation_preview.png" alt="جلسة التسميع التفاعلي">
+        <img src="/voice_recitation_preview.png" alt="جلسة التسميع">
       </div>
     </div>
 
@@ -754,7 +789,7 @@
         </div>
       </div>
       <div class="img-pane">
-        <img src="/five_fortresses_preview.png" alt="الحصون الخمسة ونظام التحفيز">
+        <img src="/five_fortresses_preview.png" alt="الحصون الخمسة">
       </div>
     </div>
 
@@ -813,7 +848,7 @@
         </div>
       </div>
       <div class="img-pane">
-        <img src="/mind_maps_preview.png" alt="الخرائط الذهنية والمتشابهات">
+        <img src="/mind_maps_preview.png" alt="الخرائط الذهنية">
       </div>
     </div>
 
@@ -871,7 +906,7 @@
         </div>
       </div>
       <div class="img-pane">
-        <img src="/admin_analytics_preview.png" alt="لوحة الإدارة والتحليلات">
+        <img src="/admin_analytics_preview.png" alt="لوحة الإدارة">
       </div>
     </div>
 
