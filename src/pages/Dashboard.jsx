@@ -58,7 +58,7 @@ const quranHadiths = [
 
 const Dashboard = () => {
   const { user, logout, deleteAccount, updateUserData } = useAuth();
-  const { lang, t, isRTL } = useLanguage();
+  const { lang, setLang, t, isRTL } = useLanguage();
   const [activeTab, setActiveTab] = useState(user?.role === 'admin' ? 'admin-panel' : 'home');
 
   const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
