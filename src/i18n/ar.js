@@ -124,6 +124,44 @@ const ar = {
   dash_start_session: 'البدء في ورد اليوم',
   dash_ai_recs: 'توصيات الذكاء الاصطناعي',
   dash_fortresses_today: 'حصون اليوم',
+
+  // ── Audio & Wave Visualizer ──────────────────────────────
+  audio_player_title: 'مشغل التلاوة والتسميع المرتل',
+  audio_reciter_select: 'اختر القارئ المفضل:',
+  audio_page_label: 'رقم الصفحة (1-604):',
+  audio_ayah_prev: 'الآية السابقة',
+  audio_ayah_next: 'الآية التالية',
+  audio_play: 'استمع للورد',
+  audio_pause: 'إيقاف الاستماع',
+  audio_listening: 'يجري الاستماع حالياً',
+  audio_repeat: 'تكرار الآية',
+  audio_repeat_count: 'تكرار: ',
+  audio_repeat_off: 'تكرار: 1× (بدون تكرار)',
+  audio_repeat_3x: 'تكرار: 3× (تثبيت)',
+  audio_repeat_5x: 'تكرار: 5× (مكثف)',
+  audio_repeat_10x: 'تكرار: 10× (إتقان)',
+  audio_repeat_infinite: 'تكرار: ∞ (مستمر)',
+  audio_repeat_status: 'التكرار',
+
+  // ── Voice Recitation Visualizer ───────────────────────────
+  recitation_title: 'وضع التسميع الصوتي والمتابعة بالذكاء الاصطناعي 🎤',
+  recitation_sub: 'انقر على زر التسجيل واقرأ الورد بصوتك، وسيظهر مؤشر الأمواج الصوتية التفاعلي ومقياس الدقة.',
+  recitation_start: 'بدء التسجيل والتسميع',
+  recitation_stop: 'إيقاف التسجيل',
+  recitation_recording: 'جاري التسجيل والتسميع الصوتية...',
+  recitation_analyzing: 'جاري تحليل التلاوة ومطابقة الأحكام...',
+  recitation_wave_label: 'مؤشر الموجات الصوتية الحي',
+  recitation_live_mic: 'الميكروفون نشط حالياً',
+  recitation_score_title: 'نتيجة تقييم التسميع الصوتي',
+  recitation_accuracy: 'دقة الحفظ والتلاوة',
+  recitation_close: 'إغلاق التقييم',
+
+  // ── Theme & Language Controls ─────────────────────────────
+  theme_dark: 'الوضع الداكن',
+  theme_light: 'الوضع المضيء',
+  lang_arabic: 'العربية',
+  lang_english: 'English',
+  lang_select: 'تغيير اللغة'
 };
 
 export default ar;

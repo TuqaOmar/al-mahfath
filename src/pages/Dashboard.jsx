@@ -31,7 +31,8 @@ import {
   BookMarked,
   Compass,
   Star,
-  Menu
+  Menu,
+  Globe
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Sidebar } from '../components/Sidebar';
@@ -528,7 +529,31 @@ const Dashboard = () => {
                 <input type="text" placeholder="ابحث في القرآن والتدبر..." style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }} />
               </div>
             )}
-            <div className="flex-center" onClick={toggleTheme} style={{ width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+            {/* Language Switcher */}
+            <button
+              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+              style={{
+                padding: '6px 14px',
+                borderRadius: '20px',
+                background: 'var(--primary-light)',
+                color: 'var(--primary)',
+                border: '1px solid var(--primary)',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              title={t('lang_select')}
+            >
+              <Globe size={15} />
+              <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
+            </button>
+
+            {/* Theme Toggle */}
+            <div className="flex-center" onClick={toggleTheme} style={{ width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }} title={isDark ? t('theme_light') : t('theme_dark')}>
               {isDark ? <Sun size={20} color="var(--text-secondary)" /> : <Moon size={20} color="var(--text-secondary)" />}
             </div>
             <div className="flex-center" style={{ width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>

@@ -124,6 +124,44 @@ const en = {
   dash_start_session: "Start Today's Session",
   dash_ai_recs: 'AI Recommendations',
   dash_fortresses_today: "Today's Fortresses",
+
+  // ── Audio & Wave Visualizer ──────────────────────────────
+  audio_player_title: 'Quran Recitation Audio Player',
+  audio_reciter_select: 'Select Preferred Reciter:',
+  audio_page_label: 'Page Number (1-604):',
+  audio_ayah_prev: 'Previous Ayah',
+  audio_ayah_next: 'Next Ayah',
+  audio_play: 'Listen to Session',
+  audio_pause: 'Pause Listening',
+  audio_listening: 'Currently Listening',
+  audio_repeat: 'Repeat Verse',
+  audio_repeat_count: 'Repeat: ',
+  audio_repeat_off: 'Repeat: 1x (No Repeat)',
+  audio_repeat_3x: 'Repeat: 3x (Consolidate)',
+  audio_repeat_5x: 'Repeat: 5x (Intensive)',
+  audio_repeat_10x: 'Repeat: 10x (Mastery)',
+  audio_repeat_infinite: 'Repeat: ∞ (Continuous)',
+  audio_repeat_status: 'Repetition',
+
+  // ── Voice Recitation Visualizer ───────────────────────────
+  recitation_title: 'Voice Recitation & AI Evaluation 🎤',
+  recitation_sub: 'Click record and recite your portion. The live audio wave visualizer and accuracy meter will show in real-time.',
+  recitation_start: 'Start Voice Recording',
+  recitation_stop: 'Stop Recording',
+  recitation_recording: 'Recording audio recitation...',
+  recitation_analyzing: 'Analyzing recitation and matching Tajweed rules...',
+  recitation_wave_label: 'Live Audio Waveform Visualizer',
+  recitation_live_mic: 'Microphone Active',
+  recitation_score_title: 'Recitation Evaluation Results',
+  recitation_accuracy: 'Memorization & Recitation Accuracy',
+  recitation_close: 'Close Evaluation',
+
+  // ── Theme & Language Controls ─────────────────────────────
+  theme_dark: 'Dark Mode',
+  theme_light: 'Light Mode',
+  lang_arabic: 'العربية',
+  lang_english: 'English',
+  lang_select: 'Language'
 };
 
 export default en;

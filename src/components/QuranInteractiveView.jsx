@@ -9,8 +9,11 @@ import {
   Mic, 
   CheckCircle2, 
   Sparkles,
-  BookOpen
+  BookOpen,
+  Infinity
 } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
+import { AudioWaveVisualizer } from './AudioWaveVisualizer';
 
 const recitersList = [
   { id: 'ar.alafasy', name: 'مشاري بن راشد العفاسي', sub: 'تلاوة خاشعة' },
@@ -22,6 +25,7 @@ const recitersList = [
 ];
 
 export const QuranInteractiveView = () => {
+  const { t, isRTL } = useLanguage();
   const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
   const [pageNumber, setPageNumber] = useState(2); // Default to Page 2 (Start of Al-Baqarah)
   const [ayahs, setAyahs] = useState([]);
@@ -108,10 +112,16 @@ export const QuranInteractiveView = () => {
   };
 
   const handleAudioEnded = () => {
-    if (repeatCount > 0 && currentRepeat < repeatCount) {
-      // Repeat the same verse
+    if (repeatCount === 'infinite') {
       setCurrentRepeat(prev => prev + 1);
-      audioRef.current.play();
+      if (audioRef.current) {
+        audioRef.current.play().catch(e => console.log(e));
+      }
+    } else if (typeof repeatCount === 'number' && repeatCount > 1 && currentRepeat < repeatCount) {
+      setCurrentRepeat(prev => prev + 1);
+      if (audioRef.current) {
+        audioRef.current.play().catch(e => console.log(e));
+      }
     } else {
       // Move to next verse on the page
       setCurrentRepeat(1);
@@ -284,27 +294,57 @@ export const QuranInteractiveView = () => {
             <SkipBack size={18} />
           </button>
 
-          {/* Repetition Loop Control Button */}
-          <button
-            onClick={() => setRepeatCount(prev => prev === 1 ? 3 : (prev === 3 ? 5 : 1))}
-            style={{
-              padding: '8px 14px',
-              borderRadius: '12px',
-              border: `1px solid ${repeatCount > 1 ? 'var(--primary)' : 'var(--glass-border)'}`,
-              background: repeatCount > 1 ? 'var(--primary-light)' : 'var(--bg-color)',
-              color: repeatCount > 1 ? 'var(--primary)' : 'var(--text-secondary)',
-              fontWeight: 'bold',
-              fontSize: '13px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-            title="تكرار الآية للتثبيت"
-          >
-            <Repeat size={16} />
-            <span>تكرار: {repeatCount}x</span>
-          </button>
+          {/* Repetition Loop Control Selector */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <button
+              onClick={() => {
+                const options = [1, 3, 5, 10, 'infinite'];
+                const idx = options.indexOf(repeatCount);
+                const nextOption = options[(idx + 1) % options.length];
+                setRepeatCount(nextOption);
+                setCurrentRepeat(1);
+              }}
+              style={{
+                padding: '8px 14px',
+                borderRadius: '12px',
+                border: `1px solid ${repeatCount !== 1 ? 'var(--primary)' : 'var(--glass-border)'}`,
+                background: repeatCount !== 1 ? 'var(--primary-light)' : 'var(--bg-color)',
+                color: repeatCount !== 1 ? 'var(--primary)' : 'var(--text-secondary)',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: repeatCount !== 1 ? '0 2px 8px rgba(16, 185, 129, 0.2)' : 'none'
+              }}
+              title={t('audio_repeat')}
+            >
+              <Repeat size={16} />
+              <span>
+                {repeatCount === 'infinite' 
+                  ? t('audio_repeat_infinite')
+                  : `${t('audio_repeat_count')}${repeatCount}x`}
+              </span>
+            </button>
+
+            {/* Repeat iteration progress badge */}
+            {isPlaying && repeatCount !== 1 && (
+              <span style={{
+                padding: '4px 10px',
+                borderRadius: '10px',
+                background: 'var(--primary)',
+                color: 'white',
+                fontSize: '11px',
+                fontWeight: 'bold',
+                whiteSpace: 'nowrap'
+              }}>
+                {repeatCount === 'infinite' 
+                  ? `🔁 ${currentRepeat} ∞` 
+                  : `🔁 ${currentRepeat} / ${repeatCount}`}
+              </span>
+            )}
+          </div>
 
         </div>
       </div>
@@ -450,32 +490,8 @@ export const QuranInteractiveView = () => {
         </div>
       )}
 
-      {/* Recitation Recording Mode Button */}
-      <div style={{ padding: '20px', borderRadius: '16px', background: 'var(--primary-light)', border: '1px solid var(--primary)', display: 'flex', alignItems: 'center', justify: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ flex: 1 }}>
-          <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--primary)' }}>وضع التسميع الصوتي والمتابعة بالذكاء الاصطناعي 🎤</h4>
-          <span style={{ fontSize: '13px', color: 'var(--text-primary)' }}>اقرأ الورد وسيتم تظليل الآية التي تتلوها تلقائياً بتقنية التعرف الصوتي.</span>
-        </div>
-        <button
-          onClick={toggleUserRecitation}
-          style={{
-            padding: '12px 24px',
-            borderRadius: '12px',
-            background: isUserReciting ? '#EF4444' : 'var(--primary)',
-            color: 'white',
-            border: 'none',
-            fontWeight: 'bold',
-            fontSize: '14px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <Mic size={18} />
-          {isUserReciting ? 'إيقاف التسجيل' : 'بدء التسميع الشخصي'}
-        </button>
-      </div>
+      {/* Audio Waveform Visualizer & Recitation Mode */}
+      <AudioWaveVisualizer />
 
     </div>
   );

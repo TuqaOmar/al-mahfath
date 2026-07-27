@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Play, Pause, Volume2, SkipForward, SkipBack, UserCheck, Sparkles } from 'lucide-react';
+import { Play, Pause, Volume2, SkipForward, SkipBack, UserCheck, Sparkles, Repeat } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const recitersList = [
   { id: 'ar.alafasy', name: 'مشاري بن راشد العفاسي', sub: 'تلاوة خاشعة' },
@@ -11,17 +12,17 @@ const recitersList = [
 ];
 
 export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }) => {
+  const { t, isRTL } = useLanguage();
   const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
   const [currentAyah, setCurrentAyah] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioUrl, setAudioUrl] = useState('');
+  const [repeatCount, setRepeatCount] = useState(1); // 1, 3, 5, 10, 'infinite'
+  const [currentRepeat, setCurrentRepeat] = useState(1);
   const audioRef = useRef(null);
 
-  // Construct audio URL based on EveryAyah / AlQuran Cloud CDN
-  // Format: https://cdn.islamic.network/quran/audio/128/{reciter_id}/{global_ayah_index}.mp3
+  // Construct audio URL based on AlQuran Cloud CDN
   useEffect(() => {
-    // For Surah Al-Fatiha (Ayah 1..7) as default live demo
-    // AlQuran Cloud Ayah Audio CDN URL
     const url = `https://cdn.islamic.network/quran/audio/128/${selectedReciter}/${currentAyah}.mp3`;
     setAudioUrl(url);
     if (isPlaying && audioRef.current) {
@@ -41,11 +42,20 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
   };
 
   const handleEnded = () => {
-    if (currentAyah < endAyah) {
-      setCurrentAyah(prev => prev + 1);
+    if (repeatCount === 'infinite') {
+      setCurrentRepeat(prev => prev + 1);
+      if (audioRef.current) audioRef.current.play().catch(e => console.log(e));
+    } else if (typeof repeatCount === 'number' && repeatCount > 1 && currentRepeat < repeatCount) {
+      setCurrentRepeat(prev => prev + 1);
+      if (audioRef.current) audioRef.current.play().catch(e => console.log(e));
     } else {
-      setIsPlaying(false);
-      setCurrentAyah(startAyah);
+      setCurrentRepeat(1);
+      if (currentAyah < endAyah) {
+        setCurrentAyah(prev => prev + 1);
+      } else {
+        setIsPlaying(false);
+        setCurrentAyah(startAyah);
+      }
     }
   };
 
@@ -74,8 +84,12 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
             <Volume2 size={22} />
           </div>
           <div>
-            <h4 style={{ margin: 0, fontSize: '17px', color: 'var(--text-primary)' }}>مشغل الاستماع والتسميع الصوتي (Live Audio API)</h4>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>مصدر صوتي معتمد 100% (EveryAyah & AlQuran Cloud CDN)</span>
+            <h4 style={{ margin: 0, fontSize: '17px', color: 'var(--text-primary)' }}>
+              {t('audio_player_title')}
+            </h4>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+              مصدر صوتي معتمد 100% (EveryAyah & AlQuran Cloud CDN)
+            </span>
           </div>
         </div>
 
@@ -110,13 +124,18 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
         border: '1px solid var(--glass-border)',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between'
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '16px'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button 
-            onClick={() => setCurrentAyah(prev => Math.max(startAyah, prev - 1))}
+            onClick={() => {
+              setCurrentAyah(prev => Math.max(startAyah, prev - 1));
+              setCurrentRepeat(1);
+            }}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-            title="الآية السابقة"
+            title={t('audio_ayah_prev')}
           >
             <SkipForward size={20} />
           </button>
@@ -137,21 +156,54 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
               boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
             }}
           >
-            {isPlaying ? <Pause size={22} /> : <Play size={22} style={{ marginRight: '-2px' }} />}
+            {isPlaying ? <Pause size={22} /> : <Play size={22} style={{ marginRight: isRTL ? '0' : '-2px' }} />}
           </button>
 
           <button 
-            onClick={() => setCurrentAyah(prev => Math.min(endAyah, prev + 1))}
+            onClick={() => {
+              setCurrentAyah(prev => Math.min(endAyah, prev + 1));
+              setCurrentRepeat(1);
+            }}
             style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-            title="الآية التالية"
+            title={t('audio_ayah_next')}
           >
             <SkipBack size={20} />
           </button>
+
+          {/* Repeat Selector Button */}
+          <button
+            onClick={() => {
+              const options = [1, 3, 5, 10, 'infinite'];
+              const idx = options.indexOf(repeatCount);
+              const nextOpt = options[(idx + 1) % options.length];
+              setRepeatCount(nextOpt);
+              setCurrentRepeat(1);
+            }}
+            style={{
+              padding: '6px 12px',
+              borderRadius: '10px',
+              border: `1px solid ${repeatCount !== 1 ? 'var(--primary)' : 'var(--glass-border)'}`,
+              background: repeatCount !== 1 ? 'var(--primary-light)' : 'transparent',
+              color: repeatCount !== 1 ? 'var(--primary)' : 'var(--text-secondary)',
+              fontSize: '12px',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}
+          >
+            <Repeat size={14} />
+            <span>
+              {repeatCount === 'infinite' ? '∞' : `${repeatCount}x`}
+            </span>
+          </button>
         </div>
 
-        <div style={{ textAlign: 'left' }}>
+        <div style={{ textAlign: isRTL ? 'left' : 'right' }}>
           <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 'bold' }}>
             الآية {currentAyah} من {endAyah}
+            {repeatCount !== 1 && ` (تكرار ${currentRepeat}/${repeatCount === 'infinite' ? '∞' : repeatCount})`}
           </span>
           <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)' }}>
             القارئ: {recitersList.find(r => r.id === selectedReciter)?.name}
@@ -161,3 +213,4 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
     </div>
   );
 };
+
