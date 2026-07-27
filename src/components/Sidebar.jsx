@@ -14,25 +14,27 @@ import {
   ChevronsLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
-const menuItems = [
-  { id: 'home', label: 'الرئيسية', icon: '🏠' },
-  { id: 'quran-map', label: 'خريطة القرآن', icon: '📖' },
-  { id: 'daily-session', label: 'جلسة اليوم', icon: '🎯' },
-  { id: 'five-fortresses', label: 'الحصون الخمسة', icon: '🏰' },
-  { id: 'ai-assistant', label: 'مساعد AI', icon: '🤖' },
-  { id: 'mind-maps', label: 'الخرائط الذهنية', icon: '🗺️' },
-  { id: 'similarities', label: 'المتشابهات', icon: '🔍' },
-  { id: 'community', label: 'المجتمع', icon: '👥' },
-  { id: 'achievements', label: 'الإنجازات', icon: '🏆' },
-  { id: 'analytics', label: 'التحليلات', icon: '📊' }
-];
+import { useLanguage } from '../context/LanguageContext';
 
 export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapsed, setCollapsed: controlledSetCollapsed }) => {
   const [localCollapsed, setLocalCollapsed] = useState(false);
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : localCollapsed;
   const setCollapsed = controlledSetCollapsed !== undefined ? controlledSetCollapsed : setLocalCollapsed;
   const { user } = useAuth();
+  const { t, lang, isRTL } = useLanguage();
+
+  const menuItems = [
+    { id: 'home', label: t('sidebar_home'), icon: '🏠' },
+    { id: 'quran-map', label: t('sidebar_quran_map'), icon: '📖' },
+    { id: 'daily-session', label: t('sidebar_daily'), icon: '🎯' },
+    { id: 'five-fortresses', label: t('sidebar_fortresses'), icon: '🏰' },
+    { id: 'ai-assistant', label: t('sidebar_ai'), icon: '🤖' },
+    { id: 'mind-maps', label: t('sidebar_mind_maps'), icon: '🗺️' },
+    { id: 'similarities', label: t('sidebar_similarities'), icon: '🔍' },
+    { id: 'community', label: t('sidebar_community'), icon: '👥' },
+    { id: 'achievements', label: t('sidebar_achievements'), icon: '🏆' },
+    { id: 'analytics', label: t('sidebar_analytics'), icon: '📊' }
+  ];
 
   // Detect mobile view dynamically to set off-screen positioning
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
@@ -43,27 +45,31 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
   }, []);
 
   const sidebarWidth = collapsed ? (isMobile ? '0px' : '80px') : '260px';
-  const sidebarRight = isMobile && collapsed ? '-260px' : '0';
+  const sidebarOffset = isMobile && collapsed ? '-260px' : '0';
 
-  const userName = user?.name || 'أحمد محمد';
+  const userName = user?.name || 'احمد محمد';
   const firstLetter = userName.charAt(0);
+
+  // Position based on RTL / LTR
+  const positionStyles = isRTL 
+    ? { right: sidebarOffset, left: 'auto', borderLeft: '1px solid #1E293B', borderRight: 'none' }
+    : { left: sidebarOffset, right: 'auto', borderRight: '1px solid #1E293B', borderLeft: 'none' };
 
   return (
     <aside style={{
       width: sidebarWidth,
       height: '100vh',
-      backgroundColor: '#0F172A', // Dark navy background matching the screenshot
+      backgroundColor: '#0F172A',
       color: '#F8FAFC',
       display: 'flex',
       flexDirection: 'column',
       position: 'fixed',
       top: 0,
-      right: sidebarRight,
       zIndex: 50,
-      transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), right 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-      borderLeft: '1px solid #1E293B',
-      boxShadow: '-4px 0 24px rgba(0,0,0,0.25)',
-      overflow: 'hidden'
+      transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1), right 0.3s cubic-bezier(0.4, 0, 0.2, 1), left 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+      boxShadow: isRTL ? '-4px 0 24px rgba(0,0,0,0.25)' : '4px 0 24px rgba(0,0,0,0.25)',
+      overflow: 'hidden',
+      ...positionStyles
     }}>
       {/* Header */}
       <div style={{
@@ -96,7 +102,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
               letterSpacing: '-0.5px',
               color: '#FFFFFF'
             }}>
-              محفظ AI
+              {t('nav_dashboard')}
             </span>
           )}
         </div>
@@ -115,11 +121,14 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
             borderRadius: '6px',
             transition: 'all 0.2s ease'
           }}
-          title={collapsed ? "توسيع القائمة" : "طوي القائمة"}
+          title={collapsed ? (isRTL ? "توسيع القائمة" : "Expand Menu") : (isRTL ? "طوي القائمة" : "Collapse Menu")}
           onMouseOver={(e) => e.currentTarget.style.color = '#FFFFFF'}
           onMouseOut={(e) => e.currentTarget.style.color = '#94A3B8'}
         >
-          {collapsed ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />}
+          {collapsed 
+            ? (isRTL ? <ChevronsLeft size={20} /> : <ChevronsRight size={20} />) 
+            : (isRTL ? <ChevronsRight size={20} /> : <ChevronsLeft size={20} />)
+          }
         </button>
       </div>
 
@@ -135,57 +144,58 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
         {(() => {
           const activeMenuItems = user?.role === 'admin' 
             ? [
-                { id: 'admin-panel', label: 'لوحة الإدارة', icon: '🛡️' },
-                { id: 'community', label: 'المجتمع', icon: '👥' },
-                { id: 'ai-assistant', label: 'مساعد AI', icon: '🤖' }
+                { id: 'admin-panel', label: t('auth_admin'), icon: '🛡️' },
+                { id: 'community', label: t('sidebar_community'), icon: '👥' },
+                { id: 'ai-assistant', label: t('sidebar_ai'), icon: '🤖' }
               ]
             : menuItems;
           return activeMenuItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
-            <button
-              key={item.id}
-              onClick={() => setActiveTab && setActiveTab(item.id)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: collapsed ? '12px 0' : '12px 16px',
-                justifyContent: collapsed ? 'center' : 'flex-start',
-                borderRadius: '12px',
-                border: 'none',
-                background: isActive 
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%)' 
-                  : 'transparent',
-                color: isActive ? '#34D399' : '#CBD5E1',
-                fontWeight: isActive ? '700' : '500',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                outline: 'none',
-                position: 'relative',
-                borderRight: isActive && !collapsed ? '3px solid #10B981' : '3px solid transparent'
-              }}
-              onMouseOver={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-                  e.currentTarget.style.color = '#F1F5F9';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = '#CBD5E1';
-                }
-              }}
-            >
-              <span style={{ fontSize: '20px', lineHeight: 1 }}>{item.icon}</span>
-              {!collapsed && <span>{item.label}</span>}
-            </button>
-          );
-        });
-      })()}
+              <button
+                key={item.id}
+                onClick={() => setActiveTab && setActiveTab(item.id)}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: collapsed ? '12px 0' : '12px 16px',
+                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  borderRadius: '12px',
+                  border: 'none',
+                  background: isActive 
+                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.25) 0%, rgba(5, 150, 105, 0.15) 100%)' 
+                    : 'transparent',
+                  color: isActive ? '#34D399' : '#CBD5E1',
+                  fontWeight: isActive ? '700' : '500',
+                  fontSize: '15px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  outline: 'none',
+                  position: 'relative',
+                  borderRight: isActive && !collapsed && isRTL ? '3px solid #10B981' : '3px solid transparent',
+                  borderLeft: isActive && !collapsed && !isRTL ? '3px solid #10B981' : '3px solid transparent'
+                }}
+                onMouseOver={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+                    e.currentTarget.style.color = '#F1F5F9';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = '#CBD5E1';
+                  }
+                }}
+              >
+                <span style={{ fontSize: '20px', lineHeight: 1 }}>{item.icon}</span>
+                {!collapsed && <span>{item.label}</span>}
+              </button>
+            );
+          });
+        })()}
       </nav>
 
       {/* Bottom Profile Section */}
@@ -234,7 +244,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
               </span>
             </div>
             <span style={{ fontSize: '11px', padding: '2px 6px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.2)', color: '#F59E0B', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '2px' }}>
-              🔥 {user?.streak || 1} يوم
+              🔥 {user?.streak || 1} {lang === 'ar' ? 'يوم' : 'Days'}
             </span>
             <span style={{
               fontSize: '12px',
@@ -242,7 +252,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
               whiteSpace: 'nowrap',
               marginTop: '2px'
             }}>
-              المستوى {user?.level || 1} • {user?.xp || 0} XP
+              {lang === 'ar' ? `المستوى ${user?.level || 1}` : `Level ${user?.level || 1}`} • {user?.xp || 0} XP
             </span>
           </div>
         )}

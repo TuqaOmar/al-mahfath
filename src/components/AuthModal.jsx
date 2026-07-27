@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, ArrowLeft, Sparkles, CheckCircle2, Shield } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 
 export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
@@ -13,6 +14,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [error, setError] = useState('');
 
   const { login, signup, loginWithTestAccount, loginWithAdminAccount, updateUserData } = useAuth();
+  const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
 
   // Listen to postMessage event from Mock Google Popup window
@@ -36,7 +38,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           }
         } catch (err) {
           console.error('Error authenticating with backend:', err);
-          setError('حدث خطأ أثناء معالجة بيانات جوجل');
+          setError(t('auth_error_google') || 'حدث خطأ أثناء معالجة بيانات جوجل');
         } finally {
           setIsLoading(false);
         }
@@ -68,29 +70,28 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
     try {
       if (!email.trim() || !password.trim()) {
-        setError('يرجى إدخال البريد الإلكتروني وكلمة المرور');
+        setError(t('auth_error_fields'));
         setIsLoading(false);
         return;
       }
 
       let result;
       if (isSignUp) {
-        result = await signup(name.trim() || 'حافظ جديد', email.trim(), password.trim());
+        result = await signup(name.trim() || t('auth_default_user_name') || 'حافظ جديد', email.trim(), password.trim());
       } else {
         result = await login(email.trim(), password.trim());
       }
 
       if (result.success) {
         onClose();
-        // The user is already set in context, navigate
         const storedUser = JSON.parse(localStorage.getItem('ma7fath_user') || '{}');
         navigate(storedUser.hasCompletedWizard ? '/dashboard' : '/wizard');
       } else {
-        setError(result.message || 'فشلت العملية، يرجى التحقق من المدخلات');
+        setError(result.message || (isRTL ? 'فشلت العملية، يرجى التحقق من المدخلات' : 'Operation failed, please check inputs'));
       }
     } catch (err) {
       console.error(err);
-      setError('تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً');
+      setError(isRTL ? 'تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً' : 'Could not connect to server, please try again later');
     } finally {
       setIsLoading(false);
     }
@@ -113,6 +114,19 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   };
 
   if (!isOpen) return null;
+
+  const iconPosition = isRTL ? { right: '14px', left: 'auto' } : { left: '14px', right: 'auto' };
+  const inputStyle = {
+    width: '100%',
+    padding: isRTL ? '12px 42px 12px 14px' : '12px 14px 12px 42px',
+    borderRadius: '12px',
+    border: '1px solid var(--glass-border)',
+    background: 'var(--bg-color)',
+    color: 'var(--text-primary)',
+    outline: 'none',
+    fontFamily: 'var(--font-body)',
+    fontSize: '14px'
+  };
 
   return (
     <AnimatePresence>
@@ -153,11 +167,12 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           {/* Close Button */}
           <button
             onClick={onClose}
-            aria-label="إغلاق النافذة"
+            aria-label={isRTL ? "إغلاق النافذة" : "Close window"}
             style={{
               position: 'absolute',
               top: '20px',
-              left: '20px',
+              left: isRTL ? '20px' : 'auto',
+              right: !isRTL ? '20px' : 'auto',
               background: 'var(--bg-color)',
               border: '1px solid var(--glass-border)',
               borderRadius: '50%',
@@ -192,10 +207,10 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             </div>
 
             <h2 style={{ fontSize: '24px', color: 'var(--text-primary)', margin: '0 0 6px 0' }}>
-              {isSignUp ? 'إنشاء حساب جديد' : 'تسجيل الدخول للمنصة'}
+              {isSignUp ? t('auth_signup_title') : t('auth_login_title')}
             </h2>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>
-              {isSignUp ? 'ابدأ رحلتك المباركة مع القرآن الكريم الآن' : 'مرحباً بعودتك لمتابعة وردك وإنجازك اليومي'}
+              {isSignUp ? t('auth_signup_sub') : t('auth_login_sub')}
             </p>
           </div>
 
@@ -235,7 +250,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
               </svg>
-              متابعة بحساب Google المفتوح بالمتصفح
+              {t('auth_google')}
             </button>
 
             <button
@@ -258,7 +273,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 gap: '8px'
               }}
             >
-              <Sparkles size={16} /> دخول سريع بالحساب التجريبي (Demo)
+              <Sparkles size={16} /> {t('auth_demo')}
             </button>
 
             <button
@@ -281,13 +296,13 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 gap: '8px'
               }}
             >
-              🛡️ دخول سريع بحساب مدير النظام (Admin)
+              🛡️ {t('auth_admin')}
             </button>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>أو عبر البريد الإلكتروني</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('auth_or')}</span>
             <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }} />
           </div>
 
@@ -295,46 +310,46 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {isSignUp && (
               <div>
-                <label style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>الاسم الكريم:</label>
+                <label style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>{t('auth_name')}:</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  <User size={18} color="var(--text-secondary)" style={{ position: 'absolute', right: '14px' }} />
+                  <User size={18} color="var(--text-secondary)" style={{ position: 'absolute', ...iconPosition }} />
                   <input
                     type="text"
                     value={name}
                     onChange={e => setName(e.target.value)}
-                    placeholder="أدخل اسمك الثلاثي..."
-                    style={{ width: '100%', padding: '12px 42px 12px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'var(--font-body)', fontSize: '14px' }}
+                    placeholder={t('auth_name_placeholder')}
+                    style={inputStyle}
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label htmlFor="email-field" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>البريد الإلكتروني:</label>
+              <label htmlFor="email-field" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>{t('auth_email')}:</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Mail size={18} color="var(--text-secondary)" style={{ position: 'absolute', right: '14px' }} />
+                <Mail size={18} color="var(--text-secondary)" style={{ position: 'absolute', ...iconPosition }} />
                 <input
                   type="email"
                   id="email-field"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="name@example.com"
-                  style={{ width: '100%', padding: '12px 42px 12px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'var(--font-body)', fontSize: '14px' }}
+                  placeholder={t('auth_email_placeholder')}
+                  style={inputStyle}
                 />
               </div>
             </div>
 
             <div>
-              <label htmlFor="password-field" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>كلمة المرور:</label>
+              <label htmlFor="password-field" style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>{t('auth_password')}:</label>
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', right: '14px' }} />
+                <Lock size={18} color="var(--text-secondary)" style={{ position: 'absolute', ...iconPosition }} />
                 <input
                   type="password"
                   id="password-field"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  style={{ width: '100%', padding: '12px 42px 12px 14px', borderRadius: '12px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', outline: 'none', fontFamily: 'var(--font-body)', fontSize: '14px' }}
+                  placeholder={t('auth_pass_placeholder')}
+                  style={inputStyle}
                 />
               </div>
             </div>
@@ -359,14 +374,14 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
               }}
             >
-              {isLoading ? 'جاري الاتصال بالسيرفر...' : (isSignUp ? 'تأكيد وإنشاء الحساب' : 'تسجيل الدخول')}
+              {isLoading ? (isRTL ? 'جاري الاتصال...' : 'Connecting...') : (isSignUp ? t('auth_signup_btn') : t('auth_login_btn'))}
             </button>
           </form>
 
           {/* Footer Toggle Switcher */}
           <div style={{ marginTop: '24px', textAlign: 'center', borderTop: '1px solid var(--glass-border)', paddingTop: '16px' }}>
             <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-              {isSignUp ? 'لديك حساب بالفعل؟ ' : 'ليس لديك حساب بعد؟ '}
+              {isSignUp ? t('auth_have_account') : t('auth_no_account')}
             </span>
             <button
               onClick={() => setIsSignUp(!isSignUp)}
@@ -377,10 +392,11 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 fontWeight: 'bold',
                 fontSize: '14px',
                 cursor: 'pointer',
-                marginRight: '4px'
+                marginRight: isRTL ? '4px' : '0',
+                marginLeft: !isRTL ? '4px' : '0'
               }}
             >
-              {isSignUp ? 'تسجيل الدخول' : 'إنشاء حساب جديد'}
+              {isSignUp ? t('auth_switch_login') : t('auth_switch_signup')}
             </button>
           </div>
 

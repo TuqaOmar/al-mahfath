@@ -37,6 +37,7 @@ import { Card } from '../components/ui/Card';
 import { Sidebar } from '../components/Sidebar';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import AiAssistant from '../components/AiAssistant';
 import { Community } from '../components/Community';
 import { QuranMapPage } from '../components/QuranMapPage';
@@ -56,6 +57,7 @@ const quranHadiths = [
 
 const Dashboard = () => {
   const { user, logout, deleteAccount, updateUserData } = useAuth();
+  const { lang, t, isRTL } = useLanguage();
   const [activeTab, setActiveTab] = useState(user?.role === 'admin' ? 'admin-panel' : 'home');
 
   const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
@@ -463,7 +465,10 @@ const Dashboard = () => {
     }
   };
 
-  const mainPaneMarginRight = isMobile ? '0px' : (sidebarCollapsed ? '80px' : '260px');
+  const mainPaneMargin = isMobile ? '0px' : (sidebarCollapsed ? '80px' : '260px');
+  const mainPaneStyles = isRTL 
+    ? { marginRight: mainPaneMargin, marginLeft: 0, transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }
+    : { marginLeft: mainPaneMargin, marginRight: 0, transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)' }}>
@@ -478,11 +483,10 @@ const Dashboard = () => {
       {/* Main Content Pane */}
       <div style={{ 
         flex: 1, 
-        marginRight: mainPaneMarginRight, 
         display: 'flex', 
         flexDirection: 'column',
         minHeight: '100vh',
-        transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        ...mainPaneStyles
       }}>
         
         {/* Header */}
