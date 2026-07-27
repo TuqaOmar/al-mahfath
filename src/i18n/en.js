@@ -61,7 +61,7 @@ const en = {
   cta_demo: 'Try Without Registration',
 
   // ── Footer ───────────────────────────────────────────────
-  footer_rights: 'All rights reserved',
+  footer_rights: 'All rights reserved - Safar Project, Basaer Course, Al-Sari Group',
   footer_slogan: 'Designed with ❤️ to serve the memorizers of the Book of Allah',
 
   // ── Auth Modal ───────────────────────────────────────────
