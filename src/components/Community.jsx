@@ -27,18 +27,124 @@ export const Community = () => {
   // Comment input state per post
   const [commentInputs, setCommentInputs] = useState({});
 
+  // Default Seed Posts State
+  const defaultPosts = [
+    {
+      id: 1,
+      author: 'أحمد محمد (حساب تجريبي)',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
+      isAnonymous: 0,
+      category: 'تدبر',
+      content: 'من أجمل اللطائف البلاغية في سورة البقرة: ﴿لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا﴾.. الله تعالى خفّف التكليف ليتناسب مع قدرة الإنسان، ولم يقل "طاقتها" لأن الطاقة أقصى ما يتحمله المرء، أما الوسع فهو السعة والراحة! سبحان الرحيم الكريم.',
+      likes: 34,
+      answers: [
+        { id: 101, author: 'د. عبدالرحمن السالم', text: 'تبارك الله، لفتة تدبرية رائعة! الرحمة الإلهية متجلية في كل أحكام الشريعة.' },
+        { id: 102, author: 'فاطمة الزهراء', text: 'جزاك الله خيراً، زرعت في قلبي الطمأنينة وأنا أراجع الورد اليوم.' }
+      ]
+    },
+    {
+      id: 2,
+      author: 'الشيخ محمد علي (مقرئ)',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sheikh',
+      isAnonymous: 0,
+      category: 'متشابهات',
+      content: '💡 فائدة لتثبيت المتشابهات بين البقرة وآل عمران:\nفي البقرة: ﴿سَبْعَ سَنَابِلَ فِي كُلِّ سُنْبُلَةٍ مِائَةُ حَبَّةٍ﴾، وفي آل عمران جاءت صيغة الجمع المكسر ﴿سُنْبُلَاتٍ﴾.\nالضابط: البقرة تفرد وتزيد في التفصيل، وآل عمران تجمع وتجمل!',
+      likes: 52,
+      answers: [
+        { id: 103, author: 'يوسف العتيبي', text: 'ضابط ذهبي يا شيخنا، كنت أتلعثم فيها دائماً في الصلاة!' },
+        { id: 104, author: 'أم ريان', text: 'كتب الله أجرك، حفظتها الآن بفضل هذا الضابط المحكم.' }
+      ]
+    },
+    {
+      id: 3,
+      author: 'سارة خالد',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara',
+      isAnonymous: 0,
+      category: 'نصيحة',
+      content: 'تجربتي مع نظام الحصون الخمسة بعد 3 أشهر:\nقبل الحصون كنت أحفظ 3 صفحات وأنسى صفحتين! بعد تطبيق "التحضير القريب (15 دقيقة)" وقراءة الورد في صلاة الليل، أصبحت الصفحة تثبت كالفاتحة 🌿.',
+      likes: 41,
+      answers: [
+        { id: 105, author: 'عمر الفاروق', text: 'هل تطبقين التكرار الصوتي 20 مرة أم أكثر؟' },
+        { id: 106, author: 'سارة خالد', text: 'التكرار 15 مرة مع استحضار موقع الآية في المصحف، ثم قراءتها في النوافل.' }
+      ]
+    },
+    {
+      id: 4,
+      author: 'د. إبراهيم الحسيني',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ibrahim',
+      isAnonymous: 0,
+      category: 'تجويد',
+      content: 'تنبيه تجويدي مهم في سورة الكهف عند قوله تعالى: ﴿مَالِ هَٰذَا الْكِتَابِ﴾:\nالرسم العثماني فصل كلمة (مَالِ) عن (هَٰذَا). ويجوز الوقف على (مَالِ) اضطراراً أو اختباراً بدون إثبات الياء، ثم الابتداء بـ (هَٰذَا).',
+      likes: 29,
+      answers: [
+        { id: 107, author: 'مريم الغامدي', text: 'سبحان الله! فائدة تجويدية دقيقة ونادرة، شكراً دكتور إبراهيم.' }
+      ]
+    },
+    {
+      id: 5,
+      author: 'هوية مخفية',
+      avatar: null,
+      isAnonymous: 1,
+      category: 'متشابهات',
+      content: 'كيف أجمع بين حفظ وجه جديد يومياً ومراجعة 5 أجزاء قديمة دون الشعور بالإرهاق والشتات؟ أحتاج جدول زمني مجرب.',
+      likes: 19,
+      answers: [
+        { id: 108, author: 'أحمد محمد', text: 'قسم المراجعة على الصلوات الخمس: نصف جزء بعد كل صلاة مفروضة، ولن تشعر بأي ثقل بإذن الله!' },
+        { id: 109, author: 'خالد بن سلطان', text: 'ركز على الرباط البعيد في النوافل، المراجعة في الصلاة أسرع طريقة للتثبيت.' }
+      ]
+    },
+    {
+      id: 6,
+      author: 'عبدالرحمن السالم',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Abdelrahman',
+      isAnonymous: 0,
+      category: 'تدبر',
+      content: 'في قصة الخضر مع موسى عليه السلام: ﴿وَأَمَّا الْغُلَامُ فَكَانَ أَبَوَاهُ مُؤْمِنَيْنِ﴾.. قد يبتليك الله بأمر ظاهره الألم وفي باطنه رحمة ولطف بك وبأهلك لا يعلمه إلا الله!',
+      likes: 63,
+      answers: [
+        { id: 110, author: 'عائشة النجار', text: 'ونعم بالله، الحمد لله على كل أقدار الله وتدبيره الرفيع.' }
+      ]
+    },
+    {
+      id: 7,
+      author: 'بلال الإبراهيمي',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Belal',
+      isAnonymous: 0,
+      category: 'نصيحة',
+      content: 'بفضل الله ثم هذا التطبيق التفاعلي، أكملت اليوم حفظ الجزء الثلاثين (عمّ) مع ضبط التجويد! القادم سورة البقرة بإذن الله 💪.',
+      likes: 48,
+      answers: [
+        { id: 111, author: 'أحمد محمد', text: 'مبارك يا بطل! اللهم بارك فيه واجعله حجة لك لا عليك.' },
+        { id: 112, author: 'خالد عمر', text: 'ما شاء الله تبارك الرحمن، إنجاز يبعث بالأمل!' }
+      ]
+    },
+    {
+      id: 8,
+      author: 'الشيخ محمد علي (مقرئ)',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sheikh',
+      isAnonymous: 0,
+      category: 'متشابهات',
+      content: '﴿قُلْ لا أَجِدُ فِي مَا أُوحِيَ إِلَيَّ مُحَرَّماً﴾ (الأنعام)، قارنها مع: ﴿قُلْ إِنَّمَا حَرَّمَ رَبِّيَ الْفَوَاحِشَ﴾ (الأعراف).\nفائدة: الأنعام تناقش الأطعمة والمأكولات، والأعراف تناقش السلوكيات والكبائر!',
+      likes: 37,
+      answers: [
+        { id: 113, author: 'زياد الشمري', text: 'الله أكبر! ربط تدبر موضوعي رائع جداً يسهل استذكار السورتين.' }
+      ]
+    }
+  ];
+
   // Real Posts State
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState(defaultPosts);
 
   // Fetch posts from Express API on mount
   React.useEffect(() => {
     fetch('/api/community/posts')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.posts) {
+        if (data.success && data.posts && data.posts.length > 0) {
           setPosts(data.posts);
         }
       })
+      .catch(() => setPosts(defaultPosts));
   }, []);
 
   // Handle Post Submission to API
