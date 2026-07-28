@@ -52,6 +52,13 @@ export const QuranMapPage = () => {
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'excellent' | 'review' | 'critical'
   const [juzFilter, setJuzFilter] = useState('all');
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   React.useEffect(() => {
     fetch('/api/quran/pages')
       .then(res => res.json())
@@ -88,14 +95,14 @@ export const QuranMapPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', gap: '24px', position: 'relative' }}>
+    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', position: 'relative' }}>
       
       {/* Main Grid View */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
         {/* Header & Controls */}
         <div style={{ 
-          padding: '24px', 
+          padding: isMobile ? '16px' : '24px', 
           borderRadius: '20px', 
           background: 'var(--bg-surface)', 
           border: '1px solid var(--glass-border)',
@@ -103,18 +110,17 @@ export const QuranMapPage = () => {
           flexDirection: 'column',
           gap: '16px'
         }}>
-          <div>
-            <h2 style={{ fontSize: '24px', color: 'var(--text-primary)', margin: 0 }}>📖 خريطة القرآن الكريم التفاعلية (604 صفحة)</h2>
-            <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '14px' }}>
-              متابعة بصرية شاملة لاستقرار الذاكرة وحالة كل صفحة من المصحف الشريف.
-            </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 style={{ fontSize: isMobile ? '20px' : '24px', color: 'var(--text-primary)', margin: 0 }}>🗺️ الخارطة الشاملة لمصفحات القرآن (604 صفحة)</h2>
+              <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>مؤشر مرئي دقيق لاستقرار الذاكرة ودرجة تثبيت كل صفحة في الصدر</p>
+            </div>
           </div>
 
-          {/* Filters Bar */}
+          {/* Controls Bar */}
           <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-            
             {/* Search Input */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', minWidth: '220px' }}>
+            <div style={{ flex: 1, minWidth: '180px', padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Search size={18} color="var(--text-secondary)" />
               <input 
                 type="text" 
@@ -126,24 +132,24 @@ export const QuranMapPage = () => {
             </div>
 
             {/* Status Filter Pills */}
-            <div style={{ display: 'flex', gap: '6px' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
                 { id: 'all', label: 'الكل (604)' },
                 { id: 'excellent', label: '🟢 ممتاز', color: '#10B981' },
-                { id: 'review', label: '🟡 يحتاج مراجعة', color: '#F59E0B' },
-                { id: 'critical', label: '🔴 حرج / ضعيف', color: '#EF4444' }
+                { id: 'review', label: '🟡 مراجعة', color: '#F59E0B' },
+                { id: 'critical', label: '🔴 حرج', color: '#EF4444' }
               ].map(f => (
                 <button
                   key={f.id}
                   onClick={() => setStatusFilter(f.id)}
                   style={{
-                    padding: '8px 14px',
+                    padding: '8px 12px',
                     borderRadius: '10px',
                     border: `1px solid ${statusFilter === f.id ? 'var(--primary)' : 'var(--glass-border)'}`,
                     background: statusFilter === f.id ? 'var(--primary-light)' : 'var(--bg-color)',
                     color: statusFilter === f.id ? 'var(--primary)' : 'var(--text-secondary)',
                     fontWeight: 'bold',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     cursor: 'pointer'
                   }}
                 >
@@ -151,33 +157,12 @@ export const QuranMapPage = () => {
                 </button>
               ))}
             </div>
-
-            {/* Juz Selector */}
-            <select
-              value={juzFilter}
-              onChange={(e) => setJuzFilter(e.target.value)}
-              style={{
-                padding: '8px 14px',
-                borderRadius: '10px',
-                border: '1px solid var(--glass-border)',
-                background: 'var(--bg-color)',
-                color: 'var(--text-primary)',
-                outline: 'none',
-                fontFamily: 'var(--font-body)',
-                fontSize: '13px'
-              }}
-            >
-              <option value="all">كل الأجزاء (30 جزء)</option>
-              {Array.from({ length: 30 }, (_, i) => (
-                <option key={i + 1} value={(i + 1).toString()}>الجزء {i + 1}</option>
-              ))}
-            </select>
           </div>
         </div>
 
         {/* 604 Grid Box Container */}
         <div style={{ 
-          padding: '24px', 
+          padding: isMobile ? '12px' : '24px', 
           borderRadius: '20px', 
           background: 'var(--bg-surface)', 
           border: '1px solid var(--glass-border)',
@@ -186,8 +171,8 @@ export const QuranMapPage = () => {
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(44px, 1fr))',
-            gap: '8px'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(40px, 1fr))',
+            gap: '6px'
           }}>
             {filteredPages.map(page => {
               const bg = getStatusColor(page.status);
@@ -199,13 +184,13 @@ export const QuranMapPage = () => {
                   onClick={() => setSelectedPage(page)}
                   title={`صفحة ${page.pageNumber} - سورة ${page.surahName} (${page.score}%)`}
                   style={{
-                    height: '44px',
+                    height: '40px',
                     borderRadius: '8px',
                     border: isSelected ? '2px solid #FFFFFF' : 'none',
                     backgroundColor: bg,
                     color: page.status === 'unmemorized' ? '#94A3B8' : '#FFFFFF',
                     fontWeight: 'bold',
-                    fontSize: '13px',
+                    fontSize: '12px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -227,7 +212,7 @@ export const QuranMapPage = () => {
       {/* Side Detail Panel (Appears when a page is selected) */}
       {selectedPage && (
         <div style={{
-          width: '320px',
+          width: isMobile ? '100%' : '320px',
           padding: '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',

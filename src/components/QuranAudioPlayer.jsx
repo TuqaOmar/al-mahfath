@@ -20,40 +20,74 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
   const [repeatCount, setRepeatCount] = useState(1); // 1, 3, 5, 10, 'infinite'
   const [currentRepeat, setCurrentRepeat] = useState(1);
   const audioRef = useRef(null);
+  const isPlayingRef = useRef(false);
+  const isChangingTrackRef = useRef(false);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
 
   // Construct audio URL based on AlQuran Cloud CDN
   useEffect(() => {
     const url = `https://cdn.islamic.network/quran/audio/128/${selectedReciter}/${currentAyah}.mp3`;
     setAudioUrl(url);
-    if (isPlaying && audioRef.current) {
+    if (isPlayingRef.current && audioRef.current) {
       audioRef.current.load();
-      audioRef.current.play().catch(e => console.log('Audio playback waiting:', e));
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            isPlayingRef.current = true;
+            isChangingTrackRef.current = false;
+          })
+          .catch(e => console.log('Audio playback waiting:', e));
+      }
     }
   }, [selectedReciter, currentAyah]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
-    if (isPlaying) {
+    if (isPlayingRef.current) {
+      isChangingTrackRef.current = false;
       audioRef.current.pause();
       setIsPlaying(false);
+      isPlayingRef.current = false;
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.log(e));
+      isChangingTrackRef.current = false;
+      audioRef.current.play()
+        .then(() => {
+          setIsPlaying(true);
+          isPlayingRef.current = true;
+        })
+        .catch(e => console.log(e));
     }
   };
 
   const handleEnded = () => {
     if (repeatCount === 'infinite') {
       setCurrentRepeat(prev => prev + 1);
-      if (audioRef.current) audioRef.current.play().catch(e => console.log(e));
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.log(e));
+      }
     } else if (typeof repeatCount === 'number' && repeatCount > 1 && currentRepeat < repeatCount) {
       setCurrentRepeat(prev => prev + 1);
-      if (audioRef.current) audioRef.current.play().catch(e => console.log(e));
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play().catch(e => console.log(e));
+      }
     } else {
       setCurrentRepeat(1);
       if (currentAyah < endAyah) {
+        isChangingTrackRef.current = true;
+        setIsPlaying(true);
+        isPlayingRef.current = true;
         setCurrentAyah(prev => prev + 1);
       } else {
         setIsPlaying(false);
+        isPlayingRef.current = false;
+        isChangingTrackRef.current = false;
         setCurrentAyah(startAyah);
       }
     }
@@ -74,8 +108,17 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
         ref={audioRef} 
         src={audioUrl} 
         onEnded={handleEnded}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPlay={() => {
+          setIsPlaying(true);
+          isPlayingRef.current = true;
+          isChangingTrackRef.current = false;
+        }}
+        onPause={() => {
+          if (!isChangingTrackRef.current) {
+            setIsPlaying(false);
+            isPlayingRef.current = false;
+          }
+        }}
       />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '20px' }}>

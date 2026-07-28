@@ -31,8 +31,13 @@ export const AudioWaveVisualizer = ({ onRecordingComplete }) => {
     setAnalysisResult(null);
     setRecordingTime(0);
 
+    // Start timer immediately
+    timerRef.current = setInterval(() => {
+      setRecordingTime((prev) => prev + 1);
+    }, 1000);
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       mediaStreamRef.current = stream;
 
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -47,23 +52,20 @@ export const AudioWaveVisualizer = ({ onRecordingComplete }) => {
 
       setIsRecording(true);
 
-      // Start timer
-      timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-
-      // Start Canvas Visualization
-      drawCanvas();
+      // Defer canvas draw to ensure DOM state has updated (isRecording=true renders canvas)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => drawCanvas());
+      });
     } catch (err) {
-      console.warn('Microphone access unavailable or denied, starting fallback simulated recording visualizer:', err);
-      // Fallback: simulated microphone visualizer
+      console.warn('Microphone access denied or unavailable, using animated fallback:', err.message);
+      // Fallback: simulated animated visualizer (no real audio)
       setIsRecording(true);
-      timerRef.current = setInterval(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-      drawFallbackCanvas();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => drawFallbackCanvas());
+      });
     }
   };
+
 
   // Stop Recording
   const stopRecording = () => {

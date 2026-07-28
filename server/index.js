@@ -452,11 +452,12 @@ app.post('/api/quran/pages/:pageNumber/review', async (req, res) => {
   }
 });
 
+
 // --- AI CHATBOT ENDPOINT ---
 
 app.get('/api/ai/chat', async (req, res) => {
   try {
-    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC');
+    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100');
     res.json({ success: true, history });
   } catch (error) {
     console.error(error);
@@ -464,28 +465,39 @@ app.get('/api/ai/chat', async (req, res) => {
   }
 });
 
+app.delete('/api/ai/chat', async (req, res) => {
+  try {
+    await runQuery('DELETE FROM ai_chat_history');
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false });
+  }
+});
+
 function getSmartFallbackResponse(message) {
   const msg = message.toLowerCase();
-  if (msg.includes('سلام') || msg.includes('مرحبا') || msg.includes('أهلاً') || msg.includes('اهلاً')) {
-    return 'وعليكم السلام ورحمة الله وبركاته! أهلاً بك يا حافظ كتاب الله في تطبيق "محفظ AI". كيف يمكنني مساعدتك اليوم في مراجعة وتثبيت حفظك؟';
+  if (msg.includes('سلام') || msg.includes('مرحبا') || msg.includes('اهلاً') || msg.includes('اهلا')) {
+    return 'وعليكم السلام ورحمة الله وبركاته! أهلاً بك يا حافظ كتاب الله في تطبيق محفظ AI. كيف يمكنني مساعدتك اليوم في مراجعة وتثبيت حفظك؟';
   } else if (msg.includes('فتوى') || msg.includes('حرام') || msg.includes('حلال') || msg.includes('حكم')) {
-    return 'أيها الأخ الحبيب، أنا معلم ذكي هنا لمساعدتك في الحفظ والتدبر وتثبيت التلاوة وربط المتشابهات. بالنسبة للأحكام الفقهية والفتاوى الشرعية الشخصية، يرجى التكرم بالرجوع لدار الإفتاء أو العلماء الأجلاء.';
+    return 'أيها الأخ الحبيب، أنا معلم ذكي هنا لمساعدتك في الحفظ والتدبر. بالنسبة للأحكام الفقهية والفتاوى الشرعية، يرجى التكرم بالرجوع لدار الإفتاء أو العلماء الأجلاء.';
   } else if (msg.includes('متشابه') || msg.includes('تشابه') || msg.includes('ربط')) {
-    return 'لتثبيت المتشابهات اللفظية: 1. اربط الآية بمعنى السورة العام، 2. اعتمد على مصاحف التوجيه والكتب المخصصة (مثل درة التنزيل)، 3. ضع علامة مميزة بقلم رصاص في مصحفك الخاص عند موضع التشابه لتتذكره أثناء التسميع.';
-  } else if (msg.includes('خطة') || msg.includes('جدول') || msg.includes('كيف أحفظ') || msg.includes('طريقة')) {
-    return 'أفضل خطة هي نظام "الحصون الخمسة":\n1. الورد اليومي (قراءة جزء نظرًا).\n2. التحضير الأسبوعي (قراءة السورة قبل حفظها).\n3. التحضير القريب (قبل الحفظ بـ 15 دقيقة).\n4. الحفظ الجديد (صفحة أو وجه يوميًا).\n5. المراجعة القريبة والبعيدة (مراجعة الحفظ السابق).\nما هو المقدار الذي تود البدء به؟';
-  } else if (msg.includes('نسيان') || msg.includes('أنسى') || msg.includes('تثبيت') || msg.includes('صعب')) {
-    return 'النسيان طبيعي في البداية، والعلاج في الاستمرار وكثرة التكرار. أنصحك بـ:\n1. التسميع لشخص آخر أو استخدام ميزة التسميع الصوتي بالتطبيق.\n2. القراءة بما حفظت في قيام الليل والصلوات المفروضة.\n3. ألا تزيد في الحفظ الجديد حتى تثبت القديم تماماً.';
-  } else if (msg.includes('البقرة')) {
-    return 'سورة البقرة هي أطول سور القرآن الكريم (286 آية)، وفضلها عظيم؛ أخذها بركة وتركها حسرة ولا تستطيعها البطلة (السحرة). تبدأ من الصفحة 2 وتنتهي في الصفحة 49. هل تود سماعها أو تكرار آياتها؟';
-  } else if (msg.includes('شكرا') || msg.includes('شكرًا') || msg.includes('جزاك')) {
-    return 'العفو، بارك الله فيك وجعل القرآن ربيع قلبك ونور صدرك وجلاء حزنك! أنا هنا دائماً لخدمتك.';
+    return 'لتثبيت المتشابهات اللفظية: 1. اربط الآية بمعنى السورة العام، 2. اعتمد على مصاحف التوجيه والكتب المخصصة، 3. ضع علامة مميزة في مصحفك عند موضع التشابه.';
+  } else if (msg.includes('خطة') || msg.includes('جدول') || msg.includes('كيف') || msg.includes('طريقة')) {
+    return 'أفضل خطة هي نظام الحصون الخمسة:\n1. الورد اليومي (قراءة جزء نظرًا).\n2. التحضير الأسبوعي.\n3. التحضير القريب (قبل الحفظ بـ 15 دقيقة).\n4. الحفظ الجديد (صفحة أو وجه يومياً).\n5. المراجعة القريبة والبعيدة.';
+  } else if (msg.includes('تجويد') || msg.includes('مخارج') || msg.includes('إدغام') || msg.includes('مد')) {
+    return 'أحكام التجويد تُتعلم بالمشافهة على يد شيخ متقن. أبرز الأحكام: الإظهار، الإدغام، الإخفاء، الإقلاب. قال ابن الجزري: والأخذ بالتجويد حتمٌ لازم من لم يجوّد القرآن آثم.';
+  } else if (msg.includes('بقرة')) {
+    return 'سورة البقرة هي أطول سورة في القرآن الكريم (286 آية). تبدأ من الصفحة 2 وتنتهي عند الصفحة 49. تحتوي على آية الكرسي (255) - أعظم آية في القرآن.';
+  } else if (msg.includes('تاريخ') || msg.includes('اليوم') || msg.includes('وقت') || msg.includes('ساعة')) {
+    const todayStr = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    return `تاريخ اليوم هو: ${todayStr}. 🌿 وفقك الله في وردك ومراجعتك لهذا اليوم!`;
+  } else if (msg.includes('تشجيع') || msg.includes('محفزة') || msg.includes('همة')) {
+    return 'بارك الله فيك! استمر في مسيرتك مع كتاب الله. قال ﷺ: خيركم من تعلّم القرآن وعلّمه. أنت تسير في طريق النور!';
   } else {
     const templates = [
-      'ثبّت الله حفظك ونور بصيرتك! تذكر أن قليل مستمر خير من كثير منقطع. كيف تسير خطتك اليوم؟',
-      'ما شاء الله! همتكم عالية. استمر في المراجعة بانتظام، فالمعاهدة هي سر رسوخ القرآن الكريم في الصدور.',
-      'جعلك الله من أهل القرآن الذين هم أهل الله وخاصته. هل تريد مني شرح متشابهة معينة أو المساعدة في تسميع صفحة؟',
-      'إن الاستماع الدائم للقرآن بقراءة مرتلة خاشعة يساعد عقلك الباطن على تثبيت مواضع الآيات وحركات الحروف تلقائياً.'
+      'بارك الله فيك! كيف يمكنني مساعدتك في رحلة الحفظ؟ سواء أردت خطة أو مساعدة في المراجعة أو التدبر.',
+      'أهلاً! تفضل. يمكنني مساعدتك في المتشابهات والمراجعة والخطط المخصصة.',
+      'وفقك الله في رحلة حفظ القرآن. ما الذي تحتاج مساعدة فيه؟'
     ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
@@ -493,52 +505,72 @@ function getSmartFallbackResponse(message) {
 
 app.post('/api/ai/chat', async (req, res) => {
   const { message } = req.body;
+  if (!message || !message.trim()) {
+    return res.status(400).json({ success: false, message: 'الرسالة فارغة' });
+  }
 
   try {
     let responseText = '';
     const apiKey = process.env.GEMINI_API_KEY;
 
-    if (apiKey && apiKey !== '' && !apiKey.includes('mock') && apiKey.startsWith('AIzaSy')) {
-      try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({
-          model: "gemini-1.5-flash",
-          systemInstruction: "أنت معلم وموجه قرآن كريم تفاعلي ذكي تطبيق 'محفظ AI'. تساعد الحفاظ في الحفظ والمراجعة وربط الآيات المتشابهة وفهم التدبر والتلاوة. أجب باللغة العربية بأسلوب مشجع وإيماني. إذا سُئلت عن فتوى فقهية معقدة، اعتذر بلطف ووجه السائل لدار الإفتاء أو العلماء المتخصصين."
-        });
+    if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
+      const candidateModels = [
+        "gemini-2.0-flash",
+        "gemini-1.5-flash",
+        "gemini-1.5-pro"
+      ];
+      let liveSuccess = false;
 
-        const result = await model.generateContent(message);
-        const response = await result.response;
-        responseText = response.text();
-      } catch (err) {
-        console.error('Gemini live API call failed, falling back to smart engine:', err);
+      for (const modelName of candidateModels) {
+        try {
+          const genAI = new GoogleGenerativeAI(apiKey);
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            systemInstruction: "أنت معلم قرآني تفاعلي متخصص في تطبيق محفظ AI. مهمتك مساعدة الحفاظ في الحفظ والمراجعة والتدبر والتجويد وربط المتشابهات. استشهد بالقرآن والسنة مع ذكر المصدر. أسلوبك إيماني وودود ومحفز. إذا سئلت فتوى اعتذر ووجه لدار الإفتاء. اجعل ردودك بالعربية ومختصرة ومباشرة."
+          });
+
+          const result = await model.generateContent(message);
+          const response = await result.response;
+          responseText = response.text();
+          console.log(`✅ Live Gemini AI response generated successfully using [${modelName}]!`);
+          liveSuccess = true;
+          break;
+        } catch (err) {
+          console.log(`💡 Model [${modelName}] notice: ${err.message}`);
+        }
+      }
+
+      if (!liveSuccess) {
+        console.log('💡 Using smart Islamic fallback engine for response');
         responseText = getSmartFallbackResponse(message);
       }
     } else {
+      console.log('💡 Note: GEMINI_API_KEY is not set. Add your key from https://aistudio.google.com for live AI.');
       responseText = getSmartFallbackResponse(message);
     }
 
     await runQuery('INSERT INTO ai_chat_history (sender, text) VALUES (?, ?)', ['user', message]);
     await runQuery('INSERT INTO ai_chat_history (sender, text) VALUES (?, ?)', ['ai', responseText]);
 
-    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC');
+    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100');
     res.json({ success: true, reply: responseText, history });
   } catch (e) {
-    console.error('Error with Gemini AI Chat:', e);
+    console.error('AI Chat error:', e);
     const fallbackText = getSmartFallbackResponse(message);
-    res.json({ 
-      success: true, 
-      reply: fallbackText, 
+    res.json({
+      success: true,
+      reply: fallbackText,
       history: [
-        { id: Date.now(), sender: 'user', text: message }, 
+        { id: Date.now(), sender: 'user', text: message },
         { id: Date.now() + 1, sender: 'ai', text: fallbackText }
-      ] 
+      ]
     });
   }
 });
 
 // Start Express Server
 app.listen(PORT, () => {
-  console.log(`=================================`);
-  console.log(`🚀 خادم محفظ AI يعمل على: http://localhost:${PORT}`);
-  console.log(`=================================`);
+  console.log('=================================');
+  console.log('Server running on port ' + PORT);
+  console.log('=================================');
 });

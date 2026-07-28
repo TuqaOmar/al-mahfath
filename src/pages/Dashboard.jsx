@@ -43,6 +43,7 @@ import AiAssistant from '../components/AiAssistant';
 import { Community } from '../components/Community';
 import { QuranMapPage } from '../components/QuranMapPage';
 import { PostSessionDhikr } from '../components/PostSessionDhikr';
+import { AnalyticsView } from '../components/AnalyticsView';
 import { QuranInteractiveView } from '../components/QuranInteractiveView';
 import { LearningStyleProfiler } from '../components/LearningStyleProfiler';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
@@ -197,7 +198,7 @@ const Dashboard = () => {
             </div>
 
             {/* 3. Bento Grid Metrics */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '16px' : '24px' }}>
               
               {/* Memory Score */}
               <Card>
@@ -245,7 +246,7 @@ const Dashboard = () => {
             </div>
 
             {/* 4. AI Guidance & Five Fortresses Timeline */}
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '24px' }}>
               
               {/* Left Column */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -276,9 +277,9 @@ const Dashboard = () => {
                 </Card>
 
                 {/* Five Fortresses Timeline */}
-                <Card style={{ padding: '28px' }}>
+                <Card style={{ padding: isMobile ? '16px' : '28px' }}>
                   <h3 style={{ fontSize: '20px', color: 'var(--text-primary)', marginBottom: '20px' }}>🏰 منهجية الحصون الخمسة للثبات</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '12px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '12px' }}>
                     {[
                       { id: 1, name: '1. قراءة الورد', desc: 'قراءة جزء نظراً' },
                       { id: 2, name: '2. تحضير أسبوعي', desc: 'التهيئة الذهنية لسورة الأسبوع' },
@@ -331,9 +332,9 @@ const Dashboard = () => {
 
       case 'daily-session':
         return (
-          <Card style={{ padding: '40px', maxWidth: '900px', margin: '0 auto' }}>
+          <Card style={{ padding: isMobile ? '20px 16px' : '40px', maxWidth: '900px', margin: '0 auto' }}>
             
-            {/* Supplication Before Recitation (دعاء التلاوة والحفظ) */}
+            {/* Supplication Before Recitation */}
             <div style={{ padding: '20px', borderRadius: '16px', background: 'var(--primary-light)', border: '1px solid var(--primary)', marginBottom: '32px', textAlign: 'center' }}>
               <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
                 🤲 دعاء الافتتاح وتيسير الفهم والحفظ
@@ -344,8 +345,8 @@ const Dashboard = () => {
             </div>
 
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <h2 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '8px' }}>🎯 جلسة التسميع والتدبر التفاعلية</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '15px' }}>تلاوة وتدبر الورد اليومي مع التحكم الفوري والتظليل المباشر للآيات</p>
+              <h2 style={{ fontSize: isMobile ? '22px' : '28px', color: 'var(--text-primary)', marginBottom: '8px' }}>🎯 جلسة التسميع والتدبر التفاعلية</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>تلاوة وتدبر الورد اليومي مع التحكم الفوري والتظليل المباشر للآيات</p>
             </div>
 
             {/* Interactive Verse-Synced Quran View Component */}
@@ -360,7 +361,7 @@ const Dashboard = () => {
 
       case 'my-plan':
         return (
-          <Card style={{ padding: '32px' }}>
+          <Card style={{ padding: isMobile ? '20px 16px' : '32px' }}>
             <h2 style={{ fontSize: '24px', marginBottom: '16px', color: 'var(--text-primary)' }}>📋 خطتك الشخصية للحفظ والمراجعة (الحصون الخمسة)</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '15px' }}>
               نظام محكم يضمن ثبات السور وعدم النسيان عبر 5 حصون متكاملة:
@@ -371,7 +372,7 @@ const Dashboard = () => {
               <LearningStyleProfiler />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', gap: '16px' }}>
               {[
                 { title: '1. القراءة المستمرة', desc: 'قراءة جزء يومياً للاستماع والاستحواذ', color: '#3B82F6' },
                 { title: '2. التحضير الأسبوعي', desc: 'قراءة السورة كاملة بتركيز وتدبر للمعاني', color: '#8B5CF6' },
@@ -396,8 +397,8 @@ const Dashboard = () => {
 
       case 'ai-assistant':
         return (
-          <Card style={{ padding: '24px' }}>
-            <h2 style={{ fontSize: '24px', color: 'var(--text-primary)', marginBottom: '16px' }}>🤖 المعلم والموجه الإيماني الذكي</h2>
+          <Card style={{ padding: isMobile ? '16px' : '24px' }}>
+            <h2 style={{ fontSize: isMobile ? '20px' : '24px', color: 'var(--text-primary)', marginBottom: '16px' }}>🤖 المعلم والموجه الإيماني الذكي</h2>
             <AiAssistant />
           </Card>
         );
@@ -407,11 +408,11 @@ const Dashboard = () => {
 
       case 'achievements':
         return (
-          <Card style={{ padding: '32px' }}>
+          <Card style={{ padding: isMobile ? '20px 16px' : '32px' }}>
             <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', marginBottom: '8px' }}>🏆 أوسمة وثمار صحبة القرآن</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>محطات إيمانية وتشجيعية في رحلتك مع كتاب الله.</p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
               {[
                 { title: 'رباط الاستمرار', desc: 'صحبة متتالية لكتاب الله لـ 7 أيام أو أكثر', unlocked: (user?.streak >= 7), icon: Flame },
                 { title: 'حافظ البقرة', desc: 'حفظ سورة البقرة بالكامل (أكثر من 48 صفحة)', unlocked: (user?.memorizedPagesCount >= 49), icon: Award },
@@ -433,18 +434,7 @@ const Dashboard = () => {
         );
 
       case 'analytics':
-        return (
-          <Card style={{ padding: '32px' }}>
-            <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', marginBottom: '8px' }}>📊 تحليلات استقرار الذاكرة والإتقان</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>مؤشرات تفصيلية لقياس جودة تثبيت السور والتقدم الزمني.</p>
-
-            <div style={{ padding: '40px', background: 'var(--bg-color)', borderRadius: '20px', border: '1px solid var(--glass-border)', textAlign: 'center', marginBottom: '24px' }}>
-              <TrendingUp size={48} color="var(--primary)" style={{ margin: '0 auto 16px' }} />
-              <h3 style={{ color: 'var(--text-primary)', fontSize: '20px', marginBottom: '8px' }}>معدل الإتقان الثابت: 94%</h3>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: 0 }}>تطور مستمر بفضل المراجعة المتباعدة وتلاوة الورد في الصلاة ✨</p>
-            </div>
-          </Card>
-        );
+        return <AnalyticsView />;
 
       case 'admin-panel':
         return <AdminPanel />;
@@ -635,9 +625,63 @@ const Dashboard = () => {
         </header>
 
         {/* Dashboard Main Content View */}
-        <main style={{ padding: isMobile ? '20px 16px' : '40px', flex: 1 }}>
+        <main style={{ padding: isMobile ? '16px 12px 90px 12px' : '40px', flex: 1 }}>
           {renderTabContent()}
         </main>
+
+        {/* Mobile Bottom Navigation Bar */}
+        {isMobile && (
+          <div style={{
+            position: 'fixed',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '64px',
+            backgroundColor: 'var(--bg-surface)',
+            borderTop: '1px solid var(--glass-border)',
+            display: 'flex',
+            justifyContent: 'space-around',
+            alignItems: 'center',
+            zIndex: 40,
+            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.12)',
+            padding: '0 4px'
+          }}>
+            {[
+              { id: 'home', label: 'الرئيسية', icon: '🏠' },
+              { id: 'daily-session', label: 'الورد', icon: '🎯' },
+              { id: 'quran-map', label: 'المصحف', icon: '📖' },
+              { id: 'ai-assistant', label: 'المعلم', icon: '🤖' },
+              { id: 'community', label: 'المجتمع', icon: '👥' }
+            ].map(tab => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '2px',
+                    color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
+                    fontWeight: isActive ? 'bold' : 'normal',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    flex: 1,
+                    padding: '4px 0',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <span style={{ fontSize: '19px', transform: isActive ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{tab.icon}</span>
+                  <span style={{ fontSize: '11px', fontFamily: 'var(--font-body)' }}>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -40,6 +40,13 @@ const OnboardingWizard = () => {
   const navigate = useNavigate();
   const { updateUserData } = useAuth();
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const handleNext = () => {
     if (step === 4) {
       // Move to step 5 (AI Analyzing step)
@@ -193,7 +200,7 @@ const OnboardingWizard = () => {
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', marginBottom: '32px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', marginBottom: '32px' }}>
                   {[
                     { 
                       style: lang === 'ar' ? 'بصري (الخرائط والصور)' : 'Visual (Maps & Images)', 

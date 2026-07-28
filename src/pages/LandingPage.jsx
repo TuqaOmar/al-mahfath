@@ -33,20 +33,31 @@ const LandingPage = () => {
     navigate('/dashboard');
   };
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+  React.useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="landing-page" style={{ position: 'relative', zIndex: 1 }}>
       
       {/* Navbar */}
       <nav style={{ position: 'sticky', top: 0, width: '100%', zIndex: 100, padding: '16px 0', background: 'var(--bg-surface)', borderBottom: '1px solid var(--glass-border)' }}>
-        <div className="container flex-between">
-          <Logo size={42} />
-          <div className="nav-links flex-center" style={{ gap: '20px' }}>
-            <a href="#features" style={{ color: 'var(--text-secondary)', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = 'var(--text-primary)'} onMouseOut={e => e.target.style.color = 'var(--text-secondary)'}>
-              {t('nav_features')}
-            </a>
-            <a href="#showcase" style={{ color: 'var(--text-secondary)', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = 'var(--text-primary)'} onMouseOut={e => e.target.style.color = 'var(--text-secondary)'}>
-              {t('nav_how_it_works')}
-            </a>
+        <div className="container flex-between" style={{ flexWrap: 'wrap', gap: '12px' }}>
+          <Logo size={isMobile ? 32 : 42} />
+          <div className="nav-links flex-center" style={{ gap: isMobile ? '10px' : '20px', flexWrap: 'wrap' }}>
+            {!isMobile && (
+              <>
+                <a href="#features" style={{ color: 'var(--text-secondary)', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = 'var(--text-primary)'} onMouseOut={e => e.target.style.color = 'var(--text-secondary)'}>
+                  {t('nav_features')}
+                </a>
+                <a href="#showcase" style={{ color: 'var(--text-secondary)', fontWeight: 600, transition: 'color 0.2s' }} onMouseOver={e => e.target.style.color = 'var(--text-primary)'} onMouseOut={e => e.target.style.color = 'var(--text-secondary)'}>
+                  {t('nav_how_it_works')}
+                </a>
+              </>
+            )}
             
             {/* Language Toggle */}
             <button 
@@ -55,10 +66,10 @@ const LandingPage = () => {
                 background: 'var(--primary-light)', 
                 color: 'var(--primary)', 
                 border: 'none', 
-                padding: '6px 14px', 
+                padding: '6px 12px', 
                 borderRadius: '20px', 
                 fontWeight: 'bold', 
-                fontSize: '13px', 
+                fontSize: '12px', 
                 cursor: 'pointer', 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -75,20 +86,20 @@ const LandingPage = () => {
             </button>
 
             {user ? (
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <Button variant="primary" onClick={() => navigate('/dashboard')} style={{ padding: '10px 24px', borderRadius: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <Button variant="primary" onClick={() => navigate('/dashboard')} style={{ padding: '8px 18px', borderRadius: '8px', fontSize: '13px' }}>
                   {t('nav_dashboard')}
                 </Button>
-                <Button variant="outline" onClick={logout} style={{ padding: '10px 16px', borderRadius: '8px', border: '1px solid #EF4444', color: '#EF4444' }}>
+                <Button variant="outline" onClick={logout} style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #EF4444', color: '#EF4444', fontSize: '13px' }}>
                   {t('nav_logout')}
                 </Button>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <Button variant="outline" onClick={() => openAuthModal('login')} style={{ padding: '10px 20px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <Button variant="outline" onClick={() => openAuthModal('login')} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--glass-border)', fontSize: '13px' }}>
                   {t('nav_login')}
                 </Button>
-                <Button variant="primary" onClick={() => openAuthModal('signup')} style={{ padding: '10px 20px', borderRadius: '8px' }}>
+                <Button variant="primary" onClick={() => openAuthModal('signup')} style={{ padding: '8px 14px', borderRadius: '8px', fontSize: '13px' }}>
                   {t('nav_signup')}
                 </Button>
               </div>
@@ -101,17 +112,17 @@ const LandingPage = () => {
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode={authMode} />
 
       {/* Hero Section */}
-      <section className="hero" style={{ padding: '80px 0', background: 'var(--bg-color)', overflow: 'hidden' }}>
+      <section className="hero" style={{ padding: isMobile ? '40px 0' : '80px 0', background: 'var(--bg-color)', overflow: 'hidden' }}>
         <div className="container">
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '48px', alignItems: 'center' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: isMobile ? '32px' : '48px', alignItems: 'center' }}>
             
             {/* Hero Text */}
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 'var(--radius-full)', marginBottom: '24px', fontSize: '14px', fontWeight: 600 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', background: 'var(--primary-light)', color: 'var(--primary)', borderRadius: 'var(--radius-full)', marginBottom: '24px', fontSize: '13px', fontWeight: 600 }}>
                 {t('hero_badge')}
               </div>
               
-              <h1 style={{ fontSize: '50px', lineHeight: 1.2, marginBottom: '20px', color: 'var(--text-primary)' }}>
+              <h1 style={{ fontSize: isMobile ? '28px' : '50px', lineHeight: 1.2, marginBottom: '20px', color: 'var(--text-primary)' }}>
                 {t('hero_title_1')} <br/>
                 <span className="text-gradient">{t('hero_title_2')}</span>
               </h1>
@@ -126,36 +137,36 @@ const LandingPage = () => {
                 marginBottom: '28px',
                 maxWidth: '520px'
               }}>
-                <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--primary)', fontFamily: 'serif' }}>
+                <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px', fontWeight: 'bold', color: 'var(--primary)', fontFamily: 'serif' }}>
                   « مَا كَانَ لِلَّهِ يَبْقَى وَمَا كَانَ لِغَيْرِهِ يَنْدَثِرُ ، اللَّهُمَّ تَقَبَّلْ » 🌿
                 </p>
               </div>
               
-              <p style={{ fontSize: '17px', color: 'var(--text-secondary)', marginBottom: '32px', maxWidth: '520px', lineHeight: 1.6 }}>
+              <p style={{ fontSize: isMobile ? '15px' : '17px', color: 'var(--text-secondary)', marginBottom: '32px', maxWidth: '520px', lineHeight: 1.6 }}>
                 {t('hero_subtitle')}
               </p>
               
-              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 {user ? (
                   <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <Button variant="primary" onClick={() => navigate('/dashboard')} icon={isRTL ? ArrowLeft : ArrowRight} style={{ padding: '16px 28px', fontSize: '16px', borderRadius: '12px' }}>
+                    <Button variant="primary" onClick={() => navigate('/dashboard')} icon={isRTL ? ArrowLeft : ArrowRight} style={{ padding: '14px 24px', fontSize: '15px', borderRadius: '12px' }}>
                       {t('nav_dashboard')}
                     </Button>
-                    <Button variant="outline" onClick={logout} style={{ padding: '16px 24px', fontSize: '16px', borderRadius: '12px', border: '1px solid #EF4444', color: '#EF4444' }}>
+                    <Button variant="outline" onClick={logout} style={{ padding: '14px 20px', fontSize: '15px', borderRadius: '12px', border: '1px solid #EF4444', color: '#EF4444' }}>
                       {t('nav_logout')}
                     </Button>
                   </div>
                 ) : (
                   <>
-                    <Button variant="primary" onClick={() => openAuthModal('signup')} icon={isRTL ? ArrowLeft : ArrowRight} style={{ padding: '16px 28px', fontSize: '16px', borderRadius: '12px' }}>
+                    <Button variant="primary" onClick={() => openAuthModal('signup')} icon={isRTL ? ArrowLeft : ArrowRight} style={{ padding: '14px 24px', fontSize: '15px', borderRadius: '12px' }}>
                       {t('hero_cta_primary')}
                     </Button>
-                    <Button variant="outline" onClick={() => openAuthModal('login')} style={{ padding: '16px 28px', fontSize: '16px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                    <Button variant="outline" onClick={() => openAuthModal('login')} style={{ padding: '14px 20px', fontSize: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
                       {t('nav_login')}
                     </Button>
                   </>
                 )}
-                <Button variant="outline" onClick={handleTestAccountAction} style={{ padding: '16px 28px', fontSize: '16px', borderRadius: '12px', border: '1px solid var(--primary)', color: 'var(--primary)' }}>
+                <Button variant="outline" onClick={handleTestAccountAction} style={{ padding: '14px 24px', fontSize: '15px', borderRadius: '12px', border: '1px solid var(--primary)', color: 'var(--primary)' }}>
                   {t('hero_cta_demo')}
                 </Button>
               </div>

@@ -41,6 +41,8 @@ export const QuranInteractiveView = () => {
   const [tafsirLoading, setTafsirLoading] = useState(false);
 
   const audioRef = useRef(null);
+  const isPlayingRef = useRef(false); // Mirror of isPlaying for use in async callbacks
+  const isChangingTrackRef = useRef(false); // Flag to prevent onPause from resetting isPlaying state when changing tracks
 
   // Fetch Tafsir dynamically for the active ayah
   useEffect(() => {
@@ -72,7 +74,6 @@ export const QuranInteractiveView = () => {
         if (data.code === 200 && data.data) {
           setAyahs(data.data.ayahs);
           if (data.data.ayahs.length > 0) {
-            // Find main surah name of the page
             setSurahName(data.data.ayahs[0].surah.name);
             setActiveAyahNum(data.data.ayahs[0].number);
           }
@@ -88,51 +89,98 @@ export const QuranInteractiveView = () => {
   // Audio URL format for AlQuran Cloud API (using global ayah number)
   const currentAudioUrl = `https://cdn.islamic.network/quran/audio/128/${selectedReciter}/${activeAyahNum}.mp3`;
 
+  // Keep isPlayingRef in sync with isPlaying state
   useEffect(() => {
-    if (isPlaying && audioRef.current) {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  // When activeAyahNum or selectedReciter changes AND we are in playing mode, auto load & play
+  useEffect(() => {
+    if (isPlayingRef.current && audioRef.current) {
       audioRef.current.load();
-      audioRef.current.play().catch(e => console.log(e));
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            isPlayingRef.current = true;
+            isChangingTrackRef.current = false;
+          })
+          .catch(e => console.log('Audio auto-play error:', e));
+      }
     }
   }, [activeAyahNum, selectedReciter]);
 
   const togglePlay = () => {
     if (!audioRef.current) return;
-    if (isPlaying) {
+    if (isPlayingRef.current) {
+      isChangingTrackRef.current = false;
       audioRef.current.pause();
       setIsPlaying(false);
+      isPlayingRef.current = false;
     } else {
-      audioRef.current.play().then(() => setIsPlaying(true)).catch(e => console.log(e));
+      isChangingTrackRef.current = false;
+      audioRef.current.play()
+        .then(() => {
+          setIsPlaying(true);
+          isPlayingRef.current = true;
+        })
+        .catch(e => console.log('Audio play error:', e));
     }
   };
 
   const handleAyahClick = (ayahNum) => {
+    isChangingTrackRef.current = true;
     setActiveAyahNum(ayahNum);
     setCurrentRepeat(1);
     setIsPlaying(true);
+    isPlayingRef.current = true;
   };
 
   const handleAudioEnded = () => {
+    // Handle infinite repeat of current verse
     if (repeatCount === 'infinite') {
       setCurrentRepeat(prev => prev + 1);
       if (audioRef.current) {
+        audioRef.current.currentTime = 0;
         audioRef.current.play().catch(e => console.log(e));
       }
-    } else if (typeof repeatCount === 'number' && repeatCount > 1 && currentRepeat < repeatCount) {
+      return;
+    }
+    // Handle finite repeat (e.g. 3x, 5x, 10x)
+    if (typeof repeatCount === 'number' && repeatCount > 1 && currentRepeat < repeatCount) {
       setCurrentRepeat(prev => prev + 1);
       if (audioRef.current) {
+        audioRef.current.currentTime = 0;
         audioRef.current.play().catch(e => console.log(e));
       }
+      return;
+    }
+
+    // Finished repeating current verse — advance to next verse automatically!
+    setCurrentRepeat(1);
+    const currentIndex = ayahs.findIndex(a => a.number === activeAyahNum);
+
+    if (currentIndex !== -1 && currentIndex < ayahs.length - 1) {
+      // Next verse on the same page
+      const nextAyah = ayahs[currentIndex + 1];
+      isChangingTrackRef.current = true;
+      setIsPlaying(true);
+      isPlayingRef.current = true;
+      setActiveAyahNum(nextAyah.number);
+    } else if (pageNumber < 604) {
+      // Last verse on the current page — advance to the next Quran page automatically!
+      isChangingTrackRef.current = true;
+      setIsPlaying(true);
+      isPlayingRef.current = true;
+      setPageNumber(prev => prev + 1);
     } else {
-      // Move to next verse on the page
-      setCurrentRepeat(1);
-      const currentIndex = ayahs.findIndex(a => a.number === activeAyahNum);
-      if (currentIndex !== -1 && currentIndex < ayahs.length - 1) {
-        setActiveAyahNum(ayahs[currentIndex + 1].number);
-      } else {
-        setIsPlaying(false);
-        if (ayahs.length > 0) {
-          setActiveAyahNum(ayahs[0].number);
-        }
+      // Reached end of Quran
+      setIsPlaying(false);
+      isPlayingRef.current = false;
+      isChangingTrackRef.current = false;
+      if (ayahs.length > 0) {
+        setActiveAyahNum(ayahs[0].number);
       }
     }
   };
@@ -141,6 +189,7 @@ export const QuranInteractiveView = () => {
     setIsUserReciting(!isUserReciting);
     if (!isUserReciting) {
       setIsPlaying(false);
+      isPlayingRef.current = false;
     }
   };
 
@@ -156,8 +205,17 @@ export const QuranInteractiveView = () => {
         ref={audioRef}
         src={currentAudioUrl}
         onEnded={handleAudioEnded}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onPlay={() => {
+          setIsPlaying(true);
+          isPlayingRef.current = true;
+          isChangingTrackRef.current = false;
+        }}
+        onPause={() => {
+          if (!isChangingTrackRef.current) {
+            setIsPlaying(false);
+            isPlayingRef.current = false;
+          }
+        }}
       />
 
       {/* Control Bar */}

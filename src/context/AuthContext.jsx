@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   };
 
-  // Real REST API: Email/Password Login
+  // Real REST API: Email/Password Login, with local fallback
   const login = async (email, password) => {
     setLoading(true);
     try {
@@ -73,13 +73,23 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: data.message || 'فشل تسجيل الدخول' };
       }
     } catch (e) {
-      console.error(e);
+      // Local fallback: check stored users in localStorage
+      console.log('Backend unavailable, trying local auth...');
+      const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
+      const storedEntry = localUsers[email.toLowerCase()];
+      if (storedEntry && storedEntry.password === password) {
+        const userData = storedEntry.user;
+        localStorage.setItem('ma7fath_user', JSON.stringify(userData));
+        setUser(userData);
+        setLoading(false);
+        return { success: true };
+      }
       setLoading(false);
-      return { success: false, message: 'تعذر الاتصال بالخادم' };
+      return { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
     }
   };
 
-  // Real REST API: Email/Password Signup
+  // Real REST API: Email/Password Signup, with local fallback
   const signup = async (name, email, password) => {
     setLoading(true);
     try {
@@ -99,11 +109,38 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: data.message || 'فشل إنشاء الحساب' };
       }
     } catch (e) {
-      console.error(e);
+      // Local fallback: store user locally
+      console.log('Backend unavailable, creating local account...');
+      const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
+      const emailKey = email.toLowerCase();
+      if (localUsers[emailKey]) {
+        setLoading(false);
+        return { success: false, message: 'البريد الإلكتروني مسجل بالفعل' };
+      }
+      const newUser = {
+        uid: 'local_' + Date.now(),
+        name: name || 'حافظ جديد',
+        email,
+        photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'User')}`,
+        hasCompletedWizard: false,
+        role: 'user',
+        streak: 1,
+        xp: 100,
+        level: 1,
+        memorizedPagesCount: 1,
+        memoryScore: 90,
+        totalJuz: 0.05,
+        preferences: {}
+      };
+      localUsers[emailKey] = { password, user: newUser };
+      localStorage.setItem('ma7fath_local_users', JSON.stringify(localUsers));
+      localStorage.setItem('ma7fath_user', JSON.stringify(newUser));
+      setUser(newUser);
       setLoading(false);
-      return { success: false, message: 'تعذر الاتصال بالخادم' };
+      return { success: true };
     }
   };
+
 
   const logout = () => {
     localStorage.removeItem('ma7fath_user');

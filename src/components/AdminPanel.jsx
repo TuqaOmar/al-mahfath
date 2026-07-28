@@ -28,6 +28,13 @@ export const AdminPanel = () => {
     totalJuz: 0
   });
 
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const fetchUsers = async () => {
     setLoading(true);
     try {
@@ -125,56 +132,56 @@ export const AdminPanel = () => {
       </div>
 
       {/* Stats Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
-        <Card style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>إجمالي المستخدمين</span>
-            <Users size={20} color="var(--primary)" />
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: isMobile ? '12px' : '20px' }}>
+        <Card style={{ padding: isMobile ? '14px' : '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: isMobile ? '12px' : '14px', color: 'var(--text-secondary)' }}>إجمالي المستخدمين</span>
+            <Users size={18} color="var(--primary)" />
           </div>
-          <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+          <p style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
             {loading ? '...' : totalUsers} مستخدم
           </p>
         </Card>
 
-        <Card style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>الصفحات المحفوظة كلياً</span>
-            <BookOpen size={20} color="#10B981" />
+        <Card style={{ padding: isMobile ? '14px' : '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: isMobile ? '12px' : '14px', color: 'var(--text-secondary)' }}>الصفحات المحفوظة</span>
+            <BookOpen size={18} color="#10B981" />
           </div>
-          <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+          <p style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
             {loading ? '...' : totalPages} صفحة
           </p>
         </Card>
 
-        <Card style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>متوسط الالتزام (الرباط)</span>
-            <Flame size={20} color="#F59E0B" />
+        <Card style={{ padding: isMobile ? '14px' : '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: isMobile ? '12px' : '14px', color: 'var(--text-secondary)' }}>متوسط الالتزام</span>
+            <Flame size={18} color="#F59E0B" />
           </div>
-          <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
-            {loading ? '...' : averageStreak} يوم متتالي
+          <p style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+            {loading ? '...' : averageStreak} يوم
           </p>
         </Card>
 
-        <Card style={{ padding: '20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>متوسط النقاط (XP)</span>
-            <Trophy size={20} color="#8B5CF6" />
+        <Card style={{ padding: isMobile ? '14px' : '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: isMobile ? '12px' : '14px', color: 'var(--text-secondary)' }}>متوسط النقاط</span>
+            <Trophy size={18} color="#8B5CF6" />
           </div>
-          <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
+          <p style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>
             {loading ? '...' : averageXp} XP
           </p>
         </Card>
       </div>
 
       {/* Main Table Card */}
-      <Card style={{ padding: '24px' }}>
+      <Card style={{ padding: isMobile ? '16px 12px' : '24px' }}>
         
         {/* Search and Filters */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <h3 style={{ fontSize: '18px', color: 'var(--text-primary)', margin: 0 }}>إدارة حسابات الحفاظ</h3>
+          <h3 style={{ fontSize: isMobile ? '16px' : '18px', color: 'var(--text-primary)', margin: 0 }}>إدارة حسابات الحفاظ</h3>
           
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', minWidth: '300px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', minWidth: isMobile ? '100%' : '300px' }}>
             <Search size={18} color="var(--text-secondary)" />
             <input 
               type="text" 
