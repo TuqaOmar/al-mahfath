@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Card } from './ui/Card';
+import { VisualProgressTracker } from './VisualProgressTracker';
 
 export const AnalyticsView = () => {
   const { user } = useAuth();
@@ -155,6 +156,9 @@ export const AnalyticsView = () => {
         </Card>
 
       </div>
+
+      {/* Visual Recharts Progress Tracker */}
+      <VisualProgressTracker />
 
       {/* 2. Main Analytics Content Grid */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: isMobile ? '16px' : '24px' }}>

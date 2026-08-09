@@ -85,11 +85,11 @@ export const Logo = ({ size = 32, className = '' }) => {
 
       {/* Text Mark */}
       <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-        <span style={{ fontSize: size * 0.6, fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-1px' }}>
-          محفظ <span className="text-gradient">الكتروني</span>
+        <span style={{ fontSize: size * 0.55, fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-0.5px' }}>
+          المحفظ <span className="text-gradient">الذكي</span>
         </span>
-        <span style={{ fontSize: size * 0.25, color: 'var(--text-secondary)', letterSpacing: '2px', fontWeight: 600, marginTop: '2px' }}>
-          ROCKET
+        <span style={{ fontSize: size * 0.22, color: 'var(--text-secondary)', letterSpacing: '1px', fontWeight: 600, marginTop: '2px' }}>
+          المحفظ الإلكتروني
         </span>
       </div>
     </div>

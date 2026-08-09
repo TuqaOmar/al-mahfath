@@ -13,54 +13,39 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login, signup, loginWithTestAccount, loginWithAdminAccount, updateUserData } = useAuth();
+  const { login, signup, loginWithGoogle, loginWithTestAccount, loginWithAdminAccount, updateUserData } = useAuth();
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
 
-  // Listen to postMessage event from Mock Google Popup window
+  // Reset fields & sync mode when modal opens or initialMode changes
   useEffect(() => {
-    const handleMessage = async (event) => {
-      if (event.data && event.data.type === 'GOOGLE_SIGN_IN_SUCCESS') {
-        setIsLoading(true);
-        const { name: googleName, email: googleEmail } = event.data;
+    if (isOpen) {
+      setIsSignUp(initialMode === 'signup');
+      setEmail('');
+      setPassword('');
+      setName('');
+      setError('');
+    }
+  }, [isOpen, initialMode]);
 
-        try {
-          const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: googleName, email: googleEmail })
-          });
-          const data = await res.json();
-          if (data.success && data.user) {
-            updateUserData(data.user);
-            onClose();
-            navigate(data.user.hasCompletedWizard ? '/dashboard' : '/wizard');
-          }
-        } catch (err) {
-          console.error('Error authenticating with backend:', err);
-          setError(t('auth_error_google') || 'حدث خطأ أثناء معالجة بيانات جوجل');
-        } finally {
-          setIsLoading(false);
-        }
+  // Seamless Google Sign-In Handler
+  const triggerGooglePopup = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const res = await loginWithGoogle(email.trim() || null, name.trim() || null);
+      if (res.success && res.user) {
+        onClose();
+        navigate(res.user.hasCompletedWizard ? '/dashboard' : '/wizard');
+      } else {
+        setError(res.message || (isRTL ? 'فشل تسجيل الدخول بحساب جوجل' : 'Failed to login with Google'));
       }
-    };
-
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [updateUserData, onClose, navigate]);
-
-  // Open the Mock Google Popup window
-  const triggerGooglePopup = () => {
-    const width = 500;
-    const height = 600;
-    const left = window.screen.width / 2 - width / 2;
-    const top = window.screen.height / 2 - height / 2;
-
-    window.open(
-      '/mock-google-login.html',
-      'Google Sign-In',
-      `width=${width},height=${height},top=${top},left=${left},scrollbars=no,resizable=no`
-    );
+    } catch (err) {
+      console.error('Google Sign-In error:', err);
+      setError(isRTL ? 'تعذر الاتصال بخدمة جوجل' : 'Failed to connect to Google service');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -70,19 +55,22 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
     try {
       if (!email.trim() || !password.trim()) {
-        setError(t('auth_error_fields'));
+        setError(t('auth_error_fields') || (isRTL ? 'يرجى ملء جميع الحقول' : 'Please fill all fields'));
         setIsLoading(false);
         return;
       }
 
       let result;
       if (isSignUp) {
-        result = await signup(name.trim() || t('auth_default_user_name') || 'حافظ جديد', email.trim(), password.trim());
+        result = await signup(name.trim() || (isRTL ? 'حافظ جديد' : 'New Learner'), email.trim(), password.trim());
       } else {
         result = await login(email.trim(), password.trim());
       }
 
-      if (result.success) {
+      if (result.success && result.user) {
+        onClose();
+        navigate(result.user.hasCompletedWizard ? '/dashboard' : '/wizard');
+      } else if (result.success) {
         onClose();
         const storedUser = JSON.parse(localStorage.getItem('ma7fath_user') || '{}');
         navigate(storedUser.hasCompletedWizard ? '/dashboard' : '/wizard');

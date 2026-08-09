@@ -55,10 +55,6 @@ export const AdminPanel = () => {
   }, []);
 
   const handleDeleteUser = async (uid) => {
-    if (!window.confirm('هل أنت متأكد من حذف هذا المستخدم نهائياً من النظام؟ لا يمكن التراجع عن هذا.')) {
-      return;
-    }
-
     try {
       const res = await fetch(`/api/admin/user/${uid}`, {
         method: 'DELETE'
@@ -66,7 +62,6 @@ export const AdminPanel = () => {
       const data = await res.json();
       if (data.success) {
         setUsers(users.filter(u => u.uid !== uid));
-        alert('تم حذف المستخدم بنجاح');
       }
     } catch (e) {
       console.error('Error deleting user:', e);

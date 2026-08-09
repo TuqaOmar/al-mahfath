@@ -11,23 +11,30 @@ import {
   ChevronLeft
 } from 'lucide-react';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
+import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
 
-// Generate mock status for 604 pages
-const generateQuranPages = () => {
+
+// Generate status for 604 pages based on user's memorized pages count
+const generateQuranPages = (memorizedCount = 0) => {
   const pages = [];
+  const count = Math.max(0, Number(memorizedCount) || 0);
+
   for (let i = 1; i <= 604; i++) {
     let status = 'unmemorized'; // 'excellent' | 'review' | 'critical' | 'unmemorized'
     let score = 0;
 
-    if (i <= 50) {
-      status = 'excellent';
-      score = Math.floor(Math.random() * 15) + 85; // 85-100%
-    } else if (i <= 80) {
-      status = 'review';
-      score = Math.floor(Math.random() * 20) + 60; // 60-79%
-    } else if (i === 82 || i === 85 || i === 89) {
-      status = 'critical';
-      score = Math.floor(Math.random() * 20) + 35; // 35-55%
+    if (count > 0 && i <= count) {
+      if (i % 7 === 0) {
+        status = 'critical';
+        score = 55;
+      } else if (i % 4 === 0) {
+        status = 'review';
+        score = 75;
+      } else {
+        status = 'excellent';
+        score = 92;
+      }
     }
 
     pages.push({
@@ -36,21 +43,26 @@ const generateQuranPages = () => {
       status,
       score,
       lastReviewed: status !== 'unmemorized' ? 'منذ يومين' : 'لم يراجع بعد',
-      errorsCount: status === 'critical' ? 4 : (status === 'review' ? 2 : 0),
+      errorsCount: status === 'critical' ? 3 : (status === 'review' ? 1 : 0),
       surahName: getSurahNameForPage(i)
     });
   }
   return pages;
 };
 
-const allPages = generateQuranPages();
-
 export const QuranMapPage = () => {
+  const { user, updateUserData } = useAuth();
+  const { notifyAndCelebrate } = useNotifications();
+  const memorizedPagesCount = Math.max(0, Number(user?.memorizedPagesCount) || 0);
+
   const [pages, setPages] = React.useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'excellent' | 'review' | 'critical'
   const [juzFilter, setJuzFilter] = useState('all');
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const [quickPagesInput, setQuickPagesInput] = useState(memorizedPagesCount.toString());
+  const [statusMessage, setStatusMessage] = useState('');
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   React.useEffect(() => {
@@ -60,22 +72,142 @@ export const QuranMapPage = () => {
   }, []);
 
   React.useEffect(() => {
+    setQuickPagesInput(memorizedPagesCount.toString());
+  }, [memorizedPagesCount]);
+
+  React.useEffect(() => {
+    const basePages = generateQuranPages(memorizedPagesCount);
+    
     fetch('/api/quran/pages')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.pages) {
-          const defaultPages = generateQuranPages();
-          const merged = defaultPages.map(dp => {
+        if (data.success && Array.isArray(data.pages)) {
+          const merged = basePages.map(dp => {
             const serverPage = data.pages.find(sp => sp.pageNumber === dp.pageNumber);
             return serverPage ? { ...dp, ...serverPage } : dp;
           });
           setPages(merged);
         } else {
-          setPages(generateQuranPages());
+          setPages(basePages);
         }
       })
-      .catch(() => setPages(generateQuranPages()));
-  }, []);
+      .catch(() => setPages(basePages));
+  }, [memorizedPagesCount]);
+
+  // Update specific page status (e.g. excellent, review, critical, unmemorized)
+  const handleUpdatePageStatus = async (pageNumber, newStatus, newScore) => {
+    const updatedPages = pages.map(p => {
+      if (p.pageNumber === pageNumber) {
+        return {
+          ...p,
+          status: newStatus,
+          score: newScore,
+          lastReviewed: newStatus !== 'unmemorized' ? 'اليوم' : 'لم يراجع بعد'
+        };
+      }
+      return p;
+    });
+
+    setPages(updatedPages);
+
+    const updatedSelected = updatedPages.find(p => p.pageNumber === pageNumber);
+    if (updatedSelected) {
+      setSelectedPage(updatedSelected);
+    }
+
+    // Calculate total memorized pages count
+    const activeMemorizedCount = updatedPages.filter(p => p.status !== 'unmemorized').length;
+    const calcJuz = Number((activeMemorizedCount / 20).toFixed(1));
+
+    updateUserData({
+      memorizedPagesCount: activeMemorizedCount,
+      totalJuz: calcJuz
+    });
+
+    if (user?.uid) {
+      try {
+        await fetch(`/api/user/${user.uid}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memorizedPagesCount: activeMemorizedCount,
+            totalJuz: calcJuz
+          })
+        });
+      } catch (e) {
+        console.error('Error syncing user level:', e);
+      }
+    }
+
+    // Send backend review log
+    try {
+      await fetch(`/api/quran/pages/${pageNumber}/review`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: newStatus,
+          score: newScore,
+          surahName: updatedSelected?.surahName,
+          juz: updatedSelected?.juz
+        })
+      });
+    } catch (e) {
+      console.error('Error posting page review:', e);
+    }
+
+    if (newStatus === 'excellent') {
+      notifyAndCelebrate({
+        title: `إتقان ممتاز للصفحة ${pageNumber}! 🟢`,
+        message: `أحسنت! أثبتت حفظ الصفحة ${pageNumber} (${updatedSelected?.surahName || ''}) بتقدير ممتاز 100%!`,
+        type: 'achievement',
+        xpBonus: 75,
+        badgeTitle: 'حافظ متقن'
+      });
+    }
+
+    setStatusMessage(`تم تحديث حالة الصفحة ${pageNumber} بنجاح ✨`);
+    setTimeout(() => setStatusMessage(''), 3000);
+  };
+
+  // Quick update memorized pages level
+  const handleQuickUpdateLevel = async (newCountNum) => {
+    const newCount = Math.min(604, Math.max(0, Number(newCountNum) || 0));
+    const newPages = generateQuranPages(newCount);
+    setPages(newPages);
+    setShowLevelModal(false);
+
+    const calcJuz = Number((newCount / 20).toFixed(1));
+    updateUserData({
+      memorizedPagesCount: newCount,
+      totalJuz: calcJuz
+    });
+
+    notifyAndCelebrate({
+      title: '🗺️ تحديث مستوى الخريطة القرآنية!',
+      message: `تم تحديث مستوى حفظك إلى ${newCount} صفحة (${calcJuz} جزءاً) بنجاح!`,
+      type: 'achievement',
+      xpBonus: 100,
+      badgeTitle: 'فارس الخريطة'
+    });
+
+    if (user?.uid) {
+      try {
+        await fetch(`/api/user/${user.uid}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memorizedPagesCount: newCount,
+            totalJuz: calcJuz
+          })
+        });
+      } catch (e) {
+        console.error('Error updating user memorized count:', e);
+      }
+    }
+
+    setStatusMessage(`تم تحديث مستوى الحفظ إلى ${newCount} صفحة بنجاح! 🎉`);
+    setTimeout(() => setStatusMessage(''), 3500);
+  };
 
   // Filtered pages
   const filteredPages = pages.filter(p => {
@@ -97,6 +229,102 @@ export const QuranMapPage = () => {
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', position: 'relative' }}>
       
+      {/* Toast Notification Message */}
+      {statusMessage && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          zIndex: 9999,
+          background: '#10B981',
+          color: 'white',
+          padding: '12px 20px',
+          borderRadius: '12px',
+          fontWeight: 'bold',
+          fontSize: '14px',
+          boxShadow: '0 10px 25px rgba(16, 185, 129, 0.4)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <CheckCircle2 size={20} />
+          {statusMessage}
+        </div>
+      )}
+
+      {/* Quick Level Update Modal */}
+      {showLevelModal && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.6)',
+          zIndex: 999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <div style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--glass-border)',
+            borderRadius: '20px',
+            padding: '28px',
+            maxWidth: '450px',
+            width: '100%',
+            boxShadow: 'var(--shadow-soft)'
+          }}>
+            <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', color: 'var(--text-primary)' }}>
+              🎯 تحديث إجمالي عدد الصفحات المحفوظة
+            </h3>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
+              أدخل إجمالي عدد الصفحات التي حفظتها في الصدر حتى الآن (من 0 إلى 604)، وسيتم تحديث الخريطة الذهنية وملفك الشخصي فوراً:
+            </p>
+
+            <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
+              <input
+                type="number"
+                min="0"
+                max="604"
+                value={quickPagesInput}
+                onChange={(e) => setQuickPagesInput(e.target.value)}
+                style={{
+                  flex: 1,
+                  padding: '12px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--primary)',
+                  background: 'var(--bg-color)',
+                  color: 'var(--text-primary)',
+                  fontSize: '16px',
+                  outline: 'none',
+                  fontWeight: 'bold'
+                }}
+              />
+              <span style={{ display: 'flex', alignItems: 'center', fontSize: '14px', color: 'var(--text-secondary)' }}>
+                صفحة ({(Number(quickPagesInput || 0) / 20).toFixed(1)} جزء)
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowLevelModal(false)}
+                style={{ padding: '10px 18px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer' }}
+              >
+                إلغاء
+              </button>
+              <button
+                onClick={() => handleQuickUpdateLevel(quickPagesInput)}
+                style={{ padding: '10px 22px', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
+              >
+                حفظ والتحديث 🚀
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Grid View */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
@@ -115,6 +343,25 @@ export const QuranMapPage = () => {
               <h2 style={{ fontSize: isMobile ? '20px' : '24px', color: 'var(--text-primary)', margin: 0 }}>🗺️ الخارطة الشاملة لمصفحات القرآن (604 صفحة)</h2>
               <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>مؤشر مرئي دقيق لاستقرار الذاكرة ودرجة تثبيت كل صفحة في الصدر</p>
             </div>
+
+            <button
+              onClick={() => setShowLevelModal(true)}
+              style={{
+                padding: '10px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--primary)',
+                background: 'var(--primary-light)',
+                color: 'var(--primary)',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
+            >
+              🎯 مستوى الحفظ المسجل: {memorizedPagesCount} صفحة ({(memorizedPagesCount / 20).toFixed(1)} جزء) ✏️
+            </button>
           </div>
 
           {/* Controls Bar */}
@@ -254,6 +501,78 @@ export const QuranMapPage = () => {
             </div>
             <div style={{ width: '100%', height: '8px', background: 'var(--glass-border)', borderRadius: '4px', overflow: 'hidden' }}>
               <div style={{ width: `${selectedPage.score}%`, height: '100%', background: getStatusColor(selectedPage.status), borderRadius: '4px' }} />
+            </div>
+          </div>
+
+          {/* Interactive Page Status Controls */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+              تعديل حالة هذه الصفحة المباشر:
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <button
+                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'excellent', 95)}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  border: selectedPage.status === 'excellent' ? '2px solid #10B981' : '1px solid var(--glass-border)',
+                  background: selectedPage.status === 'excellent' ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-color)',
+                  color: '#10B981',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                🟢 ممتاز (95%)
+              </button>
+
+              <button
+                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'review', 75)}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  border: selectedPage.status === 'review' ? '2px solid #F59E0B' : '1px solid var(--glass-border)',
+                  background: selectedPage.status === 'review' ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
+                  color: '#F59E0B',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                🟡 مراجعة (75%)
+              </button>
+
+              <button
+                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'critical', 50)}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  border: selectedPage.status === 'critical' ? '2px solid #EF4444' : '1px solid var(--glass-border)',
+                  background: selectedPage.status === 'critical' ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-color)',
+                  color: '#EF4444',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                🔴 حرج (50%)
+              </button>
+
+              <button
+                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'unmemorized', 0)}
+                style={{
+                  padding: '8px 10px',
+                  borderRadius: '8px',
+                  border: selectedPage.status === 'unmemorized' ? '2px solid #94A3B8' : '1px solid var(--glass-border)',
+                  background: selectedPage.status === 'unmemorized' ? 'rgba(148, 163, 184, 0.15)' : 'var(--bg-color)',
+                  color: 'var(--text-secondary)',
+                  fontWeight: 'bold',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                ⚪ غير محفوظ
+              </button>
             </div>
           </div>
 

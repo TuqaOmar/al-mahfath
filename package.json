@@ -5,30 +5,28 @@
   "description": "منصة ذكية تفاعلية لمساعدة حفاظ القرآن الكريم على تخطيط وتثبيت ومراجعة حفظهم باستخدام الذكاء الاصطناعي (Gemini AI)",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:server": "node server/index.js",
-    "dev:full": "concurrently \"npm run dev:server\" \"npm run dev\"",
-    "build": "tsc && vite build",
+    "dev": "node server/index.js",
+    "build": "vite build",
+    "start": "node server/index.js",
     "preview": "vite preview"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4",
     "pptxgenjs": "^4.0.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "@vercel/analytics": "^2.0.1",
+    "@google/genai": "^2.15.0",
     "@vitejs/plugin-react": "^6.0.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "firebase": "^12.17.1",
     "framer-motion": "^12.42.2",
     "lucide-react": "^1.25.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
-    "sqlite3": "^6.0.1"
+    "recharts": "^3.10.1"
   }
 }

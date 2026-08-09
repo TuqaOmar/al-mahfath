@@ -61,10 +61,18 @@ body {
   background-color: var(--bg-color);
   color: var(--text-primary);
   font-family: var(--font-body);
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), color 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden !important;
   max-width: 100vw;
   line-height: 1.6;
+}
+
+/* Global Theme Transition Smoothing */
+.glass, .glass-card, header, main, nav, footer, button, input, select, textarea {
+  transition: background-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              color 0.35s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.35s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 h1, h2, h3, h4, h5, h6 {

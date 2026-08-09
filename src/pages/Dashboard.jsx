@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Bell, 
@@ -36,7 +37,8 @@ import {
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Sidebar } from '../components/Sidebar';
-import { useTheme } from '../context/ThemeContext';
+import { ThemeProvider, useTheme } from '../context/ThemeContext';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import AiAssistant from '../components/AiAssistant';
@@ -44,10 +46,15 @@ import { Community } from '../components/Community';
 import { QuranMapPage } from '../components/QuranMapPage';
 import { PostSessionDhikr } from '../components/PostSessionDhikr';
 import { AnalyticsView } from '../components/AnalyticsView';
+import { VisualProgressTracker } from '../components/VisualProgressTracker';
 import { QuranInteractiveView } from '../components/QuranInteractiveView';
 import { LearningStyleProfiler } from '../components/LearningStyleProfiler';
+import { MyPlanManager } from '../components/MyPlanManager';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
+import { NotificationCenter } from '../components/NotificationCenter';
+import { useNotifications } from '../context/NotificationContext';
 import { AdminPanel } from '../components/AdminPanel';
+
 
 // Hadiths on the virtues of the Quran
 const quranHadiths = [
@@ -58,9 +65,11 @@ const quranHadiths = [
 ];
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const { user, logout, deleteAccount, updateUserData } = useAuth();
   const { lang, setLang, t, isRTL } = useLanguage();
   const [activeTab, setActiveTab] = useState(user?.role === 'admin' ? 'admin-panel' : 'home');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
 
@@ -314,6 +323,9 @@ const Dashboard = () => {
                   </div>
                 </Card>
 
+                {/* Visual Progress Tracker Widget */}
+                <VisualProgressTracker />
+
               </div>
 
               {/* Right Column: AI Assistant Chat */}
@@ -361,34 +373,8 @@ const Dashboard = () => {
 
       case 'my-plan':
         return (
-          <Card style={{ padding: isMobile ? '20px 16px' : '32px' }}>
-            <h2 style={{ fontSize: '24px', marginBottom: '16px', color: 'var(--text-primary)' }}>📋 خطتك الشخصية للحفظ والمراجعة (الحصون الخمسة)</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', fontSize: '15px' }}>
-              نظام محكم يضمن ثبات السور وعدم النسيان عبر 5 حصون متكاملة:
-            </p>
-
-            {/* Learning Style Scientific Profiler */}
-            <div style={{ marginBottom: '36px' }}>
-              <LearningStyleProfiler />
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(5, 1fr)', gap: '16px' }}>
-              {[
-                { title: '1. القراءة المستمرة', desc: 'قراءة جزء يومياً للاستماع والاستحواذ', color: '#3B82F6' },
-                { title: '2. التحضير الأسبوعي', desc: 'قراءة السورة كاملة بتركيز وتدبر للمعاني', color: '#8B5CF6' },
-                { title: '3. التحضير القريب', desc: 'تحضير الصفحة قبل حفظها بـ 15 دقيقة', color: '#EC4899' },
-                { title: '4. الحفظ الجديد', desc: 'حفظ الوجه الجديد بإتقان وتأمل', color: '#10B981' },
-                { title: '5. المراجعة البعيدة', desc: 'مراجعة ما تم حفظه والقراءة به في الصلاة', color: '#F59E0B' },
-              ].map((f, i) => (
-                <div key={i} style={{ padding: '24px 16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `${f.color}15`, color: f.color, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                    <Shield size={24} />
-                  </div>
-                  <h4 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '8px' }}>{f.title}</h4>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
-                </div>
-              ))}
-            </div>
+          <Card style={{ padding: isMobile ? '16px' : '28px' }}>
+            <MyPlanManager />
           </Card>
         );
 
@@ -542,13 +528,10 @@ const Dashboard = () => {
               <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
             </button>
 
-            {/* Theme Toggle */}
-            <div className="flex-center" onClick={toggleTheme} style={{ width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }} title={isDark ? t('theme_light') : t('theme_dark')}>
-              {isDark ? <Sun size={20} color="var(--text-secondary)" /> : <Moon size={20} color="var(--text-secondary)" />}
-            </div>
-            <div className="flex-center" style={{ width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-              <Bell size={20} color="var(--text-secondary)" />
-            </div>
+            {/* Smooth Animated Theme Toggle Switch */}
+            <ThemeToggle variant="pill" size="medium" />
+            {/* Interactive Notification Center */}
+            <NotificationCenter />
             <div style={{ position: 'relative' }}>
               <img 
                 src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
@@ -577,6 +560,7 @@ const Dashboard = () => {
                     onClick={() => {
                       logout();
                       setShowProfileMenu(false);
+                      navigate('/');
                     }}
                     style={{
                       background: 'transparent',
@@ -596,10 +580,8 @@ const Dashboard = () => {
                   </button>
                   <button 
                     onClick={() => {
-                      if (window.confirm('هل أنت متأكد من رغبتك في حذف حسابك نهائياً؟ لا يمكن التراجع عن هذا الإجراء.')) {
-                        deleteAccount();
-                        setShowProfileMenu(false);
-                      }
+                      setShowProfileMenu(false);
+                      setShowDeleteConfirm(true);
                     }}
                     style={{
                       background: 'transparent',
@@ -623,6 +605,82 @@ const Dashboard = () => {
             </div>
           </div>
         </header>
+
+        {/* Custom Delete Account Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.7)',
+            backdropFilter: 'blur(4px)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px'
+          }}>
+            <div style={{
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '24px',
+              padding: '28px',
+              maxWidth: '440px',
+              width: '100%',
+              boxShadow: 'var(--shadow-soft)',
+              textAlign: 'center'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>⚠️</div>
+              <h3 style={{ margin: '0 0 10px 0', fontSize: '20px', color: 'var(--text-primary)' }}>
+                تأكيد حذف الحساب نهائياً
+              </h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px', lineHeight: 1.6 }}>
+                هل أنت متأكد من رغبتك في حذف حسابك؟ سيتم مسح كافة البيانات المسجلة والتقدم في الحفظ نهائياً، ولا يمكن التراجع عن هذا الإجراء.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--glass-border)',
+                    background: 'var(--bg-color)',
+                    color: 'var(--text-primary)',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  إلغاء
+                </button>
+                <button
+                  onClick={async () => {
+                    setShowDeleteConfirm(false);
+                    await deleteAccount();
+                    navigate('/');
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '12px',
+                    borderRadius: '12px',
+                    border: 'none',
+                    background: '#EF4444',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    boxShadow: '0 4px 14px rgba(239, 68, 68, 0.4)'
+                  }}
+                >
+                  نعم، احذف الحساب
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Dashboard Main Content View */}
         <main style={{ padding: isMobile ? '16px 12px 90px 12px' : '40px', flex: 1 }}>
@@ -689,7 +747,27 @@ const Dashboard = () => {
 
 const MindMapsView = () => {
   const [selectedSurah, setSelectedSurah] = useState('البقرة');
-  
+  const { notifyAndCelebrate } = useNotifications();
+
+  // Load completed mind map nodes from local storage
+  const [completedNodes, setCompletedNodes] = useState(() => {
+    try {
+      const saved = localStorage.getItem('ma7fath_completed_mindmap_nodes');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const saveCompletedNodes = (updated) => {
+    setCompletedNodes(updated);
+    try {
+      localStorage.setItem('ma7fath_completed_mindmap_nodes', JSON.stringify(updated));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const surahOptions = ['الفاتحة', 'البقرة', 'آل عمران', 'يوسف', 'الكهف'];
 
   const getSurahData = (surahName) => {
@@ -761,6 +839,42 @@ const MindMapsView = () => {
 
   const data = getSurahData(selectedSurah);
 
+  const handleToggleNode = (node) => {
+    const key = `${selectedSurah}_${node.id}`;
+    const currentVal = !!completedNodes[key];
+    const newVal = !currentVal;
+
+    const updated = { ...completedNodes, [key]: newVal };
+    saveCompletedNodes(updated);
+
+    if (newVal) {
+      const totalNodes = data?.nodes || [];
+      const completedSurahNodesCount = totalNodes.filter(n => !!updated[`${selectedSurah}_${n.id}`]).length;
+
+      if (completedSurahNodesCount === totalNodes.length) {
+        notifyAndCelebrate({
+          title: `🌟 إتقان الخريطة الذهنية لـ ${data.title}!`,
+          message: `مبارك! أتممت استيعاب وحفظ كافة المحاور البصرية الشجرية لـ ${data.title} بنجاح واقتدار!`,
+          type: 'mindmap',
+          xpBonus: 200,
+          badgeTitle: 'خبير الخرائط القرآنية'
+        });
+      } else {
+        notifyAndCelebrate({
+          title: `🗺️ إنجاز محور في الخريطة الذهنية!`,
+          message: `أتقنت واستوعبت محور "${node.title}" في ${data.title}!`,
+          type: 'mindmap',
+          xpBonus: 60,
+          badgeTitle: 'بطل الخرائط الذهنية'
+        });
+      }
+    }
+  };
+
+  const totalSurahNodes = data?.nodes?.length || 0;
+  const completedSurahNodes = data?.nodes?.filter(n => !!completedNodes[`${selectedSurah}_${n.id}`]).length || 0;
+  const progressPercent = totalSurahNodes ? Math.round((completedSurahNodes / totalSurahNodes) * 100) : 0;
+
   return (
     <Card style={{ padding: '32px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
@@ -803,59 +917,117 @@ const MindMapsView = () => {
           border: '1px solid var(--glass-border)',
           position: 'relative'
         }}>
-          {/* Surah title and axis */}
-          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+          {/* Surah title, axis & Progress Header */}
+          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
             <h3 style={{ fontSize: '22px', color: data.color, margin: '0 0 8px 0' }}>{data.title}</h3>
-            <p style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 'bold', maxWidth: '600px', margin: '0 auto', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 'bold', maxWidth: '600px', margin: '0 auto 16px', lineHeight: 1.6 }}>
               {data.axis}
             </p>
+
+            {/* Mindmap Completion Badge */}
+            <div style={{
+              maxWidth: '450px',
+              margin: '0 auto',
+              padding: '12px 20px',
+              borderRadius: '16px',
+              background: 'var(--bg-color)',
+              border: '1px solid var(--glass-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px'
+            }}>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+                استيعاب محاور السورة: {completedSurahNodes} من {totalSurahNodes} ({progressPercent}%)
+              </span>
+              <div style={{ width: '120px', height: '8px', background: 'var(--glass-border)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: `${progressPercent}%`, height: '100%', background: data.color, transition: 'width 0.3s ease' }} />
+              </div>
+            </div>
           </div>
 
           {/* Tree Flowchart Container */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', position: 'relative', maxWidth: '700px', margin: '0 auto' }}>
-            {data.nodes.map((node, index) => (
-              <div 
-                key={node.id} 
-                style={{
-                  display: 'flex',
-                  gap: '20px',
-                  alignItems: 'flex-start',
-                  position: 'relative',
-                  background: 'var(--bg-color)',
-                  padding: '20px',
-                  borderRadius: '16px',
-                  border: '1px solid var(--glass-border)',
-                  transition: 'all 0.25s ease',
-                  boxShadow: 'var(--shadow-soft)'
-                }}
-              >
-                {/* Vertical connector line */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                  <div style={{ 
-                    width: '36px', 
-                    height: '36px', 
-                    borderRadius: '50%', 
-                    background: data.color, 
-                    color: 'white', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    fontWeight: 'bold',
-                    fontSize: '15px'
-                  }}>
-                    {index + 1}
-                  </div>
-                  {index < data.nodes.length - 1 && (
-                    <div style={{ width: '3px', height: '42px', background: `linear-gradient(to bottom, ${data.color}30, transparent)` }} />
-                  )}
-                </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', maxWidth: '720px', margin: '0 auto' }}>
+            {data.nodes.map((node, index) => {
+              const nodeKey = `${selectedSurah}_${node.id}`;
+              const isNodeDone = !!completedNodes[nodeKey];
 
-                <div>
-                  <h4 style={{ margin: '0 0 6px 0', fontSize: '16px', color: 'var(--text-primary)' }}>{node.title}</h4>
-                  <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{node.desc}</p>
+              return (
+                <div 
+                  key={node.id} 
+                  style={{
+                    display: 'flex',
+                    gap: '20px',
+                    alignItems: 'flex-start',
+                    position: 'relative',
+                    background: isNodeDone ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)' : 'var(--bg-color)',
+                    padding: '20px',
+                    borderRadius: '16px',
+                    border: `1px solid ${isNodeDone ? 'var(--primary)' : 'var(--glass-border)'}`,
+                    transition: 'all 0.25s ease',
+                    boxShadow: 'var(--shadow-soft)'
+                  }}
+                >
+                  {/* Vertical connector line */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
+                    <div style={{ 
+                      width: '36px', 
+                      height: '36px', 
+                      borderRadius: '50%', 
+                      background: isNodeDone ? 'var(--primary)' : data.color, 
+                      color: 'white', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      fontWeight: 'bold',
+                      fontSize: '15px'
+                    }}>
+                      {isNodeDone ? <Check size={18} /> : index + 1}
+                    </div>
+                    {index < data.nodes.length - 1 && (
+                      <div style={{ width: '3px', height: '52px', background: `linear-gradient(to bottom, ${data.color}30, transparent)` }} />
+                    )}
+                  </div>
+
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
+                      <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>{node.title}</h4>
+                      <button
+                        onClick={() => handleToggleNode(node)}
+                        style={{
+                          padding: '6px 14px',
+                          borderRadius: '20px',
+                          border: `1px solid ${isNodeDone ? 'var(--primary)' : 'var(--glass-border)'}`,
+                          background: isNodeDone ? 'var(--primary-light)' : 'var(--bg-surface)',
+                          color: isNodeDone ? 'var(--primary)' : 'var(--text-secondary)',
+                          fontSize: '12px',
+                          fontWeight: 'bold',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {isNodeDone ? (
+                          <>
+                            <CheckCircle size={14} color="var(--primary)" />
+                            تم الحفظ والاستيعاب 🟢
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles size={14} />
+                            تحديد كـ مستوعب ومحفوظ
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{node.desc}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -963,31 +1135,12 @@ const SimilaritiesView = () => {
 
 const FiveFortressesView = ({ setActiveTab }) => {
   const { user, updateUserData } = useAuth();
+  const { notifyAndCelebrate } = useNotifications();
   const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
 
   const currentPage = (user?.memorizedPagesCount || 0) + 1;
   const currentSurah = getSurahNameForPage(currentPage);
   const currentJuz = getJuzForPage(currentPage);
-
-  const handleToggleFort = async (id) => {
-    const currentStatus = !!fortressesToday[id];
-    const newStatus = !currentStatus;
-    
-    const newFortressesToday = { ...fortressesToday, [id]: newStatus };
-    
-    let xpChange = newStatus ? 50 : -50;
-    let newXp = Math.max(0, (user?.xp || 100) + xpChange);
-    let newLevel = Math.floor(newXp / 500) + 1;
-    
-    updateUserData({
-      xp: newXp,
-      level: newLevel,
-      preferences: {
-        ...(user?.preferences || {}),
-        fortressesToday: newFortressesToday
-      }
-    });
-  };
 
   const fortressesData = [
     {
@@ -1032,6 +1185,49 @@ const FiveFortressesView = ({ setActiveTab }) => {
       actionLabel: 'تحديد كـ تم المراجعة والتلاوة 🤲'
     }
   ];
+
+  const handleToggleFort = async (id) => {
+    const currentStatus = !!fortressesToday[id];
+    const newStatus = !currentStatus;
+    
+    const newFortressesToday = { ...fortressesToday, [id]: newStatus };
+    
+    let xpChange = newStatus ? 50 : -50;
+    let newXp = Math.max(0, (user?.xp || 100) + xpChange);
+    let newLevel = Math.floor(newXp / 500) + 1;
+    
+    updateUserData({
+      xp: newXp,
+      level: newLevel,
+      preferences: {
+        ...(user?.preferences || {}),
+        fortressesToday: newFortressesToday
+      }
+    });
+
+    if (newStatus) {
+      const fort = fortressesData.find(f => f.id === id);
+      const doneCount = Object.values(newFortressesToday).filter(Boolean).length;
+
+      if (doneCount === 5) {
+        notifyAndCelebrate({
+          title: '🏆 مبارك! إنجاز كافة الحصون الخمسة اليومية!',
+          message: 'إنجاز استثنائي ومتقن! أتممت الورد اليومي والتحضير والحفظ والمراجعة كاملة لليوم!',
+          type: 'wird',
+          xpBonus: 200,
+          badgeTitle: 'فارس الحصون الخمسة'
+        });
+      } else {
+        notifyAndCelebrate({
+          title: `تم إنجاز ${fort?.title || 'الحصن اليومي'}! 🎯`,
+          message: `أكملت بنجاح: ${fort?.target || 'ورد اليوم'}!`,
+          type: 'wird',
+          xpBonus: 50,
+          badgeTitle: 'حارس القرآن'
+        });
+      }
+    }
+  };
 
   return (
     <Card style={{ padding: '32px' }}>

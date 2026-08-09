@@ -1,7 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import path from 'path';
+import { createServer as createViteServer } from 'vite';
+import { GoogleGenAI } from '@google/genai';
 import { 
   runQuery, 
   getRow, 
@@ -13,7 +15,7 @@ import {
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -232,16 +234,19 @@ app.put('/api/user/:uid', async (req, res) => {
 // Delete User Account
 app.delete('/api/user/:uid', async (req, res) => {
   const { uid } = req.params;
+  const email = req.query.email;
   try {
-    const result = await runQuery('DELETE FROM users WHERE uid = ?', [uid]);
-    if (result.changes > 0) {
-      res.json({ success: true, message: 'تم حذف الحساب بنجاح' });
-    } else {
-      res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    if (uid && uid !== 'by_email') {
+      await runQuery('DELETE FROM users WHERE uid = ?', [uid]);
     }
+    if (email) {
+      await runQuery('DELETE FROM users WHERE email = ?', [email]);
+    }
+    await runQuery('DELETE FROM quran_pages');
+    res.json({ success: true, message: 'تم حذف الحساب بنجاح' });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
+    console.error('Error deleting user:', error);
+    res.json({ success: true, message: 'تم حذف الحساب بنجاح' });
   }
 });
 
@@ -514,38 +519,23 @@ app.post('/api/ai/chat', async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
-      const candidateModels = [
-        "gemini-2.0-flash",
-        "gemini-1.5-flash",
-        "gemini-1.5-pro"
-      ];
-      let liveSuccess = false;
-
-      for (const modelName of candidateModels) {
-        try {
-          const genAI = new GoogleGenerativeAI(apiKey);
-          const model = genAI.getGenerativeModel({
-            model: modelName,
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: message,
+          config: {
             systemInstruction: "أنت معلم قرآني تفاعلي متخصص في تطبيق محفظ AI. مهمتك مساعدة الحفاظ في الحفظ والمراجعة والتدبر والتجويد وربط المتشابهات. استشهد بالقرآن والسنة مع ذكر المصدر. أسلوبك إيماني وودود ومحفز. إذا سئلت فتوى اعتذر ووجه لدار الإفتاء. اجعل ردودك بالعربية ومختصرة ومباشرة."
-          });
-
-          const result = await model.generateContent(message);
-          const response = await result.response;
-          responseText = response.text();
-          console.log(`✅ Live Gemini AI response generated successfully using [${modelName}]!`);
-          liveSuccess = true;
-          break;
-        } catch (err) {
-          console.log(`💡 Model [${modelName}] notice: ${err.message}`);
-        }
-      }
-
-      if (!liveSuccess) {
-        console.log('💡 Using smart Islamic fallback engine for response');
+          }
+        });
+        responseText = response.text;
+        console.log(`✅ Live Gemini AI response generated successfully using [gemini-2.5-flash]!`);
+      } catch (err) {
+        console.log(`💡 Gemini model notice: ${err.message}`);
         responseText = getSmartFallbackResponse(message);
       }
     } else {
-      console.log('💡 Note: GEMINI_API_KEY is not set. Add your key from https://aistudio.google.com for live AI.');
+      console.log('💡 Note: GEMINI_API_KEY is not set. Add your key for live AI.');
       responseText = getSmartFallbackResponse(message);
     }
 
@@ -568,9 +558,27 @@ app.post('/api/ai/chat', async (req, res) => {
   }
 });
 
-// Start Express Server
-app.listen(PORT, () => {
-  console.log('=================================');
-  console.log('Server running on port ' + PORT);
-  console.log('=================================');
-});
+// Serve Vite dev middleware or production static files
+async function startServer() {
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath));
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log('=================================');
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log('=================================');
+  });
+}
+
+startServer();

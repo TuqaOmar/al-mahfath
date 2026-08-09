@@ -6,6 +6,7 @@ import { Card } from '../components/ui/Card';
 import { Logo } from '../components/ui/Logo';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../context/ThemeContext';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { AuthModal } from '../components/AuthModal';
@@ -80,10 +81,8 @@ const LandingPage = () => {
               <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
             </button>
 
-            {/* Theme Toggle */}
-            <button onClick={toggleTheme} style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%' }}>
-              {isDark ? <Sun size={18} /> : <Moon size={18} />}
-            </button>
+            {/* Smooth Animated Theme Toggle Switch */}
+            <ThemeToggle variant="pill" size="small" />
 
             {user ? (
               <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -95,14 +94,9 @@ const LandingPage = () => {
                 </Button>
               </div>
             ) : (
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <Button variant="outline" onClick={() => openAuthModal('login')} style={{ padding: '8px 14px', borderRadius: '8px', border: '1px solid var(--glass-border)', fontSize: '13px' }}>
-                  {t('nav_login')}
-                </Button>
-                <Button variant="primary" onClick={() => openAuthModal('signup')} style={{ padding: '8px 14px', borderRadius: '8px', fontSize: '13px' }}>
-                  {t('nav_signup')}
-                </Button>
-              </div>
+              <Button variant="primary" onClick={() => openAuthModal('signup')} style={{ padding: '8px 16px', borderRadius: '8px', fontSize: '13px' }}>
+                {t('nav_login')} / {t('nav_signup')}
+              </Button>
             )}
           </div>
         </div>
@@ -148,27 +142,19 @@ const LandingPage = () => {
               
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                 {user ? (
-                  <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-                    <Button variant="primary" onClick={() => navigate('/dashboard')} icon={isRTL ? ArrowLeft : ArrowRight} style={{ padding: '14px 24px', fontSize: '15px', borderRadius: '12px' }}>
-                      {t('nav_dashboard')}
-                    </Button>
-                    <Button variant="outline" onClick={logout} style={{ padding: '14px 20px', fontSize: '15px', borderRadius: '12px', border: '1px solid #EF4444', color: '#EF4444' }}>
-                      {t('nav_logout')}
-                    </Button>
-                  </div>
+                  <Button variant="primary" onClick={() => navigate('/dashboard')} icon={isRTL ? ArrowLeft : ArrowRight} style={{ padding: '14px 24px', fontSize: '15px', borderRadius: '12px' }}>
+                    {t('nav_dashboard')}
+                  </Button>
                 ) : (
                   <>
                     <Button variant="primary" onClick={() => openAuthModal('signup')} icon={isRTL ? ArrowLeft : ArrowRight} style={{ padding: '14px 24px', fontSize: '15px', borderRadius: '12px' }}>
                       {t('hero_cta_primary')}
                     </Button>
-                    <Button variant="outline" onClick={() => openAuthModal('login')} style={{ padding: '14px 20px', fontSize: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
-                      {t('nav_login')}
+                    <Button variant="outline" onClick={handleTestAccountAction} style={{ padding: '14px 20px', fontSize: '15px', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                      {t('hero_cta_demo')}
                     </Button>
                   </>
                 )}
-                <Button variant="outline" onClick={handleTestAccountAction} style={{ padding: '14px 24px', fontSize: '15px', borderRadius: '12px', border: '1px solid var(--primary)', color: 'var(--primary)' }}>
-                  {t('hero_cta_demo')}
-                </Button>
               </div>
             </motion.div>
 

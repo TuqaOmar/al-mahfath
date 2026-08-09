@@ -1,0 +1,71 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account profile and memorization progress metrics",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "hasCompletedWizard": { "type": "boolean" },
+        "role": { "type": "string" },
+        "streak": { "type": "number" },
+        "xp": { "type": "number" },
+        "level": { "type": "number" },
+        "memorizedPagesCount": { "type": "number" },
+        "memoryScore": { "type": "number" },
+        "totalJuz": { "type": "number" },
+        "preferences": { "type": "string" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "QuranPage": {
+      "title": "Quran Page Status",
+      "description": "Memorization and review metrics for a specific Quran page",
+      "type": "object",
+      "properties": {
+        "pageNumber": { "type": "number" },
+        "status": { "type": "string" },
+        "score": { "type": "number" },
+        "surahName": { "type": "string" },
+        "juz": { "type": "number" },
+        "lastReviewed": { "type": "string" },
+        "errorsCount": { "type": "number" }
+      },
+      "required": ["pageNumber", "status"]
+    },
+    "CommunityPost": {
+      "title": "Community Post",
+      "description": "Discussion post in the Quran learner community",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "author": { "type": "string" },
+        "avatar": { "type": "string" },
+        "isAnonymous": { "type": "number" },
+        "category": { "type": "string" },
+        "timeAgo": { "type": "string" },
+        "content": { "type": "string" },
+        "likes": { "type": "number" },
+        "answers": { "type": "string" }
+      },
+      "required": ["author", "content"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection"
+    },
+    "/users/{userId}/quranPages/{pageId}": {
+      "schema": "QuranPage",
+      "description": "Quran pages memorization progress for a user"
+    },
+    "/community_posts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "Community posts collection"
+    }
+  }
+}
