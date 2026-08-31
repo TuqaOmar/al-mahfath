@@ -119,7 +119,73 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Demo Test Account Login
+// Dedicated Google SSO Auth Endpoint
+app.post('/api/auth/google', async (req, res) => {
+  const { email, name, photoURL, uid: clientUid } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'البريد الإلكتروني لحساب جوجل مطلوب' });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const userName = name || normalizedEmail.split('@')[0] || 'مستخدم Google';
+  const userPhoto = photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName)}`;
+
+  try {
+    let user = await getRow('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
+
+    if (user) {
+      delete user.passwordHash;
+      delete user.salt;
+      try {
+        user.preferences = JSON.parse(user.preferences);
+      } catch (e) {
+        user.preferences = {};
+      }
+      return res.json({ success: true, user });
+    }
+
+    // Create new Google user
+    const uid = clientUid || ('google_' + Math.random().toString(36).substr(2, 9));
+    const role = normalizedEmail === 'admin@ma7fath.ai' ? 'admin' : 'user';
+
+    await runQuery(`
+      INSERT INTO users (uid, name, email, photoURL, hasCompletedWizard, role, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, salt, passwordHash, preferences)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      uid,
+      userName,
+      normalizedEmail,
+      userPhoto,
+      0,
+      role,
+      1,
+      100,
+      1,
+      1,
+      90,
+      0.05,
+      'google_sso_salt',
+      'google_sso_hash',
+      '{}'
+    ]);
+
+    const newUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if (newUser) {
+      delete newUser.passwordHash;
+      delete newUser.salt;
+      try {
+        newUser.preferences = JSON.parse(newUser.preferences);
+      } catch (e) {
+        newUser.preferences = {};
+      }
+    }
+
+    res.json({ success: true, user: newUser });
+  } catch (error) {
+    console.error('Error during Google authentication:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء تسجيل الدخول بحساب جوجل' });
+  }
+});
 app.post('/api/auth/demo', async (req, res) => {
   try {
     const user = await getRow("SELECT * FROM users WHERE uid = 'demo_user_123'");
@@ -461,8 +527,9 @@ app.post('/api/quran/pages/:pageNumber/review', async (req, res) => {
 // --- AI CHATBOT ENDPOINT ---
 
 app.get('/api/ai/chat', async (req, res) => {
+  const userId = req.query.userId || 'default';
   try {
-    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100');
+    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100', [userId]);
     res.json({ success: true, history });
   } catch (error) {
     console.error(error);
@@ -471,45 +538,74 @@ app.get('/api/ai/chat', async (req, res) => {
 });
 
 app.delete('/api/ai/chat', async (req, res) => {
+  const userId = req.query.userId || req.body?.userId;
   try {
-    await runQuery('DELETE FROM ai_chat_history');
+    await runQuery('DELETE FROM ai_chat_history', [userId]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ success: false });
   }
 });
 
-function getSmartFallbackResponse(message) {
+function getSmartFallbackResponse(message, userContext = {}) {
   const msg = message.toLowerCase();
-  if (msg.includes('سلام') || msg.includes('مرحبا') || msg.includes('اهلاً') || msg.includes('اهلا')) {
-    return 'وعليكم السلام ورحمة الله وبركاته! أهلاً بك يا حافظ كتاب الله في تطبيق محفظ AI. كيف يمكنني مساعدتك اليوم في مراجعة وتثبيت حفظك؟';
-  } else if (msg.includes('فتوى') || msg.includes('حرام') || msg.includes('حلال') || msg.includes('حكم')) {
-    return 'أيها الأخ الحبيب، أنا معلم ذكي هنا لمساعدتك في الحفظ والتدبر. بالنسبة للأحكام الفقهية والفتاوى الشرعية، يرجى التكرم بالرجوع لدار الإفتاء أو العلماء الأجلاء.';
-  } else if (msg.includes('متشابه') || msg.includes('تشابه') || msg.includes('ربط')) {
-    return 'لتثبيت المتشابهات اللفظية: 1. اربط الآية بمعنى السورة العام، 2. اعتمد على مصاحف التوجيه والكتب المخصصة، 3. ضع علامة مميزة في مصحفك عند موضع التشابه.';
-  } else if (msg.includes('خطة') || msg.includes('جدول') || msg.includes('كيف') || msg.includes('طريقة')) {
-    return 'أفضل خطة هي نظام الحصون الخمسة:\n1. الورد اليومي (قراءة جزء نظرًا).\n2. التحضير الأسبوعي.\n3. التحضير القريب (قبل الحفظ بـ 15 دقيقة).\n4. الحفظ الجديد (صفحة أو وجه يومياً).\n5. المراجعة القريبة والبعيدة.';
-  } else if (msg.includes('تجويد') || msg.includes('مخارج') || msg.includes('إدغام') || msg.includes('مد')) {
-    return 'أحكام التجويد تُتعلم بالمشافهة على يد شيخ متقن. أبرز الأحكام: الإظهار، الإدغام، الإخفاء، الإقلاب. قال ابن الجزري: والأخذ بالتجويد حتمٌ لازم من لم يجوّد القرآن آثم.';
-  } else if (msg.includes('بقرة')) {
-    return 'سورة البقرة هي أطول سورة في القرآن الكريم (286 آية). تبدأ من الصفحة 2 وتنتهي عند الصفحة 49. تحتوي على آية الكرسي (255) - أعظم آية في القرآن.';
-  } else if (msg.includes('تاريخ') || msg.includes('اليوم') || msg.includes('وقت') || msg.includes('ساعة')) {
+  const page = userContext.currentPage || ((userContext.memorizedPagesCount || 0) + 1);
+  const surah = userContext.currentSurah || 'البقرة';
+  const juz = userContext.currentJuz || Math.min(30, Math.max(1, Math.ceil(page / 20)));
+  const nearReviewStart = Math.max(1, page - 20);
+  const nearReviewEnd = Math.max(1, page - 1);
+  const nextNightPrepPage = page + 1;
+
+  if (/سلام|مرحب|أهل|اهل|هلا|صباح|مساء/.test(msg)) {
+    return `وعليكم السلام ورحمة الله وبركاته! 🌿 أهلاً بك يا حافظ كتاب الله (${userContext.name || 'الحبيب'}). أنت الآن في **الصفحة ${page} (سورة ${surah} - الجزء ${juz})**. كيف أساعدك اليوم في خطتك أو مراجعتك أو تدبر الآيات؟`;
+  } else if (/خطة|جدول|حصون|خمسة|مراجعة|ايش اراجع|شو اراجع|وين وصلت|اين وصلت|متى اراجع|الحصون الخمسة/.test(msg)) {
+    return `🏰 **خطتك اليومية الدقيقة بنظام الحصون الخمسة (بناءً على موقعك الحالي):**\n\n` +
+      `📍 **موقعك الحالي:** الصفحة **${page}** من سورة **${surah}** (الجزء ${juz}).\n` +
+      `📊 **الصفحات المحفوظة:** ${userContext.memorizedPagesCount || 0} صفحة.\n\n` +
+      `---\n\n` +
+      `1️⃣ **الحصن الأول (قراءة الاستماع والورد نظراً):**\n` +
+      `• **المطلوب اليوم:** قراءة **الجزء ${juz}** كاملاً (الصفحات ${(juz - 1) * 20 + 1} إلى ${juz * 20}) نظراً بالحدر في 20 دقيقة.\n` +
+      `• **الهدف:** شحن الذاكرة البصرية وتثبيت أماكن الآيات.\n\n` +
+      `2️⃣ **الحصن الثاني (التحضير الثلاثي):**\n` +
+      `• **التحضير الأسبوعي:** سماع سورة **${surah}** كاملة 3 مرات مع تدبر مقاصدها.\n` +
+      `• **التحضير الليلي (الليلة قبل النوم):** تلاوة **الصفحة ${nextNightPrepPage}** من 5 إلى 10 مرات وسماعها.\n` +
+      `• **التحضير القريب (قبل الحفظ بـ 15 دقيقة):** تلاوة **الصفحة ${page}** 15 مرة لتصفية الذهن.\n\n` +
+      `3️⃣ **الحصن الثالث (الحفظ الجديد الفعلي):**\n` +
+      `• **المطلوب اليوم:** حفظ **الصفحة ${page}** من سورة **${surah}**.\n` +
+      `• **طريقة الإتقان:** تكرار كل آية 20 مرة، وكل مقطع 20 مرة، وسرد الصفحة كاملة غيباً 40 مرة حتى تكون كالفاتحة.\n\n` +
+      `4️⃣ **الحصن الرابع (المراجعة القريبة اليومية):**\n` +
+      `• **المطلوب اليوم:** مراجعة غيباً وسرداً بالحدر للصفحات من **${nearReviewStart} إلى ${nearReviewEnd}** (آخر 20 صفحة تم حفظها) في 20 دقيقة.\n\n` +
+      `5️⃣ **الحصن الخامس (المراجعة البعيدة والمعاهدة في الصلاة):**\n` +
+      `• **المطلوب اليوم:** مراجعة جزء من قديم المحفوظ وتلاوة ما حفظته في ركعات السنن، الوتر، وقيام الليل.\n\n` +
+      `✨ *القاعدة الذهبية لد. سعيد حمزة: "من قرأ القرآن في صلاته ثَبَت، ومن قرأه في غير صلاته كَثُر ثوابه وتفلت حفظه".*`;
+  } else if (/فتوى|حرام|حلال|حكم شرعي|طلاق|ميراث/.test(msg)) {
+    return 'أيها الأخ الحبيب، أنا معلم ذكي متخصص في **الحفظ والمراجعة والتدبر والتجويد**. بالنسبة للأحكام الفقهية والفتاوى الشرعية، يرجى التكرم بالرجوع للجهات الإفتائية الرسمية كدار الإفتاء أو العلماء الأجلاء.';
+  } else if (/متشابه|تشابه|ربط|تثبيت/.test(msg)) {
+    return '🌿 **قواعد ذهبية لضبط المتشابهات القرآنية:**\n\n1. **الربط بالسياق والمعنى العام للسورة:** فهم المعنى يزيل 90% من اللبس.\n2. **العناية بالحرف المشترك:** مثل ربط جملة بالحرف الأول من اسم السورة (قاعدة الحرف والرمز).\n3. **المراجعة بالسرد بصوت مرتفع:** يقوي الذاكرة السمعية والنطقية.\n4. **استخدام مصاحف التوجيه والتقسيم الموضوعي.**';
+  } else if (/تجويد|مخارج|إدغام|ادغام|إخفاء|اخفاء|قلقلة|مد|غنة/.test(msg)) {
+    return '✨ **أهم أصول أحكام التجويد:**\n\n- **النون الساكنة والتنوين:** الإظهار الحلقي (أ، هـ، ع، ح، غ، خ)، الإدغام بغنة وبغير غنة (يرملون)، الإقلاب (ب)، الإخفاء الحقيقي (بقية الحروف).\n- **المدود:** المد الطبيعي (حركتان)، المد المتصل والمنفصل (4-5 حركات)، المد اللازم (6 حركات).\n- **الميم الساكنة:** الإخفاء الشفوي (ب)، الإدغام الشفوي (م)، الإظهار الشفوي (باقي الحروف).\n\n💡 نصيحة: استمع للقراء المتقنين كالحصري والمنشاوي للمحاكاة الصحيحة.';
+  } else if (/بقرة|البقرة/.test(msg)) {
+    return 'سورة البقرة هي فسطاط القرآن وأطول سوره (286 آية، من ص 2 إلى ص 49). قال النبي ﷺ: **"اقْرَءُوا سُورَةَ الْبَقَرَةِ فَإِنَّ أَخْذَهَا بَرَكَةٌ وَتَرْكَهَا حَسْرَةٌ وَلَا تَسْتَطِيعُهَا الْبَطَلَةُ"**. تحتوي على آية الكرسي وآيات أحكام الصيام والإنفاق والدين.';
+  } else if (/كهف|الكهف/.test(msg)) {
+    return 'سورة الكهف (110 آيات، الصفحات 293-304). سورة مكية تحمي قارئها من فتنة المسيح الدجال وتضيء له نورا ما بين الجمعتين. تدور حول 4 فتن كبرى: فتنة الدين (الفتية)، المال (صاحب الجنتين)، العلم (موسى والخضر)، والسلطة (ذو القرنين).';
+  } else if (/تاريخ|اليوم|وقت|ساعة/.test(msg)) {
     const todayStr = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    return `تاريخ اليوم هو: ${todayStr}. 🌿 وفقك الله في وردك ومراجعتك لهذا اليوم!`;
-  } else if (msg.includes('تشجيع') || msg.includes('محفزة') || msg.includes('همة')) {
-    return 'بارك الله فيك! استمر في مسيرتك مع كتاب الله. قال ﷺ: خيركم من تعلّم القرآن وعلّمه. أنت تسير في طريق النور!';
+    return `📅 **تاريخ اليوم:** ${todayStr}.\n\nجعله الله يوماً مباركاً مليئاً بالذكر وإتقان الورد القرآني! 🌿`;
+  } else if (/تشجيع|محفزة|همة|تعبت|صعب|نسيت/.test(msg)) {
+    return '💚 **بشارة لك يا حافظ القرآن:**\n\nقال رسول الله ﷺ: **"الذي يقرأ القرآن وهو ماهر به مع السفرة الكرام البررة، والذي يقرأ القرآن ويتتعتع فيه وهو عليه شاق له أجران"** [متفق عليه].\n\nلا تحزن إن نسيت، فكل تكرار لك هو حسنات مضاعفة وأجر عظيم عند الله!';
   } else {
     const templates = [
-      'بارك الله فيك! كيف يمكنني مساعدتك في رحلة الحفظ؟ سواء أردت خطة أو مساعدة في المراجعة أو التدبر.',
-      'أهلاً! تفضل. يمكنني مساعدتك في المتشابهات والمراجعة والخطط المخصصة.',
-      'وفقك الله في رحلة حفظ القرآن. ما الذي تحتاج مساعدة فيه؟'
+      `أهلاً بك يا حافظ القرآن! أنت في **الصفحة ${page} (سورة ${surah})**. أنا هنا لمساعدتك في أي سؤال يخص خطة الحصون الخمسة، مراجعة المتشابهات، أحكام التجويد، أو تدبر الآيات. ما الذي تود السؤال عنه؟`,
+      `بارك الله في همتك! يمكنك سؤالي عن جدول الحصون الخمسة لصفحتك الحالية (${page})، أو نصائح التثبيت، معاني الآيات، أو أوراد اليوم. تفضل بما في خاطرك.`
     ];
     return templates[Math.floor(Math.random() * templates.length)];
   }
 }
 
 app.post('/api/ai/chat', async (req, res) => {
-  const { message } = req.body;
+  const { message, userId, userContext } = req.body;
+  const targetUser = userId || 'default';
+  const uCtx = userContext || {};
   if (!message || !message.trim()) {
     return res.status(400).json({ success: false, message: 'الرسالة فارغة' });
   }
@@ -518,41 +614,60 @@ app.post('/api/ai/chat', async (req, res) => {
     let responseText = '';
     const apiKey = process.env.GEMINI_API_KEY;
 
+    const userStatePrompt = uCtx.currentPage ? `
+[بيانات المستخدم الحالية]:
+- الاسم: ${uCtx.name || 'المستخدم'}
+- الصفحة الحالية للحفظ: ${uCtx.currentPage}
+- السورة الحالية: ${uCtx.currentSurah || 'البقرة'}
+- الجزء الحالي: ${uCtx.currentJuz || 1}
+- عدد الصفحات المحفوظة: ${uCtx.memorizedPagesCount || 0}
+- الحصون المنجزة اليوم: ${JSON.stringify(uCtx.fortressesToday || {})}
+- الهدف اليومي المختار: ${uCtx.dailyTarget || 'صفحة واحدة'}
+` : '';
+
     if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
       try {
-        const ai = new GoogleGenAI({ apiKey });
-        const response = await ai.models.generateContent({
-          model: 'gemini-2.5-flash',
-          contents: message,
-          config: {
-            systemInstruction: "أنت معلم قرآني تفاعلي متخصص في تطبيق محفظ AI. مهمتك مساعدة الحفاظ في الحفظ والمراجعة والتدبر والتجويد وربط المتشابهات. استشهد بالقرآن والسنة مع ذكر المصدر. أسلوبك إيماني وودود ومحفز. إذا سئلت فتوى اعتذر ووجه لدار الإفتاء. اجعل ردودك بالعربية ومختصرة ومباشرة."
+        const ai = new GoogleGenAI({
+          apiKey,
+          httpOptions: {
+            headers: { 'User-Agent': 'aistudio-build' }
           }
         });
-        responseText = response.text;
-        console.log(`✅ Live Gemini AI response generated successfully using [gemini-2.5-flash]!`);
+        const response = await ai.models.generateContent({
+          model: 'gemini-3.7-flash',
+          contents: `${userStatePrompt}\nسؤال أو طلب المستخدم: ${message}`,
+          config: {
+            systemInstruction: "أنت معلم ومساعد قرآني خبير ومتقن في تطبيق محفظ AI، متخصص في منهجية (الحصون الخمسة) للشيخ د. سعيد أبو العلا حمزة. مهمتك إرشاد الحافظ وتوليد خطط دقيقة ومحكمة بناءً على بياناته ومدخلاته الحالية (أين وصل بالضبط في المصحف، ما هي الصفحة والسورة والآيات، وما هي أوراد الحصون الخمسة المحددة لليوم بالتفصيل: 1- قراءة الاستماع نظراً بالحدر 20 دقيقة، 2- التحضير الثلاثي الأسبوعي والليلي والقريب، 3- الحفظ الفعلي بالتكرار 20x-40x، 4- مراجعة القريب لآخر 20 صفحة بالحدر 20 دقيقة، 5- مراجعة البعيد والصلاة به). نسق إجاباتك بالعربية الفصحى مع التنسيق الجميل والرموز التعبيرية الهادئة والمشجعة."
+          }
+        });
+        responseText = response.text || '';
+        console.log(`✅ Live Gemini AI response generated successfully using [gemini-3.7-flash]!`);
       } catch (err) {
         console.log(`💡 Gemini model notice: ${err.message}`);
-        responseText = getSmartFallbackResponse(message);
+        responseText = getSmartFallbackResponse(message, uCtx);
       }
     } else {
-      console.log('💡 Note: GEMINI_API_KEY is not set. Add your key for live AI.');
-      responseText = getSmartFallbackResponse(message);
+      responseText = getSmartFallbackResponse(message, uCtx);
     }
 
-    await runQuery('INSERT INTO ai_chat_history (sender, text) VALUES (?, ?)', ['user', message]);
-    await runQuery('INSERT INTO ai_chat_history (sender, text) VALUES (?, ?)', ['ai', responseText]);
+    if (!responseText || !responseText.trim()) {
+      responseText = getSmartFallbackResponse(message, uCtx);
+    }
 
-    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100');
+    await runQuery('INSERT INTO ai_chat_history (sender, text, userId) VALUES (?, ?, ?)', ['user', message, targetUser]);
+    await runQuery('INSERT INTO ai_chat_history (sender, text, userId) VALUES (?, ?, ?)', ['ai', responseText, targetUser]);
+
+    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100', [targetUser]);
     res.json({ success: true, reply: responseText, history });
   } catch (e) {
     console.error('AI Chat error:', e);
-    const fallbackText = getSmartFallbackResponse(message);
+    const fallbackText = getSmartFallbackResponse(message, uCtx);
     res.json({
       success: true,
       reply: fallbackText,
       history: [
-        { id: Date.now(), sender: 'user', text: message },
-        { id: Date.now() + 1, sender: 'ai', text: fallbackText }
+        { id: Date.now(), sender: 'user', text: message, userId: targetUser },
+        { id: Date.now() + 1, sender: 'ai', text: fallbackText, userId: targetUser }
       ]
     });
   }

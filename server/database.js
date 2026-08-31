@@ -411,14 +411,21 @@ export async function runQuery(sql, params = []) {
   }
 
   if (upper.startsWith('INSERT INTO AI_CHAT_HISTORY')) {
-    const [sender, text] = params;
+    const [sender, text, userId] = params;
     const newId = Date.now() + Math.floor(Math.random() * 1000);
-    dbState.ai_chat_history.push({ id: newId, sender, text, timestamp: Math.floor(Date.now() / 1000) });
+    dbState.ai_chat_history.push({ id: newId, sender, text, userId: userId || 'default', timestamp: Math.floor(Date.now() / 1000) });
     saveDb();
     return { lastID: newId, changes: 1 };
   }
 
   if (upper.startsWith('DELETE FROM AI_CHAT_HISTORY')) {
+    const uid = params[0];
+    if (uid) {
+      const lenBefore = dbState.ai_chat_history.length;
+      dbState.ai_chat_history = dbState.ai_chat_history.filter(h => h.userId !== uid);
+      saveDb();
+      return { changes: lenBefore - dbState.ai_chat_history.length };
+    }
     dbState.ai_chat_history = [];
     saveDb();
     return { changes: 1 };
@@ -488,7 +495,10 @@ export async function allRows(sql, params = []) {
   }
 
   if (upper.includes('FROM AI_CHAT_HISTORY')) {
-    const history = dbState.ai_chat_history.map(h => ({ ...h }));
+    let history = dbState.ai_chat_history.map(h => ({ ...h }));
+    if (params && params[0]) {
+      history = history.filter(h => h.userId === params[0] || !h.userId || h.userId === 'default');
+    }
     if (upper.includes('ORDER BY ID ASC')) {
       history.sort((a, b) => (a.id || 0) - (b.id || 0));
     }

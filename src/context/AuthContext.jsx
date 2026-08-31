@@ -154,16 +154,21 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Google Login helper
-  const loginWithGoogle = async (providedEmail = null, providedName = null) => {
+  const loginWithGoogle = async (providedEmail = null, providedName = null, providedPhoto = null) => {
     setLoading(true);
-    const googleEmail = providedEmail || 'google_user@ma7fath.ai';
-    const googleName = providedName || (providedEmail ? providedEmail.split('@')[0] : 'مستخدم جوجل المحترَم');
-    
+    const googleEmail = (providedEmail || '').trim().toLowerCase();
+    const googleName = (providedName || '').trim() || (googleEmail ? googleEmail.split('@')[0] : 'مستخدم Google');
+    const googlePhoto = providedPhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(googleName)}`;
+
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/api/auth/google', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: googleEmail })
+        body: JSON.stringify({
+          email: googleEmail,
+          name: googleName,
+          photoURL: googlePhoto
+        })
       });
       const data = await res.json();
       if (res.ok && data.success && data.user) {
@@ -176,28 +181,16 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
         return { success: true, user: normalizedUser };
       } else {
-        // Create google account if not exists
-        const signRes = await signup(googleName, googleEmail, 'google_sso_pass_123');
-        if (signRes.success && signRes.user) {
-          const updatedGoogleUser = {
-            ...signRes.user,
-            hasCompletedWizard: false
-          };
-          localStorage.setItem('ma7fath_user', JSON.stringify(updatedGoogleUser));
-          setUser(updatedGoogleUser);
-          setLoading(false);
-          return { success: true, user: updatedGoogleUser };
-        }
         setLoading(false);
-        return signRes;
+        return { success: false, message: data.message || 'فشل تسجيل الدخول بحساب جوجل' };
       }
     } catch (e) {
       console.log('Backend Google login failed, using local Google auth fallback:', e);
       const googleUser = {
-        uid: providedEmail ? `google_${Date.now()}` : `google_user_${Date.now()}`,
+        uid: googleEmail ? `google_${Date.now()}` : `google_user_${Date.now()}`,
         name: googleName,
         email: googleEmail,
-        photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${googleName}`,
+        photoURL: googlePhoto,
         hasCompletedWizard: false,
         role: 'user',
         streak: 1,

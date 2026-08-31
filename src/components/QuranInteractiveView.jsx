@@ -10,9 +10,12 @@ import {
   CheckCircle2, 
   Sparkles,
   BookOpen,
-  Infinity
+  Infinity,
+  Bookmark,
+  Star
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { useAuth } from '../context/AuthContext';
 import { AudioWaveVisualizer } from './AudioWaveVisualizer';
 
 const recitersList = [
@@ -26,8 +29,30 @@ const recitersList = [
 
 export const QuranInteractiveView = () => {
   const { t, isRTL } = useLanguage();
+  const { user, updateUserData } = useAuth();
   const [selectedReciter, setSelectedReciter] = useState('ar.alafasy');
   const [pageNumber, setPageNumber] = useState(2); // Default to Page 2 (Start of Al-Baqarah)
+
+  const favorites = user?.favorites || [];
+  const isFavorited = favorites.some(f => f.type === 'page' && f.id === pageNumber);
+
+  const toggleFavoritePage = () => {
+    let updated;
+    if (isFavorited) {
+      updated = favorites.filter(f => !(f.type === 'page' && f.id === pageNumber));
+    } else {
+      updated = [
+        ...favorites,
+        {
+          type: 'page',
+          id: pageNumber,
+          title: `الصفحة ${pageNumber} (${surahName || 'سورة الشريفة'})`,
+          addedAt: new Date().toLocaleDateString('ar-EG')
+        }
+      ];
+    }
+    updateUserData({ favorites: updated });
+  };
   const [ayahs, setAyahs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [surahName, setSurahName] = useState('البقرة');
@@ -238,30 +263,52 @@ export const QuranInteractiveView = () => {
           </div>
           <div>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>رقم الصفحة للورد (1-604):</span>
-            <input
-              type="number"
-              min="1"
-              max="604"
-              value={pageNumber}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                if (val >= 1 && val <= 604) setPageNumber(val);
-              }}
-              style={{
-                display: 'block',
-                marginTop: '2px',
-                padding: '4px 8px',
-                borderRadius: '8px',
-                border: '1px solid var(--glass-border)',
-                background: 'var(--bg-color)',
-                color: 'var(--text-primary)',
-                fontWeight: 'bold',
-                fontSize: '14px',
-                width: '80px',
-                outline: 'none',
-                fontFamily: 'var(--font-body)'
-              }}
-            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+              <input
+                type="number"
+                min="1"
+                max="604"
+                value={pageNumber}
+                onChange={(e) => {
+                  const val = Number(e.target.value);
+                  if (val >= 1 && val <= 604) setPageNumber(val);
+                }}
+                style={{
+                  padding: '4px 8px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'var(--bg-color)',
+                  color: 'var(--text-primary)',
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  width: '80px',
+                  outline: 'none',
+                  fontFamily: 'var(--font-body)'
+                }}
+              />
+              <button
+                type="button"
+                onClick={toggleFavoritePage}
+                title={isFavorited ? 'إزالة الصفحة من المفضلة' : 'حفظ الصفحة في المفضلة'}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '6px 10px',
+                  borderRadius: '10px',
+                  border: `1px solid ${isFavorited ? '#F59E0B' : 'var(--glass-border)'}`,
+                  background: isFavorited ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
+                  color: isFavorited ? '#D97706' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <Star size={16} fill={isFavorited ? '#F59E0B' : 'none'} color={isFavorited ? '#F59E0B' : 'currentColor'} />
+                {isFavorited ? 'في المفضلة' : 'أضف للمفضلة'}
+              </button>
+            </div>
           </div>
         </div>
 

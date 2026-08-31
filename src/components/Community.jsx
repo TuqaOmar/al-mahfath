@@ -11,13 +11,25 @@ import {
   Flame, 
   Tag, 
   ShieldCheck,
-  CheckCircle2
+  CheckCircle2,
+  Compass,
+  Shield,
+  BookOpen,
+  Share2,
+  ArrowRight
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 
-export const Community = () => {
+export const Community = ({ setActiveTab }) => {
   const [activeSubTab, setActiveSubTab] = useState('posts'); // 'posts' | 'leaderboard'
   const { user } = useAuth();
+
+  const currentPage = (user?.memorizedPagesCount || 0) + 1;
+  const currentSurah = getSurahNameForPage(currentPage);
+  const currentJuz = getJuzForPage(currentPage);
+  const fortressesToday = user?.preferences?.fortressesToday || {};
+  const doneFortressesCount = Object.values(fortressesToday).filter(Boolean).length;
 
   // New Post Form State
   const [postText, setPostText] = useState('');
@@ -210,9 +222,150 @@ export const Community = () => {
     setCommentInputs({ ...commentInputs, [postId]: '' });
   };
 
+  const handleShareMilestone = async () => {
+    const defaultShareText = `🌿 بفضل الله وتوفيقه، وصلت في خطة الحفظ إلى الصفحة ${currentPage} من سورة ${currentSurah} (الجزء ${currentJuz}).\n🏰 أنجزت اليوم ${doneFortressesCount} من أصل 5 حصون في نظام الحصون الخمسة! نسأل الله العظيم الثبات والبركة لجميع الإخوة الحفاظ 🤲✨`;
+    
+    const postPayload = {
+      author: user?.name || 'أحمد محمد',
+      avatar: user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
+      isAnonymous: false,
+      category: 'نصيحة',
+      content: defaultShareText
+    };
+
+    try {
+      const res = await fetch('/api/community/posts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(postPayload)
+      });
+      const data = await res.json();
+      if (data.success && data.posts) {
+        setPosts(data.posts);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
+      {/* 🌟 User Milestone & Five-Fortresses Status Banner */}
+      <div style={{
+        padding: '24px',
+        borderRadius: '24px',
+        background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
+        color: 'white',
+        border: '1px solid rgba(16, 185, 129, 0.3)',
+        boxShadow: '0 10px 28px rgba(0,0,0,0.15)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'rgba(16, 185, 129, 0.25)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Compass size={28} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', color: 'white' }}>
+                  أين وصلت في خطتك القرآنية؟ 📍
+                </h2>
+                <span style={{ fontSize: '12px', background: 'rgba(52, 211, 153, 0.2)', color: '#34D399', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
+                  محدّث تلقائياً
+                </span>
+              </div>
+              <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#94A3B8' }}>
+                أنت الآن عند: <strong style={{ color: '#34D399' }}>الصفحة {currentPage}</strong> من <strong style={{ color: '#34D399' }}>سورة {currentSurah}</strong> (الجزء {currentJuz}) — أتممت {user?.memorizedPagesCount || 0} صفحة حفظاً متقناً.
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={handleShareMilestone}
+              style={{
+                padding: '10px 18px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                color: 'white',
+                border: 'none',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              }}
+            >
+              <Share2 size={16} />
+              مشاركة إنجازي في المجتمع 🚀
+            </button>
+
+            {setActiveTab && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('five-fortresses')}
+                style={{
+                  padding: '10px 16px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  color: 'white',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  fontWeight: 'bold',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <Shield size={16} />
+                خطة الحصون الخمسة
+                <ArrowRight size={14} />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Mini 3-point Fortress Progress Grid */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+          gap: '12px',
+          paddingTop: '12px',
+          borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+        }}>
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <BookOpen size={18} color="#38BDF8" />
+            <div style={{ fontSize: '12.5px' }}>
+              <span style={{ color: '#94A3B8', display: 'block' }}>ورد قراءة اليوم (نظراً):</span>
+              <strong style={{ color: 'white' }}>الجزء {currentJuz} بالحدر</strong>
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Shield size={18} color="#34D399" />
+            <div style={{ fontSize: '12.5px' }}>
+              <span style={{ color: '#94A3B8', display: 'block' }}>إنجاز الحصون الخمسة اليوم:</span>
+              <strong style={{ color: '#34D399' }}>{doneFortressesCount} من أصل 5 مكتملة</strong>
+            </div>
+          </div>
+
+          <div style={{ background: 'rgba(255,255,255,0.05)', padding: '10px 14px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Flame size={18} color="#FBBF24" />
+            <div style={{ fontSize: '12.5px' }}>
+              <span style={{ color: '#94A3B8', display: 'block' }}>المراجعة القريبة اليومية:</span>
+              <strong style={{ color: 'white' }}>ص {Math.max(1, currentPage - 20)} إلى {Math.max(1, currentPage - 1)}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Sub Tab Switcher */}
       <div style={{ 
         display: 'flex', 

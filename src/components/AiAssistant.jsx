@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, ShieldAlert, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Loader2, ShieldAlert, Trash2, Sparkles, Compass, Shield, BookOpen, Layers } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 
 // Simple markdown renderer for bold and line breaks
 const renderText = (text) => {
@@ -16,31 +18,47 @@ const renderText = (text) => {
 
 const WELCOME_MSG = {
   id: 'welcome',
-  text: 'السلام عليكم ورحمة الله وبركاته! 🌿\n\nأنا معلمك الذكي في "محفظ AI". يمكنني مساعدتك في:\n\n**📖 حفظ القرآن ومراجعته** — خطط ونصائح علمية\n**🔗 المتشابهات اللفظية** — ربط الآيات المتشابهة\n**📚 أحكام التجويد** — شرح المخارج والأحكام\n**🌟 فضائل السور** — من القرآن والسنة الصحيحة\n**💊 علاج النسيان** — أسباب وحلول التثبيت\n\nاسألني عن أي شيء يتعلق بحفظ كتاب الله!',
+  text: 'السلام عليكم ورحمة الله وبركاته! 🌿\n\nأنا معلمك الذكي في "محفظ AI". يمكنني مساعدتك في:\n\n**🏰 خطة الحصون الخمسة اليومية** — تحديد أورادك وأوقاتها بالضبط\n**📖 حفظ القرآن وتثبيته** — طريقة التكرار والتحضير الثلاثي\n**🔗 المتشابهات اللفظية** — ربط الآيات المتشابهة\n**📚 أحكام التجويد والوقف** — شرح المخارج والأحكام\n\nاضغط على أي زر سريع بالأسفل أو اسألني مباشرة!',
   sender: 'ai',
 };
 
-const AiAssistant = () => {
+export const AiAssistant = () => {
+  const { user } = useAuth();
+  const userId = user?.uid || 'guest';
   const [messages, setMessages] = useState([WELCOME_MSG]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Fetch AI chat history from backend on mount
+  const currentPage = (user?.memorizedPagesCount || 0) + 1;
+  const currentSurah = getSurahNameForPage(currentPage);
+  const currentJuz = getJuzForPage(currentPage);
+
+  const userContext = {
+    name: user?.name || 'حافظ القرآن',
+    currentPage,
+    currentSurah,
+    currentJuz,
+    memorizedPagesCount: user?.memorizedPagesCount || 0,
+    fortressesToday: user?.preferences?.fortressesToday || {},
+    dailyTarget: user?.preferences?.dailyTarget || 'صفحة واحدة يومياً'
+  };
+
+  // Fetch AI chat history from backend on mount or user change
   useEffect(() => {
-    fetch('/api/ai/chat')
+    fetch(`/api/ai/chat?userId=${encodeURIComponent(userId)}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.history && data.history.length > 0) {
           setMessages(data.history);
+        } else {
+          setMessages([WELCOME_MSG]);
         }
-        // If no history, keep welcome message
       })
       .catch(e => {
         console.log('Backend not available, using local mode:', e.message);
-        // Keep welcome message - will work in smart fallback mode
       });
-  }, []);
+  }, [userId]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -50,11 +68,11 @@ const AiAssistant = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = async () => {
-    if (!input.trim() || isTyping) return;
+  const handleSend = async (customText = null) => {
+    const userText = (customText || input).trim();
+    if (!userText || isTyping) return;
 
-    const userText = input.trim();
-    const userMsg = { id: Date.now(), text: userText, sender: 'user' };
+    const userMsg = { id: Date.now(), text: userText, sender: 'user', userId };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
@@ -63,23 +81,22 @@ const AiAssistant = () => {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userText })
+        body: JSON.stringify({ message: userText, userId, userContext })
       });
       const data = await res.json();
       if (data.success && data.history) {
         setMessages(data.history);
       } else if (data.success && data.reply) {
-        setMessages(prev => [...prev, { id: Date.now() + 1, text: data.reply, sender: 'ai' }]);
+        setMessages(prev => [...prev, { id: Date.now() + 1, text: data.reply, sender: 'ai', userId }]);
       }
     } catch (e) {
-      // Local smart fallback when server is offline
-      console.log('Server offline, using local Islamic knowledge engine');
+      console.log('Server offline, using fallback');
       setTimeout(() => {
-        const aiResponse = getLocalFallback(userText);
         setMessages(prev => [...prev, {
           id: Date.now() + 1,
-          text: aiResponse,
-          sender: 'ai'
+          text: `أهلاً بك يا ${user?.name || 'حبيب'}! أنت الآن في الصفحة ${currentPage} من سورة ${currentSurah} (الجزء ${currentJuz}). أنصحك اليوم بالتركيز على قراءة الجزء ${currentJuz} نظراً، والتحضير الليلي لصفحة ${currentPage + 1} ومراجعة الصفحات من ${Math.max(1, currentPage - 20)} إلى ${Math.max(1, currentPage - 1)}.`,
+          sender: 'ai',
+          userId
         }]);
       }, 800);
     } finally {
@@ -89,128 +106,208 @@ const AiAssistant = () => {
 
   const handleClearChat = async () => {
     try {
-      await fetch('/api/ai/chat', { method: 'DELETE' });
+      await fetch(`/api/ai/chat?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' });
     } catch (e) {
       console.log('Could not clear server history');
     }
     setMessages([WELCOME_MSG]);
   };
 
-  // Local fallback with basic Islamic knowledge
-  const getLocalFallback = (msg) => {
-    const m = msg.toLowerCase();
-    if (/سلام|مرحب|أهل|هلا/.test(m)) {
-      return 'وعليكم السلام ورحمة الله وبركاته! 🌿 أهلاً بك في "محفظ AI". كيف أساعدك في رحلة حفظ القرآن اليوم؟';
-    }
-    if (/طريقة|أسلوب|كيف أحفظ|خطة/.test(m)) {
-      return '**أفضل خطة للحفظ - نظام الحصون الخمسة:**\n\n1. **الورد اليومي** - قراءة جزء نظراً\n2. **التحضير** - قراءة الصفحة 10 مرات قبل الحفظ\n3. **الحفظ الجديد** - صفحة يومياً مع 20-40 تكرار\n4. **المراجعة القريبة** - مراجعة أسبوعية للجديد\n5. **التثبيت البعيد** - مراجعة شهرية للقديم';
-    }
-    if (/متشابه|تشابه/.test(m)) {
-      return '**لحل المتشابهات:**\n\n1. افهم **محور السورة** - الربط بالمعنى أقوى من الصوت\n2. انتبه لـ**السياق** قبل وبعد الآية\n3. ضع **علامة** في مصحفك عند موضع التشابه\n\n**كتب مفيدة:** درة التنزيل للإسكافي، والبرهان في متشابه القرآن للكرماني';
-    }
-    if (/نسيان|أنسى|تثبيت/.test(m)) {
-      return 'قال ﷺ: **"تعاهدوا هذا القرآن، فوالذي نفس محمد بيده، لهو أشد تفلتاً من الإبل في عقلها"** [متفق عليه]\n\n**العلاج:**\n1. استمر ولا تنقطع\n2. كثّر التكرار الصوتي بصوت عالٍ\n3. اقرأ ما حفظت في الصلاة\n4. تجنب المعاصي (قال الشافعي: شكوت إلى وكيعٍ...)';
-    }
-    if (/تاريخ|اليوم|وقت|ساعة/.test(m)) {
-      const today = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-      return `📅 **تاريخ اليوم:** ${today}\n\nوفقك الله وجعل يومك عامراً بذكر الله وتلاوة كتاب العزيز! 🌿`;
-    }
-    if (/فتوى|حرام|حلال/.test(m)) {
-      return '⚠️ أنا متخصص في **الحفظ والتدبر** فقط، وليس الإفتاء الشرعي.\n\nللفتاوى الشرعية، يرجى الرجوع لـ:\n- **دار الإفتاء المصرية** dar-alifta.org\n- **إسلام ويب** islamweb.net';
-    }
-    const defaults = [
-      'قال ﷺ: **"خيركم من تعلّم القرآن وعلّمه"** [رواه البخاري] 🌿\n\nهل تريد مساعدة في حفظ أو تجويد أو مراجعة؟',
-      'ثبّت الله حفظك! تذكر: **قليل مستمر خير من كثير منقطع**.\n\nكيف تسير خطتك اليوم؟ أخبرني بما تحفظ وسأساعدك.',
-    ];
-    return defaults[Math.floor(Math.random() * defaults.length)];
-  };
+  const quickPrompts = [
+    { label: '🏰 خطتي الدقيقة في الحصون الخمسة لليوم', query: `أعطني خطتي اليومية الدقيقة بنظام الحصون الخمسة بناءً على موقعي الحالي في الصفحة ${currentPage} من سورة ${currentSurah}` },
+    { label: '🎯 ما هو ورد المراجعة القريبة والبعيدة؟', query: `ما هو ورد المراجعة القريبة والمراجعة البعيدة المطلوب مني اليوم بدقة؟` },
+    { label: '🌙 كيف أطبق التحضير الليلي الليلة؟', query: `كيف أطبق التحضير الليلي لصفحة الغد (${currentPage + 1}) بطريقة صحيحة قبل النوم؟` },
+    { label: '💡 نصيحة تثبيت لسورة ' + currentSurah, query: `أعطني نصائح عملية وضوابط متشابهات لتثبيت سورة ${currentSurah}` }
+  ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '480px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', borderRadius: '16px', overflow: 'hidden' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', minHeight: '600px' }}>
       
-      {/* Chat Header */}
-      <div style={{ padding: '14px 16px', background: 'var(--primary-light)', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Bot size={20} />
-          </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: '15px', color: 'var(--primary)' }}>المعلم الذكي للقرآن والتدبر</h3>
-            <p style={{ margin: 0, fontSize: '11px', color: 'var(--text-secondary)' }}>مدعوم بالقرآن والسنة ومصادر موثوقة</p>
-          </div>
+      {/* Current Position Badge */}
+      <div style={{
+        padding: '12px 18px',
+        borderRadius: '16px',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%)',
+        border: '1px solid var(--primary)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '10px'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Compass size={18} color="var(--primary)" />
+          <span style={{ fontSize: '14px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
+            موقعك المعتمد في الخطة: الصفحة {currentPage} من سورة {currentSurah} (الجزء {currentJuz})
+          </span>
         </div>
-        <button
-          onClick={handleClearChat}
-          title="مسح المحادثة"
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px', borderRadius: '8px', display: 'flex', alignItems: 'center', transition: 'color 0.2s' }}
-          onMouseOver={e => e.currentTarget.style.color = '#EF4444'}
-          onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-        >
-          <Trash2 size={18} />
-        </button>
+        <span style={{ fontSize: '12px', background: 'var(--bg-surface)', padding: '4px 10px', borderRadius: '20px', color: 'var(--primary)', fontWeight: 'bold', border: '1px solid var(--glass-border)' }}>
+          {user?.memorizedPagesCount || 0} صفحة محفوظة
+        </span>
       </div>
 
-      {/* Disclaimer Sub-banner */}
-      <div style={{ padding: '6px 12px', background: 'rgba(245, 158, 11, 0.08)', borderBottom: '1px solid rgba(245, 158, 11, 0.2)', fontSize: '11px', color: '#B45309', display: 'flex', alignItems: 'center', gap: '6px' }}>
-        <ShieldAlert size={14} style={{ flexShrink: 0 }} />
-        <span>مخصص للحفظ والتدبر وتوجيه التعلم — وليس للإفتاء الشرعي.</span>
-      </div>
+      {/* Chat Messages Window */}
+      <div style={{
+        flex: 1,
+        minHeight: '400px',
+        maxHeight: '520px',
+        overflowY: 'auto',
+        padding: '20px',
+        borderRadius: '20px',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--glass-border)',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '16px'
+      }}>
+        {messages.map((m, idx) => {
+          const isAi = m.sender === 'ai';
+          return (
+            <div
+              key={m.id || idx}
+              style={{
+                display: 'flex',
+                gap: '12px',
+                alignItems: 'flex-start',
+                flexDirection: isAi ? 'row' : 'row-reverse'
+              }}
+            >
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '12px',
+                background: isAi ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : 'var(--primary-light)',
+                color: isAi ? 'white' : 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                {isAi ? <Bot size={20} /> : <User size={20} />}
+              </div>
 
-      {/* Messages Feed */}
-      <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', background: 'var(--bg-color)' }}>
-        {messages.map(msg => (
-          <div key={msg.id} style={{ display: 'flex', gap: '12px', alignSelf: msg.sender === 'user' ? 'flex-end' : 'flex-start', maxWidth: '90%', flexDirection: msg.sender === 'user' ? 'row-reverse' : 'row' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: msg.sender === 'user' ? 'var(--primary)' : 'var(--primary-light)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              {msg.sender === 'user' ? <User size={16} color="white" /> : <Bot size={16} color="var(--primary)" />}
+              <div style={{
+                maxWidth: '85%',
+                padding: '16px 20px',
+                borderRadius: isAi ? '0px 20px 20px 20px' : '20px 0px 20px 20px',
+                background: isAi ? 'var(--bg-color)' : 'var(--primary)',
+                color: isAi ? 'var(--text-primary)' : 'white',
+                border: isAi ? '1px solid var(--glass-border)' : 'none',
+                lineHeight: 1.7,
+                fontSize: '14.5px',
+                boxShadow: isAi ? 'var(--shadow-soft)' : '0 4px 14px rgba(16, 185, 129, 0.25)'
+              }}>
+                {renderText(m.text)}
+              </div>
             </div>
-            <div style={{
-              padding: '12px 16px',
-              borderRadius: '14px',
-              background: msg.sender === 'user' ? 'var(--primary)' : 'var(--bg-surface)',
-              color: msg.sender === 'user' ? 'white' : 'var(--text-primary)',
-              border: msg.sender === 'ai' ? '1px solid var(--glass-border)' : 'none',
-              fontSize: '14px',
-              lineHeight: 1.7,
-              borderTopRightRadius: msg.sender === 'user' ? 0 : '14px',
-              borderTopLeftRadius: msg.sender === 'ai' ? 0 : '14px',
-              direction: 'rtl',
-              textAlign: 'right',
-              whiteSpace: 'pre-wrap'
-            }}>
-              {renderText(msg.text)}
-            </div>
-          </div>
-        ))}
+          );
+        })}
+
         {isTyping && (
-          <div style={{ display: 'flex', gap: '12px', alignSelf: 'flex-start' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Bot size={16} color="var(--primary)" />
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '12px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Bot size={20} />
             </div>
-            <div style={{ padding: '12px 16px', borderRadius: '14px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-              <Loader2 size={16} style={{ animation: 'spin 1s linear infinite' }} />
-              المعلم يكتب الإجابة...
+            <div style={{ padding: '12px 20px', borderRadius: '0 16px 16px 16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Loader2 size={16} className="animate-spin" color="var(--primary)" />
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>المعلم الذكي يُفصّل خطتك وإجابتك...</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Form */}
-      <div style={{ padding: '14px', background: 'var(--bg-surface)', borderTop: '1px solid var(--glass-border)', display: 'flex', gap: '10px' }}>
+      {/* Quick Prompt Chips */}
+      <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {quickPrompts.map((qp, idx) => (
+          <button
+            key={idx}
+            type="button"
+            onClick={() => handleSend(qp.query)}
+            disabled={isTyping}
+            style={{
+              padding: '8px 14px',
+              borderRadius: '20px',
+              border: '1px solid var(--glass-border)',
+              background: 'var(--bg-surface)',
+              color: 'var(--text-secondary)',
+              fontSize: '12.5px',
+              fontWeight: '600',
+              cursor: isTyping ? 'not-allowed' : 'pointer',
+              whiteSpace: 'nowrap',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Sparkles size={13} color="var(--primary)" />
+            {qp.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Input Area */}
+      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
         <input
           type="text"
           value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSend()}
-          placeholder="اسأل عن الحفظ أو التجويد أو المتشابهات..."
-          style={{ flex: 1, padding: '10px 16px', borderRadius: 'var(--radius-full)', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', outline: 'none', fontFamily: 'var(--font-body)', color: 'var(--text-primary)', fontSize: '14px', direction: 'rtl' }}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSend();
+          }}
+          placeholder="اسأل المعلم الذكي عن خطتك، أو متى تراجع، أو تفسير آية..."
+          style={{
+            flex: 1,
+            padding: '14px 18px',
+            borderRadius: '14px',
+            border: '1px solid var(--glass-border)',
+            background: 'var(--bg-surface)',
+            color: 'var(--text-primary)',
+            fontSize: '14.5px',
+            fontFamily: 'inherit',
+            outline: 'none'
+          }}
         />
+
         <button
-          onClick={handleSend}
-          disabled={!input.trim() || isTyping}
-          style={{ width: '42px', height: '42px', borderRadius: '50%', background: input.trim() && !isTyping ? 'var(--primary)' : 'var(--glass-border)', color: 'white', border: 'none', cursor: input.trim() && !isTyping ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 0.2s', flexShrink: 0 }}
+          type="button"
+          onClick={() => handleSend()}
+          disabled={isTyping || !input.trim()}
+          style={{
+            padding: '14px 22px',
+            borderRadius: '14px',
+            background: 'var(--primary)',
+            color: 'white',
+            border: 'none',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            cursor: isTyping || !input.trim() ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            opacity: isTyping || !input.trim() ? 0.6 : 1,
+            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)'
+          }}
         >
-          <Send size={18} style={{ transform: 'rotate(180deg)', marginRight: '2px' }} />
+          <Send size={16} />
+          إرسال
+        </button>
+
+        <button
+          type="button"
+          onClick={handleClearChat}
+          title="مسح المحادثة"
+          style={{
+            padding: '14px',
+            borderRadius: '14px',
+            border: '1px solid var(--glass-border)',
+            background: 'var(--bg-surface)',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer'
+          }}
+        >
+          <Trash2 size={16} />
         </button>
       </div>
     </div>

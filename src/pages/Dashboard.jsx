@@ -50,6 +50,7 @@ import { VisualProgressTracker } from '../components/VisualProgressTracker';
 import { QuranInteractiveView } from '../components/QuranInteractiveView';
 import { LearningStyleProfiler } from '../components/LearningStyleProfiler';
 import { MyPlanManager } from '../components/MyPlanManager';
+import { FiveFortressesPlan } from '../components/FiveFortressesPlan';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 import { NotificationCenter } from '../components/NotificationCenter';
 import { useNotifications } from '../context/NotificationContext';
@@ -171,38 +172,152 @@ const Dashboard = () => {
               </span>
             </div>
 
-            {/* 2. Hero Section */}
+            {/* 2. Today's Learning Plan & Favorites Focus Hero Banner */}
             <div style={{
               position: 'relative',
               borderRadius: '24px',
-              padding: '36px',
+              padding: isMobile ? '24px 20px' : '32px 36px',
               background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
               color: 'white',
               overflow: 'hidden',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)'
+              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
+              border: '1px solid rgba(16, 185, 129, 0.3)'
             }}>
-              <div style={{ position: 'relative', zIndex: 2, maxWidth: '650px' }}>
-                <span style={{ padding: '6px 14px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', fontSize: '13px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px', marginBottom: '16px' }}>
-                  <Sparkles size={16} /> رحلة إيمانية متكاملة للتقرب إلى الله
-                </span>
+              <div style={{ position: 'relative', zIndex: 2 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
+                  <span style={{ padding: '6px 14px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', fontSize: '13px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Target size={16} /> خطة تعلم اليوم والمهمة اليومية
+                  </span>
+                  <span style={{ fontSize: '12px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <Clock size={14} /> تتجدد تلقائياً كل صباح
+                  </span>
+                </div>
 
-                <h1 style={{ fontSize: '36px', fontWeight: 'bold', margin: '0 0 14px 0', lineHeight: 1.2 }}>
-                  احفظ، تدبّر، واعمل بالقرآن الكريم 🌿
+                <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: 'bold', margin: '0 0 10px 0', lineHeight: 1.3 }}>
+                  ما الذي يجب عليك تعلّمه وحفظه اليوم؟ 🌿
                 </h1>
 
-                <p style={{ fontSize: '15px', color: '#94A3B8', margin: '0 0 24px 0', lineHeight: 1.6 }}>
-                  ليس مجرد نظام حفظ آلي، بل بيئة إيمانية تجمع بين فهم الآيات، تثبيت الحفظ بالحصون الخمسة، والقراءة بها في صلواتك اليومية.
-                </p>
+                {/* Plan Highlights Grid */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
+                  gap: '12px',
+                  margin: '20px 0',
+                  padding: '16px',
+                  borderRadius: '16px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <BookOpen size={18} />
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>الحفظ الجديد اليوم:</span>
+                      <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
+                        {user?.preferences?.dailyTarget || 'صفحة واحدة (سورة البقرة)'}
+                      </strong>
+                    </div>
+                  </div>
 
-                <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Layers size={18} />
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>المراجعة والتثبيت:</span>
+                      <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
+                        {user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً'}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.2)', color: '#FBBF24', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <Shield size={18} />
+                    </div>
+                    <div>
+                      <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>الأجزاء المستهدفة:</span>
+                      <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
+                        {user?.preferences?.juzsMemorized || 'الجزء 1، الجزء 30'}
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Favorites List section */}
+                {user?.favorites && user.favorites.length > 0 && (
+                  <div style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
+                      <Star size={16} color="#FBBF24" fill="#FBBF24" />
+                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#FBBF24' }}>عناصرك المحفوظة في المفضلة ({user.favorites.length}):</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                      {user.favorites.map((fav, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setActiveTab('daily-session')}
+                          style={{
+                            padding: '6px 12px',
+                            borderRadius: '12px',
+                            background: 'rgba(255, 255, 255, 0.15)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            color: '#F8FAFC',
+                            fontSize: '12px',
+                            fontWeight: 'bold',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <BookOpen size={12} color="#34D399" />
+                          {fav.title || `صفحة ${fav.id}`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Primary Action Button */}
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                   <button 
                     onClick={() => setActiveTab('daily-session')}
-                    style={{ padding: '14px 28px', borderRadius: '12px', background: '#10B981', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}
+                    style={{ 
+                      padding: '14px 28px', 
+                      borderRadius: '14px', 
+                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', 
+                      color: 'white', 
+                      border: 'none', 
+                      fontWeight: 'bold', 
+                      fontSize: '15px', 
+                      cursor: 'pointer', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+                    }}
                   >
-                    <Play size={18} /> البدء في ورد اليوم والتدبر
+                    <Play size={18} /> ابدأ ورد اليوم والتسميع الآن 🚀
                   </button>
-                  <span style={{ color: '#CBD5E1', fontSize: '13px' }}>✨ نية اليوم: الإخلاص في طلب العلم</span>
+
+                  <button 
+                    onClick={() => setActiveTab('my-plan')}
+                    style={{ 
+                      padding: '14px 20px', 
+                      borderRadius: '14px', 
+                      background: 'rgba(255, 255, 255, 0.1)', 
+                      color: '#E2E8F0', 
+                      border: '1px solid rgba(255, 255, 255, 0.2)', 
+                      fontWeight: 'bold', 
+                      fontSize: '14px', 
+                      cursor: 'pointer'
+                    }}
+                  >
+                    ⚙️ تعديل خطتي وتخصيص الأجزاء
+                  </button>
                 </div>
+
               </div>
             </div>
 
@@ -379,7 +494,11 @@ const Dashboard = () => {
         );
 
       case 'five-fortresses':
-        return <FiveFortressesView setActiveTab={setActiveTab} />;
+        return (
+          <Card style={{ padding: isMobile ? '16px' : '28px' }}>
+            <FiveFortressesPlan setActiveTab={setActiveTab} />
+          </Card>
+        );
 
       case 'ai-assistant':
         return (
@@ -390,7 +509,7 @@ const Dashboard = () => {
         );
 
       case 'community':
-        return <Community />;
+        return <Community setActiveTab={setActiveTab} />;
 
       case 'achievements':
         return (
@@ -746,23 +865,56 @@ const Dashboard = () => {
 };
 
 const MindMapsView = () => {
+  const { user, updateUserData } = useAuth();
+  const userId = user?.uid || 'guest';
   const [selectedSurah, setSelectedSurah] = useState('البقرة');
   const { notifyAndCelebrate } = useNotifications();
 
-  // Load completed mind map nodes from local storage
+  const favorites = user?.favorites || [];
+  const isSurahFavorited = favorites.some(f => f.type === 'surah' && f.id === selectedSurah);
+
+  const toggleSurahFavorite = () => {
+    let updated;
+    if (isSurahFavorited) {
+      updated = favorites.filter(f => !(f.type === 'surah' && f.id === selectedSurah));
+    } else {
+      updated = [
+        ...favorites,
+        {
+          type: 'surah',
+          id: selectedSurah,
+          title: `خريطة سورة ${selectedSurah}`,
+          addedAt: new Date().toLocaleDateString('ar-EG')
+        }
+      ];
+    }
+    updateUserData({ favorites: updated });
+  };
+
+  // Load completed mind map nodes from local storage for current user
   const [completedNodes, setCompletedNodes] = useState(() => {
     try {
-      const saved = localStorage.getItem('ma7fath_completed_mindmap_nodes');
+      const saved = localStorage.getItem(`ma7fath_${userId}_completed_mindmap_nodes`);
       return saved ? JSON.parse(saved) : {};
     } catch {
       return {};
     }
   });
 
+  // Re-sync when user changes
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(`ma7fath_${userId}_completed_mindmap_nodes`);
+      setCompletedNodes(saved ? JSON.parse(saved) : {});
+    } catch {
+      setCompletedNodes({});
+    }
+  }, [userId]);
+
   const saveCompletedNodes = (updated) => {
     setCompletedNodes(updated);
     try {
-      localStorage.setItem('ma7fath_completed_mindmap_nodes', JSON.stringify(updated));
+      localStorage.setItem(`ma7fath_${userId}_completed_mindmap_nodes`, JSON.stringify(updated));
     } catch (e) {
       console.error(e);
     }
@@ -883,28 +1035,52 @@ const MindMapsView = () => {
           <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '14px' }}>تصور شجري للمحاور الكبرى والمقاصد لتثبيت الحفظ البصري.</p>
         </div>
         
-        {/* Dropdown Selector */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>اختر السورة:</span>
-          <select 
-            value={selectedSurah} 
-            onChange={(e) => setSelectedSurah(e.target.value)}
+        {/* Dropdown Selector & Favorite Button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>اختر السورة:</span>
+            <select 
+              value={selectedSurah} 
+              onChange={(e) => setSelectedSurah(e.target.value)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '10px',
+                border: '1px solid var(--glass-border)',
+                background: 'var(--bg-color)',
+                color: 'var(--text-primary)',
+                fontWeight: 'bold',
+                outline: 'none',
+                fontFamily: 'var(--font-body)',
+                cursor: 'pointer'
+              }}
+            >
+              {surahOptions.map(opt => (
+                <option key={opt} value={opt}>{opt}</option>
+              ))}
+            </select>
+          </div>
+
+          <button
+            type="button"
+            onClick={toggleSurahFavorite}
             style={{
-              padding: '8px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '8px 14px',
               borderRadius: '10px',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--bg-color)',
-              color: 'var(--text-primary)',
+              border: `1px solid ${isSurahFavorited ? '#F59E0B' : 'var(--glass-border)'}`,
+              background: isSurahFavorited ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
+              color: isSurahFavorited ? '#D97706' : 'var(--text-secondary)',
+              cursor: 'pointer',
+              fontSize: '13px',
               fontWeight: 'bold',
-              outline: 'none',
-              fontFamily: 'var(--font-body)',
-              cursor: 'pointer'
+              transition: 'all 0.2s ease'
             }}
           >
-            {surahOptions.map(opt => (
-              <option key={opt} value={opt}>{opt}</option>
-            ))}
-          </select>
+            <Star size={16} fill={isSurahFavorited ? '#F59E0B' : 'none'} color={isSurahFavorited ? '#F59E0B' : 'currentColor'} />
+            {isSurahFavorited ? 'في المفضلة' : 'حفظ بالمفضلة'}
+          </button>
         </div>
       </div>
 
@@ -1128,227 +1304,6 @@ const SimilaritiesView = () => {
             </div>
           </div>
         ))}
-      </div>
-    </Card>
-  );
-};
-
-const FiveFortressesView = ({ setActiveTab }) => {
-  const { user, updateUserData } = useAuth();
-  const { notifyAndCelebrate } = useNotifications();
-  const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
-
-  const currentPage = (user?.memorizedPagesCount || 0) + 1;
-  const currentSurah = getSurahNameForPage(currentPage);
-  const currentJuz = getJuzForPage(currentPage);
-
-  const fortressesData = [
-    {
-      id: 1,
-      title: '1. القراءة المستمرة (الورد نظرًا)',
-      desc: 'قراءة جزء كامل يومياً من المصحف نظرًا للاستماع والتهيئة البصرية.',
-      target: `الجزء ${currentJuz} بالكامل (الورد البصري اليومي)`,
-      color: '#3B82F6',
-      actionLabel: 'تحديد كـ تم القراءة 📖'
-    },
-    {
-      id: 2,
-      title: '2. التحضير الأسبوعي',
-      desc: 'قراءة السورة المستهدفة كاملة بتركيز وتدبر قبل البدء بحفظها.',
-      target: `سورة ${currentSurah} (التهيئة الذهنية للأسبوع)`,
-      color: '#8B5CF6',
-      actionLabel: 'تحديد كـ تم التحضير 🎯'
-    },
-    {
-      id: 3,
-      title: '3. التحضير القريب',
-      desc: 'تحضير وقراءة الصفحة المستهدفة بتركيز وتدبر قبل الحفظ بـ 15 دقيقة.',
-      target: `صفحة ${currentPage} (التحضير السريع)`,
-      color: '#EC4899',
-      actionLabel: 'تحديد كـ تم التحضير القريب ⏳'
-    },
-    {
-      id: 4,
-      title: '4. الحفظ الجديد',
-      desc: 'حفظ وجه جديد بإتقان وتأمل وتكرار صوته مع المعلم.',
-      target: `صفحة ${currentPage} من سورة ${currentSurah}`,
-      color: '#10B981',
-      actionLabel: 'ابدأ تمرين التسميع والحفظ 🎤',
-      isInteractive: true
-    },
-    {
-      id: 5,
-      title: '5. المراجعة البعيدة',
-      desc: 'مراجعة الصفحات المحفوظة سابقاً بانتظام والتلاوة بها في الصلاة لتثبيتها.',
-      target: `مراجعة الصفحات من 1 إلى ${Math.max(1, currentPage - 1)}`,
-      color: '#F59E0B',
-      actionLabel: 'تحديد كـ تم المراجعة والتلاوة 🤲'
-    }
-  ];
-
-  const handleToggleFort = async (id) => {
-    const currentStatus = !!fortressesToday[id];
-    const newStatus = !currentStatus;
-    
-    const newFortressesToday = { ...fortressesToday, [id]: newStatus };
-    
-    let xpChange = newStatus ? 50 : -50;
-    let newXp = Math.max(0, (user?.xp || 100) + xpChange);
-    let newLevel = Math.floor(newXp / 500) + 1;
-    
-    updateUserData({
-      xp: newXp,
-      level: newLevel,
-      preferences: {
-        ...(user?.preferences || {}),
-        fortressesToday: newFortressesToday
-      }
-    });
-
-    if (newStatus) {
-      const fort = fortressesData.find(f => f.id === id);
-      const doneCount = Object.values(newFortressesToday).filter(Boolean).length;
-
-      if (doneCount === 5) {
-        notifyAndCelebrate({
-          title: '🏆 مبارك! إنجاز كافة الحصون الخمسة اليومية!',
-          message: 'إنجاز استثنائي ومتقن! أتممت الورد اليومي والتحضير والحفظ والمراجعة كاملة لليوم!',
-          type: 'wird',
-          xpBonus: 200,
-          badgeTitle: 'فارس الحصون الخمسة'
-        });
-      } else {
-        notifyAndCelebrate({
-          title: `تم إنجاز ${fort?.title || 'الحصن اليومي'}! 🎯`,
-          message: `أكملت بنجاح: ${fort?.target || 'ورد اليوم'}!`,
-          type: 'wird',
-          xpBonus: 50,
-          badgeTitle: 'حارس القرآن'
-        });
-      }
-    }
-  };
-
-  return (
-    <Card style={{ padding: '32px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', margin: 0 }}>🏰 نظام المتابعة اليومي للحصون الخمسة</h2>
-        <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '14px' }}>
-          نظام محكم يضمن ثبات السور ومنع التفلت عبر متابعة الورد والحفظ والمراجعة بشكل يومي تفاعلي.
-        </p>
-      </div>
-
-      {/* Progress Summary */}
-      <div style={{
-        padding: '20px 24px',
-        borderRadius: '16px',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%)',
-        border: '1px solid var(--primary)',
-        marginBottom: '28px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div>
-          <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 'bold' }}>إجمالي الإنجاز لليوم:</span>
-          <h3 style={{ margin: '4px 0 0 0', fontSize: '20px', color: 'var(--text-primary)' }}>
-            تم إنجاز {Object.values(fortressesToday).filter(Boolean).length} من أصل 5 حصون
-          </h3>
-        </div>
-        <div style={{ width: '150px', height: '10px', background: 'var(--glass-border)', borderRadius: '5px', overflow: 'hidden' }}>
-          <div style={{ width: `${(Object.values(fortressesToday).filter(Boolean).length / 5) * 100}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.3s ease' }} />
-        </div>
-      </div>
-
-      {/* Fortresses List */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        {fortressesData.map((f) => {
-          const isDone = !!fortressesToday[f.id];
-          return (
-            <div 
-              key={f.id}
-              style={{
-                padding: '24px',
-                borderRadius: '20px',
-                background: isDone ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.03) 100%)' : 'var(--bg-surface)',
-                border: `1px solid ${isDone ? 'var(--primary)' : 'var(--glass-border)'}`,
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '20px',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <div style={{ flex: 1, minWidth: '280px', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                <div style={{ 
-                  width: '40px', 
-                  height: '40px', 
-                  borderRadius: '12px', 
-                  background: `${f.color}15`, 
-                  color: f.color, 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center',
-                  flexShrink: 0
-                }}>
-                  <Shield size={22} fill={isDone ? f.color : 'none'} />
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '17px', color: 'var(--text-primary)' }}>{f.title}</h4>
-                  <p style={{ margin: '0 0 10px 0', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{f.desc}</p>
-                  <span style={{ fontSize: '13px', padding: '4px 10px', borderRadius: '20px', background: 'var(--bg-color)', color: f.color, fontWeight: 'bold', border: '1px solid var(--glass-border)' }}>
-                    🎯 المستهدف: {f.target}
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Trigger */}
-              <div>
-                {f.isInteractive && !isDone ? (
-                  <button
-                    onClick={() => setActiveTab('daily-session')}
-                    style={{
-                      padding: '12px 20px',
-                      borderRadius: '12px',
-                      background: 'var(--primary)',
-                      color: 'white',
-                      border: 'none',
-                      fontWeight: 'bold',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
-                    }}
-                  >
-                    {f.actionLabel}
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleToggleFort(f.id)}
-                    style={{
-                      padding: '10px 20px',
-                      borderRadius: '12px',
-                      border: `1.5px solid ${isDone ? 'var(--primary)' : 'var(--glass-border)'}`,
-                      background: isDone ? 'var(--primary-light)' : 'var(--bg-color)',
-                      color: isDone ? 'var(--primary)' : 'var(--text-secondary)',
-                      fontWeight: 'bold',
-                      fontSize: '13px',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s'
-                    }}
-                  >
-                    {isDone ? 'تم بنجاح! +50XP ✓' : f.actionLabel}
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
       </div>
     </Card>
   );
