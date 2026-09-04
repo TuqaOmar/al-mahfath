@@ -3,6 +3,7 @@ import { Play, Pause, Volume2, SkipForward, SkipBack, UserCheck, Sparkles, Repea
 import { useLanguage } from '../context/LanguageContext';
 
 const recitersList = [
+  { id: 'ar.dossari', name: 'ياسر الدوسري', sub: 'إمام الحرم المكي (تلاوة خاشعة مميزة)' },
   { id: 'ar.alafasy', name: 'مشاري بن راشد العفاسي', sub: 'تلاوة خاشعة' },
   { id: 'ar.husary', name: 'محمود خليل الحصري', sub: 'المعلم والمصحف المرتل' },
   { id: 'ar.minshawi', name: 'محمد صديق المنشاوي', sub: 'المنشاوي المرتل' },
@@ -27,9 +28,11 @@ export const QuranAudioPlayer = ({ surahNumber = 1, startAyah = 1, endAyah = 7 }
     isPlayingRef.current = isPlaying;
   }, [isPlaying]);
 
-  // Construct audio URL based on AlQuran Cloud CDN
+  // Construct audio URL based on AlQuran Cloud CDN or EveryAyah for Dossari
   useEffect(() => {
-    const url = `https://cdn.islamic.network/quran/audio/128/${selectedReciter}/${currentAyah}.mp3`;
+    const url = (selectedReciter === 'ar.dossari')
+      ? `https://everyayah.com/data/Yasser_Ad-Dussary_128kbps/${String(surahNumber).padStart(3, '0')}${String(currentAyah).padStart(3, '0')}.mp3`
+      : `https://cdn.islamic.network/quran/audio/128/${selectedReciter}/${currentAyah}.mp3`;
     setAudioUrl(url);
     if (isPlayingRef.current && audioRef.current) {
       audioRef.current.load();

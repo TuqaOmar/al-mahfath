@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Filter, 
@@ -7,33 +7,81 @@ import {
   CheckCircle2, 
   Clock, 
   Brain, 
-  Sparkles,
-  ChevronLeft
+  Sparkles, 
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  Check,
+  Layers,
+  Flame,
+  Award
 } from 'lucide-react';
-import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
+import { getSurahNameForPage, getJuzForPage, getPageRangeForJuz } from '../utils/quranData';
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
+import { useLanguage } from '../context/LanguageContext';
 
+// Helper to construct initial 604 pages accurately based on user's portfolio
+const buildQuranPagesData = (user) => {
+  const userPages = Array.isArray(user?.memorizedPages) ? user.memorizedPages : [];
+  const userJuzs = Array.isArray(user?.preferences?.selectedJuzList) ? user.preferences.selectedJuzList : [];
+  const count = Number(user?.memorizedPagesCount) || 0;
 
-// Generate status for 604 pages based on user's memorized pages count
-const generateQuranPages = (memorizedCount = 0) => {
+  const memorizedSet = new Set(userPages);
+
+  // If specific pages list is empty but selectedJuzList is present, populate from Juzs
+  if (userPages.length === 0 && userJuzs.length > 0) {
+    userJuzs.forEach(juzNum => {
+      const range = getPageRangeForJuz(juzNum);
+      for (let p = range.startPage; p <= range.endPage; p++) {
+        memorizedSet.add(p);
+      }
+    });
+  } else if (userPages.length === 0 && userJuzs.length === 0 && count > 0) {
+    // Fallback for legacy account with only count
+    for (let p = 1; p <= Math.min(604, count); p++) {
+      memorizedSet.add(p);
+    }
+  }
+
+  // Load custom local reviews if stored for this user
+  const savedReviewsKey = `ma7fath_${user?.uid || 'guest'}_quran_page_reviews`;
+  let savedReviews = {};
+  try {
+    savedReviews = JSON.parse(localStorage.getItem(savedReviewsKey) || '{}');
+  } catch (e) {}
+
   const pages = [];
-  const count = Math.max(0, Number(memorizedCount) || 0);
-
   for (let i = 1; i <= 604; i++) {
-    let status = 'unmemorized'; // 'excellent' | 'review' | 'critical' | 'unmemorized'
-    let score = 0;
+    const isMemorized = memorizedSet.has(i);
+    const custom = savedReviews[i];
 
-    if (count > 0 && i <= count) {
-      if (i % 7 === 0) {
+    let status = 'unmemorized';
+    let score = 0;
+    let lastReviewed = 'لم يراجع بعد';
+    let errorsCount = 0;
+
+    if (custom) {
+      status = custom.status;
+      score = custom.score;
+      lastReviewed = custom.lastReviewed || 'اليوم';
+      errorsCount = custom.errorsCount || 0;
+    } else if (isMemorized) {
+      if (i % 9 === 0) {
+        status = 'review';
+        score = 78;
+        lastReviewed = 'منذ يومين';
+        errorsCount = 1;
+      } else if (i % 17 === 0) {
         status = 'critical';
         score = 55;
-      } else if (i % 4 === 0) {
-        status = 'review';
-        score = 75;
+        lastReviewed = 'منذ ٤ أيام';
+        errorsCount = 3;
       } else {
         status = 'excellent';
-        score = 92;
+        score = 96;
+        lastReviewed = 'اليوم';
+        errorsCount = 0;
       }
     }
 
@@ -42,59 +90,59 @@ const generateQuranPages = (memorizedCount = 0) => {
       juz: getJuzForPage(i),
       status,
       score,
-      lastReviewed: status !== 'unmemorized' ? 'منذ يومين' : 'لم يراجع بعد',
-      errorsCount: status === 'critical' ? 3 : (status === 'review' ? 1 : 0),
+      lastReviewed,
+      errorsCount,
       surahName: getSurahNameForPage(i)
     });
   }
+
   return pages;
 };
 
 export const QuranMapPage = () => {
   const { user, updateUserData } = useAuth();
   const { notifyAndCelebrate } = useNotifications();
-  const memorizedPagesCount = Math.max(0, Number(user?.memorizedPagesCount) || 0);
+  const { isRTL, lang } = useLanguage();
 
-  const [pages, setPages] = React.useState([]);
+  const [pages, setPages] = useState([]);
   const [selectedPage, setSelectedPage] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'excellent' | 'review' | 'critical'
-  const [juzFilter, setJuzFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'excellent' | 'review' | 'critical' | 'memorized'
+  const [activeJuzTab, setActiveJuzTab] = useState('all'); // 'all' | 1 to 30
   const [showLevelModal, setShowLevelModal] = useState(false);
-  const [quickPagesInput, setQuickPagesInput] = useState(memorizedPagesCount.toString());
+  const [quickPagesInput, setQuickPagesInput] = useState('0');
   const [statusMessage, setStatusMessage] = useState('');
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
-  React.useEffect(() => {
+  useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  React.useEffect(() => {
-    setQuickPagesInput(memorizedPagesCount.toString());
-  }, [memorizedPagesCount]);
+  // Initialize and update pages when user changes
+  useEffect(() => {
+    const initialPages = buildQuranPagesData(user);
+    setPages(initialPages);
+    setQuickPagesInput((user?.memorizedPagesCount || initialPages.filter(p => p.status !== 'unmemorized').length).toString());
+  }, [user?.uid, user?.memorizedPagesCount, user?.memorizedPages, user?.preferences?.selectedJuzList]);
 
-  React.useEffect(() => {
-    const basePages = generateQuranPages(memorizedPagesCount);
-    
-    fetch('/api/quran/pages')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.pages)) {
-          const merged = basePages.map(dp => {
-            const serverPage = data.pages.find(sp => sp.pageNumber === dp.pageNumber);
-            return serverPage ? { ...dp, ...serverPage } : dp;
-          });
-          setPages(merged);
-        } else {
-          setPages(basePages);
-        }
-      })
-      .catch(() => setPages(basePages));
-  }, [memorizedPagesCount]);
+  const activeMemorizedPages = pages.filter(p => p.status !== 'unmemorized');
+  const activeMemorizedCount = activeMemorizedPages.length;
+  const excellentCount = pages.filter(p => p.status === 'excellent').length;
+  const reviewCount = pages.filter(p => p.status === 'review').length;
+  const criticalCount = pages.filter(p => p.status === 'critical').length;
 
-  // Update specific page status (e.g. excellent, review, critical, unmemorized)
+  // Calculate completed Juzs (where all pages in that Juz are memorized)
+  const completedJuzs = [];
+  for (let j = 1; j <= 30; j++) {
+    const range = getPageRangeForJuz(j);
+    const juzPages = pages.filter(p => p.pageNumber >= range.startPage && p.pageNumber <= range.endPage);
+    const isCompleted = juzPages.length > 0 && juzPages.every(p => p.status !== 'unmemorized');
+    if (isCompleted) completedJuzs.push(j);
+  }
+
+  // Update a single page status
   const handleUpdatePageStatus = async (pageNumber, newStatus, newScore) => {
     const updatedPages = pages.map(p => {
       if (p.pageNumber === pageNumber) {
@@ -115,12 +163,32 @@ export const QuranMapPage = () => {
       setSelectedPage(updatedSelected);
     }
 
-    // Calculate total memorized pages count
-    const activeMemorizedCount = updatedPages.filter(p => p.status !== 'unmemorized').length;
-    const calcJuz = Number((activeMemorizedCount / 20).toFixed(1));
+    // Persist to local storage reviews for current user
+    const savedReviewsKey = `ma7fath_${user?.uid || 'guest'}_quran_page_reviews`;
+    let savedReviews = {};
+    try {
+      savedReviews = JSON.parse(localStorage.getItem(savedReviewsKey) || '{}');
+    } catch (e) {}
+    savedReviews[pageNumber] = {
+      status: newStatus,
+      score: newScore,
+      lastReviewed: 'اليوم',
+      errorsCount: newStatus === 'critical' ? 3 : (newStatus === 'review' ? 1 : 0)
+    };
+    localStorage.setItem(savedReviewsKey, JSON.stringify(savedReviews));
 
-    updateUserData({
-      memorizedPagesCount: activeMemorizedCount,
+    // Update user's memorized pages array
+    const newMemorizedPages = updatedPages
+      .filter(p => p.status !== 'unmemorized')
+      .map(p => p.pageNumber)
+      .sort((a, b) => a - b);
+
+    const newCount = newMemorizedPages.length;
+    const calcJuz = Number((newCount / 20).toFixed(1));
+
+    await updateUserData({
+      memorizedPages: newMemorizedPages,
+      memorizedPagesCount: newCount,
       totalJuz: calcJuz
     });
 
@@ -130,7 +198,8 @@ export const QuranMapPage = () => {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            memorizedPagesCount: activeMemorizedCount,
+            memorizedPages: newMemorizedPages,
+            memorizedPagesCount: newCount,
             totalJuz: calcJuz
           })
         });
@@ -139,45 +208,137 @@ export const QuranMapPage = () => {
       }
     }
 
-    // Send backend review log
-    try {
-      await fetch(`/api/quran/pages/${pageNumber}/review`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: newStatus,
-          score: newScore,
-          surahName: updatedSelected?.surahName,
-          juz: updatedSelected?.juz
-        })
-      });
-    } catch (e) {
-      console.error('Error posting page review:', e);
-    }
-
     if (newStatus === 'excellent') {
       notifyAndCelebrate({
         title: `إتقان ممتاز للصفحة ${pageNumber}! 🟢`,
-        message: `أحسنت! أثبتت حفظ الصفحة ${pageNumber} (${updatedSelected?.surahName || ''}) بتقدير ممتاز 100%!`,
+        message: `أحسنت! أثبتت حفظ الصفحة ${pageNumber} (${updatedSelected?.surahName || ''}) بتقدير ممتاز!`,
         type: 'achievement',
-        xpBonus: 75,
+        xpBonus: 60,
         badgeTitle: 'حافظ متقن'
       });
     }
 
-    setStatusMessage(`تم تحديث حالة الصفحة ${pageNumber} بنجاح ✨`);
+    setStatusMessage(`تم تحديث حالة الصفحة ${pageNumber} في محفظتك بنجاح ✨`);
     setTimeout(() => setStatusMessage(''), 3000);
   };
 
-  // Quick update memorized pages level
+  // Bulk set entire Juz as Memorized or Unmemorized
+  const handleBulkSetJuzStatus = async (juzNum, shouldMemorize) => {
+    const range = getPageRangeForJuz(juzNum);
+    const updatedPages = pages.map(p => {
+      if (p.pageNumber >= range.startPage && p.pageNumber <= range.endPage) {
+        return {
+          ...p,
+          status: shouldMemorize ? 'excellent' : 'unmemorized',
+          score: shouldMemorize ? 95 : 0,
+          lastReviewed: shouldMemorize ? 'اليوم' : 'لم يراجع بعد'
+        };
+      }
+      return p;
+    });
+
+    setPages(updatedPages);
+
+    // Save reviews
+    const savedReviewsKey = `ma7fath_${user?.uid || 'guest'}_quran_page_reviews`;
+    let savedReviews = {};
+    try {
+      savedReviews = JSON.parse(localStorage.getItem(savedReviewsKey) || '{}');
+    } catch (e) {}
+
+    for (let p = range.startPage; p <= range.endPage; p++) {
+      savedReviews[p] = {
+        status: shouldMemorize ? 'excellent' : 'unmemorized',
+        score: shouldMemorize ? 95 : 0,
+        lastReviewed: shouldMemorize ? 'اليوم' : 'لم يراجع بعد',
+        errorsCount: 0
+      };
+    }
+    localStorage.setItem(savedReviewsKey, JSON.stringify(savedReviews));
+
+    const newMemorizedPages = updatedPages
+      .filter(p => p.status !== 'unmemorized')
+      .map(p => p.pageNumber)
+      .sort((a, b) => a - b);
+
+    const newCount = newMemorizedPages.length;
+    const calcJuz = Number((newCount / 20).toFixed(1));
+
+    // Update selectedJuzList
+    let currentJuzList = Array.isArray(user?.preferences?.selectedJuzList) ? [...user.preferences.selectedJuzList] : [];
+    if (shouldMemorize && !currentJuzList.includes(juzNum)) {
+      currentJuzList.push(juzNum);
+      currentJuzList.sort((a, b) => a - b);
+    } else if (!shouldMemorize) {
+      currentJuzList = currentJuzList.filter(j => j !== juzNum);
+    }
+
+    const updatedPreferences = {
+      ...(user?.preferences || {}),
+      selectedJuzList: currentJuzList
+    };
+
+    await updateUserData({
+      memorizedPages: newMemorizedPages,
+      memorizedPagesCount: newCount,
+      totalJuz: calcJuz,
+      preferences: updatedPreferences
+    });
+
+    if (user?.uid) {
+      try {
+        await fetch(`/api/user/${user.uid}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            memorizedPages: newMemorizedPages,
+            memorizedPagesCount: newCount,
+            totalJuz: calcJuz,
+            preferences: updatedPreferences
+          })
+        });
+      } catch (e) {
+        console.error('Error syncing bulk juz:', e);
+      }
+    }
+
+    notifyAndCelebrate({
+      title: shouldMemorize ? `تم اعتماد الجزء ${juzNum} كاملاً! 📗` : `تم إلغاء تحديد الجزء ${juzNum}`,
+      message: shouldMemorize ? `مبارك! أضيفت جميع صفحات الجزء ${juzNum} لمحفظتك بنجاح.` : `تم تحديث صفحات الجزء ${juzNum} كغير محفوظة.`,
+      type: 'achievement',
+      xpBonus: shouldMemorize ? 100 : 0
+    });
+
+    setStatusMessage(shouldMemorize ? `تم تعليم الجزء ${juzNum} كاملاً كمحفوظ! 🎉` : `تم إلغاء تحديد الجزء ${juzNum}`);
+    setTimeout(() => setStatusMessage(''), 3500);
+  };
+
+  // Quick update memorized count modal
   const handleQuickUpdateLevel = async (newCountNum) => {
     const newCount = Math.min(604, Math.max(0, Number(newCountNum) || 0));
-    const newPages = generateQuranPages(newCount);
+    const newPages = [];
+    const newMemorizedArr = [];
+
+    for (let i = 1; i <= 604; i++) {
+      const isMem = i <= newCount;
+      if (isMem) newMemorizedArr.push(i);
+      newPages.push({
+        pageNumber: i,
+        juz: getJuzForPage(i),
+        status: isMem ? 'excellent' : 'unmemorized',
+        score: isMem ? 95 : 0,
+        lastReviewed: isMem ? 'اليوم' : 'لم يراجع بعد',
+        errorsCount: 0,
+        surahName: getSurahNameForPage(i)
+      });
+    }
+
     setPages(newPages);
     setShowLevelModal(false);
 
     const calcJuz = Number((newCount / 20).toFixed(1));
-    updateUserData({
+    await updateUserData({
+      memorizedPages: newMemorizedArr,
       memorizedPagesCount: newCount,
       totalJuz: calcJuz
     });
@@ -186,7 +347,7 @@ export const QuranMapPage = () => {
       title: '🗺️ تحديث مستوى الخريطة القرآنية!',
       message: `تم تحديث مستوى حفظك إلى ${newCount} صفحة (${calcJuz} جزءاً) بنجاح!`,
       type: 'achievement',
-      xpBonus: 100,
+      xpBonus: 80,
       badgeTitle: 'فارس الخريطة'
     });
 
@@ -196,6 +357,7 @@ export const QuranMapPage = () => {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            memorizedPages: newMemorizedArr,
             memorizedPagesCount: newCount,
             totalJuz: calcJuz
           })
@@ -209,11 +371,15 @@ export const QuranMapPage = () => {
     setTimeout(() => setStatusMessage(''), 3500);
   };
 
-  // Filtered pages
+  // Filtered pages for grid view
   const filteredPages = pages.filter(p => {
     const matchesSearch = searchQuery === '' || p.pageNumber.toString().includes(searchQuery) || p.surahName.includes(searchQuery);
-    const matchesStatus = statusFilter === 'all' || p.status === statusFilter;
-    const matchesJuz = juzFilter === 'all' || p.juz.toString() === juzFilter;
+    
+    let matchesStatus = true;
+    if (statusFilter === 'memorized') matchesStatus = p.status !== 'unmemorized';
+    else if (statusFilter !== 'all') matchesStatus = p.status === statusFilter;
+
+    const matchesJuz = activeJuzTab === 'all' || p.juz === Number(activeJuzTab);
     return matchesSearch && matchesStatus && matchesJuz;
   });
 
@@ -222,14 +388,14 @@ export const QuranMapPage = () => {
       case 'excellent': return '#10B981'; // Green
       case 'review': return '#F59E0B'; // Yellow
       case 'critical': return '#EF4444'; // Red
-      default: return '#334155'; // Dark Gray
+      default: return '#334155'; // Dark Slate Gray (unmemorized)
     }
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', position: 'relative' }}>
       
-      {/* Toast Notification Message */}
+      {/* Toast Notification */}
       {statusMessage && (
         <div style={{
           position: 'fixed',
@@ -260,8 +426,9 @@ export const QuranMapPage = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(0,0,0,0.6)',
-          zIndex: 999,
+          background: 'rgba(0,0,0,0.65)',
+          backdropFilter: 'blur(5px)',
+          zIndex: 9999,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -270,17 +437,17 @@ export const QuranMapPage = () => {
           <div style={{
             background: 'var(--bg-surface)',
             border: '1px solid var(--glass-border)',
-            borderRadius: '20px',
+            borderRadius: '24px',
             padding: '28px',
             maxWidth: '450px',
             width: '100%',
-            boxShadow: 'var(--shadow-soft)'
+            boxShadow: 'var(--shadow-xl)'
           }}>
             <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', color: 'var(--text-primary)' }}>
               🎯 تحديث إجمالي عدد الصفحات المحفوظة
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
-              أدخل إجمالي عدد الصفحات التي حفظتها في الصدر حتى الآن (من 0 إلى 604)، وسيتم تحديث الخريطة الذهنية وملفك الشخصي فوراً:
+              أدخل إجمالي عدد الصفحات التي حفظتها في صدرك حتى الآن (من 0 إلى 604)، وسيتم تحديث الخريطة الذهنية ومحفظتك فوراً:
             </p>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
@@ -293,8 +460,8 @@ export const QuranMapPage = () => {
                 style={{
                   flex: 1,
                   padding: '12px 16px',
-                  borderRadius: '10px',
-                  border: '1px solid var(--primary)',
+                  borderRadius: '12px',
+                  border: '1.5px solid var(--primary)',
                   background: 'var(--bg-color)',
                   color: 'var(--text-primary)',
                   fontSize: '16px',
@@ -326,22 +493,31 @@ export const QuranMapPage = () => {
       )}
 
       {/* Main Grid View */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
-        {/* Header & Controls */}
-        <div style={{ 
-          padding: isMobile ? '16px' : '24px', 
-          borderRadius: '20px', 
-          background: 'var(--bg-surface)', 
+        {/* KPI Portfolio Header Banner */}
+        <div style={{
+          padding: '24px',
+          borderRadius: '20px',
+          background: 'var(--bg-surface)',
           border: '1px solid var(--glass-border)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '16px'
+          gap: '18px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <h2 style={{ fontSize: isMobile ? '20px' : '24px', color: 'var(--text-primary)', margin: 0 }}>🗺️ الخارطة الشاملة لمصفحات القرآن (604 صفحة)</h2>
-              <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>مؤشر مرئي دقيق لاستقرار الذاكرة ودرجة تثبيت كل صفحة في الصدر</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                <h2 style={{ fontSize: isMobile ? '20px' : '24px', color: 'var(--text-primary)', margin: 0 }}>
+                  🗺️ خريطة القرآن التفاعلية (604 صفحة)
+                </h2>
+                <span style={{ padding: '4px 10px', borderRadius: '20px', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: '12px', fontWeight: 'bold' }}>
+                  متصل بمحفظتك
+                </span>
+              </div>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+                مرآة بصرية دقيقة تعكس محفوظك الفعلي، نسبة تثبيته، ومواضع المراجعة اليومية
+              </p>
             </div>
 
             <button
@@ -360,31 +536,58 @@ export const QuranMapPage = () => {
                 gap: '8px'
               }}
             >
-              🎯 مستوى الحفظ المسجل: {memorizedPagesCount} صفحة ({(memorizedPagesCount / 20).toFixed(1)} جزء) ✏️
+              🎯 تعديل رصيد المحفظة: {activeMemorizedCount} صفحة ({(activeMemorizedCount / 20).toFixed(1)} جزء) ✏️
             </button>
           </div>
 
-          {/* Controls Bar */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Search Input */}
-            <div style={{ flex: 1, minWidth: '180px', padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* KPI Mini-Cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+            <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📗 محفوظ في الصدر</span>
+              <strong style={{ fontSize: '18px', color: 'var(--primary)' }}>{activeMemorizedCount} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>صفحة</span></strong>
+            </div>
+
+            <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📚 أجزاء مكتملة</span>
+              <strong style={{ fontSize: '18px', color: '#10B981' }}>{completedJuzs.length} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>من 30</span></strong>
+            </div>
+
+            <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>🟢 حفظ ممتاز</span>
+              <strong style={{ fontSize: '18px', color: '#10B981' }}>{excellentCount}</strong>
+            </div>
+
+            <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>🟡 يحتاج مراجعة</span>
+              <strong style={{ fontSize: '18px', color: '#F59E0B' }}>{reviewCount}</strong>
+            </div>
+
+            <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>🎯 نسبة الختم</span>
+              <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{((activeMemorizedCount / 604) * 100).toFixed(1)}%</strong>
+            </div>
+          </div>
+
+          {/* Search & Filter Bar */}
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <div style={{ flex: 1, minWidth: '200px', padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Search size={18} color="var(--text-secondary)" />
               <input 
                 type="text" 
-                placeholder="ابحث برقم الصفحة أو السورة..." 
+                placeholder="ابحث برقم الصفحة أو اسم السورة..." 
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                style={{ border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '14px', width: '100%' }}
+                style={{ border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '13.5px', width: '100%' }}
               />
             </div>
 
-            {/* Status Filter Pills */}
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
               {[
-                { id: 'all', label: 'الكل (604)' },
-                { id: 'excellent', label: '🟢 ممتاز', color: '#10B981' },
-                { id: 'review', label: '🟡 مراجعة', color: '#F59E0B' },
-                { id: 'critical', label: '🔴 حرج', color: '#EF4444' }
+                { id: 'all', label: `الكل (604)` },
+                { id: 'memorized', label: `📗 المحفوظ (${activeMemorizedCount})` },
+                { id: 'excellent', label: `🟢 ممتاز (${excellentCount})` },
+                { id: 'review', label: `🟡 مراجعة (${reviewCount})` },
+                { id: 'critical', label: `🔴 حرج (${criticalCount})` }
               ].map(f => (
                 <button
                   key={f.id}
@@ -407,19 +610,169 @@ export const QuranMapPage = () => {
           </div>
         </div>
 
-        {/* 604 Grid Box Container */}
+        {/* 📚 Juz Navigation & Selection Strip (الأجزاء من 1 إلى 30) */}
+        <div style={{
+          padding: '16px',
+          borderRadius: '18px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--glass-border)'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Layers size={16} color="var(--primary)" /> تصفح وإدارة الأجزاء القرآنية (١ - ٣٠):
+            </span>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button
+                onClick={() => setActiveJuzTab('all')}
+                style={{
+                  padding: '5px 12px',
+                  borderRadius: '8px',
+                  border: `1px solid ${activeJuzTab === 'all' ? 'var(--primary)' : 'var(--glass-border)'}`,
+                  background: activeJuzTab === 'all' ? 'var(--primary)' : 'transparent',
+                  color: activeJuzTab === 'all' ? 'white' : 'var(--text-secondary)',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  cursor: 'pointer'
+                }}
+              >
+                عرض المصحف كاملاً
+              </button>
+            </div>
+          </div>
+
+          {/* Scrollable Juz Buttons */}
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            overflowX: 'auto',
+            paddingBottom: '8px'
+          }}>
+            {Array.from({ length: 30 }, (_, i) => i + 1).map((jNum) => {
+              const range = getPageRangeForJuz(jNum);
+              const juzPages = pages.filter(p => p.pageNumber >= range.startPage && p.pageNumber <= range.endPage);
+              const memInJuz = juzPages.filter(p => p.status !== 'unmemorized').length;
+              const isFull = juzPages.length > 0 && memInJuz === juzPages.length;
+              const isPartial = memInJuz > 0 && !isFull;
+              const isActive = activeJuzTab === jNum.toString();
+
+              let badgeColor = '#94A3B8';
+              if (isFull) badgeColor = '#10B981';
+              else if (isPartial) badgeColor = '#F59E0B';
+
+              return (
+                <button
+                  key={jNum}
+                  onClick={() => setActiveJuzTab(jNum.toString())}
+                  style={{
+                    flexShrink: 0,
+                    padding: '8px 12px',
+                    borderRadius: '10px',
+                    border: `1.5px solid ${isActive ? 'var(--primary)' : 'var(--glass-border)'}`,
+                    background: isActive ? 'var(--primary-light)' : 'var(--bg-color)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: '4px',
+                    minWidth: '68px',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: isActive ? 'var(--primary)' : 'var(--text-primary)' }}>
+                    جزء {jNum}
+                  </span>
+                  <span style={{
+                    fontSize: '10px',
+                    padding: '2px 6px',
+                    borderRadius: '6px',
+                    background: isFull ? 'rgba(16, 185, 129, 0.15)' : (isPartial ? 'rgba(245, 158, 11, 0.15)' : 'rgba(148, 163, 184, 0.15)'),
+                    color: badgeColor,
+                    fontWeight: 'bold'
+                  }}>
+                    {isFull ? 'مكتمل ✅' : (isPartial ? `${memInJuz} ص` : 'لم يحفظ')}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Active Juz Quick Bulk Actions Banner */}
+          {activeJuzTab !== 'all' && (
+            <div style={{
+              marginTop: '14px',
+              padding: '12px 16px',
+              borderRadius: '12px',
+              background: 'var(--primary-light)',
+              border: '1px solid var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px'
+            }}>
+              <div>
+                <strong style={{ fontSize: '13.5px', color: 'var(--primary)' }}>
+                  📖 الجزء {activeJuzTab} (الصفحات {getPageRangeForJuz(Number(activeJuzTab)).startPage} - {getPageRangeForJuz(Number(activeJuzTab)).endPage})
+                </strong>
+                <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>
+                  يمكنك تعليم الجزء كاملاً كمحفوظ أو إلغاؤه بضغطة زر واحدة لتحديث محفظتك فوراً:
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button
+                  onClick={() => handleBulkSetJuzStatus(Number(activeJuzTab), true)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: '#10B981',
+                    color: 'white',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                >
+                  <Check size={14} />
+                  <span>تعليم الجزء كاملاً كمحفوظ 🟢</span>
+                </button>
+
+                <button
+                  onClick={() => handleBulkSetJuzStatus(Number(activeJuzTab), false)}
+                  style={{
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    border: '1px solid var(--glass-border)',
+                    background: 'var(--bg-surface)',
+                    color: 'var(--text-secondary)',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  إلغاء تحديد الجزء ⚪
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* 604 Interactive Grid */}
         <div style={{ 
           padding: isMobile ? '12px' : '24px', 
           borderRadius: '20px', 
           background: 'var(--bg-surface)', 
           border: '1px solid var(--glass-border)',
-          maxHeight: '600px',
+          maxHeight: '620px',
           overflowY: 'auto'
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(40px, 1fr))',
-            gap: '6px'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(42px, 1fr))',
+            gap: '7px'
           }}>
             {filteredPages.map(page => {
               const bg = getStatusColor(page.status);
@@ -429,10 +782,10 @@ export const QuranMapPage = () => {
                 <button
                   key={page.pageNumber}
                   onClick={() => setSelectedPage(page)}
-                  title={`صفحة ${page.pageNumber} - سورة ${page.surahName} (${page.score}%)`}
+                  title={`صفحة ${page.pageNumber} - سورة ${page.surahName} (جزء ${page.juz})`}
                   style={{
-                    height: '40px',
-                    borderRadius: '8px',
+                    height: '42px',
+                    borderRadius: '9px',
                     border: isSelected ? '2px solid #FFFFFF' : 'none',
                     backgroundColor: bg,
                     color: page.status === 'unmemorized' ? '#94A3B8' : '#FFFFFF',
@@ -443,8 +796,8 @@ export const QuranMapPage = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'transform 0.1s ease',
-                    boxShadow: isSelected ? '0 0 12px rgba(16, 185, 129, 0.6)' : 'none',
-                    transform: isSelected ? 'scale(1.1)' : 'scale(1)'
+                    boxShadow: isSelected ? '0 0 12px rgba(16, 185, 129, 0.7)' : 'none',
+                    transform: isSelected ? 'scale(1.12)' : 'scale(1)'
                   }}
                 >
                   {page.pageNumber}
@@ -456,24 +809,24 @@ export const QuranMapPage = () => {
 
       </div>
 
-      {/* Side Detail Panel (Appears when a page is selected) */}
+      {/* Side Detail Panel (When a page is selected) */}
       {selectedPage && (
         <div style={{
-          width: isMobile ? '100%' : '320px',
+          width: isMobile ? '100%' : '330px',
           padding: '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
           border: '1px solid var(--glass-border)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          gap: '18px',
           boxShadow: 'var(--shadow-soft)',
           position: 'sticky',
-          top: '100px',
+          top: '90px',
           height: 'fit-content'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '20px', color: 'var(--text-primary)' }}>
+            <h3 style={{ margin: 0, fontSize: '19px', color: 'var(--text-primary)' }}>
               تفاصيل الصفحة {selectedPage.pageNumber}
             </h3>
             <button 
@@ -484,17 +837,17 @@ export const QuranMapPage = () => {
             </button>
           </div>
 
-          <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+          <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
             <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>السورة والجزء</span>
-            <h4 style={{ margin: '4px 0 0 0', fontSize: '18px', color: 'var(--text-primary)' }}>
+            <h4 style={{ margin: '4px 0 0 0', fontSize: '17px', color: 'var(--text-primary)' }}>
               سورة {selectedPage.surahName} (الجزء {selectedPage.juz})
             </h4>
           </div>
 
           {/* Memory Score Meter */}
           <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '14px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>استقرار الذاكرة (Memory Score):</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+              <span style={{ color: 'var(--text-secondary)' }}>استقرار الذاكرة في الصدر:</span>
               <span style={{ fontWeight: 'bold', color: getStatusColor(selectedPage.status) }}>
                 {selectedPage.score}%
               </span>
@@ -506,7 +859,7 @@ export const QuranMapPage = () => {
 
           {/* Interactive Page Status Controls */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+            <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
               تعديل حالة هذه الصفحة المباشر:
             </span>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -576,107 +929,35 @@ export const QuranMapPage = () => {
             </div>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-            <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
-              <Clock size={18} color="var(--primary)" style={{ margin: '0 auto 4px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
+              <Clock size={16} color="var(--primary)" style={{ margin: '0 auto 4px' }} />
               <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>آخر مراجعة</span>
-              <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{selectedPage.lastReviewed}</strong>
+              <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{selectedPage.lastReviewed}</strong>
             </div>
 
-            <div style={{ padding: '12px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
-              <AlertTriangle size={18} color={selectedPage.errorsCount > 0 ? '#EF4444' : 'var(--primary)'} style={{ margin: '0 auto 4px' }} />
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>سجل الأخطاء</span>
-              <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{selectedPage.errorsCount} أخطاء</strong>
+            <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
+              <AlertTriangle size={16} color={selectedPage.errorsCount > 0 ? '#EF4444' : 'var(--primary)'} style={{ margin: '0 auto 4px' }} />
+              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>سجل التنبيهات</span>
+              <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{selectedPage.errorsCount} ملاحظات</strong>
             </div>
           </div>
 
           {/* AI Recommendation */}
-          <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <Sparkles size={18} color="var(--primary)" />
-              <strong style={{ fontSize: '14px', color: 'var(--primary)' }}>توصية الذكاء الاصطناعي:</strong>
+          <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+              <Sparkles size={16} color="var(--primary)" />
+              <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>توجيه الذكاء الاصطناعي:</strong>
             </div>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-              {selectedPage.status === 'critical' 
-                ? 'ينصح بمراجعة هذه الصفحة اليوم في حصن الغد والتكرار 5 مرات صوتاً.' 
-                : 'حالة الحفظ ممتازة. جدول المراجعة القادم بعد 5 أيام.'}
+            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+              {selectedPage.status === 'unmemorized'
+                ? 'الصفحة غير مدرجة في محفوظك حالياً. يمكنك إضافتها لخطتك في الحصن الثالث (الحفظ الجديد).'
+                : (selectedPage.status === 'critical' 
+                  ? 'ينصح بمراجعة هذه الصفحة اليوم في حصن الغد والتكرار 5 مرات صوتاً.' 
+                  : 'حالة الحفظ ممتازة. جدول المراجعة القادم بعد 5 أيام.')}
             </p>
           </div>
 
-          {/* Dynamic Surah Mind Map Flowchart */}
-          {(() => {
-            const getSurahMindMap = (surahName) => {
-              if (surahName === 'الفاتحة') {
-                return {
-                  axis: 'محور السورة: تحقيق العبودية لله والاستعانة به وهداية الصراط.',
-                  nodes: [
-                    { label: 'القسم الأول', desc: 'حمد الله والثناء عليه وتمجيده (1-4)' },
-                    { label: 'القسم الثاني', desc: 'إفراد الله بالعبادة والاستعانة (5)' },
-                    { label: 'القسم الثالث', desc: 'الدعاء بالهداية للصراط المستقيم (6-7)' }
-                  ]
-                };
-              }
-              if (surahName === 'البقرة') {
-                return {
-                  axis: 'محور السورة: تهيئة الأمة للاستخلاف في الأرض وإقامة دين الله.',
-                  nodes: [
-                    { label: 'المقدمة وأصناف الناس', desc: 'صفات المؤمنين، الكافرين، والمنافقين (1-20)' },
-                    { label: 'قصة الاستخلاف وآدم', desc: 'بدء الخلق وعمارة الأرض وقصة السجود لآدم (30-39)' },
-                    { label: 'قصة البقرة وميثاق بني إسرائيل', desc: 'نقض العهد والتلكؤ في تلبية الأوامر (40-123)' },
-                    { label: 'أحكام التشريع والعبادات', desc: 'أحكام الصيام، النكاح، القصاص، الحج، والإنفاق (163-284)' },
-                    { label: 'آية الكرسي وخاتمة الدعاء', desc: 'أعظم آية بالقرآن والالتجاء التام لله (255, 285-286)' }
-                  ]
-                };
-              }
-              return {
-                axis: `محور السورة: مقاصد سورة ${surahName} وتثبيت العقيدة والعمل الصالح.`,
-                nodes: [
-                  { label: 'القسم الأول', desc: 'مقدمة السورة وبيان إعجاز القرآن ومحور الهداية.' },
-                  { label: 'القسم الثاني', desc: 'القصص والآيات الدالة على عظمة الخالق وتشريعه.' },
-                  { label: 'القسم الثالث', desc: 'خاتمة السورة والتوجيهات الإيمانية العامة للحفاظ.' }
-                ]
-              };
-            };
-
-            const map = getSurahMindMap(selectedPage.surahName);
-            return (
-              <div style={{
-                padding: '16px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(139, 92, 246, 0.04) 100%)',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '10px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Brain size={18} color="#3B82F6" />
-                  <strong style={{ fontSize: '14px', color: '#2563EB' }}>الخريطة الذهنية للمحاور 🗺️:</strong>
-                </div>
-                
-                <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: 1.4 }}>
-                  {map.axis}
-                </p>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '4px' }}>
-                  {map.nodes.map((node, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                        <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#3B82F6', marginTop: '5px' }} />
-                        {idx < map.nodes.length - 1 && (
-                          <div style={{ width: '2px', height: '28px', background: 'rgba(59, 130, 246, 0.2)' }} />
-                        )}
-                      </div>
-                      <div>
-                        <span style={{ fontSize: '11px', fontWeight: 'bold', color: '#2563EB', display: 'block' }}>{node.label}</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-primary)', lineHeight: 1.4 }}>{node.desc}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })()}
         </div>
       )}
 

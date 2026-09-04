@@ -14,23 +14,39 @@ import {
   Clock, 
   ArrowLeft, 
   ArrowRight,
-  Eye,
-  Volume2,
-  BookOpen,
-  Sparkles,
-  Loader2,
-  Calendar,
-  ShieldCheck,
-  Zap,
-  User
+  Eye, 
+  Volume2, 
+  BookOpen, 
+  Sparkles, 
+  Loader2, 
+  Calendar, 
+  ShieldCheck, 
+  Zap, 
+  User,
+  Fingerprint,
+  RotateCcw,
+  Sliders,
+  CheckCircle2,
+  HelpCircle
 } from 'lucide-react';
+import { getPageRangeForJuz } from '../utils/quranData';
+import { learningQuizQuestions, calculateLearningProfile } from '../utils/learningQuizData';
 
 const OnboardingWizard = () => {
   const { t, lang, isRTL } = useLanguage();
   const [step, setStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Diagnostic Quiz State
+  const [quizMode, setQuizMode] = useState('quiz'); // 'quiz' | 'manual'
+  const [quizAnswers, setQuizAnswers] = useState({});
+  const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
+  const [quizCompleted, setQuizCompleted] = useState(false);
+  const [calculatedProfile, setCalculatedProfile] = useState(null);
+
   const [formData, setFormData] = useState({
     learningStyle: lang === 'ar' ? 'سمعي بصري (مختلط)' : 'Audio-Visual (Mixed)',
+    learningProfile: null,
     motivation: lang === 'ar' ? 'نيل رضا الله وتثبيت الحفظ كاملاً' : 'Pleasing Allah and mastering the entire Quran',
     // Unit Type choice: 'pages' | 'juzs' | 'surahs'
     unitType: 'juzs',
@@ -78,32 +94,59 @@ const OnboardingWizard = () => {
     if (step > 1 && step !== 5) setStep(step - 1);
   };
 
+  // Quiz Answer Handler
+  const handleAnswerQuestion = (questionId, optionId) => {
+    const updatedAnswers = { ...quizAnswers, [questionId]: optionId };
+    setQuizAnswers(updatedAnswers);
+
+    if (currentQuestionIdx < learningQuizQuestions.length - 1) {
+      setCurrentQuestionIdx(currentQuestionIdx + 1);
+    } else {
+      // Quiz finished - calculate profile
+      const profile = calculateLearningProfile(updatedAnswers);
+      setCalculatedProfile(profile);
+      setQuizCompleted(true);
+      const chosenStyle = lang === 'ar' ? profile.styleLabelAr : profile.styleLabelEn;
+      setFormData(prev => ({
+        ...prev,
+        learningStyle: chosenStyle,
+        learningProfile: profile
+      }));
+    }
+  };
+
+  const handleResetQuiz = () => {
+    setQuizAnswers({});
+    setCurrentQuestionIdx(0);
+    setQuizCompleted(false);
+    setCalculatedProfile(null);
+  };
+
   const handleComplete = async () => {
+    let memorizedPages = [];
     let memorizedPagesCount = 0;
     let totalJuz = 0;
-    const selectedJuz = String(formData.juzsMemorized || '');
 
-    if (formData.customPagesCount && !isNaN(Number(formData.customPagesCount))) {
-      memorizedPagesCount = Math.min(604, Math.max(0, Number(formData.customPagesCount)));
-    } else if (selectedJuz.includes('604') || selectedJuz.includes('كامل')) {
-      memorizedPagesCount = 604;
-    } else if (selectedJuz.includes('400') || selectedJuz.includes('20')) {
-      memorizedPagesCount = 400;
-    } else if (selectedJuz.includes('300') || selectedJuz.includes('15')) {
-      memorizedPagesCount = 300;
-    } else if (selectedJuz.includes('200') || selectedJuz.includes('10')) {
-      memorizedPagesCount = 200;
-    } else if (selectedJuz.includes('100') || selectedJuz.includes('5')) {
-      memorizedPagesCount = 100;
-    } else if (selectedJuz.includes('60') || selectedJuz.includes('3')) {
-      memorizedPagesCount = 60;
-    } else if (selectedJuz.includes('43') || selectedJuz.includes('تبارك')) {
-      memorizedPagesCount = 43;
-    } else if (selectedJuz.includes('23') || selectedJuz.includes('عم')) {
-      memorizedPagesCount = 23;
-    } else if (selectedJuz.includes('0') || selectedJuz.includes('لم أحفظ')) {
-      memorizedPagesCount = 0;
+    if (formData.unitType === 'juzs' && Array.isArray(formData.selectedJuzList) && formData.selectedJuzList.length > 0) {
+      formData.selectedJuzList.forEach(juzNum => {
+        const range = getPageRangeForJuz(juzNum);
+        for (let p = range.startPage; p <= range.endPage; p++) {
+          if (!memorizedPages.includes(p)) {
+            memorizedPages.push(p);
+          }
+        }
+      });
+      memorizedPages.sort((a, b) => a - b);
+      memorizedPagesCount = memorizedPages.length;
+    } else if (formData.customPagesCount && !isNaN(Number(formData.customPagesCount))) {
+      const count = Math.min(604, Math.max(0, Number(formData.customPagesCount)));
+      memorizedPagesCount = count;
+      memorizedPages = Array.from({ length: count }, (_, i) => i + 1);
+    } else if (formData.unitType === 'surahs') {
+      memorizedPages = Array.from({ length: 21 }, (_, i) => i + 1);
+      memorizedPagesCount = 21;
     } else {
+      memorizedPages = [];
       memorizedPagesCount = 0;
     }
 
@@ -112,6 +155,7 @@ const OnboardingWizard = () => {
     const wizardUpdate = {
       hasCompletedWizard: true,
       preferences: formData,
+      memorizedPages,
       memorizedPagesCount,
       totalJuz
     };
@@ -145,6 +189,18 @@ const OnboardingWizard = () => {
     hidden: { opacity: 0, x: isRTL ? 20 : -20 },
     visible: { opacity: 1, x: 0 },
     exit: { opacity: 0, x: isRTL ? -20 : 20 }
+  };
+
+  const currentQ = learningQuizQuestions[currentQuestionIdx];
+
+  const getOptionIcon = (iconName) => {
+    switch (iconName) {
+      case 'Volume2': return <Volume2 size={20} />;
+      case 'Eye': return <Eye size={20} />;
+      case 'Fingerprint': return <Fingerprint size={20} />;
+      case 'BookOpen': return <BookOpen size={20} />;
+      default: return <Brain size={20} />;
+    }
   };
 
   return (
@@ -216,61 +272,229 @@ const OnboardingWizard = () => {
               </motion.div>
             )}
 
-            {/* Step 2: Learning Style Assessment */}
+            {/* Step 2: Learning Style Assessment (Quiz vs Manual) */}
             {step === 2 && (
               <motion.div key="step2" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.3 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Brain size={24} />
+                
+                {/* Header with Mode Toggle */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                    <div style={{ width: '46px', height: '46px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Brain size={24} />
+                    </div>
+                    <div>
+                      <h2 style={{ margin: 0, fontSize: '20px', color: 'var(--text-primary)' }}>
+                        {lang === 'ar' ? 'اختبار تحديد نمط الحفظ الأفضل لدماغك 🧠' : 'Brain Learning Style Assessment 🧠'}
+                      </h2>
+                      <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                        {lang === 'ar' ? 'صوتي أم مرئي؟ سنكتشف الطريقة الأكثر رسوخاً لتثبيت القرآن في صدرك.' : 'Audio or visual? Discover your most retention-proof memorization style.'}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 style={{ margin: 0, fontSize: '22px', color: 'var(--text-primary)' }}>{t('wizard_step1_title')}</h2>
-                    <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{t('wizard_step1_sub')}</p>
-                  </div>
+
+                  <button
+                    onClick={() => setQuizMode(quizMode === 'quiz' ? 'manual' : 'quiz')}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid var(--glass-border)',
+                      background: 'var(--bg-color)',
+                      color: 'var(--text-secondary)',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    <Sliders size={14} />
+                    <span>{quizMode === 'quiz' ? (lang === 'ar' ? 'تحديد يدوي مباشر' : 'Select Manually') : (lang === 'ar' ? 'خوض الاختبار الذكي' : 'Take Smart Quiz')}</span>
+                  </button>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', marginBottom: '32px' }}>
-                  {[
-                    { 
-                      style: lang === 'ar' ? 'بصري (الخرائط والصور)' : 'Visual (Maps & Images)', 
-                      icon: Eye, 
-                      desc: lang === 'ar' ? 'تعتمد على رؤية الصفحات والخرائط الذهنية وتلوين الكلمات.' : 'Focuses on mind maps, visual pages, and word coloring.' 
-                    },
-                    { 
-                      style: lang === 'ar' ? 'سمعي (التكرار والاستماع)' : 'Auditory (Listening & Repeat)', 
-                      icon: Volume2, 
-                      desc: lang === 'ar' ? 'تعتمد على الاستماع للقراء والتكرار الصوتي المباشر.' : 'Relies on listening to famous reciters and vocal repetition.' 
-                    },
-                    { 
-                      style: lang === 'ar' ? 'قراءة وكتابة (الكتابة والرسم)' : 'Reading/Writing (Scribes)', 
-                      icon: BookOpen, 
-                      desc: lang === 'ar' ? 'تعتمد على كتابة الآيات وملاحظة المتشابهات كتابياً.' : 'Uses writing out verses and cataloging similarity points.' 
-                    },
-                    { 
-                      style: lang === 'ar' ? 'مختلط (شامل)' : 'Mixed (Comprehensive Style)', 
-                      icon: Sparkles, 
-                      desc: lang === 'ar' ? 'الدمج بين الاستماع والبصر والتسميع التفاعلي.' : 'A robust blend of auditory, visual, and verbal recitation.' 
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.style}
-                      onClick={() => setFormData({ ...formData, learningStyle: item.style })}
-                      style={{
-                        padding: '20px',
-                        borderRadius: '16px',
-                        border: `2px solid ${formData.learningStyle === item.style ? 'var(--primary)' : 'var(--glass-border)'}`,
-                        background: formData.learningStyle === item.style ? 'var(--primary-light)' : 'var(--bg-surface)',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        textAlign: isRTL ? 'right' : 'left'
-                      }}
-                    >
-                      <item.icon size={24} color={formData.learningStyle === item.style ? 'var(--primary)' : 'var(--text-secondary)'} style={{ marginBottom: '12px' }} />
-                      <h4 style={{ margin: '0 0 6px 0', fontSize: '16px', color: formData.learningStyle === item.style ? 'var(--primary)' : 'var(--text-primary)' }}>{item.style}</h4>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</p>
-                    </div>
-                  ))}
-                </div>
+                {/* 1. QUIZ MODE */}
+                {quizMode === 'quiz' && (
+                  <div>
+                    {!quizCompleted ? (
+                      <div>
+                        {/* Question Progress Bar */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                          <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--primary)' }}>
+                            {lang === 'ar' ? `السؤال ${currentQuestionIdx + 1} من ${learningQuizQuestions.length}` : `Question ${currentQuestionIdx + 1} of ${learningQuizQuestions.length}`}
+                          </span>
+                          <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                            {lang === 'ar' ? 'اختبار تشخيصي سريع (دقيقة واحدة)' : 'Quick Diagnostic (1 min)'}
+                          </span>
+                        </div>
+
+                        <div style={{ height: '4px', width: '100%', background: 'var(--glass-border)', borderRadius: '2px', marginBottom: '20px', overflow: 'hidden' }}>
+                          <div 
+                            style={{ 
+                              height: '100%', 
+                              width: `${((currentQuestionIdx + 1) / learningQuizQuestions.length) * 100}%`, 
+                              background: 'var(--primary)', 
+                              transition: 'width 0.3s ease' 
+                            }} 
+                          />
+                        </div>
+
+                        {/* Question Title */}
+                        <h3 style={{ fontSize: '16px', color: 'var(--text-primary)', marginBottom: '16px', lineHeight: 1.5, textAlign: isRTL ? 'right' : 'left' }}>
+                          {lang === 'ar' ? currentQ.titleAr : currentQ.titleEn}
+                        </h3>
+
+                        {/* Question Options */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '28px' }}>
+                          {currentQ.options.map((opt) => {
+                            const isSelected = quizAnswers[currentQ.id] === opt.id;
+                            return (
+                              <div
+                                key={opt.id}
+                                onClick={() => handleAnswerQuestion(currentQ.id, opt.id)}
+                                style={{
+                                  padding: '16px',
+                                  borderRadius: '14px',
+                                  border: `1.5px solid ${isSelected ? 'var(--primary)' : 'var(--glass-border)'}`,
+                                  background: isSelected ? 'var(--primary-light)' : 'var(--bg-color)',
+                                  cursor: 'pointer',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '14px',
+                                  transition: 'all 0.2s ease',
+                                  textAlign: isRTL ? 'right' : 'left'
+                                }}
+                              >
+                                <div style={{
+                                  width: '36px',
+                                  height: '36px',
+                                  borderRadius: '10px',
+                                  background: isSelected ? 'var(--primary)' : 'var(--bg-surface)',
+                                  color: isSelected ? 'white' : 'var(--text-secondary)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  flexShrink: 0
+                                }}>
+                                  {getOptionIcon(opt.icon)}
+                                </div>
+                                <span style={{ fontSize: '13.5px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                                  {lang === 'ar' ? opt.textAr : opt.textEn}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      /* Quiz Completed - Diagnosis Card */
+                      <div style={{ padding: '24px', borderRadius: '18px', background: 'var(--bg-color)', border: '1.5px solid var(--primary)', textAlign: isRTL ? 'right' : 'left', marginBottom: '28px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                          <div style={{ width: '42px', height: '42px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <CheckCircle2 size={24} />
+                          </div>
+                          <div>
+                            <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)', display: 'block' }}>
+                              🎯 النمط الأنسب الذي أظهره الاختبار:
+                            </span>
+                            <h3 style={{ margin: 0, fontSize: '19px', color: 'var(--text-primary)' }}>
+                              {lang === 'ar' ? calculatedProfile?.styleLabelAr : calculatedProfile?.styleLabelEn}
+                            </h3>
+                          </div>
+                        </div>
+
+                        <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '18px' }}>
+                          {lang === 'ar' ? calculatedProfile?.recommendationAr : calculatedProfile?.recommendationEn}
+                        </p>
+
+                        {/* Scores breakdown */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '16px' }}>
+                          <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>🎧 نمط صوتي / سمعي</span>
+                            <strong style={{ fontSize: '15px', color: 'var(--primary)' }}>{calculatedProfile?.percentages?.auditory}%</strong>
+                          </div>
+                          <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>👁️ نمط مرئي / بصري</span>
+                            <strong style={{ fontSize: '15px', color: 'var(--primary)' }}>{calculatedProfile?.percentages?.visual}%</strong>
+                          </div>
+                          <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>✍️ نمط حركي / كتابي</span>
+                            <strong style={{ fontSize: '15px', color: 'var(--text-primary)' }}>{calculatedProfile?.percentages?.kinesthetic}%</strong>
+                          </div>
+                          <div style={{ padding: '10px 14px', borderRadius: '10px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>📖 نمط تحليلي / تدبري</span>
+                            <strong style={{ fontSize: '15px', color: 'var(--text-primary)' }}>{calculatedProfile?.percentages?.analytical}%</strong>
+                          </div>
+                        </div>
+
+                        <button
+                          onClick={handleResetQuiz}
+                          style={{
+                            padding: '8px 14px',
+                            borderRadius: '8px',
+                            border: '1px solid var(--glass-border)',
+                            background: 'var(--bg-surface)',
+                            color: 'var(--text-secondary)',
+                            fontSize: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px'
+                          }}
+                        >
+                          <RotateCcw size={14} />
+                          <span>{lang === 'ar' ? 'إعادة الاختبار' : 'Retake Quiz'}</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* 2. MANUAL SELECTION MODE */}
+                {quizMode === 'manual' && (
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '16px', marginBottom: '32px' }}>
+                    {[
+                      { 
+                        style: lang === 'ar' ? 'سمعي (صوتي)' : 'Auditory (Audio-First)', 
+                        icon: Volume2, 
+                        desc: lang === 'ar' ? 'تعتمد على الاستماع للقراء والتكرار الصوتي المباشر لنبرة التلاوة.' : 'Relies on listening to famous reciters and vocal repetition.' 
+                      },
+                      { 
+                        style: lang === 'ar' ? 'بصري (مرئي)' : 'Visual (Visual-First)', 
+                        icon: Eye, 
+                        desc: lang === 'ar' ? 'تعتمد على رؤية الصفحات والخرائط الذهنية وتلوين الكلمات وأماكن الآيات.' : 'Focuses on mind maps, visual pages, and word coloring.' 
+                      },
+                      { 
+                        style: lang === 'ar' ? 'سمعي بصري (مختلط)' : 'Audio-Visual (Mixed)', 
+                        icon: Sparkles, 
+                        desc: lang === 'ar' ? 'الدمج المتوازن بين الاستماع للشيخ ومتابعة صفحة المصحف.' : 'A robust blend of auditory, visual, and verbal recitation.' 
+                      },
+                      { 
+                        style: lang === 'ar' ? 'حركي وكتابي (تفاعلي)' : 'Kinesthetic & Scribe', 
+                        icon: Fingerprint, 
+                        desc: lang === 'ar' ? 'تعتمد على كتابة الآيات واستخدام المسبحة والتسميع التفاعلي.' : 'Uses writing out verses and interactive repetition.' 
+                      }
+                    ].map((item) => (
+                      <div
+                        key={item.style}
+                        onClick={() => setFormData({ ...formData, learningStyle: item.style })}
+                        style={{
+                          padding: '20px',
+                          borderRadius: '16px',
+                          border: `2px solid ${formData.learningStyle === item.style ? 'var(--primary)' : 'var(--glass-border)'}`,
+                          background: formData.learningStyle === item.style ? 'var(--primary-light)' : 'var(--bg-surface)',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                          textAlign: isRTL ? 'right' : 'left'
+                        }}
+                      >
+                        <item.icon size={24} color={formData.learningStyle === item.style ? 'var(--primary)' : 'var(--text-secondary)'} style={{ marginBottom: '12px' }} />
+                        <h4 style={{ margin: '0 0 6px 0', fontSize: '16px', color: formData.learningStyle === item.style ? 'var(--primary)' : 'var(--text-primary)' }}>{item.style}</h4>
+                        <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>{item.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
               </motion.div>
             )}
 
@@ -365,7 +589,7 @@ const OnboardingWizard = () => {
                     </div>
                   </div>
 
-                  {/* 2. Old Memorization & Review Portion (مراجعة المحفوظ القديم) */}
+                  {/* 2. Old Memorization & Review Portion */}
                   <div style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <label style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '8px' }}>
                       {lang === 'ar' ? '2️⃣ تحديد المحفوظ القديم المسبق لمراجعته:' : '2️⃣ Past Memorization Range to Review:'}
@@ -528,15 +752,19 @@ const OnboardingWizard = () => {
                       <CheckCircle size={36} />
                     </div>
                     <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', marginBottom: '8px' }}>
-                      {lang === 'ar' ? 'تم اعتماد خطتك الشخصية بنجاح! 🎉' : 'Your custom plan has been configured! 🎉'}
+                      {lang === 'ar' ? 'تم اعتماد خطتك ومحفظتك القرآنية بنجاح! 🎉' : 'Your custom plan has been configured! 🎉'}
                     </h2>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '15px', marginBottom: '28px' }}>
                       {lang === 'ar' 
-                        ? `نوع الخطة: (${formData.planCreatorMode === 'ai' ? 'ذكاء اصطناعي ذكي' : 'مخصصة يدوياً'}) - وحدة القياس: (${formData.unitType === 'pages' ? 'صفحات' : formData.unitType === 'juzs' ? 'أجزاء' : 'سور وآيات'})`
-                        : `Plan Mode: (${formData.planCreatorMode === 'ai' ? 'AI Smart Plan' : 'Manual Custom'}) - Unit: (${formData.unitType})`}
+                        ? `نمط الحفظ: (${formData.learningStyle}) - وحدة القياس: (${formData.unitType === 'pages' ? 'صفحات' : formData.unitType === 'juzs' ? 'أجزاء' : 'سور وآيات'})`
+                        : `Learning Style: (${formData.learningStyle}) - Unit: (${formData.unitType})`}
                     </p>
 
                     <div style={{ padding: '24px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: isRTL ? 'right' : 'left', marginBottom: '32px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                        <span style={{ color: 'var(--text-secondary)' }}>{lang === 'ar' ? 'نمط الحفظ المعتمد:' : 'Adopted style:'}</span>
+                        <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>{formData.learningStyle}</span>
+                      </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
                         <span style={{ color: 'var(--text-secondary)' }}>{lang === 'ar' ? 'وحدة التتبع المعتمدة:' : 'Tracking unit:'}</span>
                         <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
@@ -554,7 +782,7 @@ const OnboardingWizard = () => {
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: 'var(--text-secondary)' }}>{lang === 'ar' ? 'أفضل وقت للمراجعة:' : 'Optimal review time:'}</span>
+                        <span style={{ color: 'var(--text-secondary)' }}>{lang === 'ar' ? 'أفضل وقت للمراجعة والتسميع:' : 'Optimal review time:'}</span>
                         <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>
                           {lang === 'ar' ? 'بعد صلاة الفجر (أعلى تركيز ذهني)' : 'After Fajr prayer (highest mental focus)'}
                         </span>

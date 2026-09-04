@@ -55,8 +55,20 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
   const userId = user?.uid || 'guest';
 
   // Current user's progress
-  const userMemorizedCount = Math.max(0, Number(user?.memorizedPagesCount) || 0);
-  const initialPage = Math.min(604, Math.max(1, userMemorizedCount + 1));
+  const userMemorizedPages = Array.isArray(user?.memorizedPages) ? user.memorizedPages : [];
+  const userSelectedJuzs = Array.isArray(user?.preferences?.selectedJuzList) ? user.preferences.selectedJuzList : [];
+  const userMemorizedCount = Math.max(0, Number(user?.memorizedPagesCount) || userMemorizedPages.length);
+  
+  let initialPage = 1;
+  if (userMemorizedPages.length > 0) {
+    const maxPage = Math.max(...userMemorizedPages);
+    initialPage = maxPage < 604 ? maxPage + 1 : 1;
+  } else if (userSelectedJuzs.length > 0) {
+    const maxJuz = Math.max(...userSelectedJuzs);
+    initialPage = getJuzStartPage(maxJuz < 30 ? maxJuz + 1 : 1);
+  } else if (userMemorizedCount > 0) {
+    initialPage = Math.min(604, userMemorizedCount + 1);
+  }
   const initialJuz = getJuzForPage(initialPage);
 
   // Active state
@@ -260,7 +272,13 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
   const getAudioSource = () => {
     const surahNum = surahs.findIndex(s => s.name === currentSurah) + 1 || 1;
     const formattedSurah = String(surahNum).padStart(3, '0');
-    return `https://server8.mp3quran.net/afs/${formattedSurah}.mp3`;
+    if (selectedReciter === 'ar.dossari' || selectedReciter === 'ar.yasseraldossari') {
+      return `https://server11.mp3quran.net/yasser/${formattedSurah}.mp3`;
+    }
+    if (selectedReciter === 'ar.alafasy') {
+      return `https://server8.mp3quran.net/afs/${formattedSurah}.mp3`;
+    }
+    return `https://server13.mp3quran.net/husr/${formattedSurah}.mp3`;
   };
 
   return (
@@ -792,8 +810,31 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               </div>
             </div>
 
-            {/* Audio Play Button */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {/* Reciter Selector & Audio Play Button */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <select
+                value={selectedReciter}
+                onChange={(e) => {
+                  setSelectedReciter(e.target.value);
+                  setIsPlayingAudio(false);
+                }}
+                style={{
+                  padding: '8px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid var(--glass-border)',
+                  background: 'var(--bg-surface)',
+                  color: 'var(--text-primary)',
+                  fontSize: '12.5px',
+                  fontWeight: 'bold',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="ar.dossari">الشيخ د. ياسر الدوسري (إمام الحرم المكي)</option>
+                <option value="ar.alafasy">الشيخ مشاري راشد العفاسي</option>
+                <option value="ar.husary">الشيخ محمود خليل الحصري</option>
+              </select>
+
               <button
                 onClick={handleToggleAudio}
                 style={{

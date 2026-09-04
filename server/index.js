@@ -652,7 +652,7 @@ app.post('/api/ai/chat', async (req, res) => {
 
   try {
     let responseText = '';
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = (req.body.apiKey && req.body.apiKey.trim()) || process.env.GEMINI_API_KEY;
 
     const userStatePrompt = `
 [بيانات الحافظ الحالية]:
@@ -660,14 +660,15 @@ app.post('/api/ai/chat', async (req, res) => {
 - الصفحة الحالية للحفظ: ${uCtx.currentPage || 1}
 - السورة الحالية: ${uCtx.currentSurah || 'الفاتحة'}
 - الجزء الحالي: ${uCtx.currentJuz || 1}
+- نمط الحفظ: ${uCtx.learningStyle || 'سمعي بصري'}
 - عدد الصفحات المحفوظة: ${uCtx.memorizedPagesCount || 0}
 - الحصون المنجزة اليوم: ${JSON.stringify(uCtx.fortressesToday || {})}
 - الهدف اليومي المختار: ${uCtx.dailyTarget || 'صفحة واحدة'}
 `;
 
     if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
-      // Cascade across candidate models to avoid 503 spike or timeout issues
-      const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-3.7-flash'];
+      // Valid Gemini models
+      const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
       const ai = new GoogleGenAI({
         apiKey,
         httpOptions: {

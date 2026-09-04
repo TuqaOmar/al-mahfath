@@ -19,6 +19,7 @@ import { useAuth } from '../context/AuthContext';
 import { AudioWaveVisualizer } from './AudioWaveVisualizer';
 
 const recitersList = [
+  { id: 'ar.dossari', name: 'ياسر الدوسري', sub: 'إمام الحرم المكي (تلاوة خاشعة مميزة)' },
   { id: 'ar.alafasy', name: 'مشاري بن راشد العفاسي', sub: 'تلاوة خاشعة' },
   { id: 'ar.husary', name: 'محمود خليل الحصري', sub: 'المعلم والمصحف المرتل' },
   { id: 'ar.minshawi', name: 'محمد صديق المنشاوي', sub: 'المنشاوي المرتل' },
@@ -111,8 +112,11 @@ export const QuranInteractiveView = () => {
       });
   }, [pageNumber]);
 
-  // Audio URL format for AlQuran Cloud API (using global ayah number)
-  const currentAudioUrl = `https://cdn.islamic.network/quran/audio/128/${selectedReciter}/${activeAyahNum}.mp3`;
+  // Audio URL format for AlQuran Cloud API / EveryAyah for Sheikh Yasser Al-Dossari
+  const activeAyahObj = ayahs.find(a => a.number === activeAyahNum);
+  const currentAudioUrl = (selectedReciter === 'ar.dossari' && activeAyahObj)
+    ? `https://everyayah.com/data/Yasser_Ad-Dussary_128kbps/${String(activeAyahObj.surah.number).padStart(3, '0')}${String(activeAyahObj.numberInSurah).padStart(3, '0')}.mp3`
+    : `https://cdn.islamic.network/quran/audio/128/${selectedReciter}/${activeAyahNum}.mp3`;
 
   // Keep isPlayingRef in sync with isPlaying state
   useEffect(() => {
