@@ -644,7 +644,9 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
         display: 'flex',
         gap: '10px',
         overflowX: 'auto',
-        paddingBottom: '4px'
+        paddingBottom: '6px',
+        scrollbarWidth: 'thin',
+        maxWidth: '100%'
       }}>
         {[
           { id: 1, title: isRTL ? 'الحصن ١: قراءة الختمة والحدر' : 'Fortress 1: Continuous Reading', color: '#3B82F6', icon: BookOpen, target: isRTL ? `الجزء ${fort1Juz}` : `Juz ${fort1Juz}` },
@@ -663,8 +665,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               onClick={() => setActiveFortressTab(tab.id)}
               style={{
                 flex: 1,
-                minWidth: '190px',
-                padding: '14px 16px',
+                minWidth: '155px',
+                padding: '12px 14px',
                 borderRadius: '16px',
                 background: isActive ? tab.color : 'var(--bg-surface)',
                 color: isActive ? 'white' : 'var(--text-primary)',
@@ -675,7 +677,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 flexDirection: 'column',
                 gap: '8px',
                 boxShadow: isActive ? `0 6px 18px ${tab.color}40` : 'none',
-                transition: 'all 0.2s ease'
+                transition: 'all 0.2s ease',
+                flexShrink: 0
               }}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

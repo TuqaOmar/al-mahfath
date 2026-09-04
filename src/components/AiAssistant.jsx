@@ -320,8 +320,8 @@ export const AiAssistant = () => {
       {/* Chat Messages Window */}
       <div style={{
         flex: 1,
-        minHeight: '400px',
-        maxHeight: '520px',
+        minHeight: '260px',
+        maxHeight: 'clamp(280px, 46vh, 480px)',
         overflowY: 'auto',
         padding: '20px',
         borderRadius: '20px',

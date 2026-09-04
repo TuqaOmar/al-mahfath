@@ -118,8 +118,11 @@ const Dashboard = () => {
   const { isDark, toggleTheme } = useTheme();
   const [isRecording, setIsRecording] = useState(false);
   const [hadithIdx, setHadithIdx] = useState(0);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    return typeof window !== 'undefined' ? window.innerWidth < 1200 : false;
+  });
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+  const [isLaptop, setIsLaptop] = useState(typeof window !== 'undefined' && window.innerWidth < 1200);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
 
@@ -142,11 +145,14 @@ const Dashboard = () => {
     }
   }, [user?.uid, user?.role]);
 
-  // Track screen size changes for responsiveness
+  // Track screen size changes for responsiveness (Laptop & Mobile)
   useEffect(() => {
     const handleResize = () => {
-      const mobile = window.innerWidth <= 768;
+      const w = window.innerWidth;
+      const mobile = w <= 768;
+      const laptop = w < 1200;
       setIsMobile(mobile);
+      setIsLaptop(laptop);
       if (mobile) {
         setSidebarCollapsed(true);
       }
@@ -213,7 +219,7 @@ const Dashboard = () => {
               {/* Targets Summary Chips */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: '12px',
                 padding: '16px',
                 borderRadius: '16px',
@@ -288,7 +294,7 @@ const Dashboard = () => {
             </div>
 
             {/* 2. Key Metrics Row (3 clean, essential cards) */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
               
               {/* Memorized Pages */}
               <Card style={{ padding: '20px' }}>
@@ -341,7 +347,7 @@ const Dashboard = () => {
             </div>
 
             {/* 3. Quick Access Hub (3 Core Navigation Cards) */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
               
               <div 
                 onClick={() => setActiveTab('quran-map')}
@@ -524,7 +530,7 @@ const Dashboard = () => {
             <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', marginBottom: '8px' }}>🏆 أوسمة وثمار صحبة القرآن</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>محطات إيمانية وتشجيعية في رحلتك مع كتاب الله.</p>
 
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
               {[
                 { title: 'رباط الاستمرار', desc: 'صحبة متتالية لكتاب الله لـ 7 أيام أو أكثر', unlocked: (user?.streak >= 7), icon: Flame },
                 { title: 'حافظ البقرة', desc: 'حفظ سورة البقرة بالكامل (أكثر من 48 صفحة)', unlocked: (user?.memorizedPagesCount >= 49), icon: Award },
@@ -568,13 +574,13 @@ const Dashboard = () => {
     }
   };
 
-  const mainPaneMargin = isMobile ? '0px' : (sidebarCollapsed ? '80px' : '260px');
+  const mainPaneMargin = isMobile ? '0px' : (sidebarCollapsed ? '76px' : '260px');
   const mainPaneStyles = isRTL 
     ? { marginRight: mainPaneMargin, marginLeft: 0, transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }
     : { marginLeft: mainPaneMargin, marginRight: 0, transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', maxWidth: '100vw', overflowX: 'hidden' }}>
       {/* Sidebar Drawer */}
       <Sidebar 
         activeTab={activeTab} 
@@ -587,6 +593,9 @@ const Dashboard = () => {
       {/* Main Content Pane */}
       <div style={{ 
         flex: 1, 
+        minWidth: 0,
+        maxWidth: '100%',
+        overflowX: 'hidden',
         display: 'flex', 
         flexDirection: 'column',
         minHeight: '100vh',
@@ -595,16 +604,19 @@ const Dashboard = () => {
         
         {/* Header */}
         <header style={{ 
-          height: '74px', 
+          minHeight: '64px',
+          height: 'auto',
           borderBottom: '1px solid var(--glass-border)', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between', 
-          padding: isMobile ? '0 16px' : '0 32px', 
+          padding: isMobile ? '10px 16px' : (isLaptop ? '10px 20px' : '0 32px'), 
           background: 'var(--bg-surface)', 
           position: 'sticky', 
           top: 0, 
-          zIndex: 20 
+          zIndex: 20,
+          flexWrap: 'wrap',
+          gap: '8px'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {isMobile && (
@@ -639,7 +651,7 @@ const Dashboard = () => {
                   }}
                   title={isRTL ? 'تعديل اسمك وملفك الشخصي' : 'Edit name & profile'}
                 >
-                  ✏️ <span style={{ display: isMobile ? 'none' : 'inline' }}>{isRTL ? 'تعديل الاسم' : 'Edit Name'}</span>
+                  ✏️ <span style={{ display: (isMobile || isLaptop) ? 'none' : 'inline' }}>{isRTL ? 'تعديل الاسم' : 'Edit Name'}</span>
                 </button>
               </div>
               <span style={{ 
@@ -658,7 +670,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="flex-center" style={{ gap: isMobile ? '8px' : '16px' }}>
+          <div className="flex-center" style={{ gap: isMobile ? '6px' : (isLaptop ? '8px' : '16px'), flexWrap: 'wrap' }}>
             {/* Language Switcher */}
             <button
               onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
@@ -703,7 +715,7 @@ const Dashboard = () => {
               title={isRTL ? 'عرض تقديمي تعريفي للمنصة 📽️' : 'Platform Presentation Deck 📽️'}
             >
               <Presentation size={15} />
-              <span style={{ display: isMobile ? 'none' : 'inline' }}>
+              <span style={{ display: (isMobile || isLaptop) ? 'none' : 'inline' }}>
                 {isRTL ? 'عرض المنصة' : 'Deck'}
               </span>
             </button>
@@ -913,7 +925,13 @@ const Dashboard = () => {
         )}
 
         {/* Dashboard Main Content View */}
-        <main style={{ padding: isMobile ? '16px 12px calc(90px + env(safe-area-inset-bottom, 0px)) 12px' : '40px', flex: 1 }}>
+        <main style={{ 
+          padding: isMobile ? '16px 12px calc(90px + env(safe-area-inset-bottom, 0px)) 12px' : (isLaptop ? '24px 20px 40px 20px' : '40px'), 
+          flex: 1, 
+          minWidth: 0, 
+          maxWidth: '100%',
+          boxSizing: 'border-box'
+        }}>
           {renderTabContent()}
         </main>
 

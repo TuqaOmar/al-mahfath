@@ -114,8 +114,13 @@ export const QuranMapPage = () => {
   const [statusMessage, setStatusMessage] = useState('');
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
+  const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' && window.innerWidth < 1180);
   useEffect(() => {
-    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    const handleResize = () => {
+      const w = window.innerWidth;
+      setIsMobile(w <= 768);
+      setIsCompact(w < 1180);
+    };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -393,7 +398,15 @@ export const QuranMapPage = () => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '24px', position: 'relative' }}>
+    <div style={{ 
+      display: 'flex', 
+      flexDirection: (isMobile || isCompact) ? 'column' : 'row', 
+      gap: '20px', 
+      position: 'relative',
+      width: '100%',
+      minWidth: 0,
+      maxWidth: '100%'
+    }}>
       
       {/* Toast Notification */}
       {statusMessage && (
@@ -541,7 +554,7 @@ export const QuranMapPage = () => {
           </div>
 
           {/* KPI Mini-Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📗 محفوظ في الصدر</span>
               <strong style={{ fontSize: '18px', color: 'var(--primary)' }}>{activeMemorizedCount} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>صفحة</span></strong>
@@ -812,18 +825,22 @@ export const QuranMapPage = () => {
       {/* Side Detail Panel (When a page is selected) */}
       {selectedPage && (
         <div style={{
-          width: isMobile ? '100%' : '330px',
-          padding: '24px',
+          width: (isMobile || isCompact) ? '100%' : '320px',
+          minWidth: (isMobile || isCompact) ? '100%' : '280px',
+          maxWidth: (isMobile || isCompact) ? '100%' : '350px',
+          padding: '20px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
           border: '1px solid var(--glass-border)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '18px',
+          gap: '16px',
           boxShadow: 'var(--shadow-soft)',
-          position: 'sticky',
-          top: '90px',
-          height: 'fit-content'
+          position: (isMobile || isCompact) ? 'relative' : 'sticky',
+          top: (isMobile || isCompact) ? 0 : '80px',
+          maxHeight: (isMobile || isCompact) ? 'none' : 'calc(100vh - 100px)',
+          overflowY: 'auto',
+          boxSizing: 'border-box'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ margin: 0, fontSize: '19px', color: 'var(--text-primary)' }}>

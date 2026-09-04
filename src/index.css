@@ -267,13 +267,29 @@ a {
   animation: spin 1.2s linear infinite;
 }
 
-/* Responsive Rules for Tablet & Mobile */
+/* Responsive Rules for Laptop, Tablet & Mobile */
+@media (max-width: 1280px) {
+  .container {
+    max-width: 100%;
+    padding: 0 20px;
+  }
+  .glass-card {
+    padding: 24px;
+  }
+  .grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (max-width: 1024px) {
   .grid-cols-4 {
     grid-template-columns: repeat(2, 1fr);
   }
   .grid-cols-3 {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .glass-card {
+    padding: 20px;
   }
 }
 
@@ -292,11 +308,27 @@ a {
     grid-template-columns: 1fr;
   }
   .glass-card {
-    padding: 20px;
+    padding: 16px;
   }
   img, video, iframe {
     max-width: 100% !important;
   }
+}
+
+/* Custom Sleek Scrollbars for Laptop & Desktop */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.6);
 }
 
 /* Button Classes */

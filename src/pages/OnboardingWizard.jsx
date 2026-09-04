@@ -209,11 +209,11 @@ const OnboardingWizard = () => {
         <Logo size={42} />
       </header>
 
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px' }}>
-        <Card style={{ maxWidth: '680px', width: '100%', padding: '40px', position: 'relative', overflow: 'hidden' }}>
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '20px 12px' : '32px 20px' }}>
+        <Card style={{ maxWidth: '680px', width: '100%', padding: isMobile ? '24px 16px' : '32px 28px', position: 'relative', overflow: 'hidden' }}>
           
           {/* Progress Bar (5 Steps) */}
-          <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '28px' }}>
             {[1, 2, 3, 4, 5].map((s) => (
               <div key={s} style={{ flex: 1, height: '6px', borderRadius: '3px', background: s <= step ? 'var(--primary)' : 'var(--glass-border)', transition: 'background 0.3s ease' }} />
             ))}
@@ -224,23 +224,23 @@ const OnboardingWizard = () => {
             {/* Step 1: Welcome & Intro */}
             {step === 1 && (
               <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.3 }}>
-                <div style={{ textAlign: 'center', padding: '20px 0' }}>
-                  <div style={{ width: '72px', height: '72px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
-                    <Sparkles size={36} />
+                <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
+                    <Sparkles size={32} />
                   </div>
-                  <h2 style={{ fontSize: '28px', color: 'var(--text-primary)', marginBottom: '12px' }}>
+                  <h2 style={{ fontSize: isMobile ? '22px' : '26px', color: 'var(--text-primary)', marginBottom: '10px' }}>
                     {lang === 'ar' ? 'أهلاً بك في محفظ AI 🚀' : 'Welcome to Ma7fath AI 🚀'}
                   </h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '16px', lineHeight: 1.7, maxWidth: '520px', margin: '0 auto 32px' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6, maxWidth: '520px', margin: '0 auto 24px' }}>
                     {lang === 'ar' 
                       ? 'مساعدك الشخصي الذي يرافقك في رحلة القرآن الكريم، ويحلل أداءك باستخدام الذكاء الاصطناعي لتقديم خطة مخصصة لعقلك.'
                       : 'Your personal companion in the Holy Quran journey, analyzing your performance using AI to deliver a tailored plan for your mind.'}
                   </p>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', textAlign: isRTL ? 'right' : 'left' }}>
-                    <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', textAlign: isRTL ? 'right' : 'left' }}>
+                    <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                       <Brain size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
+                      <h4 style={{ margin: '0 0 4px 0', fontSize: '13.5px', color: 'var(--text-primary)' }}>
                         {lang === 'ar' ? 'تحليل الأداء' : 'Performance Analysis'}
                       </h4>
                       <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
