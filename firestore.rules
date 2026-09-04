@@ -24,6 +24,11 @@ service cloud.firestore {
       match /quranPages/{pageId} {
         allow read, write: if isSignedIn();
       }
+
+      // User Five Fortresses Plans Subcollection
+      match /five_fortresses_plans/{planId} {
+        allow read, write: if isSignedIn();
+      }
     }
 
     // Community Posts Collection

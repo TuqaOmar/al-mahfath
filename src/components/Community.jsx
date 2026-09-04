@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Trophy, 
   MessageSquare, 
@@ -16,9 +16,25 @@ import {
   Shield,
   BookOpen,
   Share2,
-  ArrowRight
+  ArrowRight,
+  Pin,
+  Cloud,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { db } from '../lib/firebase';
+import { 
+  collection, 
+  doc, 
+  getDocs, 
+  setDoc, 
+  addDoc, 
+  updateDoc, 
+  onSnapshot, 
+  query, 
+  orderBy, 
+  serverTimestamp 
+} from 'firebase/firestore';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 
 export const Community = ({ setActiveTab }) => {
@@ -34,144 +50,122 @@ export const Community = ({ setActiveTab }) => {
   // New Post Form State
   const [postText, setPostText] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState('تدبر');
+  const [selectedCategory, setSelectedCategory] = useState('تثبيت وتدبر');
+  const [dbStatus, setDbStatus] = useState('connected'); // 'connected' | 'syncing'
 
   // Comment input state per post
   const [commentInputs, setCommentInputs] = useState({});
 
-  // Default Seed Posts State
-  const defaultPosts = [
-    {
-      id: 1,
-      author: 'أحمد محمد (حساب تجريبي)',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
-      isAnonymous: 0,
-      category: 'تدبر',
-      content: 'من أجمل اللطائف البلاغية في سورة البقرة: ﴿لَا يُكَلِّفُ اللَّهُ نَفْسًا إِلَّا وُسْعَهَا﴾.. الله تعالى خفّف التكليف ليتناسب مع قدرة الإنسان، ولم يقل "طاقتها" لأن الطاقة أقصى ما يتحمله المرء، أما الوسع فهو السعة والراحة! سبحان الرحيم الكريم.',
-      likes: 34,
-      answers: [
-        { id: 101, author: 'د. عبدالرحمن السالم', text: 'تبارك الله، لفتة تدبرية رائعة! الرحمة الإلهية متجلية في كل أحكام الشريعة.' },
-        { id: 102, author: 'فاطمة الزهراء', text: 'جزاك الله خيراً، زرعت في قلبي الطمأنينة وأنا أراجع الورد اليوم.' }
-      ]
-    },
-    {
-      id: 2,
-      author: 'الشيخ محمد علي (مقرئ)',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sheikh',
-      isAnonymous: 0,
-      category: 'متشابهات',
-      content: '💡 فائدة لتثبيت المتشابهات بين البقرة وآل عمران:\nفي البقرة: ﴿سَبْعَ سَنَابِلَ فِي كُلِّ سُنْبُلَةٍ مِائَةُ حَبَّةٍ﴾، وفي آل عمران جاءت صيغة الجمع المكسر ﴿سُنْبُلَاتٍ﴾.\nالضابط: البقرة تفرد وتزيد في التفصيل، وآل عمران تجمع وتجمل!',
-      likes: 52,
-      answers: [
-        { id: 103, author: 'يوسف العتيبي', text: 'ضابط ذهبي يا شيخنا، كنت أتلعثم فيها دائماً في الصلاة!' },
-        { id: 104, author: 'أم ريان', text: 'كتب الله أجرك، حفظتها الآن بفضل هذا الضابط المحكم.' }
-      ]
-    },
-    {
-      id: 3,
-      author: 'سارة خالد',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sara',
-      isAnonymous: 0,
-      category: 'نصيحة',
-      content: 'تجربتي مع نظام الحصون الخمسة بعد 3 أشهر:\nقبل الحصون كنت أحفظ 3 صفحات وأنسى صفحتين! بعد تطبيق "التحضير القريب (15 دقيقة)" وقراءة الورد في صلاة الليل، أصبحت الصفحة تثبت كالفاتحة 🌿.',
-      likes: 41,
-      answers: [
-        { id: 105, author: 'عمر الفاروق', text: 'هل تطبقين التكرار الصوتي 20 مرة أم أكثر؟' },
-        { id: 106, author: 'سارة خالد', text: 'التكرار 15 مرة مع استحضار موقع الآية في المصحف، ثم قراءتها في النوافل.' }
-      ]
-    },
-    {
-      id: 4,
-      author: 'د. إبراهيم الحسيني',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ibrahim',
-      isAnonymous: 0,
-      category: 'تجويد',
-      content: 'تنبيه تجويدي مهم في سورة الكهف عند قوله تعالى: ﴿مَالِ هَٰذَا الْكِتَابِ﴾:\nالرسم العثماني فصل كلمة (مَالِ) عن (هَٰذَا). ويجوز الوقف على (مَالِ) اضطراراً أو اختباراً بدون إثبات الياء، ثم الابتداء بـ (هَٰذَا).',
-      likes: 29,
-      answers: [
-        { id: 107, author: 'مريم الغامدي', text: 'سبحان الله! فائدة تجويدية دقيقة ونادرة، شكراً دكتور إبراهيم.' }
-      ]
-    },
-    {
-      id: 5,
-      author: 'هوية مخفية',
-      avatar: null,
-      isAnonymous: 1,
-      category: 'متشابهات',
-      content: 'كيف أجمع بين حفظ وجه جديد يومياً ومراجعة 5 أجزاء قديمة دون الشعور بالإرهاق والشتات؟ أحتاج جدول زمني مجرب.',
-      likes: 19,
-      answers: [
-        { id: 108, author: 'أحمد محمد', text: 'قسم المراجعة على الصلوات الخمس: نصف جزء بعد كل صلاة مفروضة، ولن تشعر بأي ثقل بإذن الله!' },
-        { id: 109, author: 'خالد بن سلطان', text: 'ركز على الرباط البعيد في النوافل، المراجعة في الصلاة أسرع طريقة للتثبيت.' }
-      ]
-    },
-    {
-      id: 6,
-      author: 'عبدالرحمن السالم',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Abdelrahman',
-      isAnonymous: 0,
-      category: 'تدبر',
-      content: 'في قصة الخضر مع موسى عليه السلام: ﴿وَأَمَّا الْغُلَامُ فَكَانَ أَبَوَاهُ مُؤْمِنَيْنِ﴾.. قد يبتليك الله بأمر ظاهره الألم وفي باطنه رحمة ولطف بك وبأهلك لا يعلمه إلا الله!',
-      likes: 63,
-      answers: [
-        { id: 110, author: 'عائشة النجار', text: 'ونعم بالله، الحمد لله على كل أقدار الله وتدبيره الرفيع.' }
-      ]
-    },
-    {
-      id: 7,
-      author: 'بلال الإبراهيمي',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Belal',
-      isAnonymous: 0,
-      category: 'نصيحة',
-      content: 'بفضل الله ثم هذا التطبيق التفاعلي، أكملت اليوم حفظ الجزء الثلاثين (عمّ) مع ضبط التجويد! القادم سورة البقرة بإذن الله 💪.',
-      likes: 48,
-      answers: [
-        { id: 111, author: 'أحمد محمد', text: 'مبارك يا بطل! اللهم بارك فيه واجعله حجة لك لا عليك.' },
-        { id: 112, author: 'خالد عمر', text: 'ما شاء الله تبارك الرحمن، إنجاز يبعث بالأمل!' }
-      ]
-    },
-    {
-      id: 8,
-      author: 'الشيخ محمد علي (مقرئ)',
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sheikh',
-      isAnonymous: 0,
-      category: 'متشابهات',
-      content: '﴿قُلْ لا أَجِدُ فِي مَا أُوحِيَ إِلَيَّ مُحَرَّماً﴾ (الأنعام)، قارنها مع: ﴿قُلْ إِنَّمَا حَرَّمَ رَبِّيَ الْفَوَاحِشَ﴾ (الأعراف).\nفائدة: الأنعام تناقش الأطعمة والمأكولات، والأعراف تناقش السلوكيات والكبائر!',
-      likes: 37,
-      answers: [
-        { id: 113, author: 'زياد الشمري', text: 'الله أكبر! ربط تدبر موضوعي رائع جداً يسهل استذكار السورتين.' }
-      ]
-    }
-  ];
+  // The ONE Inspiring Single Post (Default Seed)
+  const singleInspiringPost = {
+    id: 1,
+    firestoreId: 'pinned_quran_community_1',
+    author: 'مشرف مجتمع المحفظ القرآني',
+    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=QuranCommunity',
+    isAnonymous: 0,
+    isPinned: true,
+    category: 'تثبيت وتدبر',
+    timeAgo: 'منشور مثبت 📌',
+    content: 'قال رسول الله ﷺ: «تَعَاهَدُوا هَذَا الْقُرْآنَ، فَوَالَّذِي نَفْسُ مُحَمَّدٍ بِيَدِهِ لَهُوَ أَشَدُّ تَفَلُّتًا مِنَ الْإِبِلِ فِي عُقُلِهَا».\n\n🌿 إلى كل صاحب همّة يمر من هنا:\nكم من صفحة حفظتها ثم شعرت بثقل في مراجعتها؟ وكم من آية بكى قلبك عند تدبرها؟\nاعلم أن القرآن عزيز.. لا يُنال بفضول الأوقات، بل يُنال بصدق النيات، وصبر المجاهدة، ولذة المناجاة في صلاة الليل.\n\n💬 شاركونا في هذا المنشور الموحّد:\n1️⃣ ما هو أكبر تحدٍ يواجهك حالياً في تثبيت حفظك؟\n2️⃣ وما هي الآية أو القاعدة التي إذا تذكرتها هان عليك التعب وشحذت همتك؟\n\n🕊️ اكتب تجربتك أو سؤالك، ولنتعاهد كتاب الله معاً وندعو لبعضنا بالثبات 🤍🤲',
+    likes: 128,
+    answers: [
+      { 
+        id: 101, 
+        author: 'د. عبد الرحمن (معلم قرآن)', 
+        text: 'نصيحة من تجربة: أعظم ما يثبت الحفظ في صدرك هو (الحصن الخامس: الصلاة بالمحفوظ في ركعتي الليل). الصفحة التي لا تقرأ بها في صلاتك تفلت سريعاً!' 
+      },
+      { 
+        id: 102, 
+        author: 'أحمد محمد', 
+        text: 'كنت أعاني من تفلت الأوجه الأخيرة حتى طبقت قاعدة التكرار 20 مرة للآية و40 للربط.. نسأل الله أن يجعلنا وإياكم من أهل القرآن الذين هم أهل الله وخاصته.' 
+      }
+    ]
+  };
 
   // Real Posts State
-  const [posts, setPosts] = useState(defaultPosts);
+  const [posts, setPosts] = useState([singleInspiringPost]);
 
-  // Fetch posts from Express API on mount
-  React.useEffect(() => {
-    fetch('/api/community/posts')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.posts && data.posts.length > 0) {
+  // Sync with Firestore & Server API
+  useEffect(() => {
+    let unsubscribeFirestore = () => {};
+
+    // 1. Fetch from Express Backend API
+    const loadFromApi = async () => {
+      try {
+        const res = await fetch('/api/community/posts');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {
           setPosts(data.posts);
+        } else {
+          setPosts([singleInspiringPost]);
         }
-      })
-      .catch(() => setPosts(defaultPosts));
+      } catch (err) {
+        console.warn('Could not fetch from Express API, relying on Firestore / default:', err);
+      }
+    };
+
+    loadFromApi();
+
+    // 2. Real-time Firestore Listener
+    try {
+      const postsRef = collection(db, 'community_posts');
+      unsubscribeFirestore = onSnapshot(postsRef, (snapshot) => {
+        if (!snapshot.empty) {
+          const loadedPosts = [];
+          snapshot.forEach(docSnap => {
+            const docData = docSnap.data();
+            let parsedAnswers = [];
+            if (Array.isArray(docData.answers)) {
+              parsedAnswers = docData.answers;
+            } else if (typeof docData.answers === 'string') {
+              try { parsedAnswers = JSON.parse(docData.answers); } catch (e) { parsedAnswers = []; }
+            }
+            loadedPosts.push({
+              id: docSnap.id,
+              firestoreId: docSnap.id,
+              ...docData,
+              answers: parsedAnswers
+            });
+          });
+
+          // Sort pinned first, then newest
+          loadedPosts.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+          if (loadedPosts.length > 0) {
+            setPosts(loadedPosts);
+          }
+        }
+      }, (error) => {
+        console.warn('Firestore live subscription error:', error);
+      });
+    } catch (e) {
+      console.warn('Firestore connection fallback:', e);
+    }
+
+    return () => unsubscribeFirestore();
   }, []);
 
-  // Handle Post Submission to API
+  // Handle Post Submission to Database
   const handleCreatePost = async (e) => {
     e.preventDefault();
     if (!postText.trim()) return;
 
+    setDbStatus('syncing');
+    const authorName = isAnonymous ? 'هوية مخفية' : (user?.name || 'أحمد محمد');
+    const authorAvatar = isAnonymous ? null : (user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad');
+
     const postPayload = {
-      author: isAnonymous ? 'هوية مخفية' : (user?.name || 'أحمد محمد'),
-      avatar: isAnonymous ? null : (user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'),
-      isAnonymous: isAnonymous,
+      author: authorName,
+      avatar: authorAvatar,
+      isAnonymous: isAnonymous ? 1 : 0,
       category: selectedCategory,
-      content: postText.trim()
+      content: postText.trim(),
+      likes: 0,
+      answers: [],
+      timeAgo: 'الآن',
+      createdAt: new Date().toISOString()
     };
 
+    // 1. Save to Backend Database
     try {
       const res = await fetch('/api/community/posts', {
         method: 'POST',
@@ -186,51 +180,106 @@ export const Community = ({ setActiveTab }) => {
       console.error(e);
     }
 
+    // 2. Save to Firestore
+    try {
+      await addDoc(collection(db, 'community_posts'), {
+        ...postPayload,
+        answers: JSON.stringify([])
+      });
+    } catch (fsErr) {
+      console.warn('Firestore addDoc fallback:', fsErr);
+    }
+
     setPostText('');
     setIsAnonymous(false);
+    setTimeout(() => setDbStatus('connected'), 600);
   };
 
-  // Toggle Like API
-  const handleToggleLike = async (postId) => {
-    setPosts(posts.map(p => p.id === postId ? { ...p, likes: (p.likes || 0) + 1 } : p));
+  // Toggle Like API & Firestore
+  const handleToggleLike = async (post) => {
+    const postId = post.id;
+    const currentLikes = (post.likes || 0) + 1;
+
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: currentLikes, isLiked: true } : p));
+
+    // Backend API
     try {
       await fetch(`/api/community/posts/${postId}/like`, { method: 'POST' });
     } catch (e) {
       console.log(e);
     }
+
+    // Firestore
+    try {
+      if (post.firestoreId) {
+        const postRef = doc(db, 'community_posts', String(post.firestoreId));
+        await updateDoc(postRef, { likes: currentLikes });
+      }
+    } catch (e) {}
   };
 
-  // Add Comment/Answer API
-  const handleAddAnswer = async (postId) => {
+  // Add Comment/Answer API & Firestore
+  const handleAddAnswer = async (post) => {
+    const postId = post.id;
     const text = commentInputs[postId];
     if (!text || !text.trim()) return;
 
+    setDbStatus('syncing');
+    const newAnswer = {
+      id: Date.now(),
+      author: user?.name || 'أحمد محمد',
+      text: text.trim(),
+      createdAt: new Date().toISOString()
+    };
+
+    const currentAnswers = Array.isArray(post.answers) ? [...post.answers, newAnswer] : [newAnswer];
+
+    // Optimistic UI update
+    setPosts(prev => prev.map(p => p.id === postId ? { ...p, answers: currentAnswers } : p));
+    setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+
+    // 1. Backend API
     try {
       const res = await fetch(`/api/community/posts/${postId}/comment`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author: user?.name || 'أحمد محمد', text: text.trim() })
+        body: JSON.stringify({ author: newAnswer.author, text: newAnswer.text })
       });
       const data = await res.json();
       if (data.success && data.post) {
-        setPosts(posts.map(p => p.id === postId ? data.post : p));
+        setPosts(prev => prev.map(p => p.id === postId ? data.post : p));
       }
     } catch (e) {
       console.log(e);
     }
 
-    setCommentInputs({ ...commentInputs, [postId]: '' });
+    // 2. Firestore Sync
+    try {
+      if (post.firestoreId) {
+        const postRef = doc(db, 'community_posts', String(post.firestoreId));
+        await updateDoc(postRef, {
+          answers: JSON.stringify(currentAnswers)
+        });
+      }
+    } catch (e) {}
+
+    setTimeout(() => setDbStatus('connected'), 600);
   };
 
   const handleShareMilestone = async () => {
+    setDbStatus('syncing');
     const defaultShareText = `🌿 بفضل الله وتوفيقه، وصلت في خطة الحفظ إلى الصفحة ${currentPage} من سورة ${currentSurah} (الجزء ${currentJuz}).\n🏰 أنجزت اليوم ${doneFortressesCount} من أصل 5 حصون في نظام الحصون الخمسة! نسأل الله العظيم الثبات والبركة لجميع الإخوة الحفاظ 🤲✨`;
     
     const postPayload = {
       author: user?.name || 'أحمد محمد',
       avatar: user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
-      isAnonymous: false,
-      category: 'نصيحة',
-      content: defaultShareText
+      isAnonymous: 0,
+      category: 'إنجاز الحصون',
+      content: defaultShareText,
+      likes: 0,
+      answers: [],
+      timeAgo: 'الآن',
+      createdAt: new Date().toISOString()
     };
 
     try {
@@ -246,6 +295,15 @@ export const Community = ({ setActiveTab }) => {
     } catch (e) {
       console.error(e);
     }
+
+    try {
+      await addDoc(collection(db, 'community_posts'), {
+        ...postPayload,
+        answers: JSON.stringify([])
+      });
+    } catch (e) {}
+
+    setTimeout(() => setDbStatus('connected'), 600);
   };
 
   return (
@@ -271,10 +329,11 @@ export const Community = ({ setActiveTab }) => {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold', color: 'white' }}>
-                  أين وصلت في خطتك القرآنية؟ 📍
+                  مجتمع حفاظ القرآن الكريم 👥
                 </h2>
-                <span style={{ fontSize: '12px', background: 'rgba(52, 211, 153, 0.2)', color: '#34D399', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold' }}>
-                  محدّث تلقائياً
+                <span style={{ fontSize: '11px', background: 'rgba(52, 211, 153, 0.2)', color: '#34D399', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <Cloud size={13} />
+                  مربوط بقاعدة البيانات و Firestore
                 </span>
               </div>
               <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#94A3B8' }}>
@@ -394,7 +453,7 @@ export const Community = ({ setActiveTab }) => {
           }}
         >
           <MessageSquare size={18} />
-          قسم الأسئلة والتدبر (البوستات)
+          حوارات وتدبر الحفاظ 💬
         </button>
 
         <button
@@ -433,14 +492,14 @@ export const Community = ({ setActiveTab }) => {
           }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Sparkles size={20} color="var(--primary)" />
-              شارِك تدبراً أو اسأل سؤالاً حول الحفظ والمتشابهات
+              شارِك تدبراً، فائدة، أو استفساراً في تثبيت القرآن
             </h3>
 
             <form onSubmit={handleCreatePost}>
               <textarea
                 value={postText}
                 onChange={(e) => setPostText(e.target.value)}
-                placeholder="اكتب فكرة، فائدة تدبرية، أو استفساراً في الحفظ والتجويد..."
+                placeholder="اكتب تجربتك في الحفظ، سؤالاً عن المتشابهات، أو تدبراً يشد الهمم..."
                 rows={3}
                 style={{
                   width: '100%',
@@ -463,8 +522,8 @@ export const Community = ({ setActiveTab }) => {
                 {/* Categories & Anonymous Toggle */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
                   {/* Category Pills */}
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {['تدبر', 'متشابهات', 'تجويد', 'نصيحة'].map((cat) => (
+                  <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                    {['تثبيت وتدبر', 'متشابهات', 'تجويد', 'نصيحة للحفاظ'].map((cat) => (
                       <span
                         key={cat}
                         onClick={() => setSelectedCategory(cat)}
@@ -538,15 +597,36 @@ export const Community = ({ setActiveTab }) => {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {posts.map((post) => (
               <div 
-                key={post.id}
+                key={post.id || post.firestoreId}
                 style={{
-                  padding: '24px',
+                  padding: '26px',
                   borderRadius: '20px',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--glass-border)',
-                  boxShadow: 'var(--shadow-soft)'
+                  background: post.isPinned ? 'linear-gradient(180deg, var(--bg-surface) 0%, rgba(16, 185, 129, 0.04) 100%)' : 'var(--bg-surface)',
+                  border: post.isPinned ? '1.5px solid var(--primary)' : '1px solid var(--glass-border)',
+                  boxShadow: post.isPinned ? '0 8px 24px rgba(16, 185, 129, 0.12)' : 'var(--shadow-soft)',
+                  position: 'relative'
                 }}
               >
+                {/* Pinned Tag */}
+                {post.isPinned && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    background: 'var(--primary-light)',
+                    color: 'var(--primary)',
+                    padding: '4px 12px',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                    marginBottom: '14px',
+                    border: '1px solid var(--primary)'
+                  }}>
+                    <Pin size={14} />
+                    منشور تفاعلي موحّد — شاركنا رحلتك وتحدياتك القرآنية
+                  </div>
+                )}
+
                 {/* Author Info */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -564,6 +644,18 @@ export const Community = ({ setActiveTab }) => {
                       }}>
                         🎭
                       </div>
+                    ) : post.avatar ? (
+                      <img 
+                        src={post.avatar} 
+                        alt={post.author}
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          border: '2px solid var(--primary)',
+                          background: 'var(--bg-color)'
+                        }}
+                      />
                     ) : (
                       <div style={{
                         width: '44px',
@@ -584,7 +676,7 @@ export const Community = ({ setActiveTab }) => {
 
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>
+                        <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
                           {post.author}
                         </h4>
                         {post.isAnonymous && (
@@ -603,14 +695,20 @@ export const Community = ({ setActiveTab }) => {
                 </div>
 
                 {/* Content */}
-                <p style={{ fontSize: '16px', color: 'var(--text-primary)', lineHeight: 1.7, margin: '0 0 16px 0' }}>
+                <div style={{ 
+                  fontSize: '15.5px', 
+                  color: 'var(--text-primary)', 
+                  lineHeight: 1.8, 
+                  margin: '0 0 16px 0', 
+                  whiteSpace: 'pre-line' 
+                }}>
                   {post.content}
-                </p>
+                </div>
 
                 {/* Action Buttons (Likes & Answers) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
                   <button
-                    onClick={() => handleToggleLike(post.id)}
+                    onClick={() => handleToggleLike(post)}
                     style={{
                       background: 'transparent',
                       border: 'none',
@@ -624,24 +722,27 @@ export const Community = ({ setActiveTab }) => {
                     }}
                   >
                     <Heart size={18} fill={post.isLiked ? '#EF4444' : 'none'} color={post.isLiked ? '#EF4444' : 'currentColor'} />
-                    <span>{post.likes} إعجاب</span>
+                    <span>{post.likes || 0} إعجاب وتأييد</span>
                   </button>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)', fontWeight: 'bold', fontSize: '14px' }}>
                     <MessageCircle size={18} />
-                    <span>{post.answers.length} إجابة وتدبر</span>
+                    <span>{(post.answers || []).length} مشاركة ورد</span>
                   </div>
                 </div>
 
                 {/* Answers / Comments Section */}
-                {post.answers.length > 0 && (
+                {(post.answers || []).length > 0 && (
                   <div style={{ marginTop: '16px', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <h5 style={{ margin: '0 0 4px 0', fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
+                      مشاركات وتجارب الإخوة الحفاظ:
+                    </h5>
                     {post.answers.map((ans) => (
-                      <div key={ans.id} style={{ padding: '12px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', fontSize: '14px' }}>
+                      <div key={ans.id} style={{ padding: '14px 18px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', fontSize: '14.5px' }}>
                         <span style={{ fontWeight: 'bold', color: 'var(--primary)', display: 'block', marginBottom: '4px' }}>
                           {ans.author}:
                         </span>
-                        <span style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                        <span style={{ color: 'var(--text-primary)', lineHeight: 1.6 }}>
                           {ans.text}
                         </span>
                       </div>
@@ -650,17 +751,17 @@ export const Community = ({ setActiveTab }) => {
                 )}
 
                 {/* Add Answer Input */}
-                <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                <div style={{ display: 'flex', gap: '8px', marginTop: '18px' }}>
                   <input
                     type="text"
                     value={commentInputs[post.id] || ''}
                     onChange={(e) => setCommentInputs({ ...commentInputs, [post.id]: e.target.value })}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddAnswer(post.id)}
-                    placeholder="اكتب إجابة أو مشاركة..."
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddAnswer(post)}
+                    placeholder="اكتب تجربتك، إجابتك، أو دعاءك..."
                     style={{
                       flex: 1,
-                      padding: '10px 14px',
-                      borderRadius: '10px',
+                      padding: '12px 16px',
+                      borderRadius: '12px',
                       border: '1px solid var(--glass-border)',
                       background: 'var(--bg-color)',
                       color: 'var(--text-primary)',
@@ -669,19 +770,23 @@ export const Community = ({ setActiveTab }) => {
                     }}
                   />
                   <button
-                    onClick={() => handleAddAnswer(post.id)}
+                    onClick={() => handleAddAnswer(post)}
                     style={{
-                      padding: '8px 16px',
-                      borderRadius: '10px',
+                      padding: '10px 20px',
+                      borderRadius: '12px',
                       background: 'var(--primary)',
                       color: 'white',
                       border: 'none',
                       fontWeight: 'bold',
                       cursor: 'pointer',
-                      fontSize: '13px'
+                      fontSize: '13.5px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
                     }}
                   >
-                    رد
+                    <Send size={14} style={{ transform: 'rotate(180deg)' }} />
+                    إرسال
                   </button>
                 </div>
 
@@ -741,3 +846,5 @@ export const Community = ({ setActiveTab }) => {
     </div>
   );
 };
+
+export default Community;

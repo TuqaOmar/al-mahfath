@@ -493,7 +493,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                       gap: '6px'
                     }}
                   >
-                    <Sparkles size={15} /> {isRTL ? 'حساب تجريبي' : 'Demo Account'}
+                    <Sparkles size={15} /> {isRTL ? 'تجربة سريعة بدون تسجيل ⚡' : 'Quick Demo (No Signup)'}
                   </button>
 
                   <button

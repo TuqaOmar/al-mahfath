@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Shield, 
+  ShieldCheck,
   CheckCircle2, 
   Play, 
   Sparkles, 
@@ -28,6 +29,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNotifications } from '../context/NotificationContext';
+import { SimplifiedFortressPlan } from './SimplifiedFortressPlan';
+import { FiveFortressesVisualMap } from './FiveFortressesVisualMap';
 
 // Helper to determine Surah and Juz based on page number
 const getSurahNameForPage = (page) => {
@@ -62,7 +65,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
   const { isRTL, lang } = useLanguage();
   const { notifyAndCelebrate } = useNotifications();
 
-  const [activeSubTab, setActiveSubTab] = useState('daily-plan'); // 'daily-plan' | 'methodology' | 'repetition-studio' | 'plan-customizer'
+  const [activeSubTab, setActiveSubTab] = useState('visual-map'); // 'visual-map' | 'simplified-plan' | 'daily-plan' | 'methodology' | 'repetition-studio' | 'plan-customizer'
   const [expandedFortress, setExpandedFortress] = useState(null);
 
   // User state
@@ -389,10 +392,12 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
         overflowX: 'auto'
       }}>
         {[
-          { id: 'daily-plan', label: '📅 خطة اليوم التفصيلية', icon: Calendar },
-          { id: 'methodology', label: '📖 الدليل والمنهجية الشاملة', icon: BookOpen },
-          { id: 'repetition-studio', label: '🔢 معمل التكرار الذكي (20x)', icon: Repeat },
-          { id: 'plan-customizer', label: '⚙️ تخصيص وحاسبة الخطة', icon: Sliders }
+          { id: 'visual-map', label: isRTL ? '🗺️ خريطة الحصون البصرية' : '🗺️ 5-Fortresses Map', icon: Compass },
+          { id: 'simplified-plan', label: isRTL ? '⚡ الخطة اليومية المبسطة' : '⚡ Daily Fortress Plan', icon: ShieldCheck },
+          { id: 'daily-plan', label: isRTL ? '📅 خطة اليوم التفصيلية' : '📅 Detailed Daily Plan', icon: Calendar },
+          { id: 'repetition-studio', label: isRTL ? '🔢 معمل التكرار الذكي (20x)' : '🔢 20x Repetition Studio', icon: Repeat },
+          { id: 'methodology', label: isRTL ? '📖 الدليل والمنهجية الشاملة' : '📖 Comprehensive Guide', icon: BookOpen },
+          { id: 'plan-customizer', label: isRTL ? '⚙️ تخصيص وحاسبة الخطة' : '⚙️ Plan Customizer', icon: Sliders }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeSubTab === tab.id;
@@ -425,6 +430,22 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
           );
         })}
       </div>
+
+      {/* 2.4 SUB-VIEW: Interactive 5-Fortresses Visual Map */}
+      {activeSubTab === 'visual-map' && (
+        <FiveFortressesVisualMap 
+          onNavigateToVoiceRecitation={(p) => setActiveTab && setActiveTab('daily-session')} 
+          onNavigateToQuran={(p) => setActiveTab && setActiveTab('quran-interactive')} 
+        />
+      )}
+
+      {/* 2.5 SUB-VIEW: Simplified Fortress Plan */}
+      {activeSubTab === 'simplified-plan' && (
+        <SimplifiedFortressPlan 
+          onNavigateToQuran={(p) => setActiveTab && setActiveTab('quran-interactive')} 
+          onAskAi={(prompt) => setActiveTab && setActiveTab('ai-assistant')} 
+        />
+      )}
 
       {/* 3. SUB-VIEW A: Daily Plan Detailed Tracker */}
       {activeSubTab === 'daily-plan' && (

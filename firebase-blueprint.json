@@ -52,6 +52,28 @@
         "answers": { "type": "string" }
       },
       "required": ["author", "content"]
+    },
+    "FiveFortressesPlan": {
+      "title": "Five Fortresses Revision Plan",
+      "description": "Five Fortresses Quran memorization and revision schedule linked to the user's last reached Juz",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "lastJuzReached": { "type": "number" },
+        "currentPage": { "type": "number" },
+        "currentSurah": { "type": "string" },
+        "dailyTarget": { "type": "string" },
+        "fortress1_khatmah": { "type": "string" },
+        "fortress2_preparation": { "type": "string" },
+        "fortress3_newMemorization": { "type": "string" },
+        "fortress4_nearRevision": { "type": "string" },
+        "fortress5_farRevision": { "type": "string" },
+        "completionStatus": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "lastJuzReached", "currentPage"]
     }
   },
   "firestore": {
@@ -62,6 +84,10 @@
     "/users/{userId}/quranPages/{pageId}": {
       "schema": "QuranPage",
       "description": "Quran pages memorization progress for a user"
+    },
+    "/users/{userId}/five_fortresses_plans/{planId}": {
+      "schema": "FiveFortressesPlan",
+      "description": "Five Fortresses revision plan linked to the user's progress"
     },
     "/community_posts/{postId}": {
       "schema": "CommunityPost",

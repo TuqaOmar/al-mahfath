@@ -31,6 +31,17 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'خادم محفظ AI يعمل بنجاح 🚀', timestamp: new Date() });
 });
 
+// Helper to safely parse user preferences whether stored as string or object
+function safeParsePreferences(prefs) {
+  if (!prefs) return {};
+  if (typeof prefs === 'object') return prefs;
+  try {
+    return JSON.parse(prefs);
+  } catch (e) {
+    return {};
+  }
+}
+
 // --- AUTHENTICATION & USER ENDPOINTS ---
 
 // Signup Endpoint
@@ -102,15 +113,7 @@ app.post('/api/auth/login', async (req, res) => {
     // Remove sensitive fields
     delete user.passwordHash;
     delete user.salt;
-    
-    // Parse preferences
-    if (user.preferences) {
-      try {
-        user.preferences = JSON.parse(user.preferences);
-      } catch (e) {
-        user.preferences = {};
-      }
-    }
+    user.preferences = safeParsePreferences(user.preferences);
 
     res.json({ success: true, user });
   } catch (error) {
@@ -136,11 +139,7 @@ app.post('/api/auth/google', async (req, res) => {
     if (user) {
       delete user.passwordHash;
       delete user.salt;
-      try {
-        user.preferences = JSON.parse(user.preferences);
-      } catch (e) {
-        user.preferences = {};
-      }
+      user.preferences = safeParsePreferences(user.preferences);
       return res.json({ success: true, user });
     }
 
@@ -192,11 +191,7 @@ app.post('/api/auth/demo', async (req, res) => {
     if (user) {
       delete user.passwordHash;
       delete user.salt;
-      try {
-        user.preferences = JSON.parse(user.preferences);
-      } catch (e) {
-        user.preferences = {};
-      }
+      user.preferences = safeParsePreferences(user.preferences);
     }
     res.json({ success: true, user });
   } catch (error) {
@@ -212,11 +207,7 @@ app.post('/api/auth/admin', async (req, res) => {
     if (user) {
       delete user.passwordHash;
       delete user.salt;
-      try {
-        user.preferences = JSON.parse(user.preferences);
-      } catch (e) {
-        user.preferences = {};
-      }
+      user.preferences = safeParsePreferences(user.preferences);
     }
     res.json({ success: true, user });
   } catch (error) {
@@ -232,11 +223,7 @@ app.get('/api/user/:uid', async (req, res) => {
     if (user) {
       delete user.passwordHash;
       delete user.salt;
-      try {
-        user.preferences = JSON.parse(user.preferences);
-      } catch (e) {
-        user.preferences = {};
-      }
+      user.preferences = safeParsePreferences(user.preferences);
       res.json({ success: true, user });
     } else {
       res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
@@ -297,6 +284,50 @@ app.put('/api/user/:uid', async (req, res) => {
   }
 });
 
+// Save / Update User Fortress Plan
+app.post('/api/user/fortress-plan', async (req, res) => {
+  const { userId, plan } = req.body;
+  if (!userId || !plan) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم والخطة مطلوبان' });
+  }
+  try {
+    const user = await getRow('SELECT * FROM users WHERE uid = ?', [userId]);
+    if (user) {
+      let prefs = {};
+      try {
+        prefs = JSON.parse(user.preferences || '{}');
+      } catch (e) {}
+      prefs.fortressPlan = plan;
+      prefs.fortressesToday = plan.completionStatus || prefs.fortressesToday;
+      await runQuery('UPDATE users SET preferences = ? WHERE uid = ?', [JSON.stringify(prefs), userId]);
+    }
+    res.json({ success: true, plan });
+  } catch (error) {
+    console.error('Error saving fortress plan:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في حفظ الخطة' });
+  }
+});
+
+// Get User Fortress Plan
+app.get('/api/user/fortress-plan/:uid', async (req, res) => {
+  const { uid } = req.params;
+  try {
+    const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if (user && user.preferences) {
+      try {
+        const prefs = JSON.parse(user.preferences);
+        if (prefs.fortressPlan) {
+          return res.json({ success: true, plan: prefs.fortressPlan });
+        }
+      } catch (e) {}
+    }
+    res.json({ success: false, message: 'لا توجد خطة محفوظة' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
 // Delete User Account
 app.delete('/api/user/:uid', async (req, res) => {
   const { uid } = req.params;
@@ -324,11 +355,7 @@ app.get('/api/admin/users', async (req, res) => {
     users.forEach(u => {
       delete u.passwordHash;
       delete u.salt;
-      try {
-        u.preferences = JSON.parse(u.preferences);
-      } catch (e) {
-        u.preferences = {};
-      }
+      u.preferences = safeParsePreferences(u.preferences);
     });
     res.json({ success: true, users });
   } catch (error) {
@@ -683,8 +710,19 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), 'dist');
-    app.use(express.static(distPath));
-    app.get('*', (req, res) => {
+    app.use(express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
+      }
+    }));
+    app.get('*all', (req, res) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

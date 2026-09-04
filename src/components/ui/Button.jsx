@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import './Button.css';
 
 export const Button = ({ children, variant = 'primary', className = '', icon: Icon, onClick, ...props }) => {
   return (

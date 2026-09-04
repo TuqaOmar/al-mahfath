@@ -79,6 +79,23 @@
         "availableDays": "كل أيام الأسبوع",
         "photoURL": "https://api.dicebear.com/7.x/micah/svg?seed=Ahmad&baseColor=f9c9b6"
       }
+    },
+    {
+      "uid": "admin_123",
+      "name": "مدير النظام (أدمن)",
+      "email": "admin@ma7fath.ai",
+      "photoURL": "https://api.dicebear.com/7.x/bottts/svg?seed=Admin",
+      "hasCompletedWizard": 1,
+      "role": "admin",
+      "streak": 15,
+      "xp": 9999,
+      "level": 99,
+      "memorizedPagesCount": 604,
+      "memoryScore": 100,
+      "totalJuz": 30,
+      "salt": "2a43c04f6146a895666a00b563d5daf8",
+      "passwordHash": "ad33e76e2ba8faf668a3f371b23f053272a8a18548fb69d627909b87ad2012936a60d0cd27ab7bbd3f67e1396293f631a6f04eae71e790a77d2be5e6864bc619",
+      "preferences": "{\"level\":\"حافظ كامل المصحف\",\"dailyTarget\":\"مراجعة جزئين يومياً\",\"learningStyle\":\"مختلط (شامل)\",\"motivation\":\"إدارة وتوجيه مجتمع حفاظ القرآن الكريم\",\"reminder\":\"على مدار اليوم\"}"
     }
   ],
   "quranPages": [
@@ -126,42 +143,424 @@
       "juz": 3,
       "lastReviewed": "منذ أسبوع",
       "errorsCount": 4
+    },
+    {
+      "pageNumber": 5,
+      "status": "review",
+      "score": 81,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 1
+    },
+    {
+      "pageNumber": 6,
+      "status": "review",
+      "score": 75,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ 3 أيام",
+      "errorsCount": 3
+    },
+    {
+      "pageNumber": 7,
+      "status": "weak",
+      "score": 65,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ أسبوع",
+      "errorsCount": 5
+    },
+    {
+      "pageNumber": 8,
+      "status": "weak",
+      "score": 60,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ أسبوع",
+      "errorsCount": 4
+    },
+    {
+      "pageNumber": 9,
+      "status": "review",
+      "score": 80,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ 4 أيام",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 10,
+      "status": "excellent",
+      "score": 96,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 11,
+      "status": "excellent",
+      "score": 94,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 12,
+      "status": "review",
+      "score": 82,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ 3 أيام",
+      "errorsCount": 1
+    },
+    {
+      "pageNumber": 13,
+      "status": "review",
+      "score": 77,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ 5 أيام",
+      "errorsCount": 3
+    },
+    {
+      "pageNumber": 14,
+      "status": "excellent",
+      "score": 97,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 15,
+      "status": "review",
+      "score": 73,
+      "surahName": "البقرة",
+      "juz": 1,
+      "lastReviewed": "منذ أسبوع",
+      "errorsCount": 4
+    },
+    {
+      "pageNumber": 16,
+      "status": "excellent",
+      "score": 99,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 17,
+      "status": "excellent",
+      "score": 93,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 18,
+      "status": "review",
+      "score": 76,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ 3 أيام",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 19,
+      "status": "weak",
+      "score": 58,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ أسبوعين",
+      "errorsCount": 6
+    },
+    {
+      "pageNumber": 20,
+      "status": "review",
+      "score": 85,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 1
+    },
+    {
+      "pageNumber": 21,
+      "status": "excellent",
+      "score": 91,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 22,
+      "status": "excellent",
+      "score": 95,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 23,
+      "status": "review",
+      "score": 79,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ 4 أيام",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 24,
+      "status": "weak",
+      "score": 63,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ أسبوع",
+      "errorsCount": 5
+    },
+    {
+      "pageNumber": 25,
+      "status": "review",
+      "score": 83,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 1
+    },
+    {
+      "pageNumber": 26,
+      "status": "excellent",
+      "score": 94,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 27,
+      "status": "excellent",
+      "score": 97,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 28,
+      "status": "review",
+      "score": 74,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ 5 أيام",
+      "errorsCount": 3
+    },
+    {
+      "pageNumber": 29,
+      "status": "review",
+      "score": 80,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "منذ 3 أيام",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 30,
+      "status": "excellent",
+      "score": 96,
+      "surahName": "البقرة",
+      "juz": 2,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 31,
+      "status": "excellent",
+      "score": 93,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 32,
+      "status": "review",
+      "score": 77,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ 4 أيام",
+      "errorsCount": 3
+    },
+    {
+      "pageNumber": 33,
+      "status": "weak",
+      "score": 61,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ أسبوع",
+      "errorsCount": 5
+    },
+    {
+      "pageNumber": 34,
+      "status": "excellent",
+      "score": 98,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 35,
+      "status": "excellent",
+      "score": 95,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 36,
+      "status": "review",
+      "score": 76,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ 3 أيام",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 37,
+      "status": "review",
+      "score": 82,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 1
+    },
+    {
+      "pageNumber": 38,
+      "status": "excellent",
+      "score": 94,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 39,
+      "status": "review",
+      "score": 71,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ 5 أيام",
+      "errorsCount": 4
+    },
+    {
+      "pageNumber": 40,
+      "status": "review",
+      "score": 84,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 1
+    },
+    {
+      "pageNumber": 41,
+      "status": "excellent",
+      "score": 96,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 42,
+      "status": "excellent",
+      "score": 92,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 43,
+      "status": "review",
+      "score": 78,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ 4 أيام",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 44,
+      "status": "weak",
+      "score": 62,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ أسبوع",
+      "errorsCount": 5
+    },
+    {
+      "pageNumber": 45,
+      "status": "excellent",
+      "score": 97,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 46,
+      "status": "excellent",
+      "score": 95,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "اليوم",
+      "errorsCount": 0
+    },
+    {
+      "pageNumber": 47,
+      "status": "review",
+      "score": 75,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ 3 أيام",
+      "errorsCount": 3
+    },
+    {
+      "pageNumber": 48,
+      "status": "review",
+      "score": 80,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "منذ يومين",
+      "errorsCount": 2
+    },
+    {
+      "pageNumber": 49,
+      "status": "excellent",
+      "score": 93,
+      "surahName": "البقرة",
+      "juz": 3,
+      "lastReviewed": "أمس",
+      "errorsCount": 0
     }
   ],
   "communityPosts": [
     {
       "id": 1,
-      "author": "عبد الله العتيبي",
-      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Abdullah",
-      "isAnonymous": false,
-      "category": "تدبر",
-      "timeAgo": "منذ ساعتين",
-      "content": "في سورة البقرة آية 152: ﴿ فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ ﴾. ما أثر استحضار هذه الآية أثناء تكرار الحفظ اليومي؟ تشعر بوصل مباشر مع الله سبحانه.",
-      "likes": 24,
-      "answers": [
-        {
-          "id": 101,
-          "author": "د. محمد الشنقيطي",
-          "text": "سبحان الله، الذكر هو روح الحفظ وثبات السورة في القلب."
-        }
-      ]
-    },
-    {
-      "id": 2,
-      "author": "هوية مخفية",
-      "avatar": null,
-      "isAnonymous": true,
-      "category": "متشابهات",
-      "timeAgo": "منذ 5 ساعات",
-      "content": "أجد صعوبة في التفرقة بين خاتمة آيات سورة آل عمران وسورة النساء في موضوع التقوى. كيف تفرقون بينهما بطريقة تثبيت سهلة؟",
-      "likes": 18,
-      "answers": [
-        {
-          "id": 102,
-          "author": "أحمد محمد",
-          "text": "ربط الآية بمحور السورة العام؛ آل عمران تركز على الثبات والجهاد، بينما النساء تركز على الأحكام والعدل."
-        }
-      ]
+      "author": "مشرف مجتمع المحفظ القرآني",
+      "avatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=QuranCommunity",
+      "isAnonymous": 0,
+      "category": "تدبر وتثبيت",
+      "timeAgo": "منشور مثبت 📌",
+      "content": "قال رسول الله ﷺ: «تَعَاهَدُوا هَذَا الْقُرْآنَ، فَوَالَّذِي نَفْسُ مُحَمَّدٍ بِيَدِهِ لَهُوَ أَشَدُّ تَفَلُّتًا مِنَ الْإِبِلِ فِي عُقُلِهَا».\n\n🌿 إلى كل صاحب همّة يمر من هنا:\nكم من صفحة حفظتها ثم شعرت بثقل في مراجعتها؟ وكم من آية بكى قلبك عند تدبرها؟\nاعلم أن القرآن عزيز.. لا يُنال بفضول الأوقات، بل يُنال بصدق النيات، وصبر المجاهدة، ولذة المناجاة في صلاة الليل.\n\n💬 شاركونا في هذا المنشور الموحّد:\n1️⃣ ما هو أكبر تحدٍ يواجهك حالياً في تثبيت حفظك؟\n2️⃣ وما هي الآية أو القاعدة التي إذا تذكرتها هان عليك التعب وشحذت همتك؟\n\n🕊️ اكتب تجربتك أو سؤالك، ولنتعاهد كتاب الله معاً وندعو لبعضنا بالثبات 🤍🤲",
+      "likes": 128,
+      "answers": "[{\"id\":101,\"author\":\"د. عبد الرحمن (معلم قرآن)\",\"text\":\"نصيحة من تجربة: أعظم ما يثبت الحفظ في صدرك هو (الحصن الخامس: الصلاة بالمحفوظ في ركعتي الليل). الصفحة التي لا تقرأ بها في صلاتك تفلت سريعاً!\"},{\"id\":102,\"author\":\"أحمد محمد\",\"text\":\"كنت أعاني من تفلت الأوجه الأخيرة حتى طبقت قاعدة التكرار 20 مرة للآية و40 للربط.. نسأل الله أن يجعلنا وإياكم من أهل القرآن الذين هم أهل الله وخاصته.\"}]"
     }
   ],
   "aiChatHistory": [
@@ -179,6 +578,20 @@
       "id": 1784660235886,
       "sender": "ai",
       "text": "بارك الله فيك ونفع بك! بناءً على خطتك وتوجيهات الحصون الخمسة، أنصحك بمراجعة الورد اليومي وتلاوته في صلاة النوافل اليوم لتثبيتها في قلبك."
+    },
+    {
+      "id": 1788205947026,
+      "sender": "user",
+      "text": "أرجو إعداد خطة يومية دقيقة ومحكمة بنظام الحصون الخمسة (طريقة د. سعيد أبو العلا حمزة) بناءً على موقعي الحالي: الصفحة 1 من سورة الفاتحة (الجزء 1). فصّل لي ورد الختمة والاستماع بالحدر، والتحضير الثلاثي (الأسبوعي والليلي والقريب)، وخطوات الحفظ الجديد مع التكرار، ومراجعة القريب لآخر 20 صفحة، ومراجعة البعيد والصلاة به.",
+      "userId": "user_ygw316kwf",
+      "timestamp": 1788205946
+    },
+    {
+      "id": 1788205947688,
+      "sender": "ai",
+      "text": "🏰 **خطتك اليومية الدقيقة بنظام الحصون الخمسة (بناءً على موقعك الحالي):**\n\n📍 **موقعك الحالي:** الصفحة **1** من سورة **الفاتحة** (الجزء 1).\n📊 **الصفحات المحفوظة:** 0 صفحة.\n\n---\n\n1️⃣ **الحصن الأول (قراءة الاستماع والورد نظراً):**\n• **المطلوب اليوم:** قراءة **الجزء 1** كاملاً (الصفحات 1 إلى 20) نظراً بالحدر في 20 دقيقة.\n• **الهدف:** شحن الذاكرة البصرية وتثبيت أماكن الآيات.\n\n2️⃣ **الحصن الثاني (التحضير الثلاثي):**\n• **التحضير الأسبوعي:** سماع سورة **الفاتحة** كاملة 3 مرات مع تدبر مقاصدها.\n• **التحضير الليلي (الليلة قبل النوم):** تلاوة **الصفحة 2** من 5 إلى 10 مرات وسماعها.\n• **التحضير القريب (قبل الحفظ بـ 15 دقيقة):** تلاوة **الصفحة 1** 15 مرة لتصفية الذهن.\n\n3️⃣ **الحصن الثالث (الحفظ الجديد الفعلي):**\n• **المطلوب اليوم:** حفظ **الصفحة 1** من سورة **الفاتحة**.\n• **طريقة الإتقان:** تكرار كل آية 20 مرة، وكل مقطع 20 مرة، وسرد الصفحة كاملة غيباً 40 مرة حتى تكون كالفاتحة.\n\n4️⃣ **الحصن الرابع (المراجعة القريبة اليومية):**\n• **المطلوب اليوم:** مراجعة غيباً وسرداً بالحدر للصفحات من **1 إلى 1** (آخر 20 صفحة تم حفظها) في 20 دقيقة.\n\n5️⃣ **الحصن الخامس (المراجعة البعيدة والمعاهدة في الصلاة):**\n• **المطلوب اليوم:** مراجعة جزء من قديم المحفوظ وتلاوة ما حفظته في ركعات السنن، الوتر، وقيام الليل.\n\n✨ *القاعدة الذهبية لد. سعيد حمزة: \"من قرأ القرآن في صلاته ثَبَت، ومن قرأه في غير صلاته كَثُر ثوابه وتفلت حفظه\".*",
+      "userId": "user_ygw316kwf",
+      "timestamp": 1788205946
     }
   ]
 }

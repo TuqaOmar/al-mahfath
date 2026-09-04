@@ -7,10 +7,12 @@
   "scripts": {
     "dev": "node server/index.js",
     "build": "vite build",
+    "lint": "vite build --mode development",
     "start": "node server/index.js",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "jsdom": "^30.0.1",
     "pptxgenjs": "^4.0.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"

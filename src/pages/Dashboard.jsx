@@ -55,6 +55,8 @@ import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 import { NotificationCenter } from '../components/NotificationCenter';
 import { useNotifications } from '../context/NotificationContext';
 import { AdminPanel } from '../components/AdminPanel';
+import { BottomNavBar } from '../components/BottomNavBar';
+import { MoreToolsModal } from '../components/MoreToolsModal';
 
 
 // Hadiths on the virtues of the Quran
@@ -104,6 +106,7 @@ const Dashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
 
   // Set default tab for admin users when they log in or user role changes
   useEffect(() => {
@@ -140,315 +143,294 @@ const Dashboard = () => {
     switch (activeTab) {
       case 'home':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1040px', margin: '0 auto' }}>
             
-            {/* 1. Spiritual Niyyah & Virtue Banner (زاد الروح وتجديد النية) */}
+            {/* 1. Hero: Today's Recitation & Memorization Focus (ورد اليوم المبارك) */}
             <div style={{
-              padding: '20px 28px',
-              borderRadius: '20px',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%)',
-              border: '1px solid rgba(16, 185, 129, 0.25)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              flexWrap: 'wrap',
-              gap: '16px'
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Heart size={24} />
-                </div>
-                <div>
-                  <span style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--primary)', display: 'block', marginBottom: '2px' }}>
-                    📖 زادك الروحي اليومي وتجديد النية
-                  </span>
-                  <p style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: 'var(--text-primary)', fontFamily: 'serif' }}>
-                    « {quranHadiths[hadithIdx].text} »
-                  </p>
-                </div>
-              </div>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-surface)', padding: '6px 14px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
-                {quranHadiths[hadithIdx].source}
-              </span>
-            </div>
-
-            {/* 2. Today's Learning Plan & Favorites Focus Hero Banner */}
-            <div style={{
-              position: 'relative',
               borderRadius: '24px',
               padding: isMobile ? '24px 20px' : '32px 36px',
               background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
               color: 'white',
-              overflow: 'hidden',
               boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
-              border: '1px solid rgba(16, 185, 129, 0.3)'
+              border: '1px solid rgba(16, 185, 129, 0.3)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '20px'
             }}>
-              <div style={{ position: 'relative', zIndex: 2 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginBottom: '16px' }}>
-                  <span style={{ padding: '6px 14px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', fontSize: '13px', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                    <Target size={16} /> خطة تعلم اليوم والمهمة اليومية
-                  </span>
-                  <span style={{ fontSize: '12px', color: '#94A3B8', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                    <Clock size={14} /> تتجدد تلقائياً كل صباح
-                  </span>
-                </div>
-
-                <h1 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: 'bold', margin: '0 0 10px 0', lineHeight: 1.3 }}>
-                  ما الذي يجب عليك تعلّمه وحفظه اليوم؟ 🌿
-                </h1>
-
-                {/* Plan Highlights Grid */}
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)',
-                  gap: '12px',
-                  margin: '20px 0',
-                  padding: '16px',
-                  borderRadius: '16px',
-                  background: 'rgba(255, 255, 255, 0.05)',
-                  border: '1px solid rgba(255, 255, 255, 0.1)'
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                <span style={{ 
+                  padding: '6px 14px', 
+                  borderRadius: '20px', 
+                  background: 'rgba(16, 185, 129, 0.2)', 
+                  color: '#34D399', 
+                  fontSize: '13px', 
+                  fontWeight: 'bold', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '6px' 
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <BookOpen size={18} />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>الحفظ الجديد اليوم:</span>
-                      <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
-                        {user?.preferences?.dailyTarget || 'صفحة واحدة (سورة البقرة)'}
-                      </strong>
-                    </div>
-                  </div>
+                  <BookOpen size={16} /> ورد اليوم المبارك
+                </span>
+                <span style={{ fontSize: '12px', color: '#94A3B8' }}>
+                  يتجدد يومياً مع تقدمك في الحفظ
+                </span>
+              </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Layers size={18} />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>المراجعة والتثبيت:</span>
-                      <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
-                        {user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً'}
-                      </strong>
-                    </div>
-                  </div>
+              <div>
+                <h1 style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+                  جاهز لوردك اليومي؟ 🌿
+                </h1>
+                <p style={{ margin: 0, fontSize: '15px', color: '#CBD5E1', lineHeight: 1.6 }}>
+                  استمر على عهدك مع كتاب الله، ورتّل آياتك بخشوع وثبات.
+                </p>
+              </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.2)', color: '#FBBF24', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Shield size={18} />
-                    </div>
-                    <div>
-                      <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>الأجزاء المستهدفة:</span>
-                      <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
-                        {user?.preferences?.juzsMemorized || 'الجزء 1، الجزء 30'}
-                      </strong>
-                    </div>
+              {/* Targets Summary Chips */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
+                gap: '12px',
+                padding: '16px',
+                borderRadius: '16px',
+                background: 'rgba(255, 255, 255, 0.06)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <BookOpen size={18} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#94A3B8', display: 'block' }}>الحفظ الجديد اليوم:</span>
+                    <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
+                      {user?.preferences?.dailyTarget || 'صفحة واحدة (سورة البقرة)'}
+                    </strong>
                   </div>
                 </div>
 
-                {/* Favorites List section */}
-                {user?.favorites && user.favorites.length > 0 && (
-                  <div style={{ marginBottom: '20px', padding: '12px 16px', borderRadius: '14px', background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px' }}>
-                      <Star size={16} color="#FBBF24" fill="#FBBF24" />
-                      <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#FBBF24' }}>عناصرك المحفوظة في المفضلة ({user.favorites.length}):</span>
-                    </div>
-                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      {user.favorites.map((fav, index) => (
-                        <button
-                          key={index}
-                          onClick={() => setActiveTab('daily-session')}
-                          style={{
-                            padding: '6px 12px',
-                            borderRadius: '12px',
-                            background: 'rgba(255, 255, 255, 0.15)',
-                            border: '1px solid rgba(255, 255, 255, 0.2)',
-                            color: '#F8FAFC',
-                            fontSize: '12px',
-                            fontWeight: 'bold',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '6px'
-                          }}
-                        >
-                          <BookOpen size={12} color="#34D399" />
-                          {fav.title || `صفحة ${fav.id}`}
-                        </button>
-                      ))}
-                    </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Layers size={18} />
                   </div>
-                )}
-
-                {/* Primary Action Button */}
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
-                  <button 
-                    onClick={() => setActiveTab('daily-session')}
-                    style={{ 
-                      padding: '14px 28px', 
-                      borderRadius: '14px', 
-                      background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', 
-                      color: 'white', 
-                      border: 'none', 
-                      fontWeight: 'bold', 
-                      fontSize: '15px', 
-                      cursor: 'pointer', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '8px',
-                      boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
-                    }}
-                  >
-                    <Play size={18} /> ابدأ ورد اليوم والتسميع الآن 🚀
-                  </button>
-
-                  <button 
-                    onClick={() => setActiveTab('my-plan')}
-                    style={{ 
-                      padding: '14px 20px', 
-                      borderRadius: '14px', 
-                      background: 'rgba(255, 255, 255, 0.1)', 
-                      color: '#E2E8F0', 
-                      border: '1px solid rgba(255, 255, 255, 0.2)', 
-                      fontWeight: 'bold', 
-                      fontSize: '14px', 
-                      cursor: 'pointer'
-                    }}
-                  >
-                    ⚙️ تعديل خطتي وتخصيص الأجزاء
-                  </button>
+                  <div>
+                    <span style={{ fontSize: '11.5px', color: '#94A3B8', display: 'block' }}>المراجعة والتثبيت:</span>
+                    <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
+                      {user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً'}
+                    </strong>
+                  </div>
                 </div>
+              </div>
 
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={() => setActiveTab('daily-session')}
+                  style={{ 
+                    padding: '14px 28px', 
+                    borderRadius: '14px', 
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', 
+                    color: 'white', 
+                    border: 'none', 
+                    fontWeight: 'bold', 
+                    fontSize: '15px', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <Play size={18} /> ابدأ التسميع والقراءة الآن
+                </button>
+
+                <button 
+                  onClick={() => setActiveTab('my-plan')}
+                  style={{ 
+                    padding: '14px 20px', 
+                    borderRadius: '14px', 
+                    background: 'rgba(255, 255, 255, 0.1)', 
+                    color: '#E2E8F0', 
+                    border: '1px solid rgba(255, 255, 255, 0.2)', 
+                    fontWeight: 'bold', 
+                    fontSize: '14px', 
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  تعديل الخطة
+                </button>
               </div>
             </div>
 
-            {/* 3. Bento Grid Metrics */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '16px' : '24px' }}>
+            {/* 2. Key Metrics Row (3 clean, essential cards) */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
               
-              {/* Memory Score */}
-              <Card>
-                <div className="flex-between" style={{ marginBottom: '16px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Brain size={20} />
+              {/* Memorized Pages */}
+              <Card style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>المحفوظ في الصدر</span>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BookOpen size={18} />
                   </div>
-                  <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '13px' }}>{user?.memoryScore || 100}% ثبات ممتاز</span>
                 </div>
-                <h3 style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '4px' }}>درجة استقرار الحفظ (Memory Score)</h3>
-                <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0 0 12px 0' }}>{user?.memoryScore || 100}%</p>
-                <div style={{ display: 'flex', gap: '8px', fontSize: '12px' }}>
-                  <span style={{ color: '#10B981' }}>🟢 ثابت في الصدر: {user?.memorizedPagesCount || 0} صفحة</span>
+                <div style={{ fontSize: '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {user?.memorizedPagesCount || 0} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>صفحة</span>
                 </div>
+                <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>
+                  من أصل 604 صفحة
+                </span>
+              </Card>
+
+              {/* Memory Stability Score */}
+              <Card style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>ثبات الحفظ</span>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Brain size={18} />
+                  </div>
+                </div>
+                <div style={{ fontSize: '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {user?.memoryScore || 100}%
+                </div>
+                <span style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 600 }}>
+                  معدل استقرار ممتاز
+                </span>
               </Card>
 
               {/* Streak */}
-              <Card>
-                <div className="flex-between" style={{ marginBottom: '16px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Flame size={20} />
+              <Card style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>أيام الاستمرار</span>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Flame size={18} />
                   </div>
-                  <span style={{ color: 'var(--success)', fontWeight: 'bold', fontSize: '13px' }}>رباط القرآن 🔥</span>
                 </div>
-                <h3 style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '4px' }}>أيام صحبة القرآن المتتالية</h3>
-                <p style={{ fontSize: '28px', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0 0 12px 0' }}>{user?.streak || 1} يوم</p>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>«أَحَبُّ الأَعْمَالِ إِلَى اللَّهِ أَدْوَمُهَا»</span>
-              </Card>
-
-              {/* Today's Spiritual Application */}
-              <Card>
-                <div className="flex-between" style={{ marginBottom: '16px' }}>
-                  <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <BookMarked size={20} />
-                  </div>
-                  <span style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '13px' }}>العمل بالآيات</span>
+                <div style={{ fontSize: '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                  {user?.streak || 1} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>يوم</span>
                 </div>
-                <h3 style={{ fontSize: '15px', color: 'var(--text-secondary)', marginBottom: '4px' }}>تطبيق اليوم العملي</h3>
-                <p style={{ fontSize: '15px', fontWeight: 'bold', color: 'var(--text-primary)', margin: '0 0 8px 0', lineHeight: 1.5 }}>
-                  «الإحسان إلى الجار والإنفاق من طيب ما رزقك الله»
-                </p>
-                <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>مستنبط من آيات الورد اليومي</span>
+                <span style={{ fontSize: '12px', color: '#F59E0B', fontWeight: 600 }}>
+                  صحبة متواصلة لكتاب الله
+                </span>
               </Card>
 
             </div>
 
-            {/* 4. AI Guidance & Five Fortresses Timeline */}
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '24px' }}>
+            {/* 3. Quick Access Hub (3 Core Navigation Cards) */}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
               
-              {/* Left Column */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                
-                {/* Spiritual & AI Recommendations */}
-                <Card style={{ padding: '24px', background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-                    <Sparkles size={24} color="var(--primary)" />
-                    <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--primary)' }}>توجيهات المعلم والموجه الذكي اليومية</h3>
-                  </div>
-                  <ul style={{ margin: 0, paddingRight: '20px', color: 'var(--text-primary)', fontSize: '14px', lineHeight: 1.8 }}>
-                    <li>
-                      <b>الورد المخصص لك:</b> 
-                      {user?.preferences?.juzsMemorized 
-                        ? `بناءً على حفظك لـ (${user.preferences.juzsMemorized})، نوصيك بالبدء من الصفحة رقم ${user.preferences.juzsMemorized.includes('لا شيء') ? '1' : '102'} لتثبيت الحفظ الجديد.` 
-                        : 'وردك المقترح يبدأ من سورة البقرة صفحة 2 لتهيئة خطة الحفظ الأساسية.'}
-                    </li>
-                    <li>
-                      <b>توصية نمط التعلم المكتشف:</b> 
-                      {user?.preferences?.learningStyle?.includes('بصري') && 'بما أن نمطك بصري، يوصى بالتركيز على الروابط البصرية وتظليل الكلمات المتشابهة لتثبيت موضع الآية مكانياً.'}
-                      {user?.preferences?.learningStyle?.includes('سمعي') && 'بما أن نمطك سمعي، نوصيك بتكرار الاستماع لتلاوة الشيخ الحصري أو العفاسي 3 مرات متتالية قبل الحفظ صوتاً.'}
-                      {!user?.preferences?.learningStyle && 'نوصيك باستعمال مشغل الصوت ومتابعة القراءة بالعينين لربط الحفظ السمعي والبصري معاً.'}
-                    </li>
-                    <li>
-                      <b>العمل بآيات اليوم:</b> استشعر معاني الآيات في تدبر سورة البقرة اليوم، وجسدها في سلوكك اليومي بالصدقة والرفق بالآخرين.
-                    </li>
-                  </ul>
-                </Card>
-
-                {/* Five Fortresses Timeline */}
-                <Card style={{ padding: isMobile ? '16px' : '28px' }}>
-                  <h3 style={{ fontSize: '20px', color: 'var(--text-primary)', marginBottom: '20px' }}>🏰 منهجية الحصون الخمسة للثبات</h3>
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(5, 1fr)', gap: '12px' }}>
-                    {[
-                      { id: 1, name: '1. قراءة الورد', desc: 'قراءة جزء نظراً' },
-                      { id: 2, name: '2. تحضير أسبوعي', desc: 'التهيئة الذهنية لسورة الأسبوع' },
-                      { id: 3, name: '3. تحضير قريب', desc: 'تكرار الصفحة قبل الحفظ بـ 15 دقيقة' },
-                      { id: 4, name: '4. حفظ جديد', desc: 'كتابة وتثبيت الوجه الجديد' },
-                      { id: 5, name: '5. مراجعة بعيدة', desc: 'تكرار المحفوظ السابق في الصلاة' },
-                    ].map((fort) => {
-                      const isDone = !!fortressesToday[fort.id];
-                      return (
-                        <div 
-                          key={fort.id} 
-                          onClick={() => handleToggleFortress(fort.id)}
-                          style={{ 
-                            padding: '16px 12px', 
-                            borderRadius: '16px', 
-                            background: isDone ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.08) 100%)' : 'var(--bg-color)', 
-                            border: `2px solid ${isDone ? 'var(--primary)' : 'var(--glass-border)'}`, 
-                            textAlign: 'center',
-                            cursor: 'pointer',
-                            transition: 'all 0.25s ease',
-                            boxShadow: isDone ? '0 4px 12px rgba(16, 185, 129, 0.1)' : 'none'
-                          }}
-                          title="انقر لتحديث حالة إنجاز الحصن لليوم"
-                        >
-                          <span style={{ fontSize: '13px', fontWeight: 'bold', color: isDone ? 'var(--primary)' : 'var(--text-primary)', display: 'block', marginBottom: '6px' }}>{fort.name}</span>
-                          <span style={{ fontSize: '11px', color: isDone ? 'var(--primary)' : 'var(--text-secondary)', fontWeight: isDone ? 'bold' : 'normal' }}>
-                            {isDone ? 'تم بنجاح! +50XP ✅' : 'انقر للاكتمال 🔄'}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </Card>
-
-                {/* Visual Progress Tracker Widget */}
-                <VisualProgressTracker />
-
+              <div 
+                onClick={() => setActiveTab('quran-map')}
+                style={{
+                  padding: '20px',
+                  borderRadius: '18px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--glass-border)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'var(--shadow-soft)'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Compass size={22} />
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 2px 0', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                    خريطة القرآن (604)
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    تصفح صفحات المصحف ومتابعة الإنجاز
+                  </p>
+                </div>
               </div>
 
-              {/* Right Column: AI Assistant Chat */}
-              <Card style={{ padding: '0', background: 'transparent', border: 'none', boxShadow: 'none' }}>
-                <h3 style={{ fontSize: '20px', color: 'var(--text-primary)', marginBottom: '16px', padding: '0 8px' }}>المساعد والمعلم الإيماني</h3>
-                <AiAssistant />
-              </Card>
+              <div 
+                onClick={() => setActiveTab('five-fortresses')}
+                style={{
+                  padding: '20px',
+                  borderRadius: '18px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--glass-border)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'var(--shadow-soft)'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <ShieldCheck size={22} />
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 2px 0', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                    الحصون الخمسة
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    منهجية التحضير والحفظ والمراجعة
+                  </p>
+                </div>
+              </div>
 
+              <div 
+                onClick={() => setActiveTab('ai-assistant')}
+                style={{
+                  padding: '20px',
+                  borderRadius: '18px',
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--glass-border)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '14px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: 'var(--shadow-soft)'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+              >
+                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Sparkles size={22} />
+                </div>
+                <div>
+                  <h4 style={{ margin: '0 0 2px 0', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                    المعلم الإيماني الذكي
+                  </h4>
+                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    إجابات فورية وتفسير ومتشابهات
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            {/* 4. Spiritual Calm: Hadith of the Day */}
+            <div style={{
+              padding: '18px 24px',
+              borderRadius: '18px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--glass-border)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span style={{ fontSize: '20px' }}>📖</span>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'serif' }}>
+                  « {quranHadiths[hadithIdx].text} »
+                </p>
+              </div>
+              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', background: 'var(--bg-color)', padding: '4px 12px', borderRadius: '12px' }}>
+                {quranHadiths[hadithIdx].source}
+              </span>
             </div>
 
           </div>
@@ -586,7 +568,18 @@ const Dashboard = () => {
       }}>
         
         {/* Header */}
-        <header style={{ height: '80px', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: isMobile ? '0 16px' : '0 40px', background: 'var(--bg-surface)', position: 'sticky', top: 0, zIndex: 5 }}>
+        <header style={{ 
+          height: '74px', 
+          borderBottom: '1px solid var(--glass-border)', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'space-between', 
+          padding: isMobile ? '0 16px' : '0 32px', 
+          background: 'var(--bg-surface)', 
+          position: 'sticky', 
+          top: 0, 
+          zIndex: 20 
+        }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {isMobile && (
               <button 
@@ -597,44 +590,38 @@ const Dashboard = () => {
                 <Menu size={24} />
               </button>
             )}
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                <h2 style={{ fontSize: isMobile ? '16px' : '24px', color: 'var(--text-primary)', margin: 0 }}>مرحباً بعودتك، {user?.name?.split(' ')[0] || 'أحمد'} 👋</h2>
-                <span style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', fontWeight: 'bold', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  🔥 {user?.streak || 1} يوم متتالي
-                </span>
-                <span style={{ padding: '4px 10px', borderRadius: '20px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)', fontWeight: 'bold', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                  ⭐ المستوى {user?.level || 1}
-                </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>الخبرة: {user?.xp || 100} XP</span>
-                <div style={{ width: '120px', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-                  <div style={{ width: `${((user?.xp || 100) % 500) / 5}%`, height: '100%', background: 'var(--primary)' }} />
-                </div>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>هدفك: {user?.preferences?.dailyTarget || 'صفحة واحدة يومياً'}</span>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                مرحباً، {user?.name?.split(' ')[0] || 'أحمد'} 👋
+              </h2>
+              <span style={{ 
+                padding: '4px 10px', 
+                borderRadius: '20px', 
+                background: 'rgba(245, 158, 11, 0.15)', 
+                color: '#F59E0B', 
+                fontWeight: 'bold', 
+                fontSize: '12px', 
+                display: 'inline-flex', 
+                alignItems: 'center', 
+                gap: '4px' 
+              }}>
+                🔥 {user?.streak || 1} أيام
+              </span>
             </div>
           </div>
 
-          <div className="flex-center" style={{ gap: isMobile ? '8px' : '24px' }}>
-            {!isMobile && (
-              <div className="flex-center" style={{ padding: '8px 16px', borderRadius: 'var(--radius-full)', gap: '8px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                <Search size={18} color="var(--text-secondary)" />
-                <input type="text" placeholder="ابحث في القرآن والتدبر..." style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-body)' }} />
-              </div>
-            )}
+          <div className="flex-center" style={{ gap: isMobile ? '8px' : '16px' }}>
             {/* Language Switcher */}
             <button
               onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
               style={{
-                padding: '6px 14px',
-                borderRadius: '20px',
+                padding: '6px 12px',
+                borderRadius: '16px',
                 background: 'var(--primary-light)',
                 color: 'var(--primary)',
                 border: '1px solid var(--primary)',
                 fontWeight: 'bold',
-                fontSize: '13px',
+                fontSize: '12px',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
@@ -643,20 +630,20 @@ const Dashboard = () => {
               }}
               title={t('lang_select')}
             >
-              <Globe size={15} />
-              <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
+              <Globe size={14} />
+              <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
             </button>
 
-            {/* Smooth Animated Theme Toggle Switch */}
+            {/* Theme Toggle Switch */}
             <ThemeToggle variant="pill" size="medium" />
-            {/* Interactive Notification Center */}
+            {/* Notification Center */}
             <NotificationCenter />
             <div style={{ position: 'relative' }}>
               <img 
                 src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
                 alt="Profile" 
                 onClick={() => setShowProfileMenu(!showProfileMenu)} 
-                style={{ width: '40px', height: '40px', borderRadius: '50%', cursor: 'pointer', background: 'var(--primary)', border: '2px solid var(--glass-border)' }} 
+                style={{ width: '38px', height: '38px', borderRadius: '50%', cursor: 'pointer', background: 'var(--primary)', border: '2px solid var(--glass-border)' }} 
                 title="خيارات الحساب" 
               />
               {showProfileMenu && (
@@ -808,57 +795,20 @@ const Dashboard = () => {
 
         {/* Mobile Bottom Navigation Bar */}
         {isMobile && (
-          <div style={{
-            position: 'fixed',
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: '64px',
-            backgroundColor: 'var(--bg-surface)',
-            borderTop: '1px solid var(--glass-border)',
-            display: 'flex',
-            justifyContent: 'space-around',
-            alignItems: 'center',
-            zIndex: 40,
-            boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.12)',
-            padding: '0 4px'
-          }}>
-            {[
-              { id: 'home', label: 'الرئيسية', icon: '🏠' },
-              { id: 'daily-session', label: 'الورد', icon: '🎯' },
-              { id: 'quran-map', label: 'المصحف', icon: '📖' },
-              { id: 'ai-assistant', label: 'المعلم', icon: '🤖' },
-              { id: 'community', label: 'المجتمع', icon: '👥' }
-            ].map(tab => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '2px',
-                    color: isActive ? 'var(--primary)' : 'var(--text-secondary)',
-                    fontWeight: isActive ? 'bold' : 'normal',
-                    fontSize: '11px',
-                    cursor: 'pointer',
-                    flex: 1,
-                    padding: '4px 0',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <span style={{ fontSize: '19px', transform: isActive ? 'scale(1.15)' : 'scale(1)', transition: 'transform 0.2s ease' }}>{tab.icon}</span>
-                  <span style={{ fontSize: '11px', fontFamily: 'var(--font-body)' }}>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+          <BottomNavBar 
+            activeTab={activeTab} 
+            setActiveTab={setActiveTab} 
+            onOpenMore={() => setShowMoreToolsModal(true)} 
+          />
         )}
+
+        {/* More Tools Modal Sheet */}
+        <MoreToolsModal 
+          isOpen={showMoreToolsModal} 
+          onClose={() => setShowMoreToolsModal(false)} 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+        />
       </div>
     </div>
   );

@@ -181,3 +181,16 @@ export const getJuzForPage = (pageNumber) => {
   }
   return activeJuz;
 };
+
+export const getPageRangeForJuz = (juzNumber) => {
+  const targetJuz = Number(juzNumber) || 1;
+  const current = juzStarts.find(j => j.juz === targetJuz) || juzStarts[0];
+  const next = juzStarts.find(j => j.juz === targetJuz + 1);
+  const endPage = next ? next.startPage - 1 : 604;
+  return { startPage: current.startPage, endPage };
+};
+
+export const getJuzStartPage = (juzNumber) => {
+  const item = juzStarts.find(j => j.juz === Number(juzNumber));
+  return item ? item.startPage : 1;
+};
