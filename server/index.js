@@ -114,6 +114,7 @@ app.post('/api/auth/login', async (req, res) => {
     delete user.passwordHash;
     delete user.salt;
     user.preferences = safeParsePreferences(user.preferences);
+    user.hasCompletedWizard = Boolean(user.hasCompletedWizard);
 
     res.json({ success: true, user });
   } catch (error) {
@@ -140,6 +141,7 @@ app.post('/api/auth/google', async (req, res) => {
       delete user.passwordHash;
       delete user.salt;
       user.preferences = safeParsePreferences(user.preferences);
+      user.hasCompletedWizard = Boolean(user.hasCompletedWizard);
       return res.json({ success: true, user });
     }
 
@@ -273,9 +275,8 @@ app.put('/api/user/:uid', async (req, res) => {
     const updatedUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
     delete updatedUser.passwordHash;
     delete updatedUser.salt;
-    try {
-      updatedUser.preferences = JSON.parse(updatedUser.preferences);
-    } catch (e) {}
+    updatedUser.preferences = safeParsePreferences(updatedUser.preferences);
+    updatedUser.hasCompletedWizard = Boolean(updatedUser.hasCompletedWizard);
 
     res.json({ success: true, user: updatedUser });
   } catch (error) {
@@ -388,9 +389,8 @@ app.put('/api/admin/user/:uid', async (req, res) => {
     const updatedUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
     delete updatedUser.passwordHash;
     delete updatedUser.salt;
-    try {
-      updatedUser.preferences = JSON.parse(updatedUser.preferences);
-    } catch (e) {}
+    updatedUser.preferences = safeParsePreferences(updatedUser.preferences);
+    updatedUser.hasCompletedWizard = Boolean(updatedUser.hasCompletedWizard);
 
     res.json({ success: true, user: updatedUser });
   } catch (error) {
@@ -734,4 +734,8 @@ async function startServer() {
   });
 }
 
-startServer();
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

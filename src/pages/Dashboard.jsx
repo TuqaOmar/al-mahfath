@@ -13,6 +13,7 @@ import {
   CheckCircle,
   Target,
   Shield,
+  ShieldCheck,
   Award,
   BarChart2,
   Sparkles,

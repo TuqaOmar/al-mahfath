@@ -50,7 +50,7 @@ const OnboardingWizard = () => {
   });
 
   const navigate = useNavigate();
-  const { updateUserData } = useAuth();
+  const { user, updateUserData } = useAuth();
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   React.useEffect(() => {
@@ -109,32 +109,36 @@ const OnboardingWizard = () => {
 
     totalJuz = Number((memorizedPagesCount / 20).toFixed(1));
 
-    updateUserData({
+    const wizardUpdate = {
       hasCompletedWizard: true,
       preferences: formData,
       memorizedPagesCount,
       totalJuz
-    });
+    };
+
+    // Update React Auth context & localStorage immediately
+    await updateUserData(wizardUpdate);
 
     try {
       const storedUser = JSON.parse(localStorage.getItem('ma7fath_user') || '{}');
-      if (storedUser.uid) {
-        await fetch(`/api/user/${storedUser.uid}`, {
+      const targetUid = storedUser.uid || user?.uid;
+      if (targetUid) {
+        const res = await fetch(`/api/user/${targetUid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            hasCompletedWizard: true,
-            preferences: formData,
-            memorizedPagesCount,
-            totalJuz
-          })
+          body: JSON.stringify(wizardUpdate)
         });
+        const data = await res.json();
+        if (data && data.user) {
+          const merged = { ...storedUser, ...data.user, hasCompletedWizard: true };
+          localStorage.setItem('ma7fath_user', JSON.stringify(merged));
+        }
       }
     } catch (e) {
       console.log('Error syncing wizard data with API:', e);
     }
 
-    navigate('/dashboard');
+    navigate('/dashboard', { replace: true });
   };
 
   const stepVariants = {

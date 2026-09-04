@@ -219,8 +219,7 @@ seedDb();
 
 // Query Dispatcher
 export async function runQuery(sql, params = []) {
-  const sqlTrim = sql.trim();
-  const upper = sqlTrim.toUpperCase();
+  const upper = sql.replace(/\s+/g, ' ').trim().toUpperCase();
 
   if (upper.startsWith('INSERT INTO USERS')) {
     const userObj = {
@@ -228,7 +227,7 @@ export async function runQuery(sql, params = []) {
       name: params[1],
       email: params[2],
       photoURL: params[3],
-      hasCompletedWizard: params[4],
+      hasCompletedWizard: params[4] ? 1 : 0,
       role: params[5],
       streak: params[6],
       xp: params[7],
@@ -246,12 +245,12 @@ export async function runQuery(sql, params = []) {
     return { lastID: userObj.uid, changes: 1 };
   }
 
-  if (upper.startsWith('UPDATE USERS SET NAME = ?, HASCOMPLETEDWIZARD = ?')) {
+  if (upper.includes('UPDATE USERS SET') && upper.includes('HASCOMPLETEDWIZARD = ?')) {
     const [name, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid] = params;
     const user = dbState.users.find(u => u.uid === uid);
     if (user) {
       user.name = name;
-      user.hasCompletedWizard = hasCompletedWizard;
+      user.hasCompletedWizard = hasCompletedWizard ? 1 : 0;
       user.streak = streak;
       user.xp = xp;
       user.level = level;
@@ -265,7 +264,7 @@ export async function runQuery(sql, params = []) {
     return { changes: 0 };
   }
 
-  if (upper.startsWith('UPDATE USERS SET NAME = ?, LEVEL = ?')) {
+  if (upper.includes('UPDATE USERS SET') && upper.includes('LEVEL = ?')) {
     const [name, level, xp, memorizedPagesCount, totalJuz, uid] = params;
     const user = dbState.users.find(u => u.uid === uid);
     if (user) {
