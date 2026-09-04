@@ -70,6 +70,13 @@ export const MoreToolsModal = ({ isOpen, onClose, activeTab, setActiveTab }) => 
       desc: lang === 'ar' ? 'عرض شرائح متكامل يشرح فكرة المنصة، الحصون الخمسة، والأثر القرآني' : 'Full presentation slides explaining the vision, fortresses, and impact',
       icon: Presentation,
       color: '#10B981'
+    },
+    {
+      id: 'docs',
+      title: lang === 'ar' ? 'توثيق ودليل المنصة الشامل 📚' : 'Platform Documentation 📚',
+      desc: lang === 'ar' ? 'دليل هندسي وتقني شامل لجميع ميزات ومحركات المنصة، نماذج الذكاء، واستدعاء الواجهات' : 'Full system architecture, AI engines, API reference, and methodology guide',
+      icon: BookOpen,
+      color: '#3B82F6'
     }
   ];
 

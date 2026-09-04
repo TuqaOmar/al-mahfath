@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Globe, ArrowLeft, ArrowRight, Sparkles, UserCheck, ShieldCheck, LogIn, LayoutDashboard } from 'lucide-react';
+import { Globe, ArrowLeft, ArrowRight, Sparkles, UserCheck, ShieldCheck, LogIn, LayoutDashboard, BookOpen } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { ThemeToggle } from '../ThemeToggle';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export const LandingNavbar = ({ onOpenAuth, onDemoLogin }) => {
+export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
   const { lang, setLang, t, isRTL } = useLanguage();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -94,10 +94,55 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin }) => {
           >
             {isRTL ? 'الأسئلة الشائعة' : 'FAQ'}
           </a>
+
+          {/* Documentation Link */}
+          <button
+            onClick={onOpenDocs}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '13.5px',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              transition: 'color 0.2s',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: 0
+            }}
+            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
+            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+          >
+            <span>{isRTL ? 'توثيق المنصة 📚' : 'Documentation 📚'}</span>
+          </button>
         </div>
 
         {/* Right Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          {/* Docs Quick Button */}
+          <button
+            onClick={onOpenDocs}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px',
+              padding: '6px 10px',
+              borderRadius: '9px',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
+              background: 'rgba(59, 130, 246, 0.1)',
+              color: '#3B82F6',
+              fontSize: '12px',
+              fontWeight: 700,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+            title={isRTL ? 'توثيق ودليل المنصة الشامل' : 'Platform Documentation'}
+          >
+            <BookOpen size={14} />
+            <span>{isRTL ? 'التوثيق' : 'Docs'}</span>
+          </button>
+
           {/* Language Switch */}
           <button
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}

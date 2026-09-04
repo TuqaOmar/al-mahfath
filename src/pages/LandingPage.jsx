@@ -13,10 +13,12 @@ import { LandingTestimonials } from '../components/landing/LandingTestimonials';
 import { LandingFAQ } from '../components/landing/LandingFAQ';
 import { LandingCTA } from '../components/landing/LandingCTA';
 import { LandingFooter } from '../components/landing/LandingFooter';
+import { DocumentationModal } from '../components/DocumentationModal';
 
 const LandingPage = () => {
   const { user, loginWithTestAccount } = useAuth();
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signup'); // 'login' | 'signup'
   const navigate = useNavigate();
 
@@ -50,6 +52,7 @@ const LandingPage = () => {
       <LandingNavbar
         onOpenAuth={handleOpenAuth}
         onDemoLogin={handleDemoLogin}
+        onOpenDocs={() => setIsDocsOpen(true)}
       />
 
       {/* 2. Hero Section with Live Floating Mockup */}
@@ -93,7 +96,13 @@ const LandingPage = () => {
       />
 
       {/* 11. Islamic Modern Footer with Dedication */}
-      <LandingFooter />
+      <LandingFooter onOpenDocs={() => setIsDocsOpen(true)} />
+
+      {/* Platform In-App Interactive Documentation Modal */}
+      <DocumentationModal
+        isOpen={isDocsOpen}
+        onClose={() => setIsDocsOpen(false)}
+      />
 
       {/* Auth Modal popup */}
       <AuthModal

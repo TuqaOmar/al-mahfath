@@ -16,7 +16,8 @@ import {
   ChevronsLeft,
   Shield,
   Bot,
-  Presentation
+  Presentation,
+  FileText
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -45,7 +46,8 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
     { id: 'analytics', label: lang === 'ar' ? 'التحليلات' : 'Analytics', icon: BarChart3 },
     { id: 'achievements', label: lang === 'ar' ? 'الأوسمة' : 'Achievements', icon: Trophy },
     { id: 'community', label: lang === 'ar' ? 'المجتمع' : 'Community', icon: Users },
-    { id: 'presentation', label: lang === 'ar' ? 'عرض المنصة 📽️' : 'Pitch Deck 📽️', icon: Presentation }
+    { id: 'presentation', label: lang === 'ar' ? 'عرض المنصة 📽️' : 'Pitch Deck 📽️', icon: Presentation },
+    { id: 'docs', label: lang === 'ar' ? 'توثيق المنصة 📚' : 'Documentation 📚', icon: FileText }
   ];
 
   // Detect mobile view dynamically

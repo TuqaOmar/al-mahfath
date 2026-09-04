@@ -3,7 +3,7 @@ import { Logo } from '../ui/Logo';
 import { Heart, Sparkles, Shield, BookOpen } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-export const LandingFooter = () => {
+export const LandingFooter = ({ onOpenDocs }) => {
   const { isRTL } = useLanguage();
 
   return (
@@ -73,6 +73,24 @@ export const LandingFooter = () => {
               <a href="#methodology" style={{ transition: 'color 0.2s' }} onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
                 {isRTL ? 'خطة الحصون الخمسة' : 'Five Fortresses System'}
               </a>
+              <button 
+                onClick={onOpenDocs} 
+                style={{ 
+                  background: 'none', 
+                  border: 'none', 
+                  padding: 0, 
+                  textAlign: isRTL ? 'right' : 'left', 
+                  cursor: 'pointer', 
+                  color: '#3B82F6', 
+                  fontWeight: 700, 
+                  fontSize: '14px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}
+              >
+                <span>{isRTL ? 'توثيق ودليل المنصة الشامل 📚' : 'Platform Documentation 📚'}</span>
+              </button>
             </div>
           </div>
 

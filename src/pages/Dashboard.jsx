@@ -62,6 +62,7 @@ import { BottomNavBar } from '../components/BottomNavBar';
 import { MoreToolsModal } from '../components/MoreToolsModal';
 import { UserProfileModal } from '../components/UserProfileModal';
 import { PresentationModal } from '../components/PresentationModal';
+import { DocumentationModal } from '../components/DocumentationModal';
 
 
 // Hadiths on the virtues of the Quran
@@ -80,11 +81,15 @@ const Dashboard = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showPresentationModal, setShowPresentationModal] = useState(false);
+  const [showDocsModal, setShowDocsModal] = useState(false);
   const { soundEnabled, toggleSound } = useNotifications();
 
   useEffect(() => {
     if (activeTab === 'presentation') {
       setShowPresentationModal(true);
+      setActiveTab('home');
+    } else if (activeTab === 'docs') {
+      setShowDocsModal(true);
       setActiveTab('home');
     }
   }, [activeTab]);
@@ -720,6 +725,32 @@ const Dashboard = () => {
               </span>
             </button>
 
+            {/* Platform Documentation Portal Button */}
+            <button
+              id="header-docs-btn"
+              onClick={() => setShowDocsModal(true)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '16px',
+                background: 'rgba(59, 130, 246, 0.1)',
+                color: '#3B82F6',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              title={isRTL ? 'دليل وتوثيق المنصة الشامل 📚' : 'Platform Documentation 📚'}
+            >
+              <BookOpen size={15} />
+              <span style={{ display: (isMobile || isLaptop) ? 'none' : 'inline' }}>
+                {isRTL ? 'التوثيق' : 'Docs'}
+              </span>
+            </button>
+
             {/* Sound Effects & Tones Mute Toggle */}
             <button
               id="header-sound-mute-btn"
@@ -962,6 +993,12 @@ const Dashboard = () => {
         <PresentationModal 
           isOpen={showPresentationModal} 
           onClose={() => setShowPresentationModal(false)} 
+        />
+
+        {/* Platform Documentation Modal */}
+        <DocumentationModal 
+          isOpen={showDocsModal} 
+          onClose={() => setShowDocsModal(false)} 
         />
       </div>
     </div>
