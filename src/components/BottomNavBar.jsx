@@ -28,7 +28,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore }) => {
         bottom: 0,
         left: 0,
         right: 0,
-        height: '64px',
+        height: 'calc(64px + env(safe-area-inset-bottom, 0px))',
         backgroundColor: 'var(--bg-surface)',
         borderTop: '1px solid var(--glass-border)',
         boxShadow: '0 -4px 20px rgba(0, 0, 0, 0.1)',
@@ -36,7 +36,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore }) => {
         alignItems: 'center',
         justifyContent: 'space-around',
         zIndex: 40,
-        padding: '0 8px',
+        padding: '0 8px env(safe-area-inset-bottom, 0px) 8px',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
       }}

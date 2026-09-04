@@ -11,7 +11,8 @@ import {
   Sparkles,
   ShieldCheck,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Presentation
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -62,6 +63,13 @@ export const MoreToolsModal = ({ isOpen, onClose, activeTab, setActiveTab }) => 
       desc: lang === 'ar' ? 'رسوم بيانية لدقة التسميع ومعدل ثبات الحفظ عبر الزمن' : 'Charts tracking retention, memory stability, and review',
       icon: BarChart3,
       color: '#06B6D4'
+    },
+    {
+      id: 'presentation',
+      title: lang === 'ar' ? 'العرض التعريفي للمنصة 📽️' : 'Platform Pitch Deck 📽️',
+      desc: lang === 'ar' ? 'عرض شرائح متكامل يشرح فكرة المنصة، الحصون الخمسة، والأثر القرآني' : 'Full presentation slides explaining the vision, fortresses, and impact',
+      icon: Presentation,
+      color: '#10B981'
     }
   ];
 

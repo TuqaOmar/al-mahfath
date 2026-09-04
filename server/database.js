@@ -245,11 +245,17 @@ export async function runQuery(sql, params = []) {
     return { lastID: userObj.uid, changes: 1 };
   }
 
-  if (upper.includes('UPDATE USERS SET') && upper.includes('HASCOMPLETEDWIZARD = ?')) {
-    const [name, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid] = params;
+  if (upper.includes('UPDATE USERS SET') && (upper.includes('HASCOMPLETEDWIZARD = ?') || upper.includes('PHOTOURL = ?'))) {
+    let name, photoURL, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid;
+    if (upper.includes('PHOTOURL = ?')) {
+      [name, photoURL, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid] = params;
+    } else {
+      [name, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid] = params;
+    }
     const user = dbState.users.find(u => u.uid === uid);
     if (user) {
-      user.name = name;
+      if (name !== undefined) user.name = name;
+      if (photoURL !== undefined) user.photoURL = photoURL;
       user.hasCompletedWizard = hasCompletedWizard ? 1 : 0;
       user.streak = streak;
       user.xp = xp;
@@ -334,14 +340,26 @@ export async function runQuery(sql, params = []) {
   }
 
   if (upper.startsWith('INSERT INTO COMMUNITY_POSTS')) {
-    const author = params[0];
-    const avatar = params[1];
-    const isAnonymous = params[2];
-    const category = params[3];
-    const timeAgo = params.length > 6 ? params[4] : 'الآن';
-    const content = params.length > 6 ? params[5] : params[4];
-    const likes = params.length > 6 ? params[6] : 0;
-    const answers = params.length > 7 ? params[7] : '[]';
+    const author = params[0] || 'حافظ القرآن';
+    const avatar = params[1] || null;
+    const isAnonymous = params[2] ? 1 : 0;
+    const category = params[3] || 'تدبر وتثبيت';
+    let timeAgo = 'الآن';
+    let content = '';
+    let likes = 0;
+    let answers = '[]';
+
+    if (params.length >= 6) {
+      timeAgo = params[4] || 'الآن';
+      content = params[5] || '';
+      likes = params[6] || 0;
+      answers = params[7] || '[]';
+    } else if (params.length === 5) {
+      timeAgo = 'الآن';
+      content = params[4] || '';
+    } else {
+      content = params[4] || params[0] || '';
+    }
 
     const newId = (dbState.community_posts.reduce((max, p) => Math.max(max, p.id || 0), 0)) + 1;
     const post = {
@@ -351,13 +369,21 @@ export async function runQuery(sql, params = []) {
       isAnonymous,
       category,
       timeAgo: timeAgo || 'الآن',
-      content,
-      likes: likes || 0,
+      content: String(content || ''),
+      likes: Number(likes) || 0,
       answers: typeof answers === 'string' ? answers : JSON.stringify(answers || [])
     };
     dbState.community_posts.unshift(post);
     saveDb();
     return { lastID: newId, changes: 1 };
+  }
+
+  if (upper.startsWith('DELETE FROM COMMUNITY_POSTS WHERE ID = ?')) {
+    const id = Number(params[0]);
+    const prevLen = dbState.community_posts.length;
+    dbState.community_posts = dbState.community_posts.filter(p => p.id !== id);
+    saveDb();
+    return { changes: prevLen - dbState.community_posts.length };
   }
 
   if (upper.startsWith('UPDATE COMMUNITY_POSTS SET LIKES = ?')) {
@@ -475,7 +501,7 @@ export async function allRows(sql, params = []) {
   if (upper.includes('FROM AI_CHAT_HISTORY')) {
     let history = dbState.ai_chat_history.map(h => ({ ...h }));
     if (params && params[0]) {
-      history = history.filter(h => h.userId === params[0] || !h.userId || h.userId === 'default');
+      history = history.filter(h => h.userId === params[0]);
     }
     if (upper.includes('ORDER BY ID ASC')) {
       history.sort((a, b) => (a.id || 0) - (b.id || 0));

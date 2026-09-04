@@ -29,7 +29,8 @@ import {
   ExternalLink,
   Mic,
   Calendar,
-  Info
+  Info,
+  VolumeX
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -50,7 +51,7 @@ import {
 export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigateToQuran }) => {
   const { user, updateUserData } = useAuth();
   const { isRTL, lang } = useLanguage();
-  const { notifyAndCelebrate } = useNotifications();
+  const { notifyAndCelebrate, soundEnabled, toggleSound } = useNotifications();
   const userId = user?.uid || 'guest';
 
   // Current user's progress
@@ -77,7 +78,6 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
 
   // Audio State for Fortresses
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-  const [audioSpeed, setAudioSpeed] = useState(1.0); // 1.0, 1.25, 1.5
   const [selectedReciter, setSelectedReciter] = useState('ar.husary');
   const audioRef = useRef(null);
 
@@ -109,8 +109,9 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
   const pastAjzaaCount = Math.max(0, currentJuz - 1);
   const todayDistantJuz = pastAjzaaCount > 0 ? ((currentPage % pastAjzaaCount) + 1) : null;
 
-  // Sound effect for repetition ding
+  // Sound effect for repetition ding (respects global soundEnabled setting)
   const playDing = () => {
+    if (!soundEnabled) return;
     try {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const osc = audioCtx.createOscillator();
@@ -245,17 +246,10 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
       audioRef.current.pause();
       setIsPlayingAudio(false);
     } else {
-      audioRef.current.playbackRate = audioSpeed;
+      audioRef.current.playbackRate = 1.0;
       audioRef.current.play().then(() => {
         setIsPlayingAudio(true);
       }).catch(e => console.log('Audio playback waiting:', e));
-    }
-  };
-
-  const handleSpeedChange = (speed) => {
-    setAudioSpeed(speed);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = speed;
     }
   };
 
@@ -746,7 +740,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               <p style={{ margin: '6px 0 0 0', fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 {isRTL 
                   ? `قراءة الجزء ${fort1Juz} (الصفحات من ${fort1Range.startPage} إلى ${fort1Range.endPage}) نظراً من مصحفك الخاص لتثبيت صورة الصفحات في الذاكرة البصرية وإتمام ختمة كاملة كل شهر.`
-                  : `Read the entire Juz ${fort1Juz} (Pages ${fort1Range.startPage} to ${fort1Range.endPage}) with fluent Hadr speed to complete a monthly Khatmah.`}
+                  : `Read the entire Juz ${fort1Juz} (Pages ${fort1Range.startPage} to ${fort1Range.endPage}) to complete a monthly Khatmah.`}
               </p>
             </div>
 
@@ -772,7 +766,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             </button>
           </div>
 
-          {/* Hadr Speed Player Box */}
+          {/* Authentic Recitation Player Box */}
           <div style={{
             padding: '18px 20px',
             borderRadius: '16px',
@@ -790,40 +784,20 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               </div>
               <div>
                 <strong style={{ fontSize: '14px', color: 'var(--text-primary)', display: 'block' }}>
-                  {isRTL ? 'الاستماع لصوت قارئ متقن (حدر سريع ⚡)' : 'Listen to authentic Qari (Hadr speed)'}
+                  {isRTL ? 'الاستماع لتلاوة متقنة ومضبوطة' : 'Listen to authentic Qari recitation'}
                 </strong>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  {isRTL ? 'الشيخ محمود خليل الحصري • مصحف الحدر' : 'Sheikh Al-Husary • Hadr Recitation'}
+                  {isRTL ? 'الشيخ محمود خليل الحصري • تلاوة منهجية بالسرعة الطبيعية' : 'Sheikh Al-Husary • Standard natural recitation'}
                 </span>
               </div>
             </div>
 
-            {/* Audio Speed Controls */}
+            {/* Audio Play Button */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{isRTL ? 'السرعة:' : 'Speed:'}</span>
-              {[1.0, 1.25, 1.5].map((spd) => (
-                <button
-                  key={spd}
-                  onClick={() => handleSpeedChange(spd)}
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: '8px',
-                    background: audioSpeed === spd ? '#3B82F6' : 'var(--bg-surface)',
-                    color: audioSpeed === spd ? 'white' : 'var(--text-primary)',
-                    border: '1px solid var(--glass-border)',
-                    fontSize: '12px',
-                    fontWeight: 'bold',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {spd}x
-                </button>
-              ))}
-
               <button
                 onClick={handleToggleAudio}
                 style={{
-                  padding: '8px 16px',
+                  padding: '9px 18px',
                   borderRadius: '10px',
                   background: '#3B82F6',
                   color: 'white',
@@ -833,11 +807,12 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px'
+                  gap: '6px',
+                  boxShadow: '0 2px 10px rgba(59, 130, 246, 0.3)'
                 }}
               >
                 {isPlayingAudio ? <Pause size={15} /> : <Play size={15} />}
-                <span>{isPlayingAudio ? (isRTL ? 'إيقاف' : 'Pause') : (isRTL ? 'استمع الآن' : 'Listen')}</span>
+                <span>{isPlayingAudio ? (isRTL ? 'إيقاف مؤقت' : 'Pause') : (isRTL ? 'استمع للورد' : 'Listen')}</span>
               </button>
 
               <audio ref={audioRef} src={getAudioSource()} onEnded={() => setIsPlayingAudio(false)} />
@@ -1085,6 +1060,26 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 <strong style={{ fontSize: '15px', color: 'var(--text-primary)' }}>
                   {isRTL ? 'معمل التكرار التفاعلي (التكرار يصنع الرسوخ):' : 'Interactive Repetition Clicker Studio:'}
                 </strong>
+                <button
+                  onClick={toggleSound}
+                  style={{
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    background: soundEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.1)',
+                    color: soundEnabled ? '#10B981' : '#EF4444',
+                    border: `1px solid ${soundEnabled ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    fontSize: '11px',
+                    fontWeight: 'bold',
+                    cursor: 'pointer'
+                  }}
+                  title={soundEnabled ? (isRTL ? 'كتم نغمة عداد التكرار' : 'Mute Click Sound') : (isRTL ? 'تفعيل نغمة عداد التكرار' : 'Unmute Click Sound')}
+                >
+                  {soundEnabled ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                  <span>{soundEnabled ? (isRTL ? 'صوت مفعل' : 'Sound ON') : (isRTL ? 'صامت' : 'Muted')}</span>
+                </button>
               </div>
 
               {/* Step Selectors */}

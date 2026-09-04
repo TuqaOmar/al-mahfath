@@ -280,24 +280,26 @@ export const NotificationProvider = ({ children }) => {
       categoryName
     });
 
-    // Play synthesized celebratory fanfare tone
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 alegre arpeggio
-      notes.forEach((freq, index) => {
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.12);
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime + index * 0.12);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.12 + 0.35);
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.start(audioCtx.currentTime + index * 0.12);
-        osc.stop(audioCtx.currentTime + index * 0.12 + 0.35);
-      });
-    } catch (err) {
-      console.log('Audio ctx error:', err);
+    // Play synthesized celebratory fanfare tone only if soundEnabled is true
+    if (reminderSettings.soundEnabled) {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6 alegre arpeggio
+        notes.forEach((freq, index) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime + index * 0.12);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime + index * 0.12);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + index * 0.12 + 0.35);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime + index * 0.12);
+          osc.stop(audioCtx.currentTime + index * 0.12 + 0.35);
+        });
+      } catch (err) {
+        console.log('Audio ctx error:', err);
+      }
     }
   };
 
@@ -346,6 +348,13 @@ export const NotificationProvider = ({ children }) => {
     setActiveCelebration(null);
   };
 
+  const soundEnabled = !!reminderSettings.soundEnabled;
+  const toggleSound = () => {
+    const nextState = !soundEnabled;
+    updateReminderSettings({ soundEnabled: nextState });
+    setToast(nextState ? '🔊 تم تفعيل أصوات النغمات والإشعارات' : '🔇 تم كتم جميع النغمات والأصوات التفاعلية');
+  };
+
   return (
     <NotificationContext.Provider value={{
       notifications,
@@ -361,6 +370,8 @@ export const NotificationProvider = ({ children }) => {
       toast,
       reminderSettings,
       updateReminderSettings,
+      soundEnabled,
+      toggleSound,
       testReminderNow,
       triggerReviewReminder,
       activeReminderAlert,

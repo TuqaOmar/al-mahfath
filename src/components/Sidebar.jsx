@@ -15,12 +15,13 @@ import {
   ChevronsRight,
   ChevronsLeft,
   Shield,
-  Bot
+  Bot,
+  Presentation
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 
-export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapsed, setCollapsed: controlledSetCollapsed }) => {
+export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapsed, setCollapsed: controlledSetCollapsed, onOpenProfile }) => {
   const [localCollapsed, setLocalCollapsed] = useState(false);
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : localCollapsed;
   const setCollapsed = controlledSetCollapsed !== undefined ? controlledSetCollapsed : setLocalCollapsed;
@@ -43,7 +44,8 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
     { id: 'mind-maps', label: lang === 'ar' ? 'الخرائط الذهنية' : 'Mind Maps', icon: Map },
     { id: 'analytics', label: lang === 'ar' ? 'التحليلات' : 'Analytics', icon: BarChart3 },
     { id: 'achievements', label: lang === 'ar' ? 'الأوسمة' : 'Achievements', icon: Trophy },
-    { id: 'community', label: lang === 'ar' ? 'المجتمع' : 'Community', icon: Users }
+    { id: 'community', label: lang === 'ar' ? 'المجتمع' : 'Community', icon: Users },
+    { id: 'presentation', label: lang === 'ar' ? 'عرض المنصة 📽️' : 'Pitch Deck 📽️', icon: Presentation }
   ];
 
   // Detect mobile view dynamically
@@ -350,44 +352,76 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
         </nav>
 
         {/* Bottom Profile Section */}
-        <div style={{
-          padding: '14px 16px',
-          borderTop: '1px solid #1E293B',
-          backgroundColor: '#0B1120',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          justifyContent: collapsed ? 'center' : 'flex-start'
-        }}>
-          <div style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: '#10B981',
+        <div 
+          onClick={() => {
+            if (onOpenProfile) onOpenProfile();
+          }}
+          title={lang === 'ar' ? 'تعديل الملف الشخصي والاسم' : 'Edit Profile & Name'}
+          style={{
+            padding: '14px 16px',
+            borderTop: '1px solid #1E293B',
+            backgroundColor: '#0B1120',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            color: '#FFFFFF',
-            fontWeight: 'bold',
-            fontSize: '16px',
-            flexShrink: 0,
-            boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)'
-          }}>
-            {firstLetter}
-          </div>
+            gap: '12px',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+            cursor: onOpenProfile ? 'pointer' : 'default',
+            transition: 'background-color 0.2s ease'
+          }}
+          onMouseEnter={(e) => {
+            if (onOpenProfile) e.currentTarget.style.backgroundColor = '#1E293B';
+          }}
+          onMouseLeave={(e) => {
+            if (onOpenProfile) e.currentTarget.style.backgroundColor = '#0B1120';
+          }}
+        >
+          {user?.photoURL ? (
+            <img
+              src={user.photoURL}
+              alt={userName}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                objectFit: 'cover',
+                flexShrink: 0,
+                border: '2px solid #10B981'
+              }}
+            />
+          ) : (
+            <div style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: '#10B981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: '#FFFFFF',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              flexShrink: 0,
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.4)'
+            }}>
+              {firstLetter}
+            </div>
+          )}
 
           {!collapsed && (
-            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-              <span style={{
-                fontWeight: 'bold',
-                fontSize: '14px',
-                color: '#F8FAFC',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                overflow: 'hidden'
-              }}>
-                {userName}
-              </span>
+            <div style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px' }}>
+                <span style={{
+                  fontWeight: 'bold',
+                  fontSize: '14px',
+                  color: '#F8FAFC',
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden'
+                }}>
+                  {userName}
+                </span>
+                <span style={{ fontSize: '11px', color: '#94A3B8' }}>✏️</span>
+              </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                 <span style={{ fontSize: '10.5px', color: '#34D399', fontWeight: 600 }}>
                   ⭐ {lang === 'ar' ? `المستوى ${user?.level || 1}` : `Lvl ${user?.level || 1}`}

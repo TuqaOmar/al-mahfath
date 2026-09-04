@@ -138,6 +138,10 @@ app.post('/api/auth/google', async (req, res) => {
     let user = await getRow('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
 
     if (user) {
+      if (name && name.trim() && user.name !== name.trim()) {
+        user.name = name.trim();
+        await runQuery('UPDATE users SET name = ? WHERE uid = ?', [user.name, user.uid]);
+      }
       delete user.passwordHash;
       delete user.salt;
       user.preferences = safeParsePreferences(user.preferences);
@@ -248,6 +252,7 @@ app.put('/api/user/:uid', async (req, res) => {
     }
 
     const name = updates.name !== undefined ? updates.name : user.name;
+    const photoURL = updates.photoURL !== undefined ? updates.photoURL : user.photoURL;
     const hasCompletedWizard = updates.hasCompletedWizard !== undefined ? (updates.hasCompletedWizard ? 1 : 0) : user.hasCompletedWizard;
     const streak = updates.streak !== undefined ? updates.streak : user.streak;
     const xp = updates.xp !== undefined ? updates.xp : user.xp;
@@ -259,9 +264,9 @@ app.put('/api/user/:uid', async (req, res) => {
 
     await runQuery(`
       UPDATE users 
-      SET name = ?, hasCompletedWizard = ?, streak = ?, xp = ?, level = ?, memorizedPagesCount = ?, memoryScore = ?, totalJuz = ?, preferences = ?
+      SET name = ?, photoURL = ?, hasCompletedWizard = ?, streak = ?, xp = ?, level = ?, memorizedPagesCount = ?, memoryScore = ?, totalJuz = ?, preferences = ?
       WHERE uid = ?
-    `, [name, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid]);
+    `, [name, photoURL, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid]);
 
     // Automatically mark pre-memorized pages as excellent in SQLite database
     if (Number(memorizedPagesCount) > 0) {
@@ -551,6 +556,21 @@ app.post('/api/quran/pages/:pageNumber/review', async (req, res) => {
 });
 
 
+app.delete('/api/community/posts/:id', async (req, res) => {
+  const postId = Number(req.params.id);
+  try {
+    await runQuery('DELETE FROM community_posts WHERE id = ?', [postId]);
+    const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
+    posts.forEach(p => {
+      try { p.answers = JSON.parse(p.answers); } catch (e) { p.answers = []; }
+    });
+    res.json({ success: true, posts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
 // --- AI CHATBOT ENDPOINT ---
 
 app.get('/api/ai/chat', async (req, res) => {
@@ -584,18 +604,18 @@ function getSmartFallbackResponse(message, userContext = {}) {
   const nextNightPrepPage = page + 1;
 
   if (/سلام|مرحب|أهل|اهل|هلا|صباح|مساء/.test(msg)) {
-    return `وعليكم السلام ورحمة الله وبركاته! 🌿 أهلاً بك يا حافظ كتاب الله (${userContext.name || 'الحبيب'}). أنت الآن في **الصفحة ${page} (سورة ${surah} - الجزء ${juz})**. كيف أساعدك اليوم في خطتك أو مراجعتك أو تدبر الآيات؟`;
-  } else if (/خطة|جدول|حصون|خمسة|مراجعة|ايش اراجع|شو اراجع|وين وصلت|اين وصلت|متى اراجع|الحصون الخمسة/.test(msg)) {
+    return `وعليكم السلام ورحمة الله وبركاته ومغفرته! 🌿✨\n\nأهلاً بك يا حافظ كتاب الله (${userContext.name || 'أخي الكريم'}). أنت الآن عند **الصفحة ${page} (سورة ${surah} - الجزء ${juz})**، وقد أتممت بفضل الله ${userContext.memorizedPagesCount || 0} صفحة.\n\nكيف يمكنني إعانتك اليوم؟ يمكنك سؤالي عن خطة الحصون الخمسة، تثبيت المتشابهات، جدول التكرار، أو كيفية مراجعة الأجزاء السابقة.`;
+  } else if (/خطة|جدول|حصون|خمسة|ورد اليوم|ايش اراجع|شو اراجع|وين وصلت|اين وصلت|متى اراجع|الحصون الخمسة/.test(msg)) {
     return `🏰 **خطتك اليومية الدقيقة بنظام الحصون الخمسة (بناءً على موقعك الحالي):**\n\n` +
       `📍 **موقعك الحالي:** الصفحة **${page}** من سورة **${surah}** (الجزء ${juz}).\n` +
       `📊 **الصفحات المحفوظة:** ${userContext.memorizedPagesCount || 0} صفحة.\n\n` +
       `---\n\n` +
       `1️⃣ **الحصن الأول (قراءة الاستماع والورد نظراً):**\n` +
-      `• **المطلوب اليوم:** قراءة **الجزء ${juz}** كاملاً (الصفحات ${(juz - 1) * 20 + 1} إلى ${juz * 20}) نظراً بالحدر في 20 دقيقة.\n` +
-      `• **الهدف:** شحن الذاكرة البصرية وتثبيت أماكن الآيات.\n\n` +
+      `• **المطلوب اليوم:** قراءة **الجزء ${juz}** كاملاً (الصفحات ${(juz - 1) * 20 + 1} إلى ${juz * 20}) نظراً بالحدر السريع المتقن في 20 دقيقة.\n` +
+      `• **الهدف:** شحن الذاكرة البصرية وتثبيت أماكن الآيات ورؤوس الفواصل.\n\n` +
       `2️⃣ **الحصن الثاني (التحضير الثلاثي):**\n` +
       `• **التحضير الأسبوعي:** سماع سورة **${surah}** كاملة 3 مرات مع تدبر مقاصدها.\n` +
-      `• **التحضير الليلي (الليلة قبل النوم):** تلاوة **الصفحة ${nextNightPrepPage}** من 5 إلى 10 مرات وسماعها.\n` +
+      `• **التحضير الليلي (الليلة قبل النوم):** تلاوة **الصفحة ${nextNightPrepPage}** من 5 إلى 10 مرات وسماعها بتركيز.\n` +
       `• **التحضير القريب (قبل الحفظ بـ 15 دقيقة):** تلاوة **الصفحة ${page}** 15 مرة لتصفية الذهن.\n\n` +
       `3️⃣ **الحصن الثالث (الحفظ الجديد الفعلي):**\n` +
       `• **المطلوب اليوم:** حفظ **الصفحة ${page}** من سورة **${surah}**.\n` +
@@ -605,32 +625,25 @@ function getSmartFallbackResponse(message, userContext = {}) {
       `5️⃣ **الحصن الخامس (المراجعة البعيدة والمعاهدة في الصلاة):**\n` +
       `• **المطلوب اليوم:** مراجعة جزء من قديم المحفوظ وتلاوة ما حفظته في ركعات السنن، الوتر، وقيام الليل.\n\n` +
       `✨ *القاعدة الذهبية لد. سعيد حمزة: "من قرأ القرآن في صلاته ثَبَت، ومن قرأه في غير صلاته كَثُر ثوابه وتفلت حفظه".*`;
-  } else if (/فتوى|حرام|حلال|حكم شرعي|طلاق|ميراث/.test(msg)) {
-    return 'أيها الأخ الحبيب، أنا معلم ذكي متخصص في **الحفظ والمراجعة والتدبر والتجويد**. بالنسبة للأحكام الفقهية والفتاوى الشرعية، يرجى التكرم بالرجوع للجهات الإفتائية الرسمية كدار الإفتاء أو العلماء الأجلاء.';
-  } else if (/متشابه|تشابه|ربط|تثبيت/.test(msg)) {
-    return '🌿 **قواعد ذهبية لضبط المتشابهات القرآنية:**\n\n1. **الربط بالسياق والمعنى العام للسورة:** فهم المعنى يزيل 90% من اللبس.\n2. **العناية بالحرف المشترك:** مثل ربط جملة بالحرف الأول من اسم السورة (قاعدة الحرف والرمز).\n3. **المراجعة بالسرد بصوت مرتفع:** يقوي الذاكرة السمعية والنطقية.\n4. **استخدام مصاحف التوجيه والتقسيم الموضوعي.**';
+  } else if (/تكرار|كم مرة|طريقة الحفظ|كيف احفظ|سر التكرار|40 مرة|20 مرة/.test(msg)) {
+    return `🔁 **قاعدة التكرار الذهبية في منهجية الحصون الخمسة:**\n\n1. **تكرار الآية الواحدة:** كرر كل آية (20 مرة) غيباً مع النظر في المصحف فقط عند التعثر، حتى تطبع الآية في ذهنك كالصورة.\n2. **تكرار الربط بين الآيات:** عند الانتهاء من الآية الأولى والثانية، اقرأهما معاً (20 مرة) لربط الفواصل.\n3. **تكرار الصفحة كاملة:** بعد حفظ الصفحة كاملة، اسردها غيباً بصوت مسموع (40 مرة) متفرقة على مدار اليوم.\n\n💡 *سر النجاح:* لا تنتقل إلى صفحة جديدة إلا بعد أن تصبح صفحة اليوم جارية على لسانك كالفاتحة دون أدنى تردد.`;
+  } else if (/متشابه|تشابه|ربط|تثبيت|فواصل/.test(msg)) {
+    return `🌿 **ضوابط وقواعد ضبط المتشابهات القرآنية:**\n\n1. **الربط بالحرف المشترك:** اربط الحرف المميز في الآية باسم السورة (مثلاً: إن الله بما تعملون خبير / بصير).\n2. **قاعدة العناية بالسياق العام:** الآية المتشابهة دائماً تخدم سياق السورة وموضوعها الأساسي.\n3. **السرد بالحدر بصوت مسموع:** التكرار الصوتي المسموع يرسخ الفواصل في الذاكرة السمعية.\n4. **تدوين المتشابه في هامش المصحف:** اكتب الآية المقابلة في مصحفك الخاص حتى لا تلتبس عليك عند التسميع.`;
+  } else if (/صلاة|قيام|ليل|وتر|نافلة|ركعتين/.test(msg)) {
+    return `🤲 **الحصن الخامس (الصلاة بالمحفوظ):**\n\nقال السلف الصالح: **"لا يثبت القرآن في الصدر إلا بقيام الليل"**.\n\n• اجعل صفحة اليوم (الصفحة ${page}) وورد المراجعة القريبة (${nearReviewStart} - ${nearReviewEnd}) هما وردك في ركعتي الوتر أو قيام الليل.\n• القراءة في الصلاة تُخرج الحفظ من دائرة الذاكرة المؤقتة إلى الاستقرار القلبي العميق.\n• إذا تعثرت في الصلاة، فذلك ينبهك فوراً للمواضع التي تحتاج إعادة تكرار في الغد.`;
+  } else if (/نسيان|انسى|أنسى|تفلت|ضعيف|مش حافظ/.test(msg)) {
+    return `💚 **علاج تفلت الحفظ ونسيان الآيات:**\n\nقال النبي ﷺ: **"تعاهدوا هذا القرآن، فوالذي نفسي بيده لهو أشد تفلتاً من الإبل في عقلها"**.\n\n1. لا تقلق، فالنسيان طبيعي والحل يكمن في **المعاهدة اليومية (المراجعة القريبة بالحدر 20 دقيقة)**.\n2. تأكد من إتقان **قراءة الاستماع نظراً**؛ فالنظر في المصحف يقوي الحفظ البصري بنسبة 70%.\n3. لا تحفظ حفظاً جديداً إذا كان القديم متفلتاً؛ اجعل اليوم يوم تثبيت لما سبق حتى يرسخ.\n4. الاستغفار وترك المعاصي: قال الشافعي: "شكوت إلى وكيع سوء حفظي... فأرشدني إلى ترك المعاصي".`;
   } else if (/تجويد|مخارج|إدغام|ادغام|إخفاء|اخفاء|قلقلة|مد|غنة/.test(msg)) {
-    return '✨ **أهم أصول أحكام التجويد:**\n\n- **النون الساكنة والتنوين:** الإظهار الحلقي (أ، هـ، ع، ح، غ، خ)، الإدغام بغنة وبغير غنة (يرملون)، الإقلاب (ب)، الإخفاء الحقيقي (بقية الحروف).\n- **المدود:** المد الطبيعي (حركتان)، المد المتصل والمنفصل (4-5 حركات)، المد اللازم (6 حركات).\n- **الميم الساكنة:** الإخفاء الشفوي (ب)، الإدغام الشفوي (م)، الإظهار الشفوي (باقي الحروف).\n\n💡 نصيحة: استمع للقراء المتقنين كالحصري والمنشاوي للمحاكاة الصحيحة.';
-  } else if (/بقرة|البقرة/.test(msg)) {
-    return 'سورة البقرة هي فسطاط القرآن وأطول سوره (286 آية، من ص 2 إلى ص 49). قال النبي ﷺ: **"اقْرَءُوا سُورَةَ الْبَقَرَةِ فَإِنَّ أَخْذَهَا بَرَكَةٌ وَتَرْكَهَا حَسْرَةٌ وَلَا تَسْتَطِيعُهَا الْبَطَلَةُ"**. تحتوي على آية الكرسي وآيات أحكام الصيام والإنفاق والدين.';
-  } else if (/كهف|الكهف/.test(msg)) {
-    return 'سورة الكهف (110 آيات، الصفحات 293-304). سورة مكية تحمي قارئها من فتنة المسيح الدجال وتضيء له نورا ما بين الجمعتين. تدور حول 4 فتن كبرى: فتنة الدين (الفتية)، المال (صاحب الجنتين)، العلم (موسى والخضر)، والسلطة (ذو القرنين).';
-  } else if (/تاريخ|اليوم|وقت|ساعة/.test(msg)) {
-    const todayStr = new Date().toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-    return `📅 **تاريخ اليوم:** ${todayStr}.\n\nجعله الله يوماً مباركاً مليئاً بالذكر وإتقان الورد القرآني! 🌿`;
-  } else if (/تشجيع|محفزة|همة|تعبت|صعب|نسيت/.test(msg)) {
-    return '💚 **بشارة لك يا حافظ القرآن:**\n\nقال رسول الله ﷺ: **"الذي يقرأ القرآن وهو ماهر به مع السفرة الكرام البررة، والذي يقرأ القرآن ويتتعتع فيه وهو عليه شاق له أجران"** [متفق عليه].\n\nلا تحزن إن نسيت، فكل تكرار لك هو حسنات مضاعفة وأجر عظيم عند الله!';
+    return `✨ **أهم أصول وضوابط أحكام التجويد للحافظ:**\n\n- **النون الساكنة والتنوين:** الإظهار الحلقي (أ، هـ، ع، ح، غ، خ)، الإدغام (يرملون: بغنة في 'ينمو' وبغير غنة في 'ر، ل')، الإقلاب (ب)، الإخفاء الحقيقي (بقية 15 حرفاً).\n- **المدود:** المد الطبيعي (حركتان)، المتصل والمنفصل (4-5 حركات)، اللازم (6 حركات كلمي وحرفي).\n- **القلقلة:** قطب جد (صغرى في وسط الكلمة، كبرى عند الوقف).\n\n💡 *وصية:* الحدر في الحصون الخمسة لا يعني إسقاط الأحكام، بل الإسراع مع ضبط الغنن والمدود ومخارج الحروف.`;
+  } else if (/تشجيع|محفزة|همة|تعبت|صعب|فرح/.test(msg)) {
+    return `🌟 **بشارة لك يا صاحب القرآن:**\n\nقال رسول الله ﷺ: **"يُقَالُ لِصَاحِبِ الْقُرْآنِ: اقْرَأْ وَارْتَقِ وَرَتِّلْ كَمَا كُنْتَ تَرَتِّلُ فِي الدُّنْيَا، فَإِنَّ مَنْزِلَتَكَ عِنْدَ آخِرِ آيَةٍ تَقْرَؤُهَا"** [رواه الترمذي وصححه الألباني].\n\nتذكر أن كل حرف تتلوه وتكرره لك به حسنة، والحسنة بعشر أمثالها.. فتكرارك لآية واحدة 20 مرة يثقل ميزانك بآلاف الحسنات. استعن بالله ولا تعجز!`;
   } else {
-    const templates = [
-      `أهلاً بك يا حافظ القرآن! أنت في **الصفحة ${page} (سورة ${surah})**. أنا هنا لمساعدتك في أي سؤال يخص خطة الحصون الخمسة، مراجعة المتشابهات، أحكام التجويد، أو تدبر الآيات. ما الذي تود السؤال عنه؟`,
-      `بارك الله في همتك! يمكنك سؤالي عن جدول الحصون الخمسة لصفحتك الحالية (${page})، أو نصائح التثبيت، معاني الآيات، أو أوراد اليوم. تفضل بما في خاطرك.`
-    ];
-    return templates[Math.floor(Math.random() * templates.length)];
+    return `🌿 **نصيحة مخصصة لسؤالك حول "${message.slice(0, 40)}":**\n\nبناءً على موقعك الحالي في **الصفحة ${page} من سورة ${surah} (الجزء ${juz})**:\n\n• احرص اليوم على ضبط الورد بدقة ولا تؤجل المراجعة.\n• قسّم وقتك: 20 دقيقة للورد نظراً بالحدر، و30 دقيقة للحفظ بالتكرار، و20 دقيقة لمراجعة الأوجه السابقة.\n• إن كان لديك أي سؤال محدد حول متشابهات آية معينة، حكم تجويدي، أو كيفية تنظيم وقتك، فاكتب لي وسأجيبك بالتفصيل! 📖✨`;
   }
 }
 
 app.post('/api/ai/chat', async (req, res) => {
-  const { message, userId, userContext } = req.body;
+  const { message, userId, userContext, history: clientHistory } = req.body;
   const targetUser = userId || 'default';
   const uCtx = userContext || {};
   if (!message || !message.trim()) {
@@ -641,40 +654,46 @@ app.post('/api/ai/chat', async (req, res) => {
     let responseText = '';
     const apiKey = process.env.GEMINI_API_KEY;
 
-    const userStatePrompt = uCtx.currentPage ? `
-[بيانات المستخدم الحالية]:
-- الاسم: ${uCtx.name || 'المستخدم'}
-- الصفحة الحالية للحفظ: ${uCtx.currentPage}
-- السورة الحالية: ${uCtx.currentSurah || 'البقرة'}
+    const userStatePrompt = `
+[بيانات الحافظ الحالية]:
+- الاسم: ${uCtx.name || 'حافظ القرآن'}
+- الصفحة الحالية للحفظ: ${uCtx.currentPage || 1}
+- السورة الحالية: ${uCtx.currentSurah || 'الفاتحة'}
 - الجزء الحالي: ${uCtx.currentJuz || 1}
 - عدد الصفحات المحفوظة: ${uCtx.memorizedPagesCount || 0}
 - الحصون المنجزة اليوم: ${JSON.stringify(uCtx.fortressesToday || {})}
 - الهدف اليومي المختار: ${uCtx.dailyTarget || 'صفحة واحدة'}
-` : '';
+`;
 
     if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
-      try {
-        const ai = new GoogleGenAI({
-          apiKey,
-          httpOptions: {
-            headers: { 'User-Agent': 'aistudio-build' }
+      // Cascade across candidate models to avoid 503 spike or timeout issues
+      const candidateModels = ['gemini-3.1-flash-lite', 'gemini-3.8-flash', 'gemini-3.7-flash'];
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: { 'User-Agent': 'aistudio-build' }
+        }
+      });
+
+      for (const modelName of candidateModels) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName,
+            contents: `${userStatePrompt}\n\n[سؤال أو طلب المستخدم]: ${message}`,
+            config: {
+              systemInstruction: "أنت معلم ومساعد قرآني خبير ومتقن في تطبيق محفظ AI، متخصص في منهجية (الحصون الخمسة) للشيخ د. سعيد أبو العلا حمزة. مهمتك إرشاد الحافظ وإجابته بدقة وعمق بناءً على سؤاله المحدد وموقعه الحالي في المصحف. أجب على سؤاله مباشرة وفصّل الحلول العملية باللغة العربية الفصحى مع التنسيق الجميل والرموز التعبيرية الهادئة والمشجعة. تجنب إعطاء نفس الإجابة النمطية المتكررة."
+            }
+          });
+
+          if (response && response.text && response.text.trim()) {
+            responseText = response.text.trim();
+            console.log(`✅ Live Gemini AI response generated successfully using [${modelName}]!`);
+            break;
           }
-        });
-        const response = await ai.models.generateContent({
-          model: 'gemini-3.7-flash',
-          contents: `${userStatePrompt}\nسؤال أو طلب المستخدم: ${message}`,
-          config: {
-            systemInstruction: "أنت معلم ومساعد قرآني خبير ومتقن في تطبيق محفظ AI، متخصص في منهجية (الحصون الخمسة) للشيخ د. سعيد أبو العلا حمزة. مهمتك إرشاد الحافظ وتوليد خطط دقيقة ومحكمة بناءً على بياناته ومدخلاته الحالية (أين وصل بالضبط في المصحف، ما هي الصفحة والسورة والآيات، وما هي أوراد الحصون الخمسة المحددة لليوم بالتفصيل: 1- قراءة الاستماع نظراً بالحدر 20 دقيقة، 2- التحضير الثلاثي الأسبوعي والليلي والقريب، 3- الحفظ الفعلي بالتكرار 20x-40x، 4- مراجعة القريب لآخر 20 صفحة بالحدر 20 دقيقة، 5- مراجعة البعيد والصلاة به). نسق إجاباتك بالعربية الفصحى مع التنسيق الجميل والرموز التعبيرية الهادئة والمشجعة."
-          }
-        });
-        responseText = response.text || '';
-        console.log(`✅ Live Gemini AI response generated successfully using [gemini-3.7-flash]!`);
-      } catch (err) {
-        console.log(`💡 Gemini model notice: ${err.message}`);
-        responseText = getSmartFallbackResponse(message, uCtx);
+        } catch (modelErr) {
+          console.log(`💡 Model [${modelName}] notice: ${modelErr.message}`);
+        }
       }
-    } else {
-      responseText = getSmartFallbackResponse(message, uCtx);
     }
 
     if (!responseText || !responseText.trim()) {

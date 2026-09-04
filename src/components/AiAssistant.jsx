@@ -68,6 +68,28 @@ export const AiAssistant = () => {
     scrollToBottom();
   }, [messages, isTyping]);
 
+  // Dynamic client fallback generator in case of network issue so it never repeats the same response
+  const generateClientFallback = (text, ctx) => {
+    const q = text.toLowerCase();
+    const page = ctx.currentPage || 1;
+    const surah = ctx.currentSurah || 'الفاتحة';
+    const juz = ctx.currentJuz || 1;
+
+    if (/خطة|جدول|حصون|خمسة|اليوم|ورد/.test(q)) {
+      return `🏰 **خطتك اليومية المقترحة في الحصون الخمسة (الصفحة ${page} - سورة ${surah}):**\n\n1️⃣ **قراءة الاستماع نظراً:** قراءة الجزء ${juz} كاملاً بالحدر في 20 دقيقة.\n2️⃣ **التحضير الثلاثي:** سماع سورة ${surah}، وتحضير صفحة ${page + 1} قبل النوم 5 مرات، وقراءة صفحة ${page} 15 مرة قبل الحفظ.\n3️⃣ **الحفظ الجديد:** حفظ الصفحة ${page} بتكرار كل آية 20 مرة وسرد الوجه 40 مرة.\n4️⃣ **المراجعة القريبة:** مراجعة آخر 20 صفحة تم حفظها في 20 دقيقة بالحدر.\n5️⃣ **المراجعة البعيدة والصلاة:** قراءة ما حفظته في ركعتي قيام الليل أو النوافل.`;
+    }
+    if (/تكرار|كم مرة|طريقة|احفظ|كيف/.test(q)) {
+      return `🔁 **قاعدة التكرار الذهبية لإتقان الصفحة ${page}:**\n\n• كرر كل آية 20 مرة غيباً حتى تستقر في ذاكرتك.\n• عند حفظ آيتين متتاليتين، كرر ربطهما معاً 20 مرة.\n• بعد إتمام الصفحة كاملة، اسردها 40 مرة سرداً متفرقاً على مدار اليوم.\n• القاعدة: لا تنتقل إلى جديد قبل أن ينساب القديم كالفاتحة.`;
+    }
+    if (/متشابه|نسيان|انسى|أنسى|تفلت|ثبات|تثبيت/.test(q)) {
+      return `🌿 **إرشادات عملية لتثبيت حفظك لسورة ${surah}:**\n\n• اربط فواصل الآيات بالسياق العام للموضوع.\n• استخدم قراءة الحدر المتقنة بصوت مسموع لترسيخ الذاكرة السمعية.\n• اكتب الآيات المتشابهة في دفتر خاص وقارن بين مواضعها.\n• اجعل ورد المراجعة القريبة مقدماً دائماً على الحفظ الجديد.`;
+    }
+    if (/تجويد|مخارج|مد|ادغام|اخفاء|قلقلة/.test(q)) {
+      return `✨ **تنبيه تجويدي هام أثناء قراءة الورد:**\n\n• الحدر في الحصون الخمسة هو سرعة القراءة مع **المحافظة التامة على الأحكام والمدود والغنن** دون بتر للحروف.\n• احرص على إعطاء المدود الطبيعية حركتين، والمدود الفرعية حقها، وإتمام الحركات.`;
+    }
+    return `🌿 **إجابة حول سؤالك الكريم:**\n\nبارك الله في حرصك وهمتك يا صاحب القرآن! بخصوص استفسارك، وأنت الآن عند **الصفحة ${page} من سورة ${surah}**:\n\n• ننصحك بتثبيت الورد اليومي دون انقطاع، فالمداومة ولو على القليل خير من الانقطاع.\n• اجعل لسانك رطباً بتلاوة ما حفظت في صلواتك ونوافلك، فإن الصلاة بالمحفوظ هي أرسخ وسائل التثبيت.\n• هل تود تفصيل أي خطوة أو حكم معين؟ أنا في خدمتك دائماً! 📖✨`;
+  };
+
   const handleSend = async (customText = null) => {
     const userText = (customText || input).trim();
     if (!userText || isTyping) return;
@@ -77,28 +99,35 @@ export const AiAssistant = () => {
     setInput('');
     setIsTyping(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
       const res = await fetch('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userText, userId, userContext })
+        body: JSON.stringify({ message: userText, userId, userContext }),
+        signal: controller.signal
       });
+      clearTimeout(timeoutId);
       const data = await res.json();
-      if (data.success && data.history) {
-        setMessages(data.history);
-      } else if (data.success && data.reply) {
+      if (data.success && data.reply) {
         setMessages(prev => [...prev, { id: Date.now() + 1, text: data.reply, sender: 'ai', userId }]);
+      } else if (data.success && data.history && data.history.length > 0) {
+        setMessages(data.history);
+      } else {
+        throw new Error('No valid response');
       }
     } catch (e) {
-      console.log('Server offline, using fallback');
-      setTimeout(() => {
-        setMessages(prev => [...prev, {
-          id: Date.now() + 1,
-          text: `أهلاً بك يا ${user?.name || 'حبيب'}! أنت الآن في الصفحة ${currentPage} من سورة ${currentSurah} (الجزء ${currentJuz}). أنصحك اليوم بالتركيز على قراءة الجزء ${currentJuz} نظراً، والتحضير الليلي لصفحة ${currentPage + 1} ومراجعة الصفحات من ${Math.max(1, currentPage - 20)} إلى ${Math.max(1, currentPage - 1)}.`,
-          sender: 'ai',
-          userId
-        }]);
-      }, 800);
+      clearTimeout(timeoutId);
+      console.log('Using dynamic smart fallback:', e.message);
+      const fallbackReply = generateClientFallback(userText, userContext);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: fallbackReply,
+        sender: 'ai',
+        userId
+      }]);
     } finally {
       setIsTyping(false);
     }

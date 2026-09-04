@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -20,6 +20,8 @@ import {
   Play,
   Mic,
   Volume2,
+  VolumeX,
+  Presentation,
   Check,
   Brain,
   Layers,
@@ -58,6 +60,8 @@ import { useNotifications } from '../context/NotificationContext';
 import { AdminPanel } from '../components/AdminPanel';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { MoreToolsModal } from '../components/MoreToolsModal';
+import { UserProfileModal } from '../components/UserProfileModal';
+import { PresentationModal } from '../components/PresentationModal';
 
 
 // Hadiths on the virtues of the Quran
@@ -74,6 +78,16 @@ const Dashboard = () => {
   const { lang, setLang, t, isRTL } = useLanguage();
   const [activeTab, setActiveTab] = useState(user?.role === 'admin' ? 'admin-panel' : 'home');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showPresentationModal, setShowPresentationModal] = useState(false);
+  const { soundEnabled, toggleSound } = useNotifications();
+
+  useEffect(() => {
+    if (activeTab === 'presentation') {
+      setShowPresentationModal(true);
+      setActiveTab('home');
+    }
+  }, [activeTab]);
 
   const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
 
@@ -109,14 +123,24 @@ const Dashboard = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
 
-  // Set default tab for admin users when they log in or user role changes
+  // Set default tab only when user logs in or user role changes
+  const lastUserRoleRef = useRef(user?.role);
+  const lastUserIdRef = useRef(user?.uid);
+
   useEffect(() => {
-    if (user?.role === 'admin') {
-      setActiveTab('admin-panel');
-    } else {
-      setActiveTab('home');
+    const isNewUser = user?.uid && user?.uid !== lastUserIdRef.current;
+    const isRoleChanged = user?.role !== lastUserRoleRef.current;
+
+    if (isNewUser || isRoleChanged) {
+      lastUserIdRef.current = user?.uid;
+      lastUserRoleRef.current = user?.role;
+      if (user?.role === 'admin') {
+        setActiveTab('admin-panel');
+      } else if (isNewUser) {
+        setActiveTab('home');
+      }
     }
-  }, [user]);
+  }, [user?.uid, user?.role]);
 
   // Track screen size changes for responsiveness
   useEffect(() => {
@@ -557,6 +581,7 @@ const Dashboard = () => {
         setActiveTab={setActiveTab} 
         collapsed={sidebarCollapsed} 
         setCollapsed={setSidebarCollapsed} 
+        onOpenProfile={() => setShowProfileModal(true)}
       />
 
       {/* Main Content Pane */}
@@ -592,9 +617,31 @@ const Dashboard = () => {
               </button>
             )}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                مرحباً، {user?.name?.split(' ')[0] || 'أحمد'} 👋
-              </h2>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
+                  مرحباً، {user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')} 👋
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(true)}
+                  style={{
+                    background: 'var(--primary-light)',
+                    border: '1px solid var(--glass-border)',
+                    borderRadius: '8px',
+                    padding: '3px 8px',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: 'var(--primary)',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                  }}
+                  title={isRTL ? 'تعديل اسمك وملفك الشخصي' : 'Edit name & profile'}
+                >
+                  ✏️ <span style={{ display: isMobile ? 'none' : 'inline' }}>{isRTL ? 'تعديل الاسم' : 'Edit Name'}</span>
+                </button>
+              </div>
               <span style={{ 
                 padding: '4px 10px', 
                 borderRadius: '20px', 
@@ -606,7 +653,7 @@ const Dashboard = () => {
                 alignItems: 'center', 
                 gap: '4px' 
               }}>
-                🔥 {user?.streak || 1} أيام
+                🔥 {user?.streak || 1} {isRTL ? 'أيام' : 'days'}
               </span>
             </div>
           </div>
@@ -633,6 +680,57 @@ const Dashboard = () => {
             >
               <Globe size={14} />
               <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
+            </button>
+
+            {/* Project Presentation Deck Button */}
+            <button
+              id="header-presentation-btn"
+              onClick={() => setShowPresentationModal(true)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: '16px',
+                background: 'rgba(16, 185, 129, 0.1)',
+                color: 'var(--primary)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                transition: 'all 0.2s ease'
+              }}
+              title={isRTL ? 'عرض تقديمي تعريفي للمنصة 📽️' : 'Platform Presentation Deck 📽️'}
+            >
+              <Presentation size={15} />
+              <span style={{ display: isMobile ? 'none' : 'inline' }}>
+                {isRTL ? 'عرض المنصة' : 'Deck'}
+              </span>
+            </button>
+
+            {/* Sound Effects & Tones Mute Toggle */}
+            <button
+              id="header-sound-mute-btn"
+              onClick={toggleSound}
+              style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '50%',
+                background: soundEnabled ? 'var(--primary-light)' : 'rgba(239, 68, 68, 0.12)',
+                color: soundEnabled ? 'var(--primary)' : '#EF4444',
+                border: `1px solid ${soundEnabled ? 'var(--glass-border)' : 'rgba(239, 68, 68, 0.3)'}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+              title={soundEnabled 
+                ? (isRTL ? 'كتم النغمات والأصوات التفاعلية (الصوت مفعل حالياً)' : 'Mute sound effects & tones (Currently ON)') 
+                : (isRTL ? 'تشغيل النغمات والأصوات التفاعلية (الصوت صامت حالياً)' : 'Unmute sound effects & tones (Currently MUTED)')}
+              aria-label={soundEnabled ? 'كتم النغمات' : 'تفعيل النغمات'}
+            >
+              {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
             </button>
 
             {/* Theme Toggle Switch */}
@@ -663,6 +761,31 @@ const Dashboard = () => {
                   gap: '4px',
                   zIndex: 10
                 }}>
+                  <button 
+                    onClick={() => {
+                      setShowProfileMenu(false);
+                      setShowProfileModal(true);
+                    }}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      padding: '8px 12px',
+                      color: 'var(--text-primary)',
+                      textAlign: isRTL ? 'right' : 'left',
+                      cursor: 'pointer',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      fontWeight: 600,
+                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px'
+                    }}
+                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--glass-border)'}
+                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                  >
+                    👤 {isRTL ? 'تعديل الاسم والملف الشخصي' : 'Edit Profile & Name'}
+                  </button>
                   <button 
                     onClick={() => {
                       logout();
@@ -790,7 +913,7 @@ const Dashboard = () => {
         )}
 
         {/* Dashboard Main Content View */}
-        <main style={{ padding: isMobile ? '16px 12px 90px 12px' : '40px', flex: 1 }}>
+        <main style={{ padding: isMobile ? '16px 12px calc(90px + env(safe-area-inset-bottom, 0px)) 12px' : '40px', flex: 1 }}>
           {renderTabContent()}
         </main>
 
@@ -809,6 +932,18 @@ const Dashboard = () => {
           onClose={() => setShowMoreToolsModal(false)} 
           activeTab={activeTab} 
           setActiveTab={setActiveTab} 
+        />
+
+        {/* User Profile & Display Name Modal */}
+        <UserProfileModal 
+          isOpen={showProfileModal} 
+          onClose={() => setShowProfileModal(false)} 
+        />
+
+        {/* Project Presentation Deck Modal */}
+        <PresentationModal 
+          isOpen={showPresentationModal} 
+          onClose={() => setShowPresentationModal(false)} 
         />
       </div>
     </div>

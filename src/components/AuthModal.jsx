@@ -17,6 +17,8 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
   // Google Account Chooser State
   const [showGoogleChooser, setShowGoogleChooser] = useState(false);
+  const [selectedGoogleAcc, setSelectedGoogleAcc] = useState(null);
+  const [editableGoogleName, setEditableGoogleName] = useState('');
   const [customGoogleEmail, setCustomGoogleEmail] = useState('');
   const [customGoogleName, setCustomGoogleName] = useState('');
   const [isAddingNewGoogleAccount, setIsAddingNewGoogleAccount] = useState(false);
@@ -25,15 +27,15 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const { t, isRTL } = useLanguage();
   const navigate = useNavigate();
 
-  // Preset / Detected Google Accounts
+  // Preset / Detected Google Accounts (Single language, clean names)
   const knownGoogleAccounts = [
     {
-      name: 'دعاء / Tuaa',
+      name: 'تقى عمر',
       email: 'tuaa.1999@gmail.com',
       photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Tuaa'
     },
     {
-      name: 'حساب جوجل الرئيسي',
+      name: 'أحمد الصالح',
       email: 'user.quran@gmail.com',
       photo: 'https://api.dicebear.com/7.x/avataaars/svg?seed=QuranStudent'
     }
@@ -48,6 +50,8 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       setName('');
       setError('');
       setShowGoogleChooser(false);
+      setSelectedGoogleAcc(null);
+      setEditableGoogleName('');
       setIsAddingNewGoogleAccount(false);
       setCustomGoogleEmail('');
       setCustomGoogleName('');
@@ -289,117 +293,223 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                 </div>
               )}
 
-              {/* Account list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
-                {knownGoogleAccounts.map((acc, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => selectGoogleAccount(acc.email, acc.name, acc.photo)}
-                    disabled={isLoading}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '12px',
-                      padding: '12px 16px',
-                      borderRadius: '14px',
-                      border: '1px solid var(--glass-border)',
-                      background: 'var(--bg-color)',
-                      cursor: 'pointer',
-                      textAlign: isRTL ? 'right' : 'left',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--glass-border)'}
-                  >
+              {/* Account list or Name Confirmation View */}
+              {selectedGoogleAcc ? (
+                <div style={{
+                  padding: '16px',
+                  borderRadius: '16px',
+                  background: 'var(--bg-color)',
+                  border: '1px solid var(--glass-border)',
+                  marginBottom: '16px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
                     <img
-                      src={acc.photo}
-                      alt={acc.name}
-                      style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#F1F5F9', border: '1px solid var(--glass-border)' }}
+                      src={selectedGoogleAcc.photo}
+                      alt={selectedGoogleAcc.name}
+                      style={{ width: '48px', height: '48px', borderRadius: '50%', border: '2px solid var(--primary)' }}
                     />
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                        {acc.name}
+                      <div style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        {isRTL ? 'الحساب المختار:' : 'Selected Account:'}
                       </div>
-                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {acc.email}
+                      <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedGoogleAcc.email}
                       </div>
                     </div>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                      ✓
-                    </div>
-                  </button>
-                ))}
-              </div>
+                  </div>
 
-              {/* Add custom Google account form toggle */}
-              {!isAddingNewGoogleAccount ? (
-                <button
-                  type="button"
-                  onClick={() => setIsAddingNewGoogleAccount(true)}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    borderRadius: '12px',
-                    border: '1px dashed var(--glass-border)',
-                    background: 'transparent',
-                    color: 'var(--primary)',
-                    fontWeight: 'bold',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px'
-                  }}
-                >
-                  <PlusCircle size={16} />
-                  {isRTL ? 'استخدام حساب Google آخر' : 'Use another Google account'}
-                </button>
-              ) : (
-                <form onSubmit={handleCustomGoogleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
-                      {isRTL ? 'الاسم:' : 'Name:'}
+                  <div style={{ marginBottom: '16px' }}>
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '6px' }}>
+                      {isRTL ? 'الاسم الظاهر في المنصة (يمكنك تعديله الآن):' : 'Display Name (You can change it now):'}
                     </label>
                     <input
                       type="text"
-                      placeholder={isRTL ? 'مثال: فاطمة أحمد' : 'e.g. Fatima Ahmad'}
-                      value={customGoogleName}
-                      onChange={e => setCustomGoogleName(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
-                      {isRTL ? 'بريد Google (Gmail):' : 'Google Email (Gmail):'}
-                    </label>
-                    <input
-                      type="email"
                       required
-                      placeholder="yourname@gmail.com"
-                      value={customGoogleEmail}
-                      onChange={e => setCustomGoogleEmail(e.target.value)}
-                      style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
+                      value={editableGoogleName}
+                      onChange={e => setEditableGoogleName(e.target.value)}
+                      placeholder={isRTL ? 'اكتب اسمك المفضل' : 'Enter your preferred name'}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--primary)',
+                        background: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        fontSize: '15px',
+                        fontWeight: 'bold',
+                        outline: 'none'
+                      }}
                     />
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', display: 'block' }}>
+                      {isRTL ? '💡 يمكنك تعديل الاسم أيضاً لاحقاً في أي وقت من الملف الشخصي.' : '💡 You can also edit your name later in your profile.'}
+                    </span>
                   </div>
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    style={{
-                      padding: '10px',
-                      borderRadius: '10px',
-                      background: '#4285F4',
-                      color: 'white',
-                      border: 'none',
-                      fontWeight: 'bold',
-                      fontSize: '13px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {isLoading ? (isRTL ? 'جاري تسجيل الدخول...' : 'Signing in...') : (isRTL ? 'دخول بهذا الحساب' : 'Sign in with this account')}
-                  </button>
-                </form>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => selectGoogleAccount(selectedGoogleAcc.email, editableGoogleName.trim() || selectedGoogleAcc.name, selectedGoogleAcc.photo)}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        background: '#4285F4',
+                        color: 'white',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(66, 133, 244, 0.3)'
+                      }}
+                    >
+                      {isLoading ? (isRTL ? 'جاري تسجيل الدخول...' : 'Signing in...') : (isRTL ? `المتابعة باسم: ${editableGoogleName || selectedGoogleAcc.name}` : 'Continue with this name')}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setSelectedGoogleAcc(null)}
+                      style={{
+                        width: '100%',
+                        padding: '9px',
+                        borderRadius: '10px',
+                        background: 'transparent',
+                        color: 'var(--text-secondary)',
+                        fontSize: '13px',
+                        fontWeight: 'bold',
+                        border: '1px solid var(--glass-border)',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {isRTL ? 'اختيار حساب Google آخر' : 'Choose another account'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '16px' }}>
+                    {knownGoogleAccounts.map((acc, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => {
+                          setSelectedGoogleAcc(acc);
+                          setEditableGoogleName(acc.name);
+                        }}
+                        disabled={isLoading}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          padding: '12px 16px',
+                          borderRadius: '14px',
+                          border: '1px solid var(--glass-border)',
+                          background: 'var(--bg-color)',
+                          cursor: 'pointer',
+                          textAlign: isRTL ? 'right' : 'left',
+                          transition: 'all 0.2s ease'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+                        onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--glass-border)'}
+                      >
+                        <img
+                          src={acc.photo}
+                          alt={acc.name}
+                          style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#F1F5F9', border: '1px solid var(--glass-border)' }}
+                        />
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                            {acc.name}
+                          </div>
+                          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {acc.email}
+                          </div>
+                        </div>
+                        <div style={{
+                          padding: '4px 10px',
+                          borderRadius: '8px',
+                          background: 'var(--primary-light)',
+                          color: 'var(--primary)',
+                          fontSize: '12px',
+                          fontWeight: 'bold'
+                        }}>
+                          {isRTL ? 'اختيار وتعديل' : 'Select'}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Add custom Google account form toggle */}
+                  {!isAddingNewGoogleAccount ? (
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingNewGoogleAccount(true)}
+                      style={{
+                        width: '100%',
+                        padding: '12px',
+                        borderRadius: '12px',
+                        border: '1px dashed var(--glass-border)',
+                        background: 'transparent',
+                        color: 'var(--primary)',
+                        fontWeight: 'bold',
+                        fontSize: '13px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '8px'
+                      }}
+                    >
+                      <PlusCircle size={16} />
+                      {isRTL ? 'إدخال حساب Google أو اسم آخر' : 'Enter another Google account or name'}
+                    </button>
+                  ) : (
+                    <form onSubmit={handleCustomGoogleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                          {isRTL ? 'اسمك الظاهر في المنصة:' : 'Display Name:'}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder={isRTL ? 'مثال: تقى عمر' : 'e.g. Tuaa Omar'}
+                          value={customGoogleName}
+                          onChange={e => setCustomGoogleName(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '12px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'block', marginBottom: '4px' }}>
+                          {isRTL ? 'بريد Google (Gmail):' : 'Google Email (Gmail):'}
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          placeholder="yourname@gmail.com"
+                          value={customGoogleEmail}
+                          onChange={e => setCustomGoogleEmail(e.target.value)}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: '8px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px', outline: 'none' }}
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        disabled={isLoading}
+                        style={{
+                          padding: '10px',
+                          borderRadius: '10px',
+                          background: '#4285F4',
+                          color: 'white',
+                          border: 'none',
+                          fontWeight: 'bold',
+                          fontSize: '13px',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {isLoading ? (isRTL ? 'جاري تسجيل الدخول...' : 'Signing in...') : (isRTL ? 'المتابعة بهذا الاسم والحساب' : 'Sign in with this account')}
+                      </button>
+                    </form>
+                  )}
+                </>
               )}
             </div>
           ) : (

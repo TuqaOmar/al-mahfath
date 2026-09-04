@@ -52,6 +52,7 @@ export const Community = ({ setActiveTab }) => {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('تثبيت وتدبر');
   const [dbStatus, setDbStatus] = useState('connected'); // 'connected' | 'syncing'
+  const [postFeedback, setPostFeedback] = useState(null);
 
   // Comment input state per post
   const [commentInputs, setCommentInputs] = useState({});
@@ -128,11 +129,15 @@ export const Community = ({ setActiveTab }) => {
             });
           });
 
-          // Sort pinned first, then newest
-          loadedPosts.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-          if (loadedPosts.length > 0) {
-            setPosts(loadedPosts);
-          }
+          // Merge without losing freshly added local posts
+          setPosts(prev => {
+            const map = new Map();
+            prev.forEach(p => map.set(p.content || p.id, p));
+            loadedPosts.forEach(p => map.set(p.content || p.id, { ...map.get(p.content || p.id), ...p }));
+            const merged = Array.from(map.values());
+            merged.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
+            return merged;
+          });
         }
       }, (error) => {
         console.warn('Firestore live subscription error:', error);
@@ -151,7 +156,7 @@ export const Community = ({ setActiveTab }) => {
 
     setDbStatus('syncing');
     const authorName = isAnonymous ? 'هوية مخفية' : (user?.name || 'أحمد محمد');
-    const authorAvatar = isAnonymous ? null : (user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad');
+    const authorAvatar = isAnonymous ? null : (user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(authorName));
 
     const postPayload = {
       author: authorName,
@@ -165,7 +170,15 @@ export const Community = ({ setActiveTab }) => {
       createdAt: new Date().toISOString()
     };
 
-    // 1. Save to Backend Database
+    // Optimistic UI update: insert immediately at the top
+    const tempId = Date.now();
+    const optimisticPost = { ...postPayload, id: tempId };
+    setPosts(prev => [optimisticPost, ...prev.filter(p => p.id !== tempId)]);
+    setPostText('');
+    setPostFeedback('تم نشر مشاركتك وحفظها بنجاح في قاعدة البيانات! 🌿✨');
+    setTimeout(() => setPostFeedback(null), 5000);
+
+    // 1. Save to Backend SQLite Database
     try {
       const res = await fetch('/api/community/posts', {
         method: 'POST',
@@ -182,17 +195,33 @@ export const Community = ({ setActiveTab }) => {
 
     // 2. Save to Firestore
     try {
-      await addDoc(collection(db, 'community_posts'), {
+      const docRef = await addDoc(collection(db, 'community_posts'), {
         ...postPayload,
         answers: JSON.stringify([])
       });
+      if (docRef?.id) {
+        setPosts(prev => prev.map(p => p.id === tempId ? { ...p, firestoreId: docRef.id } : p));
+      }
     } catch (fsErr) {
-      console.warn('Firestore addDoc fallback:', fsErr);
+      console.warn('Firestore addDoc note:', fsErr);
     }
 
-    setPostText('');
     setIsAnonymous(false);
     setTimeout(() => setDbStatus('connected'), 600);
+  };
+
+  const handleDeletePost = async (post) => {
+    const targetId = post.id;
+    const fsId = post.firestoreId;
+    setPosts(prev => prev.filter(p => p.id !== targetId && p.firestoreId !== fsId));
+
+    if (typeof targetId === 'number') {
+      try {
+        await fetch(`/api/community/posts/${targetId}`, { method: 'DELETE' });
+      } catch (e) {
+        console.warn('Delete error:', e);
+      }
+    }
   };
 
   // Toggle Like API & Firestore
@@ -494,6 +523,25 @@ export const Community = ({ setActiveTab }) => {
               <Sparkles size={20} color="var(--primary)" />
               شارِك تدبراً، فائدة، أو استفساراً في تثبيت القرآن
             </h3>
+
+            {postFeedback && (
+              <div style={{
+                padding: '12px 18px',
+                borderRadius: '12px',
+                background: 'rgba(16, 185, 129, 0.15)',
+                border: '1px solid #10B981',
+                color: '#047857',
+                fontWeight: 'bold',
+                fontSize: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                marginBottom: '16px'
+              }}>
+                <CheckCircle2 size={20} color="#10B981" />
+                <span>{postFeedback}</span>
+              </div>
+            )}
 
             <form onSubmit={handleCreatePost}>
               <textarea
