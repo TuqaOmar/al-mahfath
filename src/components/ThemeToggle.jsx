@@ -22,8 +22,8 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' 
           borderRadius: '20px',
           border: '1px solid var(--glass-border, #e5e7eb)',
           background: isDark 
-            ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)' 
-            : 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)',
+            ? 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' 
+            : 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
           cursor: 'pointer',
           padding: '3px',
           display: 'flex',
@@ -31,8 +31,8 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' 
           justifyContent: 'space-between',
           overflow: 'hidden',
           boxShadow: isDark 
-            ? 'inset 0 2px 4px rgba(0,0,0,0.4), 0 0 12px rgba(59, 130, 246, 0.2)' 
-            : 'inset 0 2px 4px rgba(0,0,0,0.06), 0 0 12px rgba(251, 191, 36, 0.25)',
+            ? 'inset 0 2px 4px rgba(0,0,0,0.4), 0 0 12px rgba(16, 185, 129, 0.2)' 
+            : 'inset 0 2px 4px rgba(0,0,0,0.06), 0 0 12px rgba(245, 158, 11, 0.25)',
           transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
           outline: 'none'
         }}
@@ -60,7 +60,7 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' 
           transition: 'opacity 0.3s ease',
           zIndex: 1
         }}>
-          <Moon size={size === 'small' ? 14 : 16} color="#60A5FA" />
+          <Moon size={size === 'small' ? 14 : 16} color="#10B981" />
         </span>
 
         {/* Sliding Knob */}
@@ -80,11 +80,11 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' 
             height: size === 'small' ? '22px' : '26px',
             borderRadius: '50%',
             background: isDark 
-              ? 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)' 
-              : 'linear-gradient(135deg, #fbbf24 0%, #d97706 100%)',
+              ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
+              : 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
             boxShadow: isDark 
-              ? '0 2px 8px rgba(59, 130, 246, 0.5)' 
-              : '0 2px 8px rgba(251, 191, 36, 0.5)',
+              ? '0 2px 8px rgba(16, 185, 129, 0.5)' 
+              : '0 2px 8px rgba(245, 158, 11, 0.5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -127,12 +127,12 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' 
         borderRadius: '50%',
         cursor: 'pointer',
         background: isDark 
-          ? 'linear-gradient(135deg, #1e293b 0%, #334155 100%)' 
-          : 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)',
+          ? 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)' 
+          : 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
         border: '1px solid var(--glass-border, #e5e7eb)',
         boxShadow: isDark 
           ? '0 2px 8px rgba(0,0,0,0.3)' 
-          : '0 2px 8px rgba(16, 185, 129, 0.15)',
+          : '0 2px 8px rgba(16, 185, 129, 0.2)',
         transition: 'background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease',
         outline: 'none',
         position: 'relative',

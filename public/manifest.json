@@ -1,0 +1,63 @@
+{
+  "id": "/",
+  "name": "المحفظ الإلكتروني الذكي",
+  "short_name": "المحفظ",
+  "description": "منصة ذكية متكاملة لحفظ وتثبيت ومراجعة القرآن الكريم وخريطة الـ 604 صفحة مع التسميع بالذكاء الاصطناعي.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#0B1120",
+  "background_color": "#070D18",
+  "categories": [
+    "education",
+    "books",
+    "lifestyle"
+  ],
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/landing_page_screenshot.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "الصفحة الرئيسية - المحفظ الذكي للقرآن الكريم"
+    },
+    {
+      "src": "/quran_map_preview.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "خريطة المصحف الشريف التفاعلية 604 صفحة"
+    },
+    {
+      "src": "/voice_recitation_preview.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "التسميع الصوتي المباشر بالذكاء الاصطناعي"
+    }
+  ],
+  "prefer_related_applications": false
+}

@@ -26,7 +26,21 @@ const ProtectedRoute = ({ children, requireWizard = true }) => {
     return <Navigate to="/" replace />;
   }
 
-  const wizardDone = Boolean(currentUser.hasCompletedWizard);
+  // Robust wizard completion detection:
+  // User is considered to have completed the wizard if hasCompletedWizard is true,
+  // OR if they already have non-empty preferences (dailyTarget, learningStyle),
+  // OR have memorized pages count > 0, OR hold admin or teacher roles.
+  const hasValidPreferences = currentUser.preferences && typeof currentUser.preferences === 'object' && Object.keys(currentUser.preferences).length > 0;
+  const wizardDone = Boolean(
+    currentUser.hasCompletedWizard === true ||
+    currentUser.hasCompletedWizard === 1 ||
+    currentUser.hasCompletedWizard === 'true' ||
+    hasValidPreferences ||
+    Number(currentUser.memorizedPagesCount) > 0 ||
+    Number(currentUser.totalJuz) > 0 ||
+    currentUser.role === 'admin' ||
+    currentUser.role === 'teacher'
+  );
 
   // If the route requires the user to have completed the wizard, and they haven't
   if (requireWizard && !wizardDone) {

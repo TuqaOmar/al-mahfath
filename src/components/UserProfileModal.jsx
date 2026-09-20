@@ -376,7 +376,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                 <div style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--primary)' }}>⭐ {user?.level || 1}</div>
               </div>
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{isRTL ? 'الالتزام' : 'Streak'}</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{isRTL ? 'صحبة القرآن' : 'Quran Companion'}</div>
                 <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#F59E0B' }}>🔥 {user?.streak || 1} {isRTL ? 'يوم' : 'd'}</div>
               </div>
               <div>

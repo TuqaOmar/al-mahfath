@@ -60,6 +60,27 @@ export const NotificationProvider = ({ children }) => {
   const [activeReminderAlert, setActiveReminderAlert] = useState(null);
   const [toast, setToast] = useState(null);
   const reminderCheckRef = useRef(null);
+  const toastTimeoutRef = useRef(null);
+
+  const showToast = (toastData, duration = 3000) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    const formatted = typeof toastData === 'string'
+      ? { title: toastData, message: '', icon: toastData.includes('🔇') ? '🔇' : '🔊' }
+      : toastData;
+    setToast(formatted);
+    toastTimeoutRef.current = setTimeout(() => {
+      setToast(null);
+    }, duration);
+  };
+
+  const dismissToast = () => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
+    setToast(null);
+  };
 
   // Save notifications to local storage on change
   useEffect(() => {
@@ -78,6 +99,17 @@ export const NotificationProvider = ({ children }) => {
       console.error('Failed to save reminder settings', e);
     }
   }, [reminderSettings]);
+
+  // Sync actual browser notification permission on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted' && !reminderSettings.browserPushEnabled) {
+        updateReminderSettings({ browserPushEnabled: true });
+      } else if (Notification.permission === 'denied' && reminderSettings.browserPushEnabled) {
+        updateReminderSettings({ browserPushEnabled: false });
+      }
+    }
+  }, []);
 
   // Update reminder settings
   const updateReminderSettings = (newSettings) => {
@@ -110,15 +142,92 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  // Dispatch Native Notification (compatible with desktop browsers & mobile Android via Service Worker)
+  const dispatchNativeNotification = (title, bodyText) => {
+    if (typeof window === 'undefined' || !('Notification' in window) || Notification.permission !== 'granted') {
+      return;
+    }
+
+    const options = {
+      body: bodyText,
+      icon: '/pwa-192x192.png',
+      badge: '/favicon.svg',
+      dir: 'rtl',
+      lang: 'ar',
+      tag: 'daily-quran-reminder',
+      renotify: true,
+      data: { url: '/dashboard' }
+    };
+
+    // Haptic vibration feedback on supported mobile devices
+    if ('vibrate' in navigator) {
+      try {
+        navigator.vibrate([250, 100, 250]);
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    // Try service worker first (crucial for Chrome on Android & PWA mode)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready
+        .then((reg) => {
+          if (reg && reg.showNotification) {
+            reg.showNotification(title, options);
+          } else {
+            new Notification(title, options);
+          }
+        })
+        .catch(() => {
+          try {
+            new Notification(title, options);
+          } catch (e) {
+            console.warn('Native notification fallback failed', e);
+          }
+        });
+    } else {
+      try {
+        new Notification(title, options);
+      } catch (e) {
+        console.warn('Native notification dispatch failed', e);
+      }
+    }
+  };
+
   // Request browser push notification permission
   const requestBrowserPermission = async () => {
-    if (!('Notification' in window)) {
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setToast({
+        title: 'إشعارات المتصفح غير مدعومة',
+        message: 'متصفحك الحالي لا يدعم إشعارات النظام الخارجية. التنبيهات الصوتية والداخلية تعمل بنجاح.',
+        icon: 'ℹ️'
+      });
+      setTimeout(() => setToast(null), 4500);
       return false;
     }
     try {
       const permission = await Notification.requestPermission();
       const isGranted = permission === 'granted';
       updateReminderSettings({ browserPushEnabled: isGranted });
+
+      if (isGranted) {
+        setToast({
+          title: 'تم تفعيل إشعارات المتصفح بنجاح! 🔔',
+          message: 'ستصلك التنبيهات على جهازك ومكتملة بالصوت.',
+          icon: '✅'
+        });
+        dispatchNativeNotification(
+          'الْمَحْفَظَة AI — تفعيل التنبيهات بنجاح',
+          'تم تفعيل إشعارات وتذكير المراجعة اليومية على جهازك المبارك بنجاح.'
+        );
+      } else if (permission === 'denied') {
+        setToast({
+          title: 'تم حظر إذن الإشعارات',
+          message: 'يرجى السماح بالإشعارات من إعدادات المتصفح أو أيقونة القفل بجانب شريط الرابط.',
+          icon: '⚠️'
+        });
+      }
+      setTimeout(() => setToast(null), 4500);
       return isGranted;
     } catch (err) {
       console.error('Push notification permission error', err);
@@ -145,18 +254,12 @@ export const NotificationProvider = ({ children }) => {
       playReminderChime();
     }
 
-    // Fire browser native notification if permitted
-    if ('Notification' in window && Notification.permission === 'granted' && reminderSettings.browserPushEnabled) {
-      try {
-        new Notification('الْمَحْفَظَة AI — تذكير المراجعة اليومية', {
-          body: customMsg || `${focusTitle}: حان وقت تثبيت حفظك والوفاء بوردك اليومي المبارك!`,
-          icon: '/favicon.ico',
-          dir: 'rtl',
-          lang: 'ar'
-        });
-      } catch (e) {
-        console.warn('Native notification dispatch failed', e);
-      }
+    // Fire browser native notification if permitted (Laptop / Android / PWA)
+    if (reminderSettings.browserPushEnabled) {
+      dispatchNativeNotification(
+        'الْمَحْفَظَة AI — تذكير المراجعة اليومية',
+        customMsg || `${focusTitle}: حان وقت تثبيت حفظك والوفاء بوردك اليومي المبارك!`
+      );
     }
 
     // Set simulated in-app push alert popup
@@ -326,11 +429,8 @@ export const NotificationProvider = ({ children }) => {
 
     setNotifications(prev => [newNotif, ...prev]);
 
-    // Set brief toast notification
-    setToast({ title, message, icon });
-    setTimeout(() => {
-      setToast(null);
-    }, 4500);
+    // Set brief toast notification with auto-timeout
+    showToast({ title, message, icon }, 4500);
 
     if (shouldCelebrate) {
       triggerCelebration({
@@ -352,7 +452,11 @@ export const NotificationProvider = ({ children }) => {
   const toggleSound = () => {
     const nextState = !soundEnabled;
     updateReminderSettings({ soundEnabled: nextState });
-    setToast(nextState ? '🔊 تم تفعيل أصوات النغمات والإشعارات' : '🔇 تم كتم جميع النغمات والأصوات التفاعلية');
+    showToast({
+      title: nextState ? 'تم تفعيل الصوت' : 'تم كتم الصوت',
+      message: nextState ? 'أصوات النغمات والتنبيهات التفاعلية قيد التشغيل' : 'تم كتم جميع النغمات والأصوات التفاعلية',
+      icon: nextState ? '🔊' : '🔇'
+    }, 2800);
   };
 
   return (
@@ -368,6 +472,8 @@ export const NotificationProvider = ({ children }) => {
       closeCelebration,
       triggerCelebration,
       toast,
+      showToast,
+      dismissToast,
       reminderSettings,
       updateReminderSettings,
       soundEnabled,

@@ -660,8 +660,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
               width: '46px',
               height: '46px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%)',
-              color: '#059669',
+              background: 'var(--primary-light)',
+              color: 'var(--primary, #10B981)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -675,7 +675,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   5. الحصن الخامس: المراجعة البعيدة والصلاة بالمحفوظ
                 </h3>
-                <span style={{ fontSize: '11px', background: 'rgba(5, 150, 105, 0.12)', color: '#059669', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary, #10B981)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
                   {selectedJuz > 1 ? `الأجزاء 1 إلى ${selectedJuz - 1}` : 'ينشط بعد الجزء 1'}
                 </span>
               </div>

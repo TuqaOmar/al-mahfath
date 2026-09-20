@@ -241,7 +241,7 @@ export const VisualProgressTracker = () => {
           </div>
           <div style={{ fontSize: '11px', color: '#F59E0B', marginTop: '6px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
             <Flame size={13} color="#F59E0B" />
-            <span>سلسلة الحفظ: {userStreak} أيام متتالية 🔥</span>
+            <span>أيام صحبة القرآن: {userStreak} يوماً متتالياً 📖</span>
           </div>
         </div>
 

@@ -42,13 +42,20 @@ const WELCOME_MSG = {
   sender: 'ai',
 };
 
-export const AiAssistant = () => {
+export const AiAssistant = ({ isFloating = false, onClose = null }) => {
   const { user } = useAuth();
   const userId = user?.uid || 'guest';
   const [messages, setMessages] = useState([WELCOME_MSG]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Gemini API Key Modal & State
   const [showKeyModal, setShowKeyModal] = useState(false);
@@ -230,7 +237,15 @@ export const AiAssistant = () => {
   ];
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', height: '100%', minHeight: '620px', position: 'relative' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: isMobile ? '12px' : '16px',
+      height: '100%',
+      minHeight: isMobile ? 'auto' : (isFloating ? 'auto' : '620px'),
+      position: 'relative',
+      paddingBottom: isFloating ? '14px' : (isMobile ? '82px' : '16px')
+    }}>
       
       {/* Top Header Controls Bar */}
       <div style={{
@@ -314,6 +329,29 @@ export const AiAssistant = () => {
           >
             <Trash2 size={15} />
           </button>
+
+          {isFloating && onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              title="إغلاق المعلم الذكي"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#EF4444',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <X size={16} strokeWidth={2.5} />
+            </button>
+          )}
         </div>
       </div>
 
@@ -353,7 +391,7 @@ export const AiAssistant = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                boxShadow: isAi ? '0 4px 10px rgba(16, 185, 129, 0.3)' : 'none'
+                boxShadow: isAi ? '0 4px 10px rgba(16, 185, 129, 0.35)' : 'none'
               }}>
                 {isAi ? <Bot size={20} /> : <User size={20} />}
               </div>
@@ -427,7 +465,7 @@ export const AiAssistant = () => {
       </div>
 
       {/* Message Input Bar */}
-      <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <input
           type="text"
           value={input}
@@ -435,43 +473,55 @@ export const AiAssistant = () => {
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSend();
           }}
-          placeholder="اسأل المعلم الذكي عن خطتك، المتشابهات، جدول التكرار، أو أي استفسار..."
+          placeholder={isMobile ? "اسأل المعلم الذكي عن الآيات، الخطة..." : "اسأل المعلم الذكي عن خطتك، المتشابهات، جدول التكرار، أو أي استفسار..."}
           style={{
             flex: 1,
-            padding: '14px 18px',
+            padding: isMobile ? '12px 14px' : '14px 18px',
             borderRadius: '14px',
             border: '1px solid var(--glass-border)',
             background: 'var(--bg-surface)',
             color: 'var(--text-primary)',
-            fontSize: '14.5px',
+            fontSize: isMobile ? '13.5px' : '14.5px',
             fontFamily: 'inherit',
-            outline: 'none'
+            outline: 'none',
+            minHeight: '46px'
           }}
         />
 
         <button
           type="button"
-          onClick={() => handleSend()}
+          onClick={() => {
+            if (navigator?.vibrate) {
+              try { navigator.vibrate(10); } catch (e) {}
+            }
+            handleSend();
+          }}
           disabled={isTyping || !input.trim()}
           style={{
-            padding: '14px 24px',
+            width: isMobile ? '46px' : 'auto',
+            height: '46px',
+            padding: isMobile ? '0' : '0 20px',
             borderRadius: '14px',
             background: 'var(--primary)',
             color: 'white',
             border: 'none',
             fontWeight: 'bold',
-            fontSize: '14.5px',
+            fontSize: '14px',
             cursor: isTyping || !input.trim() ? 'not-allowed' : 'pointer',
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '8px',
             opacity: isTyping || !input.trim() ? 0.6 : 1,
             boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
-            transition: 'all 0.2s ease'
+            transition: 'all 0.15s ease',
+            flexShrink: 0,
+            touchAction: 'manipulation'
           }}
+          title="إرسال السؤال"
         >
-          <Send size={16} />
-          إرسال
+          <Send size={18} />
+          {!isMobile && <span>إرسال</span>}
         </button>
       </div>
 

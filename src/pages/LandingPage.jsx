@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { AuthModal } from '../components/AuthModal';
@@ -14,6 +14,8 @@ import { LandingFAQ } from '../components/landing/LandingFAQ';
 import { LandingCTA } from '../components/landing/LandingCTA';
 import { LandingFooter } from '../components/landing/LandingFooter';
 import { DocumentationModal } from '../components/DocumentationModal';
+import { MobileWelcomeView } from '../components/mobile/MobileWelcomeView';
+import { isMobileEnvironment } from '../utils/platform';
 
 const LandingPage = () => {
   const { user, loginWithTestAccount } = useAuth();
@@ -21,6 +23,14 @@ const LandingPage = () => {
   const [isDocsOpen, setIsDocsOpen] = useState(false);
   const [authMode, setAuthMode] = useState('signup'); // 'login' | 'signup'
   const navigate = useNavigate();
+  const isMobile = isMobileEnvironment();
+
+  // If already authenticated, redirect directly into the app
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleOpenAuth = (mode = 'signup') => {
     if (user) {
@@ -40,13 +50,31 @@ const LandingPage = () => {
     }
   };
 
+  // When running inside a mobile app (Capacitor/PWA) and not yet logged in:
+  // Render clean, streamlined mobile onboarding instead of heavy marketing website
+  if (isMobile && !user) {
+    return (
+      <div className="landing-page-root">
+        <MobileWelcomeView
+          onOpenAuth={handleOpenAuth}
+          onDemoLogin={handleDemoLogin}
+        />
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          initialMode={authMode}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="landing-page-root" style={{
       position: 'relative',
       minHeight: '100vh',
       backgroundColor: 'var(--bg-color)',
       color: 'var(--text-primary)',
-      overflowX: 'hidden'
+      overflowX: 'clip'
     }}>
       {/* 1. Header / Navbar */}
       <LandingNavbar

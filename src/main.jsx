@@ -5,12 +5,12 @@ import { ThemeProvider } from './context/ThemeContext'
 import { AuthProvider } from './context/AuthContext.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
 import { NotificationProvider } from './context/NotificationContext.jsx'
-import { ErrorBoundary } from './components/ErrorBoundary.jsx'
+import { SafeBoundary } from './components/SafeBoundary.jsx'
 import './index.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <ErrorBoundary>
+    <SafeBoundary>
       <AuthProvider>
         <LanguageProvider>
           <ThemeProvider>
@@ -20,7 +20,7 @@ createRoot(document.getElementById('root')).render(
           </ThemeProvider>
         </LanguageProvider>
       </AuthProvider>
-    </ErrorBoundary>
+    </SafeBoundary>
   </StrictMode>,
 )
 

@@ -25,7 +25,9 @@ let dbState = {
   users: [],
   quran_pages: [],
   community_posts: [],
-  ai_chat_history: []
+  ai_chat_history: [],
+  portfolio_ayahs: [],
+  recitation_sessions: []
 };
 
 function loadDb() {
@@ -39,6 +41,10 @@ function loadDb() {
       if (Array.isArray(data.community_posts)) dbState.community_posts = data.community_posts;
       if (Array.isArray(data.aiChatHistory)) dbState.ai_chat_history = data.aiChatHistory;
       if (Array.isArray(data.ai_chat_history)) dbState.ai_chat_history = data.ai_chat_history;
+      if (Array.isArray(data.portfolioAyahs)) dbState.portfolio_ayahs = data.portfolioAyahs;
+      if (Array.isArray(data.portfolio_ayahs)) dbState.portfolio_ayahs = data.portfolio_ayahs;
+      if (Array.isArray(data.recitationSessions)) dbState.recitation_sessions = data.recitationSessions;
+      if (Array.isArray(data.recitation_sessions)) dbState.recitation_sessions = data.recitation_sessions;
     }
   } catch (e) {
     console.error('Error loading db.json:', e);
@@ -51,7 +57,9 @@ function saveDb() {
       users: dbState.users,
       quranPages: dbState.quran_pages,
       communityPosts: dbState.community_posts,
-      aiChatHistory: dbState.ai_chat_history
+      aiChatHistory: dbState.ai_chat_history,
+      portfolioAyahs: dbState.portfolio_ayahs,
+      recitationSessions: dbState.recitation_sessions
     }, null, 2), 'utf8');
   } catch (e) {
     console.error('Error saving db.json:', e);
@@ -510,4 +518,207 @@ export async function allRows(sql, params = []) {
   }
 
   return [];
+}
+
+// Portfolio helper functions
+export function getUserPortfolio(userId) {
+  if (!userId) return [];
+  return (dbState.portfolio_ayahs || []).filter(item => item.userId === userId);
+}
+
+export function saveAyahToPortfolio(userId, item) {
+  if (!userId || !item) return null;
+  const surahNum = Number(item.surahNumber);
+  const ayahNum = Number(item.ayahNumber);
+  
+  let existingIndex = (dbState.portfolio_ayahs || []).findIndex(
+    p => p.userId === userId && Number(p.surahNumber) === surahNum && Number(p.ayahNumber) === ayahNum
+  );
+
+  const entry = {
+    id: `${userId}_${surahNum}_${ayahNum}`,
+    userId,
+    surahNumber: surahNum,
+    ayahNumber: ayahNum,
+    globalAyahNumber: item.globalAyahNumber || null,
+    status: item.status || 'memorized',
+    repetitionCount: Number(item.repetitionCount) || 0,
+    recitationScore: Number(item.recitationScore) || 0,
+    lastReviewed: item.lastReviewed || new Date().toISOString(),
+    notes: item.notes || '',
+    updatedAt: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    dbState.portfolio_ayahs[existingIndex] = { ...dbState.portfolio_ayahs[existingIndex], ...entry };
+  } else {
+    if (!dbState.portfolio_ayahs) dbState.portfolio_ayahs = [];
+    dbState.portfolio_ayahs.push(entry);
+  }
+
+  saveDb();
+  return entry;
+}
+
+export function bulkSaveSurahToPortfolio(userId, surahNumber, items) {
+  if (!userId || !Array.isArray(items)) return [];
+  const results = [];
+  for (const item of items) {
+    const saved = saveAyahToPortfolio(userId, { ...item, surahNumber });
+    if (saved) results.push(saved);
+  }
+  return results;
+}
+
+// Recitation Sessions & Accuracy Storage
+export function saveRecitationSession(session) {
+  if (!session) return null;
+  const newId = 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  const accuracy = Math.max(0, Math.min(100, Math.round(Number(session.accuracy) || 0)));
+  const pageNum = Number(session.pageNumber) || 1;
+  const isFullPage = Boolean(session.isFullPage);
+  const ayahNum = isFullPage ? null : (Number(session.ayahNumber) || 1);
+  const surahNum = Number(session.surahNumber) || 1;
+
+  let statusTag = 'weak';
+  if (accuracy >= 90) statusTag = 'excellent';
+  else if (accuracy >= 75) statusTag = 'review';
+
+  const entry = {
+    id: newId,
+    userId: session.userId || 'demo_user_123',
+    pageNumber: pageNum,
+    surahNumber: surahNum,
+    surahName: session.surahName || 'سورة الشريفة',
+    ayahNumber: ayahNum,
+    isFullPage,
+    accuracy,
+    stats: session.stats || {
+      totalWords: 0,
+      correctCount: 0,
+      diacriticCount: 0,
+      grammarCount: 0,
+      errorCount: 0
+    },
+    results: session.results || [],
+    ayahBreakdown: session.ayahBreakdown || [],
+    transcribedText: session.transcribedText || '',
+    expectedText: session.expectedText || '',
+    type: session.type || 'voice',
+    status: statusTag,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!dbState.recitation_sessions) dbState.recitation_sessions = [];
+  dbState.recitation_sessions.unshift(entry);
+
+  // Keep last 500 recitation sessions in memory
+  if (dbState.recitation_sessions.length > 500) {
+    dbState.recitation_sessions = dbState.recitation_sessions.slice(0, 500);
+  }
+
+  // Update page review status & score in quran_pages
+  const page = dbState.quran_pages.find(p => p.pageNumber === pageNum);
+  if (page) {
+    // Weighted update so recent recitation reflects in Quran map
+    page.score = Math.round((Number(page.score || 0) * 0.3) + (accuracy * 0.7));
+    if (page.score >= 90) page.status = 'excellent';
+    else if (page.score >= 75) page.status = 'review';
+    else page.status = 'weak';
+    page.lastReviewed = 'اليوم';
+    page.errorsCount = entry.stats?.errorCount || entry.stats?.grammarCount || 0;
+  } else {
+    dbState.quran_pages.push({
+      pageNumber: pageNum,
+      status: statusTag,
+      score: accuracy,
+      surahName: session.surahName || `صفحة ${pageNum}`,
+      juz: Math.ceil(pageNum / 20),
+      lastReviewed: 'اليوم',
+      errorsCount: entry.stats?.errorCount || entry.stats?.grammarCount || 0
+    });
+  }
+
+  // Update in portfolio_ayahs
+  if (isFullPage && Array.isArray(session.ayahBreakdown) && session.ayahBreakdown.length > 0) {
+    session.ayahBreakdown.forEach(a => {
+      saveAyahToPortfolio(session.userId || 'demo_user_123', {
+        surahNumber: surahNum,
+        ayahNumber: a.ayahNumber,
+        status: a.accuracy >= 75 ? 'memorized' : 'learning',
+        recitationScore: a.accuracy,
+        repetitionCount: 1
+      });
+    });
+  } else if (ayahNum) {
+    saveAyahToPortfolio(session.userId || 'demo_user_123', {
+      surahNumber: surahNum,
+      ayahNumber: ayahNum,
+      status: accuracy >= 75 ? 'memorized' : 'learning',
+      recitationScore: accuracy,
+      repetitionCount: 1
+    });
+  }
+
+  // Reward XP and update memory score in user record
+  const user = dbState.users.find(u => u.uid === session.userId);
+  if (user) {
+    const gainedXp = isFullPage
+      ? (accuracy >= 90 ? 100 : (accuracy >= 75 ? 60 : 25))
+      : (accuracy >= 95 ? 50 : (accuracy >= 75 ? 25 : 10));
+    user.xp = (Number(user.xp) || 100) + gainedXp;
+    if (accuracy >= 75) {
+      user.memoryScore = Math.min(100, Math.round(((Number(user.memoryScore) || 85) * 0.85) + (accuracy * 0.15)));
+    }
+  }
+
+  saveDb();
+  return entry;
+}
+
+export function getRecitationHistory(userId, options = {}) {
+  let list = dbState.recitation_sessions || [];
+  if (userId) {
+    list = list.filter(item => item.userId === userId);
+  }
+  if (options.pageNumber) {
+    list = list.filter(item => item.pageNumber === Number(options.pageNumber));
+  }
+  if (options.ayahNumber) {
+    list = list.filter(item => item.ayahNumber === Number(options.ayahNumber));
+  }
+  if (options.surahNumber) {
+    list = list.filter(item => item.surahNumber === Number(options.surahNumber));
+  }
+  const limit = Number(options.limit) || 50;
+  return list.slice(0, limit);
+}
+
+export function getPageRecitationStats(pageNumber) {
+  const pNum = Number(pageNumber);
+  const attempts = (dbState.recitation_sessions || []).filter(s => s.pageNumber === pNum);
+  if (attempts.length === 0) {
+    return {
+      hasAttempts: false,
+      totalAttempts: 0,
+      averageAccuracy: 0,
+      bestAccuracy: 0,
+      lastRecitedAt: null,
+      recentAttempts: []
+    };
+  }
+
+  const accuracies = attempts.map(a => Number(a.accuracy) || 0);
+  const total = accuracies.reduce((sum, val) => sum + val, 0);
+  const avg = Math.round(total / accuracies.length);
+  const best = Math.max(...accuracies);
+
+  return {
+    hasAttempts: true,
+    totalAttempts: attempts.length,
+    averageAccuracy: avg,
+    bestAccuracy: best,
+    lastRecitedAt: attempts[0].createdAt,
+    recentAttempts: attempts.slice(0, 10)
+  };
 }

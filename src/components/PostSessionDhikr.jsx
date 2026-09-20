@@ -116,7 +116,7 @@ export const PostSessionDhikr = () => {
             borderRadius: '50%',
             background: isCurrentCompleted 
               ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
-              : 'linear-gradient(135deg, var(--primary) 0%, #047857 100%)',
+              : 'linear-gradient(135deg, var(--primary) 0%, #064E3B 100%)',
             color: 'white',
             border: 'none',
             cursor: 'pointer',
@@ -125,7 +125,7 @@ export const PostSessionDhikr = () => {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 8px 24px rgba(16, 185, 129, 0.35)',
+            boxShadow: '0 8px 24px var(--primary-glow)',
             transition: 'background 0.3s ease'
           }}
         >

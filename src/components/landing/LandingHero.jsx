@@ -52,11 +52,11 @@ export const LandingHero = ({ onOpenAuth, onDemoLogin }) => {
         left: '5%',
         width: '380px',
         height: '380px',
-        background: 'radial-gradient(circle, rgba(217, 119, 6, 0.15) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, var(--secondary-glow) 0%, transparent 70%)',
         borderRadius: '50%',
         pointerEvents: 'none',
         filter: 'blur(50px)',
-        opacity: 0.5
+        opacity: 0.6
       }} />
 
       <div className="container" style={{ position: 'relative', zIndex: 2 }}>
@@ -347,7 +347,7 @@ export const LandingHero = ({ onOpenAuth, onDemoLogin }) => {
                     background: 'rgba(11, 17, 26, 0.88)',
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
-                    border: '1px solid rgba(217, 119, 6, 0.4)',
+                    border: '1px solid rgba(122, 64, 105, 0.4)',
                     padding: '10px 16px',
                     borderRadius: '16px',
                     display: 'flex',
@@ -361,17 +361,17 @@ export const LandingHero = ({ onOpenAuth, onDemoLogin }) => {
                     width: '36px',
                     height: '36px',
                     borderRadius: '10px',
-                    background: 'rgba(217, 119, 6, 0.2)',
+                    background: 'rgba(122, 64, 105, 0.25)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    color: '#FBBF24'
+                    color: '#a35d8f'
                   }}>
                     <ShieldCheck size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '11px', color: '#94A3B8', fontWeight: 600 }}>خطة الحصون الخمسة</div>
-                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#FBBF24' }}>
+                    <div style={{ fontSize: '11px', color: '#9cb5c1', fontWeight: 600 }}>خطة الحصون الخمسة</div>
+                    <div style={{ fontSize: '13.5px', fontWeight: 800, color: '#a35d8f' }}>
                       تم إنجاز ورد اليوم (+150 XP) 🔥
                     </div>
                   </div>

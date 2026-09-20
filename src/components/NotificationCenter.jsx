@@ -27,6 +27,7 @@ export const NotificationCenter = () => {
     clearAll,
     triggerCelebration,
     toast,
+    dismissToast,
     reminderSettings,
     updateReminderSettings,
     testReminderNow,
@@ -96,6 +97,7 @@ export const NotificationCenter = () => {
             initial={{ opacity: 0, y: -20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            onClick={() => dismissToast && dismissToast()}
             style={{
               position: 'fixed',
               top: '20px',
@@ -104,21 +106,44 @@ export const NotificationCenter = () => {
               background: 'var(--bg-surface)',
               border: '2px solid var(--primary)',
               borderRadius: '16px',
-              padding: '12px 20px',
-              boxShadow: '0 10px 30px rgba(16, 185, 129, 0.3)',
+              padding: '12px 18px',
+              boxShadow: '0 10px 30px rgba(16, 185, 129, 0.35)',
               zIndex: 99999,
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
-              maxWidth: '380px',
-              width: '90%'
+              maxWidth: '420px',
+              width: '90%',
+              cursor: 'pointer'
             }}
           >
             <div style={{ fontSize: '22px' }}>{toast.icon || '🎉'}</div>
             <div style={{ flex: 1, textAlign: isRTL ? 'right' : 'left' }}>
-              <div style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--text-primary)' }}>{toast.title}</div>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{toast.message}</div>
+              <div style={{ fontWeight: 'bold', fontSize: '13.5px', color: 'var(--text-primary)' }}>{toast.title}</div>
+              {toast.message && (
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>{toast.message}</div>
+              )}
             </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (dismissToast) dismissToast();
+              }}
+              style={{
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-secondary)',
+                cursor: 'pointer',
+                padding: '4px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              aria-label="إغلاق التنبيه"
+            >
+              <X size={16} />
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -181,18 +206,16 @@ export const NotificationCenter = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.18 }}
+            className="fixed inset-x-2.5 top-[60px] sm:absolute sm:inset-auto sm:top-[48px] z-50"
             style={{
-              position: 'absolute',
-              top: '50px',
               left: isRTL ? '0' : 'auto',
               right: isRTL ? 'auto' : '0',
               width: '390px',
-              maxWidth: '92vw',
+              maxWidth: 'calc(100vw - 20px)',
               background: 'var(--bg-surface)',
               border: '1px solid var(--glass-border)',
               borderRadius: '20px',
               boxShadow: '0 12px 36px rgba(0, 0, 0, 0.25)',
-              zIndex: 9999,
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column'
@@ -494,7 +517,7 @@ export const NotificationCenter = () => {
                 <button
                   onClick={testReminderNow}
                   style={{
-                    padding: '10px',
+                    padding: '11px',
                     borderRadius: '12px',
                     background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                     color: 'white',
@@ -506,12 +529,36 @@ export const NotificationCenter = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
+                    transition: 'transform 0.15s ease'
                   }}
+                  onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
+                  onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                 >
                   <Bell size={16} />
-                  تجربة الإشعار والتنبيه الآن 🔔
+                  تجربة الإشعار والتنبيه الصوتي الآن 🔔
                 </button>
+
+                {/* Device Compatibility & Info Box */}
+                <div style={{
+                  padding: '10px 12px',
+                  borderRadius: '12px',
+                  background: 'var(--bg-color)',
+                  border: '1px solid var(--glass-border)',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: '1.6'
+                }}>
+                  <div style={{ fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span>📱💻 التوافق مع الهواتف واللابتوب:</span>
+                  </div>
+                  <ul style={{ margin: 0, paddingRight: '16px', listStyleType: 'disc' }}>
+                    <li><strong>على اللابتوب:</strong> تظهر إشعارات سطح المكتب (Windows / Mac) مع نغمة التنبيه عند تفعيل إذن المتصفح.</li>
+                    <li><strong>على هواتف أندرويد:</strong> تدعم الإشعارات والاهتزاز والنغمة عبر المتصفح وتطبيق PWA.</li>
+                    <li><strong>على هواتف آيفون (iOS):</strong> أضف التطبيق للشاشة الرئيسية (PWA) لدعم إشعارات النظام.</li>
+                    <li><strong>داخل التطبيق:</strong> النافذة التفاعلية والنغمة تعمل فورياً على جميع الأجهزة دون استثناء.</li>
+                  </ul>
+                </div>
 
               </div>
             ) : (

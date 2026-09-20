@@ -27,7 +27,9 @@ import {
   RotateCcw,
   Sliders,
   CheckCircle2,
-  HelpCircle
+  HelpCircle,
+  Users,
+  Check
 } from 'lucide-react';
 import { getPageRangeForJuz } from '../utils/quranData';
 import { learningQuizQuestions, calculateLearningProfile } from '../utils/learningQuizData';
@@ -65,8 +67,58 @@ const OnboardingWizard = () => {
     photoURL: 'https://api.dicebear.com/7.x/micah/svg?seed=Ahmad&baseColor=f9c9b6'
   });
 
+  // Safar Ecosystem Group & Path State
+  const [groupInfo, setGroupInfo] = useState({
+    choice: 'independent', // 'group' | 'independent'
+    code: '',
+    verifiedGroup: null,
+    isSafarMember: false,
+    verifying: false,
+    error: '',
+    successMessage: ''
+  });
+
   const navigate = useNavigate();
   const { user, updateUserData } = useAuth();
+
+  const handleVerifyGroupCode = async () => {
+    const clean = groupInfo.code.trim().toUpperCase();
+    if (!clean) {
+      setGroupInfo(prev => ({ ...prev, error: isRTL ? 'الرجاء كتابة رمز الحلقة أولاً' : 'Please enter group code' }));
+      return;
+    }
+    setGroupInfo(prev => ({ ...prev, verifying: true, error: '', successMessage: '' }));
+    try {
+      const res = await fetch(`/api/groups/verify?code=${encodeURIComponent(clean)}`);
+      const data = await res.json();
+      if (res.ok && data.valid && data.group) {
+        setGroupInfo(prev => ({
+          ...prev,
+          verifying: false,
+          verifiedGroup: data.group,
+          isSafarMember: true,
+          error: '',
+          successMessage: isRTL ? `تم التحقق بنجاح! حلقة: ${data.group.name} (المعلمة: ${data.group.teacherName})` : `Verified: ${data.group.name}`
+        }));
+      } else {
+        setGroupInfo(prev => ({
+          ...prev,
+          verifying: false,
+          verifiedGroup: null,
+          isSafarMember: false,
+          error: data.message || (isRTL ? 'رمز الحلقة غير صحيح أو لم يعد متاحاً' : 'Invalid group code')
+        }));
+      }
+    } catch (e) {
+      setGroupInfo(prev => ({
+        ...prev,
+        verifying: false,
+        verifiedGroup: null,
+        isSafarMember: false,
+        error: isRTL ? 'تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً' : 'Verification failed'
+      }));
+    }
+  };
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   React.useEffect(() => {
@@ -157,7 +209,11 @@ const OnboardingWizard = () => {
       preferences: formData,
       memorizedPages,
       memorizedPagesCount,
-      totalJuz
+      totalJuz,
+      isSafarMember: Boolean(groupInfo.isSafarMember),
+      groupId: groupInfo.verifiedGroup?.id || null,
+      groupName: groupInfo.verifiedGroup?.name || null,
+      teacherName: groupInfo.verifiedGroup?.teacherName || null
     };
 
     // Update React Auth context & localStorage immediately
@@ -221,52 +277,226 @@ const OnboardingWizard = () => {
 
           <AnimatePresence mode="wait">
             
-            {/* Step 1: Welcome & Intro */}
+            {/* Step 1: Welcome, Value Propositions & Choose Path */}
             {step === 1 && (
               <motion.div key="step1" variants={stepVariants} initial="hidden" animate="visible" exit="exit" transition={{ duration: 0.3 }}>
                 <div style={{ textAlign: 'center', padding: '10px 0' }}>
-                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
-                    <Sparkles size={32} />
+                  <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <BookOpen size={32} />
                   </div>
-                  <h2 style={{ fontSize: isMobile ? '22px' : '26px', color: 'var(--text-primary)', marginBottom: '10px' }}>
-                    {lang === 'ar' ? 'أهلاً بك في محفظ AI 🚀' : 'Welcome to Ma7fath AI 🚀'}
+                  <h2 style={{ fontSize: isMobile ? '22px' : '26px', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                    {lang === 'ar' ? 'أهلاً بك في منصة سَفَر القرآنية 🌿' : 'Welcome to Safar Quran Platform 🌿'}
                   </h2>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '15px', lineHeight: 1.6, maxWidth: '520px', margin: '0 auto 24px' }}>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '14.5px', lineHeight: 1.6, maxWidth: '540px', margin: '0 auto 20px' }}>
                     {lang === 'ar' 
-                      ? 'مساعدك الشخصي الذي يرافقك في رحلة القرآن الكريم، ويحلل أداءك باستخدام الذكاء الاصطناعي لتقديم خطة مخصصة لعقلك.'
-                      : 'Your personal companion in the Holy Quran journey, analyzing your performance using AI to deliver a tailored plan for your mind.'}
+                      ? 'منظومة حديثة ومتكاملة لحفظ القرآن الكريم ومراجعته وإتقانه بإشراف نخبة من المعلمات المعتمدات أو بمسار الحفظ الذاتي المستقل.'
+                      : 'A modern, structured ecosystem for Quran memorization, recitation, and mastery with certified teachers or independent study.'}
                   </p>
                   
-                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(160px, 1fr))', gap: '12px', textAlign: isRTL ? 'right' : 'left' }}>
-                    <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                      <Brain size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '13.5px', color: 'var(--text-primary)' }}>
-                        {lang === 'ar' ? 'تحليل الأداء' : 'Performance Analysis'}
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {lang === 'ar' ? 'تحديد المتشابهات ومواضع الضعف تلقائياً.' : 'Automatically spot similar verses and weak pages.'}
-                      </p>
+                  {/* 4 Value Proposition Cards */}
+                  <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px', textAlign: isRTL ? 'right' : 'left', marginBottom: '24px' }}>
+                    <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
+                        <Target size={18} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 2px 0', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                          {lang === 'ar' ? 'حفظ ومراجعة يومية' : 'Daily Memorization & Review'}
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                          {lang === 'ar' ? 'أوراد ذكية تتجدد تلقائياً حسب جدولك ومستواك.' : 'Structured daily targets adapted to your rhythm.'}
+                        </p>
+                      </div>
                     </div>
 
-                    <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                      <ShieldCheck size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-                        {lang === 'ar' ? 'الحصون الخمسة' : 'Five Fortresses'}
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {lang === 'ar' ? 'تثبيت دائم للمحفوظ دون نسيان.' : 'Permanent retention of memorized pages without forgetting.'}
-                      </p>
+                    <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
+                        <Volume2 size={18} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 2px 0', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                          {lang === 'ar' ? 'تسميع صوتي وتكرار ذكي' : 'Audio & Smart Repetition'}
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                          {lang === 'ar' ? 'استماع لكبار القراء مع تقنيات تثبيت متقدمة.' : 'Audio recitation & AI-assisted repetition tools.'}
+                        </p>
+                      </div>
                     </div>
 
-                    <div style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                      <Zap size={20} color="var(--primary)" style={{ marginBottom: '8px' }} />
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', color: 'var(--text-primary)' }}>
-                        {lang === 'ar' ? 'مراجعة متباعدة' : 'Spaced Repetition'}
-                      </h4>
-                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {lang === 'ar' ? 'جدولة تلقائية لأفضل أوقات التسميع.' : 'Auto scheduling of optimal recitation times.'}
-                      </p>
+                    <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
+                        <Users size={18} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 2px 0', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                          {lang === 'ar' ? 'حلقات معلمات أو مسار حر' : 'Teacher Groups or Solo'}
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                          {lang === 'ar' ? 'انضم لحلقة مع معلمتك أو احفظ مستقلاً بحرية.' : 'Guided study with certified teachers or self-paced.'}
+                        </p>
+                      </div>
                     </div>
+
+                    <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
+                        <ShieldCheck size={18} />
+                      </div>
+                      <div>
+                        <h4 style={{ margin: '0 0 2px 0', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 700 }}>
+                          {lang === 'ar' ? 'الحصون والمراجعة المتباعدة' : 'Retention & Spaced System'}
+                        </h4>
+                        <p style={{ margin: 0, fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                          {lang === 'ar' ? 'منظومة الحصون الخمسة لرسوخ لا ينسى.' : 'Progress tracking & spaced revision system.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Choose Path: Group Code vs Independent Learner */}
+                  <div style={{ 
+                    padding: '16px', 
+                    borderRadius: '16px', 
+                    background: 'var(--bg-color)', 
+                    border: '1px solid var(--primary-border)', 
+                    textAlign: isRTL ? 'right' : 'left' 
+                  }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 4px 0' }}>
+                      {lang === 'ar' ? 'اختر مسارك في سَفَر: هل لديك رمز حلقة من معلمتك؟' : 'Choose your path: Do you have a group code from your teacher?'}
+                    </h3>
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0 0 14px 0' }}>
+                      {lang === 'ar' 
+                        ? 'إذا كان لديك رمز دعوة من حلقتك القرآنية أدخله هنا، أو تابع كحافظ مستقل دون أي إلزام.' 
+                        : 'If you have an invitation code enter it below, or continue freely as an independent learner.'}
+                    </p>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '10px', marginBottom: '14px' }}>
+                      <button
+                        type="button"
+                        onClick={() => setGroupInfo(prev => ({ ...prev, choice: 'group' }))}
+                        style={{
+                          padding: '12px',
+                          borderRadius: '12px',
+                          border: groupInfo.choice === 'group' ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                          background: groupInfo.choice === 'group' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          textAlign: isRTL ? 'right' : 'left'
+                        }}
+                      >
+                        <span style={{ fontSize: '20px' }}>👥</span>
+                        <div>
+                          <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-primary)' }}>
+                            {lang === 'ar' ? 'نعم، لدي رمز حلقة' : 'Yes, I have a code'}
+                          </strong>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            {lang === 'ar' ? 'للانضمام لحلقة مع معلمة' : 'Join a teacher group'}
+                          </span>
+                        </div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setGroupInfo(prev => ({ 
+                          ...prev, 
+                          choice: 'independent', 
+                          isSafarMember: false, 
+                          verifiedGroup: null, 
+                          error: '',
+                          successMessage: '' 
+                        }))}
+                        style={{
+                          padding: '12px',
+                          borderRadius: '12px',
+                          border: groupInfo.choice === 'independent' ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
+                          background: groupInfo.choice === 'independent' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          textAlign: isRTL ? 'right' : 'left'
+                        }}
+                      >
+                        <span style={{ fontSize: '20px' }}>🌿</span>
+                        <div>
+                          <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-primary)' }}>
+                            {lang === 'ar' ? 'حافظ مستقل' : 'Independent Learner'}
+                          </strong>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                            {lang === 'ar' ? 'متابعة حرة دون حلقة' : 'Self-paced memorization'}
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* If Group Path chosen: show input & verification */}
+                    {groupInfo.choice === 'group' && (
+                      <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-surface)', border: '1px dashed var(--primary)' }}>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                          {lang === 'ar' ? 'أدخل رمز الحلقة (مثال: NOOR2026 أو TAQWA-A)' : 'Enter Group Code (e.g. NOOR2026)'}
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <input
+                            type="text"
+                            value={groupInfo.code}
+                            onChange={(e) => setGroupInfo(prev => ({ ...prev, code: e.target.value.toUpperCase(), error: '', successMessage: '' }))}
+                            placeholder="NOOR2026"
+                            style={{
+                              flex: 1,
+                              padding: '8px 12px',
+                              borderRadius: '8px',
+                              border: '1px solid var(--glass-border)',
+                              background: 'var(--bg-color)',
+                              color: 'var(--text-primary)',
+                              fontSize: '14px',
+                              fontFamily: 'monospace',
+                              letterSpacing: '1px',
+                              textTransform: 'uppercase'
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleVerifyGroupCode}
+                            disabled={groupInfo.verifying || !groupInfo.code.trim()}
+                            style={{
+                              padding: '8px 16px',
+                              borderRadius: '8px',
+                              background: 'var(--primary)',
+                              color: '#FFFFFF',
+                              border: 'none',
+                              fontSize: '12px',
+                              fontWeight: 700,
+                              cursor: (groupInfo.verifying || !groupInfo.code.trim()) ? 'not-allowed' : 'pointer',
+                              opacity: (groupInfo.verifying || !groupInfo.code.trim()) ? 0.7 : 1
+                            }}
+                          >
+                            {groupInfo.verifying ? (lang === 'ar' ? 'جاري التحقق...' : 'Checking...') : (lang === 'ar' ? 'تحقق وانضمام' : 'Verify')}
+                          </button>
+                        </div>
+
+                        {groupInfo.error && (
+                          <div style={{ marginTop: '8px', fontSize: '11.5px', color: '#EF4444', fontWeight: 600 }}>
+                            ⚠️ {groupInfo.error}
+                          </div>
+                        )}
+
+                        {groupInfo.successMessage && (
+                          <div style={{ marginTop: '8px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: 'var(--primary)', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Check size={14} />
+                            <span>{groupInfo.successMessage}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {groupInfo.choice === 'independent' && (
+                      <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', background: 'var(--bg-surface)', padding: '8px 12px', borderRadius: '8px' }}>
+                        💡 {lang === 'ar' 
+                          ? 'يمكنك دائماً الانضمام لأي حلقة لاحقاً من ملفك الشخصي أو من الصفحة الرئيسية متى ما رغبت بذلك.'
+                          : 'You can join a group later anytime from your profile or settings.'}
+                      </div>
+                    )}
                   </div>
                 </div>
               </motion.div>

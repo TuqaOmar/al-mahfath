@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
   Filter, 
@@ -14,7 +14,8 @@ import {
   Check,
   Layers,
   Flame,
-  Award
+  Award,
+  Mic
 } from 'lucide-react';
 import { getSurahNameForPage, getJuzForPage, getPageRangeForJuz } from '../utils/quranData';
 import { useAuth } from '../context/AuthContext';
@@ -99,7 +100,7 @@ const buildQuranPagesData = (user) => {
   return pages;
 };
 
-export const QuranMapPage = () => {
+export const QuranMapPage = ({ onSelectPageForRecitation }) => {
   const { user, updateUserData } = useAuth();
   const { notifyAndCelebrate } = useNotifications();
   const { isRTL, lang } = useLanguage();
@@ -114,12 +115,14 @@ export const QuranMapPage = () => {
   const [statusMessage, setStatusMessage] = useState('');
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
-  const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' && window.innerWidth < 1180);
+  const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' && window.innerWidth < 1340);
+  const detailPanelRef = useRef(null);
+
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
       setIsMobile(w <= 768);
-      setIsCompact(w < 1180);
+      setIsCompact(w < 1340);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -397,6 +400,204 @@ export const QuranMapPage = () => {
     }
   };
 
+  const renderDetailPanelContent = () => {
+    if (!selectedPage) return null;
+    return (
+      <>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3 style={{ margin: 0, fontSize: '19px', color: 'var(--text-primary)' }}>
+            تفاصيل الصفحة {selectedPage.pageNumber}
+          </h3>
+          <button 
+            onClick={() => setSelectedPage(null)}
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+          <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>السورة والجزء</span>
+          <h4 style={{ margin: '4px 0 0 0', fontSize: '17px', color: 'var(--text-primary)' }}>
+            سورة {selectedPage.surahName} (الجزء {selectedPage.juz})
+          </h4>
+        </div>
+
+        {/* Memory Score Meter */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>استقرار الذاكرة في الصدر:</span>
+            <span style={{ fontWeight: 'bold', color: getStatusColor(selectedPage.status) }}>
+              {selectedPage.score}%
+            </span>
+          </div>
+          <div style={{ width: '100%', height: '8px', background: 'var(--glass-border)', borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ width: `${selectedPage.score}%`, height: '100%', background: getStatusColor(selectedPage.status), borderRadius: '4px' }} />
+          </div>
+        </div>
+
+        {/* Interactive Page Status Controls */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+            تعديل حالة هذه الصفحة المباشر:
+          </span>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button
+              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'excellent', 95)}
+              style={{
+                padding: '8px 10px',
+                borderRadius: '8px',
+                border: selectedPage.status === 'excellent' ? '2px solid #10B981' : '1px solid var(--glass-border)',
+                background: selectedPage.status === 'excellent' ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-color)',
+                color: '#10B981',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              🟢 ممتاز (95%)
+            </button>
+
+            <button
+              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'review', 75)}
+              style={{
+                padding: '8px 10px',
+                borderRadius: '8px',
+                border: selectedPage.status === 'review' ? '2px solid #F59E0B' : '1px solid var(--glass-border)',
+                background: selectedPage.status === 'review' ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
+                color: '#F59E0B',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              🟡 مراجعة (75%)
+            </button>
+
+            <button
+              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'critical', 50)}
+              style={{
+                padding: '8px 10px',
+                borderRadius: '8px',
+                border: selectedPage.status === 'critical' ? '2px solid #EF4444' : '1px solid var(--glass-border)',
+                background: selectedPage.status === 'critical' ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-color)',
+                color: '#EF4444',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              🔴 حرج (50%)
+            </button>
+
+            <button
+              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'unmemorized', 0)}
+              style={{
+                padding: '8px 10px',
+                borderRadius: '8px',
+                border: selectedPage.status === 'unmemorized' ? '2px solid #94A3B8' : '1px solid var(--glass-border)',
+                background: selectedPage.status === 'unmemorized' ? 'rgba(148, 163, 184, 0.15)' : 'var(--bg-color)',
+                color: 'var(--text-secondary)',
+                fontWeight: 'bold',
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              ⚪ غير محفوظ
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+          <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
+            <Clock size={16} color="var(--primary)" style={{ margin: '0 auto 4px' }} />
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>آخر مراجعة</span>
+            <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{selectedPage.lastReviewed}</strong>
+          </div>
+
+          <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
+            <AlertTriangle size={16} color={selectedPage.errorsCount > 0 ? '#EF4444' : 'var(--primary)'} style={{ margin: '0 auto 4px' }} />
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>سجل التنبيهات</span>
+            <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{selectedPage.errorsCount} ملاحظات</strong>
+          </div>
+        </div>
+
+        {/* AI Recommendation */}
+        <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+            <Sparkles size={16} color="var(--primary)" />
+            <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>توجيه الذكاء الاصطناعي:</strong>
+          </div>
+          <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
+            {selectedPage.status === 'unmemorized'
+              ? 'الصفحة غير مدرجة في محفوظك حالياً. يمكنك إضافتها لخطتك في الحصن الثالث (الحفظ الجديد).'
+              : (selectedPage.status === 'critical' 
+                ? 'ينصح بمراجعة هذه الصفحة اليوم في حصن الغد والتكرار 5 مرات صوتاً.' 
+                : 'حالة الحفظ ممتازة. جدول المراجعة القادم بعد 5 أيام.')}
+          </p>
+        </div>
+
+        {/* Direct Navigation & Recitation Action Buttons */}
+        {onSelectPageForRecitation && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '14px' }}>
+            <button
+              onClick={() => {
+                const pNum = selectedPage.pageNumber;
+                setSelectedPage(null);
+                onSelectPageForRecitation(pNum);
+              }}
+              style={{
+                width: '100%',
+                padding: '12px',
+                borderRadius: '12px',
+                border: 'none',
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                color: 'white',
+                fontWeight: 700,
+                fontSize: '14px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)'
+              }}
+            >
+              <BookOpen size={18} />
+              <span>فتح وقراءة الصفحة {selectedPage.pageNumber} في المصحف التفاعلي 📖</span>
+            </button>
+
+            <button
+              onClick={() => {
+                const pNum = selectedPage.pageNumber;
+                setSelectedPage(null);
+                onSelectPageForRecitation(pNum);
+              }}
+              style={{
+                width: '100%',
+                padding: '10px',
+                borderRadius: '12px',
+                border: '1px solid var(--primary)',
+                background: 'var(--primary-light)',
+                color: 'var(--primary)',
+                fontWeight: 700,
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px'
+              }}
+            >
+              <Mic size={16} />
+              <span>تسميع الصفحة {selectedPage.pageNumber} واختبار الحفظ 🎯</span>
+            </button>
+          </div>
+        )}
+      </>
+    );
+  };
+
   return (
     <div style={{ 
       display: 'flex', 
@@ -405,7 +606,8 @@ export const QuranMapPage = () => {
       position: 'relative',
       width: '100%',
       minWidth: 0,
-      maxWidth: '100%'
+      maxWidth: '100%',
+      boxSizing: 'border-box'
     }}>
       
       {/* Toast Notification */}
@@ -506,17 +708,20 @@ export const QuranMapPage = () => {
       )}
 
       {/* Main Grid View */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
+      <div style={{ flex: 1, minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
         {/* KPI Portfolio Header Banner */}
         <div style={{
-          padding: '24px',
+          padding: isMobile ? '16px' : '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
           border: '1px solid var(--glass-border)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '18px'
+          gap: '18px',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
             <div>
@@ -546,7 +751,11 @@ export const QuranMapPage = () => {
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
-                gap: '8px'
+                gap: '8px',
+                maxWidth: '100%',
+                boxSizing: 'border-box',
+                whiteSpace: 'normal',
+                textAlign: 'center'
               }}
             >
               🎯 تعديل رصيد المحفظة: {activeMemorizedCount} صفحة ({(activeMemorizedCount / 20).toFixed(1)} جزء) ✏️
@@ -554,7 +763,13 @@ export const QuranMapPage = () => {
           </div>
 
           {/* KPI Mini-Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px' }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: isMobile ? 'repeat(auto-fit, minmax(95px, 1fr))' : 'repeat(auto-fit, minmax(110px, 1fr))', 
+            gap: '8px',
+            width: '100%',
+            boxSizing: 'border-box'
+          }}>
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📗 محفوظ في الصدر</span>
               <strong style={{ fontSize: '18px', color: 'var(--primary)' }}>{activeMemorizedCount} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>صفحة</span></strong>
@@ -582,8 +797,8 @@ export const QuranMapPage = () => {
           </div>
 
           {/* Search & Filter Bar */}
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ flex: 1, minWidth: '200px', padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', width: '100%', boxSizing: 'border-box' }}>
+            <div style={{ flex: 1, minWidth: isMobile ? '100%' : '180px', padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px', boxSizing: 'border-box' }}>
               <Search size={18} color="var(--text-secondary)" />
               <input 
                 type="text" 
@@ -594,7 +809,7 @@ export const QuranMapPage = () => {
               />
             </div>
 
-            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxWidth: '100%' }}>
               {[
                 { id: 'all', label: `الكل (604)` },
                 { id: 'memorized', label: `📗 المحفوظ (${activeMemorizedCount})` },
@@ -625,10 +840,14 @@ export const QuranMapPage = () => {
 
         {/* 📚 Juz Navigation & Selection Strip (الأجزاء من 1 إلى 30) */}
         <div style={{
-          padding: '16px',
+          padding: isMobile ? '12px' : '16px',
           borderRadius: '18px',
           background: 'var(--bg-surface)',
-          border: '1px solid var(--glass-border)'
+          border: '1px solid var(--glass-border)',
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '8px' }}>
             <span style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -658,7 +877,12 @@ export const QuranMapPage = () => {
             display: 'flex',
             gap: '8px',
             overflowX: 'auto',
-            paddingBottom: '8px'
+            paddingBottom: '8px',
+            width: '100%',
+            maxWidth: '100%',
+            boxSizing: 'border-box',
+            WebkitOverflowScrolling: 'touch',
+            scrollbarWidth: 'thin'
           }}>
             {Array.from({ length: 30 }, (_, i) => i + 1).map((jNum) => {
               const range = getPageRangeForJuz(jNum);
@@ -775,17 +999,24 @@ export const QuranMapPage = () => {
 
         {/* 604 Interactive Grid */}
         <div style={{ 
-          padding: isMobile ? '12px' : '24px', 
+          padding: isMobile ? '12px' : '20px', 
           borderRadius: '20px', 
           background: 'var(--bg-surface)', 
           border: '1px solid var(--glass-border)',
-          maxHeight: '620px',
-          overflowY: 'auto'
+          width: '100%',
+          maxWidth: '100%',
+          boxSizing: 'border-box',
+          maxHeight: (isMobile || isCompact) ? 'none' : 'calc(100vh - 120px)',
+          minHeight: (isMobile || isCompact) ? 'auto' : '520px',
+          overflowY: (isMobile || isCompact) ? 'visible' : 'auto',
+          overflowX: 'hidden'
         }}>
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(42px, 1fr))',
-            gap: '7px'
+            gridTemplateColumns: isMobile ? 'repeat(auto-fill, minmax(36px, 1fr))' : 'repeat(auto-fill, minmax(40px, 1fr))',
+            gap: isMobile ? '5px' : '6px',
+            width: '100%',
+            boxSizing: 'border-box'
           }}>
             {filteredPages.map(page => {
               const bg = getStatusColor(page.status);
@@ -797,13 +1028,13 @@ export const QuranMapPage = () => {
                   onClick={() => setSelectedPage(page)}
                   title={`صفحة ${page.pageNumber} - سورة ${page.surahName} (جزء ${page.juz})`}
                   style={{
-                    height: '42px',
-                    borderRadius: '9px',
+                    height: isMobile ? '36px' : '40px',
+                    borderRadius: '8px',
                     border: isSelected ? '2px solid #FFFFFF' : 'none',
                     backgroundColor: bg,
                     color: page.status === 'unmemorized' ? '#94A3B8' : '#FFFFFF',
                     fontWeight: 'bold',
-                    fontSize: '12px',
+                    fontSize: isMobile ? '11px' : '12px',
                     cursor: 'pointer',
                     display: 'flex',
                     alignItems: 'center',
@@ -822,159 +1053,79 @@ export const QuranMapPage = () => {
 
       </div>
 
-      {/* Side Detail Panel (When a page is selected) */}
-      {selectedPage && (
-        <div style={{
-          width: (isMobile || isCompact) ? '100%' : '320px',
-          minWidth: (isMobile || isCompact) ? '100%' : '280px',
-          maxWidth: (isMobile || isCompact) ? '100%' : '350px',
-          padding: '20px',
-          borderRadius: '20px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--glass-border)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '16px',
-          boxShadow: 'var(--shadow-soft)',
-          position: (isMobile || isCompact) ? 'relative' : 'sticky',
-          top: (isMobile || isCompact) ? 0 : '80px',
-          maxHeight: (isMobile || isCompact) ? 'none' : 'calc(100vh - 100px)',
-          overflowY: 'auto',
-          boxSizing: 'border-box'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: '19px', color: 'var(--text-primary)' }}>
-              تفاصيل الصفحة {selectedPage.pageNumber}
-            </h3>
-            <button 
-              onClick={() => setSelectedPage(null)}
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-            >
-              <X size={20} />
-            </button>
+      {/* Side Detail Panel (When a page is selected on desktop) */}
+      {selectedPage && !isMobile && !isCompact && (
+        <div 
+          ref={detailPanelRef}
+          style={{
+            width: '320px',
+            minWidth: '280px',
+            maxWidth: '350px',
+            flexShrink: 0,
+            padding: '20px',
+            borderRadius: '20px',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--glass-border)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '16px',
+            boxShadow: 'var(--shadow-soft)',
+            position: 'sticky',
+            top: '80px',
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto',
+            boxSizing: 'border-box'
+          }}
+        >
+          {renderDetailPanelContent()}
+        </div>
+      )}
+
+      {/* Mobile & Compact Screens Detail Panel Overlay */}
+      {selectedPage && (isMobile || isCompact) && (
+        <div 
+          onClick={() => setSelectedPage(null)}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: isMobile ? 'flex-end' : 'center',
+            justifyContent: 'center',
+            padding: isMobile ? '0' : '20px',
+            boxSizing: 'border-box'
+          }}
+        >
+          <div 
+            ref={detailPanelRef}
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: isMobile ? '100%' : '520px',
+              maxHeight: isMobile ? '82vh' : '90vh',
+              background: 'var(--bg-surface)',
+              borderRadius: isMobile ? '24px 24px 0 0' : '24px',
+              border: '1px solid var(--glass-border)',
+              padding: isMobile ? '20px 18px calc(24px + env(safe-area-inset-bottom, 0px)) 18px' : '24px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '16px',
+              overflowY: 'auto',
+              boxShadow: '0 -8px 32px rgba(0,0,0,0.3)',
+              boxSizing: 'border-box'
+            }}
+          >
+            {isMobile && (
+              <div style={{ width: '40px', height: '4px', background: 'var(--glass-border)', borderRadius: '2px', margin: '0 auto -6px auto' }} />
+            )}
+            {renderDetailPanelContent()}
           </div>
-
-          <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>السورة والجزء</span>
-            <h4 style={{ margin: '4px 0 0 0', fontSize: '17px', color: 'var(--text-primary)' }}>
-              سورة {selectedPage.surahName} (الجزء {selectedPage.juz})
-            </h4>
-          </div>
-
-          {/* Memory Score Meter */}
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>استقرار الذاكرة في الصدر:</span>
-              <span style={{ fontWeight: 'bold', color: getStatusColor(selectedPage.status) }}>
-                {selectedPage.score}%
-              </span>
-            </div>
-            <div style={{ width: '100%', height: '8px', background: 'var(--glass-border)', borderRadius: '4px', overflow: 'hidden' }}>
-              <div style={{ width: `${selectedPage.score}%`, height: '100%', background: getStatusColor(selectedPage.status), borderRadius: '4px' }} />
-            </div>
-          </div>
-
-          {/* Interactive Page Status Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-              تعديل حالة هذه الصفحة المباشر:
-            </span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button
-                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'excellent', 95)}
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  border: selectedPage.status === 'excellent' ? '2px solid #10B981' : '1px solid var(--glass-border)',
-                  background: selectedPage.status === 'excellent' ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-color)',
-                  color: '#10B981',
-                  fontWeight: 'bold',
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                🟢 ممتاز (95%)
-              </button>
-
-              <button
-                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'review', 75)}
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  border: selectedPage.status === 'review' ? '2px solid #F59E0B' : '1px solid var(--glass-border)',
-                  background: selectedPage.status === 'review' ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
-                  color: '#F59E0B',
-                  fontWeight: 'bold',
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                🟡 مراجعة (75%)
-              </button>
-
-              <button
-                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'critical', 50)}
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  border: selectedPage.status === 'critical' ? '2px solid #EF4444' : '1px solid var(--glass-border)',
-                  background: selectedPage.status === 'critical' ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-color)',
-                  color: '#EF4444',
-                  fontWeight: 'bold',
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                🔴 حرج (50%)
-              </button>
-
-              <button
-                onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'unmemorized', 0)}
-                style={{
-                  padding: '8px 10px',
-                  borderRadius: '8px',
-                  border: selectedPage.status === 'unmemorized' ? '2px solid #94A3B8' : '1px solid var(--glass-border)',
-                  background: selectedPage.status === 'unmemorized' ? 'rgba(148, 163, 184, 0.15)' : 'var(--bg-color)',
-                  color: 'var(--text-secondary)',
-                  fontWeight: 'bold',
-                  fontSize: '12px',
-                  cursor: 'pointer'
-                }}
-              >
-                ⚪ غير محفوظ
-              </button>
-            </div>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-            <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
-              <Clock size={16} color="var(--primary)" style={{ margin: '0 auto 4px' }} />
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>آخر مراجعة</span>
-              <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{selectedPage.lastReviewed}</strong>
-            </div>
-
-            <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
-              <AlertTriangle size={16} color={selectedPage.errorsCount > 0 ? '#EF4444' : 'var(--primary)'} style={{ margin: '0 auto 4px' }} />
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>سجل التنبيهات</span>
-              <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{selectedPage.errorsCount} ملاحظات</strong>
-            </div>
-          </div>
-
-          {/* AI Recommendation */}
-          <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-              <Sparkles size={16} color="var(--primary)" />
-              <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>توجيه الذكاء الاصطناعي:</strong>
-            </div>
-            <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
-              {selectedPage.status === 'unmemorized'
-                ? 'الصفحة غير مدرجة في محفوظك حالياً. يمكنك إضافتها لخطتك في الحصن الثالث (الحفظ الجديد).'
-                : (selectedPage.status === 'critical' 
-                  ? 'ينصح بمراجعة هذه الصفحة اليوم في حصن الغد والتكرار 5 مرات صوتاً.' 
-                  : 'حالة الحفظ ممتازة. جدول المراجعة القادم بعد 5 أيام.')}
-            </p>
-          </div>
-
         </div>
       )}
 

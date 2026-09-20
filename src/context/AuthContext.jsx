@@ -186,7 +186,13 @@ export const AuthProvider = ({ children }) => {
       }
     } catch (e) {
       console.log('Backend Google login failed, using local Google auth fallback:', e);
-      const googleUser = {
+      const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
+      const existingEntry = localUsers[googleEmail]?.user;
+      const googleUser = existingEntry ? {
+        ...existingEntry,
+        name: googleName || existingEntry.name,
+        photoURL: googlePhoto || existingEntry.photoURL
+      } : {
         uid: googleEmail ? `google_${Date.now()}` : `google_user_${Date.now()}`,
         name: googleName,
         email: googleEmail,
@@ -201,6 +207,12 @@ export const AuthProvider = ({ children }) => {
         totalJuz: 0,
         preferences: {}
       };
+      
+      if (googleEmail) {
+        localUsers[googleEmail] = { password: '', user: googleUser };
+        localStorage.setItem('ma7fath_local_users', JSON.stringify(localUsers));
+      }
+      
       localStorage.setItem('ma7fath_user', JSON.stringify(googleUser));
       setUser(googleUser);
       setLoading(false);
@@ -295,6 +307,23 @@ export const AuthProvider = ({ children }) => {
     setUser(updatedUser);
     localStorage.setItem('ma7fath_user', JSON.stringify(updatedUser));
 
+    // Also synchronize to ma7fath_local_users so subsequent logins keep completed wizard state
+    if (updatedUser?.email) {
+      try {
+        const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
+        const emailKey = updatedUser.email.toLowerCase();
+        if (localUsers[emailKey]) {
+          localUsers[emailKey].user = {
+            ...localUsers[emailKey].user,
+            ...updates
+          };
+          localStorage.setItem('ma7fath_local_users', JSON.stringify(localUsers));
+        }
+      } catch (err) {
+        console.error('Error syncing localUsers:', err);
+      }
+    }
+
     if (user?.uid) {
       try {
         await fetch(`/api/user/${user.uid}`, {
@@ -308,8 +337,55 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Real REST API: Refresh and sync user progress & stats from backend
+  const refreshUserData = async () => {
+    if (!user?.uid) {
+      // If guest or no user, refresh from localStorage
+      const stored = localStorage.getItem('ma7fath_user');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setUser(parsed);
+          return { success: true, user: parsed };
+        } catch (e) {}
+      }
+      return { success: true, user: null };
+    }
+
+    try {
+      const res = await fetch(`/api/user/${user.uid}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.user) {
+          const merged = {
+            ...user,
+            ...data.user,
+            hasCompletedWizard: Boolean(data.user.hasCompletedWizard ?? user.hasCompletedWizard)
+          };
+          localStorage.setItem('ma7fath_user', JSON.stringify(merged));
+          setUser(merged);
+          return { success: true, user: merged };
+        }
+      }
+    } catch (e) {
+      console.log('Backend user refresh error, syncing from localStorage:', e);
+    }
+
+    // Fallback: reload latest from localStorage
+    const localStored = localStorage.getItem('ma7fath_user');
+    if (localStored) {
+      try {
+        const parsed = JSON.parse(localStored);
+        setUser(parsed);
+        return { success: true, user: parsed };
+      } catch (e) {}
+    }
+
+    return { success: true, user };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, loginWithTestAccount, loginWithAdminAccount, logout, deleteAccount, updateUserData }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, loginWithTestAccount, loginWithAdminAccount, logout, deleteAccount, updateUserData, refreshUserData }}>
       {!loading && children}
     </AuthContext.Provider>
   );

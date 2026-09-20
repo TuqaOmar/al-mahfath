@@ -1058,7 +1058,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
                   }}
                 >
                   <Mic size={16} />

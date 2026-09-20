@@ -9,20 +9,52 @@ import {
   getRow, 
   allRows, 
   hashPassword, 
-  verifyPassword 
+  verifyPassword,
+  getUserPortfolio,
+  saveAyahToPortfolio,
+  bulkSaveSurahToPortfolio,
+  saveRecitationSession,
+  getRecitationHistory,
+  getPageRecitationStats
 } from './database.js';
+import { analyzeRecitation, compareRecitation, comparePageRecitation } from './recitationEngine.js';
+import { 
+  getGroups, 
+  lookupGroupByCode, 
+  joinGroupByCode, 
+  leaveGroup, 
+  getTeacherDashboard, 
+  getTeacherStudents, 
+  getStudentProfile, 
+  getAdminOverview, 
+  getAdminUsersList, 
+  assignTeacherRole, 
+  removeTeacherRole,
+  createNewTeacherDirect,
+  addStudentByTeacher,
+  getAvailableStudentsForTeacher,
+  enrollStudentInTeacherGroup,
+  distributeStudentByAdmin,
+  submitEnrollmentRequest,
+  getEnrollmentRequests,
+  approveEnrollmentRequest,
+  getMemorizationPerformanceStats
+} from './safarEcosystem.js';
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// Logger middleware
+// Logger middleware for API endpoints
 app.use((req, res, next) => {
-  console.log(`[${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+  if (req.url.startsWith('/api')) {
+    console.log(`[API ${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+  }
   next();
 });
 
@@ -331,6 +363,45 @@ app.get('/api/user/fortress-plan/:uid', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false });
+  }
+});
+
+// --- USER PERSONAL MEMORIZATION PORTFOLIO (محفظة الحفظ الشخصية) ---
+// Get all portfolio ayahs for user
+app.get('/api/user/:uid/portfolio', async (req, res) => {
+  const { uid } = req.params;
+  try {
+    const portfolio = getUserPortfolio(uid);
+    res.json({ success: true, portfolio });
+  } catch (error) {
+    console.error('Error fetching portfolio:', error);
+    res.status(500).json({ success: false, message: 'تعذر جلب بيانات المحفظة' });
+  }
+});
+
+// Update or save single ayah memorization progress
+app.post('/api/user/:uid/portfolio/ayah', async (req, res) => {
+  const { uid } = req.params;
+  const ayahData = req.body;
+  try {
+    const saved = saveAyahToPortfolio(uid, ayahData);
+    res.json({ success: true, item: saved });
+  } catch (error) {
+    console.error('Error saving ayah to portfolio:', error);
+    res.status(500).json({ success: false, message: 'تعذر حفظ تقدم الآية في المحفظة' });
+  }
+});
+
+// Bulk update surah ayahs in portfolio (e.g. mark full surah as memorized)
+app.post('/api/user/:uid/portfolio/bulk-surah', async (req, res) => {
+  const { uid } = req.params;
+  const { surahNumber, ayahs } = req.body;
+  try {
+    const results = bulkSaveSurahToPortfolio(uid, surahNumber, ayahs);
+    res.json({ success: true, count: results.length, items: results });
+  } catch (error) {
+    console.error('Error bulk updating surah:', error);
+    res.status(500).json({ success: false, message: 'تعذر تحديث السورة في المحفظة' });
   }
 });
 
@@ -667,8 +738,8 @@ app.post('/api/ai/chat', async (req, res) => {
 `;
 
     if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
-      // Valid Gemini models
-      const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+      // Valid modern Gemini models
+      const candidateModels = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.1-flash-lite'];
       const ai = new GoogleGenAI({
         apiKey,
         httpOptions: {
@@ -718,6 +789,364 @@ app.post('/api/ai/chat', async (req, res) => {
       ]
     });
   }
+});
+
+// --- RECITATION VOICE AI & QURAN CHECK ENDPOINTS ---
+
+// Check recitation by recorded audio or transcribed text, with accuracy calculation
+app.post('/api/ai/recitation-check', async (req, res) => {
+  const { 
+    audioBase64, 
+    spokenText, 
+    expectedText, 
+    ayahs,
+    isFullPage,
+    token, 
+    autoSave, 
+    userId, 
+    pageNumber, 
+    surahNumber, 
+    surahName, 
+    ayahNumber, 
+    type 
+  } = req.body;
+
+  if (!expectedText && (!ayahs || ayahs.length === 0)) {
+    return res.status(400).json({ success: false, message: 'نص الآية أو قائمة آيات الصفحة مطلوبة للمقارنة' });
+  }
+
+  try {
+    let result = null;
+    const fullExpected = expectedText || (Array.isArray(ayahs) ? ayahs.map(a => a.text).join(' ') : '');
+
+    // 1. If audio is provided, process through Whisper ASR with Gemini fallback
+    if (audioBase64) {
+      const base64Data = audioBase64.includes(',') ? audioBase64.split(',')[1] : audioBase64;
+      const audioBuffer = Buffer.from(base64Data, 'base64');
+
+      const analysis = await analyzeRecitation({
+        audioBuffer,
+        expectedText: fullExpected,
+        ayahs: ayahs || [],
+        isFullPage: Boolean(isFullPage),
+        token
+      });
+
+      result = analysis;
+    } 
+    // 2. If spokenText is already provided (e.g. from Web Speech Recognition or typing)
+    else if (spokenText && spokenText.trim()) {
+      if (isFullPage && Array.isArray(ayahs) && ayahs.length > 0) {
+        const comparison = comparePageRecitation(ayahs, spokenText);
+        result = {
+          transcribedText: spokenText.trim(),
+          ...comparison
+        };
+      } else {
+        const comparison = compareRecitation(fullExpected, spokenText);
+        result = {
+          transcribedText: spokenText.trim(),
+          ...comparison
+        };
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'يرجى إرسال التسجيل الصوتي أو النص المنطوق' });
+    }
+
+    // Auto-save recitation accuracy to DB if requested
+    let savedSession = null;
+    if (autoSave && result) {
+      savedSession = saveRecitationSession({
+        userId: userId || 'demo_user_123',
+        pageNumber: Number(pageNumber) || 1,
+        surahNumber: Number(surahNumber) || 1,
+        surahName: surahName || 'سورة الشريفة',
+        ayahNumber: isFullPage ? null : (Number(ayahNumber) || 1),
+        isFullPage: Boolean(isFullPage),
+        accuracy: result.accuracy || result.pageAccuracy,
+        stats: result.stats,
+        results: result.results,
+        ayahBreakdown: result.ayahBreakdown || [],
+        transcribedText: result.transcribedText || result.transcribedSpoken,
+        expectedText: fullExpected,
+        type: type || (audioBase64 ? 'voice' : 'text')
+      });
+    }
+
+    return res.json({
+      success: true,
+      ...result,
+      savedSession
+    });
+  } catch (err) {
+    console.error('Recitation check error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'حدث خطأ أثناء فحص وتصحيح التلاوة'
+    });
+  }
+});
+
+// Explicit endpoint to save recitation session & accuracy score
+app.post('/api/recitation/save', async (req, res) => {
+  try {
+    const sessionData = req.body;
+    if (!sessionData) {
+      return res.status(400).json({ success: false, message: 'بيانات جلسة التسميع مطلوبة' });
+    }
+
+    const saved = saveRecitationSession(sessionData);
+    if (!saved) {
+      return res.status(500).json({ success: false, message: 'تعذر حفظ بيانات دقة التسميع' });
+    }
+
+    // Return updated user stats
+    const user = await getRow('SELECT uid, xp, level, memoryScore, streak, memorizedPagesCount FROM users WHERE uid = ?', [saved.userId]);
+
+    res.json({
+      success: true,
+      message: 'تم حفظ دقة التسميع بنجاح 🎯',
+      session: saved,
+      user
+    });
+  } catch (error) {
+    console.error('Error saving recitation session:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ أثناء حفظ دقة التسميع' });
+  }
+});
+
+// Get recitation history for a user
+app.get('/api/recitation/history', async (req, res) => {
+  const { userId, pageNumber, ayahNumber, surahNumber, limit } = req.query;
+  try {
+    const history = getRecitationHistory(userId, { pageNumber, ayahNumber, surahNumber, limit });
+    res.json({ success: true, count: history.length, history });
+  } catch (error) {
+    console.error('Error fetching recitation history:', error);
+    res.status(500).json({ success: false, message: 'تعذر جلب سجل التسميع' });
+  }
+});
+
+// Get aggregated recitation stats for a Quran page
+app.get('/api/recitation/page-stats/:pageNumber', async (req, res) => {
+  const { pageNumber } = req.params;
+  try {
+    const stats = getPageRecitationStats(Number(pageNumber));
+    res.json({ success: true, pageNumber: Number(pageNumber), stats });
+  } catch (error) {
+    console.error('Error fetching page recitation stats:', error);
+    res.status(500).json({ success: false, message: 'تعذر جلب إحصائيات تسميع الصفحة' });
+  }
+});
+
+// Status of recitation engine
+app.get('/api/ai/recitation-status', (req, res) => {
+  const hasToken = Boolean(process.env.HUGGINGFACE_TOKEN);
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+  res.json({
+    success: true,
+    hasToken,
+    hasGemini,
+    models: [
+      'tarteel-ai/whisper-base-ar-quran',
+      'openai/whisper-large-v3-turbo',
+      'gemini-2.5-flash-asr'
+    ],
+    activeModel: 'Whisper Quran + Gemini 2.5 Flash + Web Speech Recognition'
+  });
+});
+
+// --- SAFAR ECOSYSTEM ROUTES (GROUPS, TEACHER, ADMIN, ONBOARDING) ---
+
+// Get all groups or teacher's groups
+app.get('/api/groups', (req, res) => {
+  const { teacherId } = req.query;
+  const groups = getGroups(teacherId);
+  res.json({ success: true, count: groups.length, groups });
+});
+
+// Lookup group by code (for onboarding invitation code flow)
+app.get('/api/groups/lookup', (req, res) => {
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).json({ success: false, message: 'رمز الحلقة مطلوب' });
+  }
+  const group = lookupGroupByCode(code);
+  if (!group) {
+    return res.status(404).json({ success: false, message: 'لم يتم العثور على حلقة بهذا الرمز' });
+  }
+  res.json({ success: true, group });
+});
+
+// Join group via code
+app.post('/api/groups/join', (req, res) => {
+  const { userId, email, name, code } = req.body;
+  if (!code) {
+    return res.status(400).json({ success: false, message: 'رمز الحلقة مطلوب' });
+  }
+  const result = joinGroupByCode(userId, email, name, code);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Leave group
+app.post('/api/groups/leave', (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
+  }
+  const result = leaveGroup(userId);
+  res.json(result);
+});
+
+// Teacher Dashboard
+app.get('/api/teacher/:teacherId/dashboard', (req, res) => {
+  const { teacherId } = req.params;
+  const dashboard = getTeacherDashboard(teacherId);
+  res.json({ success: true, ...dashboard });
+});
+
+// Teacher Students List with Search, Filter & Sort
+app.get('/api/teacher/:teacherId/students', (req, res) => {
+  const { teacherId } = req.params;
+  const { search, filter, sort } = req.query;
+  const students = getTeacherStudents(teacherId, search, filter, sort);
+  res.json({ success: true, count: students.length, students });
+});
+
+// Detailed Student Profile
+app.get('/api/teacher/:teacherId/student/:studentId', (req, res) => {
+  const { studentId } = req.params;
+  const profile = getStudentProfile(studentId);
+  if (!profile) {
+    return res.status(404).json({ success: false, message: 'الملف الشخصي للطالب غير موجود' });
+  }
+  res.json({ success: true, student: profile });
+});
+
+// Admin Platform Overview Stats
+app.get('/api/admin/overview', (req, res) => {
+  const stats = getAdminOverview();
+  res.json({ success: true, ...stats });
+});
+
+// Admin Users List with full search and filtering
+app.get('/api/admin/users', (req, res) => {
+  const { search, filter } = req.query;
+  const users = getAdminUsersList(search, filter);
+  res.json({ success: true, count: users.length, users });
+});
+
+// Admin Assign Teacher Role
+app.post('/api/admin/assign-teacher', (req, res) => {
+  const { uid } = req.body;
+  if (!uid) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
+  }
+  const result = assignTeacherRole(uid);
+  res.json(result);
+});
+
+// Admin Remove Teacher Role
+app.post('/api/admin/remove-teacher', (req, res) => {
+  const { uid } = req.body;
+  if (!uid) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
+  }
+  const result = removeTeacherRole(uid);
+  res.json(result);
+});
+
+// Admin / System Direct Create New Teacher
+app.post('/api/admin/create-teacher', (req, res) => {
+  const { name, email, specialty } = req.body;
+  if (!name) {
+    return res.status(400).json({ success: false, message: 'اسم المعلمة مطلوب' });
+  }
+  const result = createNewTeacherDirect({ name, email, specialty });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Teacher: Search and fetch available registered students/learners to enroll
+app.get('/api/teacher/:teacherId/available-students', (req, res) => {
+  const { teacherId } = req.params;
+  const { search } = req.query;
+  const students = getAvailableStudentsForTeacher(teacherId, search);
+  res.json({ success: true, count: students.length, students });
+});
+
+// Teacher: Gather and enroll a student directly into her circle
+app.post('/api/teacher/:teacherId/enroll-student', (req, res) => {
+  const { teacherId } = req.params;
+  const { studentUid, email, name, groupId, currentTarget } = req.body;
+  const result = enrollStudentInTeacherGroup(teacherId, { studentUid, email, name, groupId, currentTarget });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Teacher Adds Student Directly
+app.post('/api/teacher/:teacherId/add-student', (req, res) => {
+  const { teacherId } = req.params;
+  const { name, email, memorizedJuz, currentTarget, groupId } = req.body;
+  const result = addStudentByTeacher(teacherId, { name, email, memorizedJuz, currentTarget, groupId });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Admin Distribute Student to Group and Teacher
+app.post('/api/admin/distribute-student', (req, res) => {
+  const { studentUid, groupId, teacherId } = req.body;
+  if (!studentUid || !groupId) {
+    return res.status(400).json({ success: false, message: 'معرف الطالبة ومعرف المجموعة مطلوبان' });
+  }
+  const result = distributeStudentByAdmin({ studentUid, groupId, teacherId });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Student Enrollment Request (Submit)
+app.post('/api/safar/enrollment-request', (req, res) => {
+  const result = submitEnrollmentRequest(req.body);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Admin Get Enrollment Requests
+app.get('/api/admin/enrollment-requests', (req, res) => {
+  const requests = getEnrollmentRequests();
+  res.json({ success: true, count: requests.length, requests });
+});
+
+// Admin Approve Enrollment Request
+app.post('/api/admin/enrollment-requests/approve', (req, res) => {
+  const { requestId, groupId, teacherId } = req.body;
+  if (!requestId || !groupId) {
+    return res.status(400).json({ success: false, message: 'معرف الطلب والمجموعة مطلوبان' });
+  }
+  const result = approveEnrollmentRequest(requestId, groupId, teacherId);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Admin Memorization Performance & Progress Analytics
+app.get('/api/admin/memorization-performance', (req, res) => {
+  const performance = getMemorizationPerformanceStats();
+  res.json(performance);
 });
 
 // Serve Vite dev middleware or production static files

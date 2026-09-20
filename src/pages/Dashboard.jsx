@@ -36,13 +36,17 @@ import {
   Compass,
   Star,
   Menu,
-  Globe
+  Globe,
+  RefreshCw,
+  Users,
+  Plus
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Sidebar } from '../components/Sidebar';
 import { ThemeProvider, useTheme } from '../context/ThemeContext';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { useAuth } from '../context/AuthContext';
+import { PullToRefresh } from '../components/PullToRefresh';
 import { useLanguage } from '../context/LanguageContext';
 import AiAssistant from '../components/AiAssistant';
 import { Community } from '../components/Community';
@@ -51,18 +55,33 @@ import { PostSessionDhikr } from '../components/PostSessionDhikr';
 import { AnalyticsView } from '../components/AnalyticsView';
 import { VisualProgressTracker } from '../components/VisualProgressTracker';
 import { QuranInteractiveView } from '../components/QuranInteractiveView';
+import { SafeBoundary } from '../components/SafeBoundary';
 import { LearningStyleProfiler } from '../components/LearningStyleProfiler';
 import { MyPlanManager } from '../components/MyPlanManager';
 import { FiveFortressesPlan } from '../components/FiveFortressesPlan';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 import { NotificationCenter } from '../components/NotificationCenter';
 import { useNotifications } from '../context/NotificationContext';
+import { ReviewReminderAlert } from '../components/ReviewReminderAlert';
+import { CelebrationOverlay } from '../components/CelebrationOverlay';
 import { AdminPanel } from '../components/AdminPanel';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { MoreToolsModal } from '../components/MoreToolsModal';
 import { UserProfileModal } from '../components/UserProfileModal';
 import { PresentationModal } from '../components/PresentationModal';
 import { DocumentationModal } from '../components/DocumentationModal';
+import { FloatingAiButton } from '../components/FloatingAiButton';
+import { QuickSettingsMenu } from '../components/QuickSettingsMenu';
+import { SimilaritiesView } from '../components/SimilaritiesView';
+import { MindMapsView } from '../components/MindMapsView';
+import { RoleSwitcher } from '../components/RoleSwitcher';
+import { JoinGroupModal } from '../components/onboarding/JoinGroupModal';
+import { TeacherDashboard } from '../components/teacher/TeacherDashboard';
+import { TeacherStudentsView } from '../components/teacher/TeacherStudentsView';
+import { TeacherStudentProfileModal } from '../components/teacher/TeacherStudentProfileModal';
+import { TeacherGroupsView } from '../components/teacher/TeacherGroupsView';
+import { TeacherReportsView } from '../components/teacher/TeacherReportsView';
+import { AdminDashboard } from '../components/admin/AdminDashboard';
 
 
 // Hadiths on the virtues of the Quran
@@ -75,14 +94,37 @@ const quranHadiths = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout, deleteAccount, updateUserData } = useAuth();
+  const { user, logout, deleteAccount, updateUserData, refreshUserData } = useAuth();
   const { lang, setLang, t, isRTL } = useLanguage();
-  const [activeTab, setActiveTab] = useState(user?.role === 'admin' ? 'admin-panel' : 'home');
+  const [activeTab, setActiveTab] = useState(
+    user?.role === 'admin' ? 'admin-dashboard' : (user?.role === 'teacher' ? 'teacher-dashboard' : 'home')
+  );
+  const [selectedQuranPage, setSelectedQuranPage] = useState(2);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showJoinGroupModal, setShowJoinGroupModal] = useState(false);
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [studentFilter, setStudentFilter] = useState('all');
   const [showPresentationModal, setShowPresentationModal] = useState(false);
   const [showDocsModal, setShowDocsModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncToast, setSyncToast] = useState('');
   const { soundEnabled, toggleSound } = useNotifications();
+
+  const handleRefreshDashboard = async () => {
+    setIsSyncing(true);
+    try {
+      if (typeof refreshUserData === 'function') {
+        await refreshUserData();
+      }
+      setSyncToast(isRTL ? 'تمت مزامنة وتحديث بيانات الحفظ بنجاح 🌿' : 'Progress & recitation synced successfully 🌿');
+      setTimeout(() => setSyncToast(''), 2500);
+    } catch (err) {
+      console.error('Refresh error:', err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'presentation') {
@@ -124,10 +166,10 @@ const Dashboard = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [hadithIdx, setHadithIdx] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    return typeof window !== 'undefined' ? window.innerWidth < 1200 : false;
+    return typeof window !== 'undefined' ? window.innerWidth < 1280 : false;
   });
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
-  const [isLaptop, setIsLaptop] = useState(typeof window !== 'undefined' && window.innerWidth < 1200);
+  const [isLaptop, setIsLaptop] = useState(typeof window !== 'undefined' && window.innerWidth < 1340);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
 
@@ -143,8 +185,10 @@ const Dashboard = () => {
       lastUserIdRef.current = user?.uid;
       lastUserRoleRef.current = user?.role;
       if (user?.role === 'admin') {
-        setActiveTab('admin-panel');
-      } else if (isNewUser) {
+        setActiveTab('admin-dashboard');
+      } else if (user?.role === 'teacher') {
+        setActiveTab('teacher-dashboard');
+      } else {
         setActiveTab('home');
       }
     }
@@ -155,7 +199,7 @@ const Dashboard = () => {
     const handleResize = () => {
       const w = window.innerWidth;
       const mobile = w <= 768;
-      const laptop = w < 1200;
+      const laptop = w < 1340;
       setIsMobile(mobile);
       setIsLaptop(laptop);
       if (mobile) {
@@ -176,47 +220,211 @@ const Dashboard = () => {
   }, []);
 
   const renderTabContent = () => {
+    // If Teacher lands on home, render their dedicated Teacher Dashboard
+    if (activeTab === 'home' && user?.role === 'teacher') {
+      return (
+        <TeacherDashboard
+          onOpenStudentProfile={(sId) => setSelectedStudentId(sId)}
+          onViewAllStudents={(filter) => {
+            setStudentFilter(filter || 'all');
+            setActiveTab('teacher-students');
+          }}
+          onViewGroups={() => setActiveTab('teacher-groups')}
+        />
+      );
+    }
+
+    // If Admin lands on home, render their dedicated Admin Dashboard
+    if (activeTab === 'home' && user?.role === 'admin') {
+      return <AdminDashboard activeAdminTab="dashboard" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+    }
+
     switch (activeTab) {
+      case 'teacher-dashboard':
+        return (
+          <TeacherDashboard
+            onOpenStudentProfile={(sId) => setSelectedStudentId(sId)}
+            onViewAllStudents={(filter) => {
+              setStudentFilter(filter || 'all');
+              setActiveTab('teacher-students');
+            }}
+            onViewGroups={() => setActiveTab('teacher-groups')}
+          />
+        );
+
+      case 'teacher-students':
+        return (
+          <TeacherStudentsView
+            initialFilter={studentFilter}
+            onOpenStudentProfile={(sId) => setSelectedStudentId(sId)}
+          />
+        );
+
+      case 'teacher-groups':
+        return (
+          <TeacherGroupsView
+            onViewStudentsInGroup={() => {
+              setStudentFilter('all');
+              setActiveTab('teacher-students');
+            }}
+          />
+        );
+
+      case 'teacher-reports':
+        return <TeacherReportsView />;
+
+      case 'admin-dashboard':
+      case 'admin-panel':
+        return <AdminDashboard activeAdminTab="dashboard" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
+      case 'admin-users':
+        return <AdminDashboard activeAdminTab="users" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
+      case 'admin-teachers':
+        return <AdminDashboard activeAdminTab="teachers" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
+      case 'admin-groups':
+        return <AdminDashboard activeAdminTab="groups" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
+      case 'admin-analytics':
+        return <AdminDashboard activeAdminTab="analytics" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
       case 'home':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1040px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', maxWidth: '1040px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px' }}>
             
+            {/* Optional Banner: Safar Membership status or gentle invitation */}
+            {user?.isSafarMember ? (
+              <div style={{
+                padding: '12px 18px',
+                borderRadius: '16px',
+                background: 'var(--bg-surface)',
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+                boxShadow: 'var(--shadow-soft)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Layers size={18} />
+                  </div>
+                  <div>
+                    <strong style={{ fontSize: '13.5px', color: 'var(--text-primary)', display: 'block' }}>
+                      عضوة مسجلة في {user?.groupName || 'حلقة النور والهدى'} 🌸
+                    </strong>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                      المعلمة المشرفة: {user?.teacherName || 'أ. عائشة العتيبي'} • متابعة دورية للأوراد والتسميع
+                    </span>
+                  </div>
+                </div>
+
+                <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
+                  سَفَر نشط 🟢
+                </span>
+              </div>
+            ) : (
+              <div style={{
+                padding: '14px 18px',
+                borderRadius: '16px',
+                background: 'var(--bg-surface)',
+                border: '1px dashed var(--primary)',
+                boxShadow: 'var(--shadow-soft)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Users size={18} />
+                  </div>
+                  <div>
+                    <h4 style={{ margin: '0 0 2px 0', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      هل لديكِ رمز دعوة من معلمة حلقة في سَفَر؟ 👥
+                    </h4>
+                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      انضمي لحلقتكِ بسهولة أو تابعي مسيرتكِ كحافظ مستقل دون أي إلزام.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setShowJoinGroupModal(true)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '10px',
+                    background: 'var(--primary)',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  <Plus size={14} />
+                  <span>انضمام لحلقة</span>
+                </button>
+              </div>
+            )}
+
             {/* 1. Hero: Today's Recitation & Memorization Focus (ورد اليوم المبارك) */}
             <div style={{
-              borderRadius: '24px',
-              padding: isMobile ? '24px 20px' : '32px 36px',
-              background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
+              borderRadius: isMobile ? '20px' : '24px',
+              padding: isMobile ? '20px 16px' : '32px 36px',
+              background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 55%, #022C22 100%)',
               color: 'white',
-              boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
+              boxShadow: '0 8px 24px rgba(6, 78, 59, 0.25)',
               border: '1px solid rgba(16, 185, 129, 0.3)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '20px'
+              gap: isMobile ? '14px' : '20px',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              {/* Subtle background Quran ornament */}
+              <div style={{
+                position: 'absolute',
+                top: '-30px',
+                left: '-30px',
+                width: '160px',
+                height: '160px',
+                borderRadius: '50%',
+                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
+                pointerEvents: 'none'
+              }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
                 <span style={{ 
-                  padding: '6px 14px', 
+                  padding: '4px 12px', 
                   borderRadius: '20px', 
                   background: 'rgba(16, 185, 129, 0.2)', 
                   color: '#34D399', 
-                  fontSize: '13px', 
+                  fontSize: '12px', 
                   fontWeight: 'bold', 
                   display: 'inline-flex', 
                   alignItems: 'center', 
                   gap: '6px' 
                 }}>
-                  <BookOpen size={16} /> ورد اليوم المبارك
+                  <BookOpen size={14} /> ورد اليوم المبارك
                 </span>
-                <span style={{ fontSize: '12px', color: '#94A3B8' }}>
-                  يتجدد يومياً مع تقدمك في الحفظ
+                <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+                  يتجدد يومياً مع تقدمك
                 </span>
               </div>
 
               <div>
-                <h1 style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: 'bold', margin: '0 0 8px 0', lineHeight: 1.3 }}>
+                <h1 style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: 'bold', margin: '0 0 6px 0', lineHeight: 1.3 }}>
                   جاهز لوردك اليومي؟ 🌿
                 </h1>
-                <p style={{ margin: 0, fontSize: '15px', color: '#CBD5E1', lineHeight: 1.6 }}>
+                <p style={{ margin: 0, fontSize: isMobile ? '13.5px' : '15px', color: '#CBD5E1', lineHeight: 1.5 }}>
                   استمر على عهدك مع كتاب الله، ورتّل آياتك بخشوع وثبات.
                 </p>
               </div>
@@ -224,32 +432,32 @@ const Dashboard = () => {
               {/* Targets Summary Chips */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-                gap: '12px',
-                padding: '16px',
-                borderRadius: '16px',
-                background: 'rgba(255, 255, 255, 0.06)',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '8px',
+                padding: isMobile ? '12px' : '16px',
+                borderRadius: '14px',
+                background: 'rgba(255, 255, 255, 0.07)',
+                border: '1px solid rgba(255, 255, 255, 0.12)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <BookOpen size={18} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <BookOpen size={16} />
                   </div>
                   <div>
-                    <span style={{ fontSize: '11.5px', color: '#94A3B8', display: 'block' }}>الحفظ الجديد اليوم:</span>
-                    <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
+                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>الحفظ الجديد اليوم:</span>
+                    <strong style={{ fontSize: '13px', color: '#F8FAFC' }}>
                       {user?.preferences?.dailyTarget || 'صفحة واحدة (سورة البقرة)'}
                     </strong>
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <Layers size={18} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Layers size={16} />
                   </div>
                   <div>
-                    <span style={{ fontSize: '11.5px', color: '#94A3B8', display: 'block' }}>المراجعة والتثبيت:</span>
-                    <strong style={{ fontSize: '14px', color: '#F8FAFC' }}>
+                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>المراجعة والتثبيت:</span>
+                    <strong style={{ fontSize: '13px', color: '#F8FAFC' }}>
                       {user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً'}
                     </strong>
                   </div>
@@ -257,40 +465,44 @@ const Dashboard = () => {
               </div>
 
               {/* Action Buttons */}
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
                 <button 
                   onClick={() => setActiveTab('daily-session')}
                   style={{ 
-                    padding: '14px 28px', 
+                    flex: isMobile ? 1 : 'none',
+                    padding: isMobile ? '13px 20px' : '14px 28px', 
                     borderRadius: '14px', 
                     background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', 
                     color: 'white', 
                     border: 'none', 
                     fontWeight: 'bold', 
-                    fontSize: '15px', 
+                    fontSize: isMobile ? '14px' : '15px', 
                     cursor: 'pointer', 
                     display: 'flex', 
                     alignItems: 'center', 
+                    justifyContent: 'center',
                     gap: '8px',
                     boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.15s ease',
+                    touchAction: 'manipulation'
                   }}
                 >
-                  <Play size={18} /> ابدأ التسميع والقراءة الآن
+                  <Play size={17} /> ابدأ التسميع والقراءة الآن
                 </button>
 
                 <button 
                   onClick={() => setActiveTab('my-plan')}
                   style={{ 
-                    padding: '14px 20px', 
+                    padding: isMobile ? '13px 16px' : '14px 20px', 
                     borderRadius: '14px', 
                     background: 'rgba(255, 255, 255, 0.1)', 
                     color: '#E2E8F0', 
                     border: '1px solid rgba(255, 255, 255, 0.2)', 
                     fontWeight: 'bold', 
-                    fontSize: '14px', 
+                    fontSize: isMobile ? '13px' : '14px', 
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    transition: 'all 0.15s ease',
+                    touchAction: 'manipulation'
                   }}
                 >
                   تعديل الخطة
@@ -298,60 +510,174 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* 2. Key Metrics Row (3 clean, essential cards) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+            {/* 2. Key Metrics Row (Compact & Touch-Friendly on Mobile) */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(160px, 1fr))',
+              gap: isMobile ? '8px' : '16px'
+            }}>
               
               {/* Memorized Pages */}
-              <Card style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>المحفوظ في الصدر</span>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <BookOpen size={18} />
+              <Card style={{ padding: isMobile ? '12px 10px' : '20px', textAlign: isMobile ? 'center' : 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '8px' }}>
+                  {!isMobile && <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>المحفوظ</span>}
+                  <div style={{ width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BookOpen size={isMobile ? 15 : 18} />
                   </div>
                 </div>
-                <div style={{ fontSize: '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  {user?.memorizedPagesCount || 0} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>صفحة</span>
+                <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                  {user?.memorizedPagesCount || 0} {!isMobile && <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>صفحة</span>}
                 </div>
-                <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600 }}>
-                  من أصل 604 صفحة
+                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: 'var(--primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {isMobile ? 'صفحة محفوظة' : 'من أصل 604 صفحة'}
                 </span>
               </Card>
 
               {/* Memory Stability Score */}
-              <Card style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>ثبات الحفظ</span>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Brain size={18} />
+              <Card style={{ padding: isMobile ? '12px 10px' : '20px', textAlign: isMobile ? 'center' : 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '8px' }}>
+                  {!isMobile && <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>ثبات الحفظ</span>}
+                  <div style={{ width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Brain size={isMobile ? 15 : 18} />
                   </div>
                 </div>
-                <div style={{ fontSize: '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
                   {user?.memoryScore || 100}%
                 </div>
-                <span style={{ fontSize: '12px', color: 'var(--success)', fontWeight: 600 }}>
-                  معدل استقرار ممتاز
+                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {isMobile ? 'ثبات ممتاز' : 'معدل استقرار ممتاز'}
                 </span>
               </Card>
 
               {/* Streak */}
-              <Card style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>أيام الاستمرار</span>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Flame size={18} />
+              <Card style={{ padding: isMobile ? '12px 10px' : '20px', textAlign: isMobile ? 'center' : 'right' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '8px' }}>
+                  {!isMobile && <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>صحبة القرآن</span>}
+                  <div style={{ width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Flame size={isMobile ? 15 : 18} />
                   </div>
                 </div>
-                <div style={{ fontSize: '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                  {user?.streak || 1} <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)' }}>يوم</span>
+                <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                  {user?.streak || 1} {!isMobile && <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>يوم</span>}
                 </div>
-                <span style={{ fontSize: '12px', color: '#F59E0B', fontWeight: 600 }}>
-                  صحبة متواصلة لكتاب الله
+                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: '#F59E0B', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {isMobile ? 'أيام صحبة القرآن' : 'أيام صحبة القرآن'}
                 </span>
               </Card>
 
             </div>
 
-            {/* 3. Quick Access Hub (3 Core Navigation Cards) */}
+            {/* 3. Mobile-First Quick Fortresses Daily Check-in */}
+            <div style={{
+              borderRadius: isMobile ? '18px' : '22px',
+              padding: isMobile ? '16px' : '22px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--glass-border)',
+              boxShadow: 'var(--shadow-soft)',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '12px'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <ShieldCheck size={18} style={{ color: 'var(--primary)' }} />
+                  <h3 style={{ margin: 0, fontSize: isMobile ? '15px' : '17px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    حصونك الخمسة اليومية
+                  </h3>
+                </div>
+                <div style={{
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                  background: 'var(--primary-light)',
+                  color: 'var(--primary)',
+                  fontSize: '11.5px',
+                  fontWeight: 800
+                }}>
+                  {Object.values(fortressesToday).filter(Boolean).length} / 5 منجزة
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div style={{ width: '100%', height: '6px', borderRadius: '4px', background: 'var(--bg-color)', overflow: 'hidden' }}>
+                <div style={{
+                  width: `${(Object.values(fortressesToday).filter(Boolean).length / 5) * 100}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #10B981, #059669)',
+                  borderRadius: '4px',
+                  transition: 'width 0.3s ease'
+                }} />
+              </div>
+
+              {/* 5 Quick Tap Capsules */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(140px, 1fr))',
+                gap: '8px'
+              }}>
+                {[
+                  { id: 1, name: '١. قراءة الورد', sub: 'نظراً من المصحف' },
+                  { id: 2, name: '٢. التحضير', sub: 'سماع وفهم الآيات' },
+                  { id: 3, name: '٣. الحفظ الجديد', sub: 'تكرار متقن' },
+                  { id: 4, name: '٤. مراجعة قريبة', sub: 'آخر ٢٠ صفحة' },
+                  { id: 5, name: '٥. مراجعة بعيدة', sub: 'المحفوظ القديم' }
+                ].map(fort => {
+                  const isDone = !!fortressesToday[fort.id];
+                  return (
+                    <button
+                      key={fort.id}
+                      onClick={() => {
+                        if (navigator?.vibrate) {
+                          try { navigator.vibrate(10); } catch (e) {}
+                        }
+                        handleToggleFortress(fort.id);
+                      }}
+                      style={{
+                        padding: isMobile ? '10px 12px' : '12px 10px',
+                        borderRadius: '12px',
+                        border: isDone ? '1px solid var(--primary)' : '1px solid var(--glass-border)',
+                        background: isDone ? 'var(--primary-light)' : 'var(--bg-color)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        cursor: 'pointer',
+                        textAlign: 'right',
+                        transition: 'all 0.15s ease',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{
+                          fontSize: '12.5px',
+                          fontWeight: isDone ? 800 : 600,
+                          color: isDone ? 'var(--primary)' : 'var(--text-primary)'
+                        }}>
+                          {fort.name}
+                        </span>
+                        <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                          {fort.sub}
+                        </span>
+                      </div>
+                      <div style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        border: isDone ? 'none' : '1.5px solid var(--text-secondary)',
+                        background: isDone ? 'var(--primary)' : 'transparent',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        {isDone && <Check size={14} strokeWidth={3} />}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* 4. Quick Access Hub (3 Core Navigation Cards) */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
               
               <div 
@@ -473,11 +799,19 @@ const Dashboard = () => {
         );
 
       case 'quran-map':
-        return <QuranMapPage />;
+        return (
+          <QuranMapPage
+            onSelectPageForRecitation={(pNum) => {
+              setSelectedQuranPage(pNum);
+              setActiveTab('daily-session');
+            }}
+          />
+        );
 
+      case 'mushaf':
       case 'daily-session':
         return (
-          <Card style={{ padding: isMobile ? '20px 16px' : '40px', maxWidth: '900px', margin: '0 auto' }}>
+          <Card style={{ padding: isMobile ? '16px 12px' : '36px', maxWidth: '1050px', width: '100%', boxSizing: 'border-box', margin: '0 auto' }}>
             
             {/* Supplication Before Recitation */}
             <div style={{ padding: '20px', borderRadius: '16px', background: 'var(--primary-light)', border: '1px solid var(--primary)', marginBottom: '32px', textAlign: 'center' }}>
@@ -490,13 +824,18 @@ const Dashboard = () => {
             </div>
 
             <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-              <h2 style={{ fontSize: isMobile ? '22px' : '28px', color: 'var(--text-primary)', marginBottom: '8px' }}>🎯 جلسة التسميع والتدبر التفاعلية</h2>
-              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>تلاوة وتدبر الورد اليومي مع التحكم الفوري والتظليل المباشر للآيات</p>
+              <h2 style={{ fontSize: isMobile ? '22px' : '28px', color: 'var(--text-primary)', marginBottom: '8px' }}>📖 تصفح المصحف الشريف والتسميع التفاعلي</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>قراءة وتدبر صفحات المصحف الشريف الـ 604 مع الاستماع لكبار القراء وتسميع الآيات بالذكاء الاصطناعي</p>
             </div>
 
             {/* Interactive Verse-Synced Quran View Component */}
             <div style={{ marginBottom: '40px' }}>
-              <QuranInteractiveView />
+              <SafeBoundary>
+                <QuranInteractiveView 
+                  initialPageNumber={selectedQuranPage} 
+                  onPageChange={(pNum) => setSelectedQuranPage(pNum)}
+                />
+              </SafeBoundary>
             </div>
 
             {/* Post-Session Dhikr & Tasbeeh Component */}
@@ -563,10 +902,24 @@ const Dashboard = () => {
         return <AdminPanel />;
 
       case 'mind-maps':
-        return <MindMapsView />;
+        return (
+          <MindMapsView 
+            onSelectPageForRecitation={(pNum) => {
+              setSelectedQuranPage(pNum);
+              setActiveTab('daily-session');
+            }}
+          />
+        );
 
       case 'similarities':
-        return <SimilaritiesView />;
+        return (
+          <SimilaritiesView 
+            onSelectPageForRecitation={(pNum) => {
+              setSelectedQuranPage(pNum);
+              setActiveTab('daily-session');
+            }}
+          />
+        );
 
       default:
         return (
@@ -585,8 +938,8 @@ const Dashboard = () => {
     : { marginLeft: mainPaneMargin, marginRight: 0, transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', maxWidth: '100vw', overflowX: 'hidden' }}>
-      {/* Sidebar Drawer */}
+    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', width: '100%', maxWidth: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
+      {/* Primary Navigation Sidebar / Mobile Slide-out Drawer */}
       <Sidebar 
         activeTab={activeTab} 
         setActiveTab={setActiveTab} 
@@ -599,284 +952,503 @@ const Dashboard = () => {
       <div style={{ 
         flex: 1, 
         minWidth: 0,
-        maxWidth: '100%',
+        maxWidth: isMobile ? '100%' : `calc(100% - ${mainPaneMargin})`,
+        width: isMobile ? '100%' : `calc(100% - ${mainPaneMargin})`,
         overflowX: 'hidden',
         display: 'flex', 
         flexDirection: 'column',
         minHeight: '100vh',
+        boxSizing: 'border-box',
         ...mainPaneStyles
       }}>
         
-        {/* Header */}
+        {/* Header / Top App Bar */}
         <header style={{ 
-          minHeight: '64px',
+          minHeight: isMobile ? '56px' : '64px',
           height: 'auto',
           borderBottom: '1px solid var(--glass-border)', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'space-between', 
-          padding: isMobile ? '10px 16px' : (isLaptop ? '10px 20px' : '0 32px'), 
+          padding: isMobile 
+            ? 'max(8px, env(safe-area-inset-top)) 16px 8px 16px' 
+            : (isLaptop ? '10px 20px' : '0 32px'), 
           background: 'var(--bg-surface)', 
           position: 'sticky', 
           top: 0, 
-          zIndex: 20,
-          flexWrap: 'wrap',
+          zIndex: 30,
+          flexWrap: 'nowrap',
           gap: '8px'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {isMobile && (
-              <button 
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                aria-label="تفتيح القائمة الجانبية"
-                style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Menu size={24} />
-              </button>
-            )}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>
-                  مرحباً، {user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')} 👋
-                </h2>
+          {isMobile ? (
+            /* Mobile View: Drawer toggle + Compact profile card + Quick Settings */
+            <>
+              {/* Left / Start: Drawer Toggle & Compact Profile Card */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
                 <button
-                  type="button"
-                  onClick={() => setShowProfileModal(true)}
-                  style={{
-                    background: 'var(--primary-light)',
-                    border: '1px solid var(--glass-border)',
-                    borderRadius: '8px',
-                    padding: '3px 8px',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    color: 'var(--primary)',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px'
+                  id="mobile-drawer-toggle-btn"
+                  onClick={() => {
+                    if (navigator?.vibrate) {
+                      try { navigator.vibrate(10); } catch (e) {}
+                    }
+                    setSidebarCollapsed(!sidebarCollapsed);
                   }}
-                  title={isRTL ? 'تعديل اسمك وملفك الشخصي' : 'Edit name & profile'}
+                  style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    border: '1px solid var(--glass-border)',
+                    background: 'var(--bg-color)',
+                    color: 'var(--text-primary)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    flexShrink: 0
+                  }}
+                  title={isRTL ? 'فتح القائمة الجانبية (الدروار)' : 'Open Drawer Menu'}
+                  aria-label="Navigation Drawer"
                 >
-                  ✏️ <span style={{ display: (isMobile || isLaptop) ? 'none' : 'inline' }}>{isRTL ? 'تعديل الاسم' : 'Edit Name'}</span>
+                  <Menu size={19} />
                 </button>
-              </div>
-              <span style={{ 
-                padding: '4px 10px', 
-                borderRadius: '20px', 
-                background: 'rgba(245, 158, 11, 0.15)', 
-                color: '#F59E0B', 
-                fontWeight: 'bold', 
-                fontSize: '12px', 
-                display: 'inline-flex', 
-                alignItems: 'center', 
-                gap: '4px' 
-              }}>
-                🔥 {user?.streak || 1} {isRTL ? 'أيام' : 'days'}
-              </span>
-            </div>
-          </div>
 
-          <div className="flex-center" style={{ gap: isMobile ? '6px' : (isLaptop ? '8px' : '16px'), flexWrap: 'wrap' }}>
-            {/* Language Switcher */}
-            <button
-              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '16px',
-                background: 'var(--primary-light)',
-                color: 'var(--primary)',
-                border: '1px solid var(--primary)',
-                fontWeight: 'bold',
-                fontSize: '12px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease'
-              }}
-              title={t('lang_select')}
-            >
-              <Globe size={14} />
-              <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
-            </button>
-
-            {/* Project Presentation Deck Button */}
-            <button
-              id="header-presentation-btn"
-              onClick={() => setShowPresentationModal(true)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '16px',
-                background: 'rgba(16, 185, 129, 0.1)',
-                color: 'var(--primary)',
-                border: '1px solid rgba(16, 185, 129, 0.25)',
-                fontWeight: 'bold',
-                fontSize: '12px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease'
-              }}
-              title={isRTL ? 'عرض تقديمي تعريفي للمنصة 📽️' : 'Platform Presentation Deck 📽️'}
-            >
-              <Presentation size={15} />
-              <span style={{ display: (isMobile || isLaptop) ? 'none' : 'inline' }}>
-                {isRTL ? 'عرض المنصة' : 'Deck'}
-              </span>
-            </button>
-
-            {/* Platform Documentation Portal Button */}
-            <button
-              id="header-docs-btn"
-              onClick={() => setShowDocsModal(true)}
-              style={{
-                padding: '6px 12px',
-                borderRadius: '16px',
-                background: 'rgba(59, 130, 246, 0.1)',
-                color: '#3B82F6',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
-                fontWeight: 'bold',
-                fontSize: '12px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                transition: 'all 0.2s ease'
-              }}
-              title={isRTL ? 'دليل وتوثيق المنصة الشامل 📚' : 'Platform Documentation 📚'}
-            >
-              <BookOpen size={15} />
-              <span style={{ display: (isMobile || isLaptop) ? 'none' : 'inline' }}>
-                {isRTL ? 'التوثيق' : 'Docs'}
-              </span>
-            </button>
-
-            {/* Sound Effects & Tones Mute Toggle */}
-            <button
-              id="header-sound-mute-btn"
-              onClick={toggleSound}
-              style={{
-                width: '38px',
-                height: '38px',
-                borderRadius: '50%',
-                background: soundEnabled ? 'var(--primary-light)' : 'rgba(239, 68, 68, 0.12)',
-                color: soundEnabled ? 'var(--primary)' : '#EF4444',
-                border: `1px solid ${soundEnabled ? 'var(--glass-border)' : 'rgba(239, 68, 68, 0.3)'}`,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease'
-              }}
-              title={soundEnabled 
-                ? (isRTL ? 'كتم النغمات والأصوات التفاعلية (الصوت مفعل حالياً)' : 'Mute sound effects & tones (Currently ON)') 
-                : (isRTL ? 'تشغيل النغمات والأصوات التفاعلية (الصوت صامت حالياً)' : 'Unmute sound effects & tones (Currently MUTED)')}
-              aria-label={soundEnabled ? 'كتم النغمات' : 'تفعيل النغمات'}
-            >
-              {soundEnabled ? <Volume2 size={17} /> : <VolumeX size={17} />}
-            </button>
-
-            {/* Theme Toggle Switch */}
-            <ThemeToggle variant="pill" size="medium" />
-            {/* Notification Center */}
-            <NotificationCenter />
-            <div style={{ position: 'relative' }}>
-              <img 
-                src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
-                alt="Profile" 
-                onClick={() => setShowProfileMenu(!showProfileMenu)} 
-                style={{ width: '38px', height: '38px', borderRadius: '50%', cursor: 'pointer', background: 'var(--primary)', border: '2px solid var(--glass-border)' }} 
-                title="خيارات الحساب" 
-              />
-              {showProfileMenu && (
-                <div style={{
-                  position: 'absolute',
-                  top: '50px',
-                  left: 0,
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--glass-border)',
-                  borderRadius: '12px',
-                  boxShadow: 'var(--shadow-soft)',
-                  padding: '8px',
-                  minWidth: '150px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px',
-                  zIndex: 10
-                }}>
-                  <button 
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      setShowProfileModal(true);
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '8px 12px',
-                      color: 'var(--text-primary)',
-                      textAlign: isRTL ? 'right' : 'left',
-                      cursor: 'pointer',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: 600,
-                      width: '100%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--glass-border)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    👤 {isRTL ? 'تعديل الاسم والملف الشخصي' : 'Edit Profile & Name'}
-                  </button>
-                  <button 
-                    onClick={() => {
-                      logout();
-                      setShowProfileMenu(false);
-                      navigate('/');
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '8px 12px',
-                      color: 'var(--text-primary)',
-                      textAlign: 'right',
-                      cursor: 'pointer',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      width: '100%'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'var(--glass-border)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    🚪 تسجيل الخروج
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setShowProfileMenu(false);
-                      setShowDeleteConfirm(true);
-                    }}
-                    style={{
-                      background: 'transparent',
-                      border: 'none',
-                      padding: '8px 12px',
-                      color: '#EF4444',
-                      textAlign: 'right',
-                      cursor: 'pointer',
-                      borderRadius: '8px',
-                      fontSize: '14px',
-                      fontWeight: 'bold',
-                      width: '100%'
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                    onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                  >
-                    🗑️ حذف الحساب
-                  </button>
+                <div 
+                  id="header-user-profile-card"
+                onClick={() => {
+                  if (navigator?.vibrate) {
+                    try { navigator.vibrate(12); } catch (e) {}
+                  }
+                  setShowProfileModal(true);
+                }}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px',
+                  cursor: 'pointer',
+                  padding: '4px 6px',
+                  borderRadius: '16px',
+                  userSelect: 'none',
+                  minWidth: 0
+                }}
+                title={isRTL ? 'عرض وتعديل الملف الشخصي' : 'View & edit profile'}
+              >
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img 
+                    src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
+                    alt="Profile" 
+                    style={{ 
+                      width: '36px', 
+                      height: '36px', 
+                      borderRadius: '50%', 
+                      background: 'var(--primary)', 
+                      border: '2px solid var(--primary)',
+                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                      objectFit: 'cover'
+                    }} 
+                  />
+                  <span style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    [isRTL ? 'left' : 'right']: 0,
+                    width: '10px',
+                    height: '10px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10B981',
+                    border: '2px solid var(--bg-surface)'
+                  }} />
                 </div>
-              )}
+
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ 
+                      fontSize: '14px', 
+                      fontWeight: 800, 
+                      color: 'var(--text-primary)', 
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '120px'
+                    }}>
+                      {user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')}
+                    </span>
+                    <span 
+                      style={{ 
+                        padding: '2px 7px', 
+                        borderRadius: '12px', 
+                        background: 'rgba(245, 158, 11, 0.15)', 
+                        color: '#F59E0B', 
+                        fontWeight: 800, 
+                        fontSize: '11px', 
+                        display: 'inline-flex', 
+                        alignItems: 'center', 
+                        gap: '3px',
+                        whiteSpace: 'nowrap'
+                      }}
+                      title={isRTL ? 'أيام صحبة القرآن' : 'Quran Companion Days'}
+                    >
+                      🔥 {user?.streak || 1} {isRTL ? 'صحبة القرآن' : 'd'}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+
+              {/* Right / End: RoleSwitcher, Notification, Theme & Quick Settings */}
+              <div className="flex-center" style={{ gap: '6px', flexWrap: 'nowrap' }}>
+                <RoleSwitcher />
+                <NotificationCenter />
+                <ThemeToggle variant="pill" size="small" />
+                <QuickSettingsMenu
+                  soundEnabled={soundEnabled}
+                  toggleSound={toggleSound}
+                  isSyncing={isSyncing}
+                  handleRefresh={handleRefreshDashboard}
+                  onOpenProfile={() => setShowProfileModal(true)}
+                  onOpenDocs={() => setShowDocsModal(true)}
+                  onOpenPresentation={() => setShowPresentationModal(true)}
+                  isMobile={true}
+                />
+              </div>
+            </>
+          ) : (
+            /* Laptop / Desktop View: Original full desktop bar */
+            <>
+              {/* Left / Start: Greeting, Edit Name & Quran Companion Badge */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: isLaptop ? '6px' : '10px', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <h2 style={{ 
+                    fontSize: isLaptop ? '16px' : '20px', 
+                    fontWeight: 700, 
+                    color: 'var(--text-primary)', 
+                    margin: 0,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: isLaptop ? '160px' : '260px'
+                  }}>
+                    مرحباً، {user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')} 👋
+                  </h2>
+                  {!isLaptop && (
+                    <button
+                      type="button"
+                      id="header-edit-name-btn"
+                      onClick={() => setShowProfileModal(true)}
+                      style={{
+                        background: 'var(--primary-light)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: '8px',
+                        padding: '3px 8px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        color: 'var(--primary)',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                      title={isRTL ? 'تعديل اسمك وملفك الشخصي' : 'Edit name & profile'}
+                    >
+                      ✏️ <span>{isRTL ? 'تعديل الاسم' : 'Edit Name'}</span>
+                    </button>
+                  )}
+                </div>
+                <span style={{ 
+                  padding: '4px 10px', 
+                  borderRadius: '20px', 
+                  background: 'rgba(245, 158, 11, 0.15)', 
+                  color: '#F59E0B', 
+                  fontWeight: 'bold', 
+                  fontSize: '12px', 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '4px',
+                  whiteSpace: 'nowrap'
+                }}>
+                  🔥 {user?.streak || 1} {isRTL ? 'أيام صحبة القرآن' : 'd'}
+                </span>
+              </div>
+
+              {/* Right / End: RoleSwitcher + Desktop Tools & Actions */}
+              <div className="flex-center" style={{ gap: isLaptop ? '6px' : '10px', flexWrap: 'nowrap' }}>
+                <RoleSwitcher />
+
+                {/* On wider screens without drawer constraints, display direct quick buttons */}
+                {!isLaptop && (
+                  <>
+                    {/* Sync & Refresh Button */}
+                    <button
+                      id="header-sync-refresh-btn"
+                      onClick={handleRefreshDashboard}
+                      disabled={isSyncing}
+                      style={{
+                        height: '36px',
+                        padding: '0 12px',
+                        borderRadius: '12px',
+                        background: isSyncing ? 'rgba(16, 185, 129, 0.2)' : 'var(--primary-light)',
+                        color: 'var(--primary)',
+                        border: '1px solid var(--primary-border)',
+                        fontWeight: 700,
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px',
+                        cursor: isSyncing ? 'wait' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        flexShrink: 0
+                      }}
+                      title={isRTL ? 'مزامنة وتحديث تقدم الحفظ والبيانات' : 'Sync & Refresh Progress'}
+                    >
+                      <RefreshCw
+                        size={14}
+                        style={{
+                          animation: isSyncing ? 'spin 0.75s linear infinite' : 'none'
+                        }}
+                      />
+                      <span>{isSyncing ? (isRTL ? 'جاري المزامنة...' : 'Syncing...') : (isRTL ? 'مزامنة' : 'Sync')}</span>
+                    </button>
+
+                    {/* Language Switcher */}
+                    <button
+                      id="header-lang-btn"
+                      onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        background: 'var(--primary-light)',
+                        color: 'var(--primary)',
+                        border: '1px solid var(--primary)',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        transition: 'all 0.2s ease',
+                        height: '36px'
+                      }}
+                      title={t('lang_select')}
+                    >
+                      <Globe size={13} />
+                      <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
+                    </button>
+
+                    {/* Presentation Deck */}
+                    <button
+                      id="header-presentation-btn"
+                      onClick={() => setShowPresentationModal(true)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        background: 'rgba(16, 185, 129, 0.1)',
+                        color: 'var(--primary)',
+                        border: '1px solid rgba(16, 185, 129, 0.25)',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease',
+                        height: '36px'
+                      }}
+                      title={isRTL ? 'عرض تقديمي تعريفي للمنصة 📽️' : 'Platform Presentation Deck 📽️'}
+                    >
+                      <Presentation size={15} />
+                      <span>{isRTL ? 'عرض المنصة' : 'Deck'}</span>
+                    </button>
+
+                    {/* Documentation */}
+                    <button
+                      id="header-docs-btn"
+                      onClick={() => setShowDocsModal(true)}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: '12px',
+                        background: 'rgba(59, 130, 246, 0.1)',
+                        color: '#3B82F6',
+                        border: '1px solid rgba(59, 130, 246, 0.25)',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        transition: 'all 0.2s ease',
+                        height: '36px'
+                      }}
+                      title={isRTL ? 'دليل وتوثيق المنصة الشامل 📚' : 'Platform Documentation 📚'}
+                    >
+                      <BookOpen size={15} />
+                      <span>{isRTL ? 'التوثيق' : 'Docs'}</span>
+                    </button>
+
+                    {/* Sound Toggle */}
+                    <button
+                      id="header-sound-mute-btn"
+                      onClick={toggleSound}
+                      style={{
+                        width: '36px',
+                        height: '36px',
+                        borderRadius: '50%',
+                        background: soundEnabled ? 'var(--primary-light)' : 'rgba(239, 68, 68, 0.12)',
+                        color: soundEnabled ? 'var(--primary)' : '#EF4444',
+                        border: `1px solid ${soundEnabled ? 'var(--glass-border)' : 'rgba(239, 68, 68, 0.3)'}`,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                      title={soundEnabled ? (isRTL ? 'كتم النغمات والأصوات' : 'Mute sound') : (isRTL ? 'تشغيل النغمات والأصوات' : 'Unmute sound')}
+                    >
+                      {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                    </button>
+                  </>
+                )}
+
+                {/* On laptop / when drawer is open, QuickSettingsMenu neatly bundles Sync, Sound, Lang, Deck, Docs */}
+                {isLaptop && (
+                  <QuickSettingsMenu
+                    soundEnabled={soundEnabled}
+                    toggleSound={toggleSound}
+                    isSyncing={isSyncing}
+                    handleRefresh={handleRefreshDashboard}
+                    onOpenProfile={() => setShowProfileModal(true)}
+                    onOpenDocs={() => setShowDocsModal(true)}
+                    onOpenPresentation={() => setShowPresentationModal(true)}
+                    isMobile={false}
+                  />
+                )}
+
+                {/* Notification Center */}
+                <NotificationCenter />
+
+                {/* Theme Toggle */}
+                <ThemeToggle variant="pill" size="medium" />
+
+                {/* Profile Avatar with Dropdown Menu */}
+                <div style={{ position: 'relative' }}>
+                  <img 
+                    src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
+                    alt="Profile" 
+                    onClick={() => setShowProfileMenu(!showProfileMenu)} 
+                    style={{ 
+                      width: '38px', 
+                      height: '38px', 
+                      borderRadius: '50%', 
+                      cursor: 'pointer', 
+                      background: 'var(--primary)', 
+                      border: '2px solid var(--primary)',
+                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                      objectFit: 'cover'
+                    }} 
+                    title="خيارات الحساب" 
+                  />
+                  {showProfileMenu && (
+                    <>
+                      <div 
+                        style={{ position: 'fixed', inset: 0, zIndex: 99 }} 
+                        onClick={() => setShowProfileMenu(false)} 
+                      />
+                      <div style={{
+                        position: 'absolute',
+                        top: '46px',
+                        left: isRTL ? 0 : 'auto',
+                        right: isRTL ? 'auto' : 0,
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--glass-border)',
+                        borderRadius: '16px',
+                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
+                        padding: '8px',
+                        minWidth: '180px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '4px',
+                        zIndex: 100
+                      }}>
+                        <button 
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            setShowProfileModal(true);
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            padding: '10px 14px',
+                            color: 'var(--text-primary)',
+                            textAlign: isRTL ? 'right' : 'left',
+                            cursor: 'pointer',
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            fontWeight: 600,
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--glass-border)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          👤 {isRTL ? 'تعديل الملف الشخصي' : 'Edit Profile'}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            logout();
+                            setShowProfileMenu(false);
+                            navigate('/');
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            padding: '10px 14px',
+                            color: 'var(--text-primary)',
+                            textAlign: isRTL ? 'right' : 'left',
+                            cursor: 'pointer',
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--glass-border)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          🚪 {isRTL ? 'تسجيل الخروج' : 'Logout'}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setShowProfileMenu(false);
+                            setShowDeleteConfirm(true);
+                          }}
+                          style={{
+                            background: 'transparent',
+                            border: 'none',
+                            padding: '10px 14px',
+                            color: '#EF4444',
+                            textAlign: isRTL ? 'right' : 'left',
+                            cursor: 'pointer',
+                            borderRadius: '10px',
+                            fontSize: '13px',
+                            fontWeight: 'bold',
+                            width: '100%',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '8px'
+                          }}
+                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
+                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                        >
+                          🗑️ {isRTL ? 'حذف الحساب' : 'Delete Account'}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
         </header>
 
         {/* Custom Delete Account Confirmation Modal */}
@@ -955,15 +1527,54 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* Dashboard Main Content View */}
+        {/* Dashboard Main Content View with Native Pull-To-Refresh */}
         <main style={{ 
-          padding: isMobile ? '16px 12px calc(90px + env(safe-area-inset-bottom, 0px)) 12px' : (isLaptop ? '24px 20px 40px 20px' : '40px'), 
+          padding: isMobile ? '12px 12px calc(90px + env(safe-area-inset-bottom, 0px)) 12px' : (isLaptop ? '20px 20px 40px 20px' : '28px 32px'), 
           flex: 1, 
           minWidth: 0, 
           maxWidth: '100%',
-          boxSizing: 'border-box'
+          width: '100%',
+          boxSizing: 'border-box',
+          position: 'relative'
         }}>
-          {renderTabContent()}
+          {/* Floating Sync Success / Refresh Toast */}
+          {syncToast && (
+            <div
+              id="dashboard-sync-toast"
+              style={{
+                position: 'fixed',
+                top: 'calc(68px + env(safe-area-inset-top, 0px))',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 9999,
+                background: 'rgba(15, 23, 42, 0.94)',
+                color: '#34D399',
+                padding: '10px 20px',
+                borderRadius: '24px',
+                border: '1px solid rgba(16, 185, 129, 0.35)',
+                boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+                fontSize: '13px',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                pointerEvents: 'none'
+              }}
+            >
+              <Check size={16} strokeWidth={3} />
+              <span>{syncToast}</span>
+            </div>
+          )}
+
+          {isMobile ? (
+            <PullToRefresh onRefresh={handleRefreshDashboard}>
+              {renderTabContent()}
+            </PullToRefresh>
+          ) : (
+            renderTabContent()
+          )}
         </main>
 
         {/* Mobile Bottom Navigation Bar */}
@@ -972,8 +1583,13 @@ const Dashboard = () => {
             activeTab={activeTab} 
             setActiveTab={setActiveTab} 
             onOpenMore={() => setShowMoreToolsModal(true)} 
+            onOpenProfile={() => setShowProfileModal(true)}
+            isProfileOpen={showProfileModal}
           />
         )}
+
+        {/* Global Floating Action Button & Assistant for "المعلم الذكي" (Mobile Only) */}
+        {isMobile && <FloatingAiButton activeTab={activeTab} />}
 
         {/* More Tools Modal Sheet */}
         <MoreToolsModal 
@@ -1000,453 +1616,35 @@ const Dashboard = () => {
           isOpen={showDocsModal} 
           onClose={() => setShowDocsModal(false)} 
         />
+
+        {/* Safar Group Join Modal */}
+        <JoinGroupModal
+          isOpen={showJoinGroupModal}
+          onClose={() => setShowJoinGroupModal(false)}
+          onJoinedSuccess={() => {
+            setShowJoinGroupModal(false);
+            if (refreshUserData) refreshUserData();
+          }}
+        />
+
+        {/* Teacher Student Detailed Profile Modal */}
+        <TeacherStudentProfileModal
+          studentId={selectedStudentId}
+          isOpen={Boolean(selectedStudentId)}
+          onClose={() => setSelectedStudentId(null)}
+        />
+
+        {/* Daily Review Reminder Alert Modal */}
+        <ReviewReminderAlert 
+          onNavigateToReview={(targetTab) => {
+            setActiveTab(targetTab || 'five-fortresses');
+          }} 
+        />
+
+        {/* Milestone & Celebration Confetti Overlay */}
+        <CelebrationOverlay />
       </div>
     </div>
-  );
-};
-
-const MindMapsView = () => {
-  const { user, updateUserData } = useAuth();
-  const userId = user?.uid || 'guest';
-  const [selectedSurah, setSelectedSurah] = useState('البقرة');
-  const { notifyAndCelebrate } = useNotifications();
-
-  const favorites = user?.favorites || [];
-  const isSurahFavorited = favorites.some(f => f.type === 'surah' && f.id === selectedSurah);
-
-  const toggleSurahFavorite = () => {
-    let updated;
-    if (isSurahFavorited) {
-      updated = favorites.filter(f => !(f.type === 'surah' && f.id === selectedSurah));
-    } else {
-      updated = [
-        ...favorites,
-        {
-          type: 'surah',
-          id: selectedSurah,
-          title: `خريطة سورة ${selectedSurah}`,
-          addedAt: new Date().toLocaleDateString('ar-EG')
-        }
-      ];
-    }
-    updateUserData({ favorites: updated });
-  };
-
-  // Load completed mind map nodes from local storage for current user
-  const [completedNodes, setCompletedNodes] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`ma7fath_${userId}_completed_mindmap_nodes`);
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
-  });
-
-  // Re-sync when user changes
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(`ma7fath_${userId}_completed_mindmap_nodes`);
-      setCompletedNodes(saved ? JSON.parse(saved) : {});
-    } catch {
-      setCompletedNodes({});
-    }
-  }, [userId]);
-
-  const saveCompletedNodes = (updated) => {
-    setCompletedNodes(updated);
-    try {
-      localStorage.setItem(`ma7fath_${userId}_completed_mindmap_nodes`, JSON.stringify(updated));
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const surahOptions = ['الفاتحة', 'البقرة', 'آل عمران', 'يوسف', 'الكهف'];
-
-  const getSurahData = (surahName) => {
-    switch (surahName) {
-      case 'الفاتحة':
-        return {
-          title: 'سورة الفاتحة (أم الكتاب)',
-          axis: 'العبودية والاستعانة والدعاء بالهداية للصراط المستقيم.',
-          color: '#10B981',
-          nodes: [
-            { id: 1, title: 'الحمد والثناء', desc: 'تمجيد الباري وإثبات أسمائه الحسنى وتفرده بالملك يوم القيامة (1-4)' },
-            { id: 2, title: 'حقيقة العبادة', desc: 'إفراد الله عز وجل بالخضوع التام والتذلل والاستعانة به وحده (5)' },
-            { id: 3, title: 'الدعاء بالثبات', desc: 'طلب الهداية والمسلك الصالح وتجنب مسالك المغضوب عليهم والضالين (6-7)' }
-          ]
-        };
-      case 'البقرة':
-        return {
-          title: 'سورة البقرة (فسطاط القرآن)',
-          axis: 'الاستخلاف في الأرض وإقامة شرائع الله والالتزام بالعهود.',
-          color: '#3B82F6',
-          nodes: [
-            { id: 1, title: 'أصناف الناس', desc: 'المؤمنون، الكافرون، والمنافقون وسلوكياتهم (1-20)' },
-            { id: 2, title: 'قصة عمارة الأرض', desc: 'خلق آدم واستخلافه ورفض إبليس السجود (30-39)' },
-            { id: 3, title: 'بنو إسرائيل والميثاق', desc: 'قصة ذبح البقرة والتلكؤ ونقض العهود والالتزامات (40-123)' },
-            { id: 4, title: 'أحكام التشريع والعبادات', desc: 'أحكام الصيام، النكاح، القصاص، الطلاق، الحج، والقتال (163-284)' },
-            { id: 5, title: 'التسليم والجاهزية', desc: 'آية الكرسي، وخاتمة السورة بالدعاء والاستغفار (255, 285-286)' }
-          ]
-        };
-      case 'آل عمران':
-        return {
-          title: 'سورة آل عمران',
-          axis: 'الثبات الفكري والعقائدي والعملي أمام الشبهات والشهوات.',
-          color: '#8B5CF6',
-          nodes: [
-            { id: 1, title: 'التوحيد والقرآن', desc: 'إقرار الألوهية والمحكم والملتزم بالتدبر (1-9)' },
-            { id: 2, title: 'عمران وعيسى عليه السلام', desc: 'ولادة مريم وعيسى والمعجزات وتكريم آل عمران (33-64)' },
-            { id: 3, title: 'غزوة أحد والدروس', desc: 'التمحيص والصبر وأهمية طاعة القائد والشورى (121-180)' },
-            { id: 4, title: 'تأمل الخلق والتفكر', desc: 'آيات أولي الألباب والتفكر في السماوات والأرض (190-200)' }
-          ]
-        };
-      case 'يوسف':
-        return {
-          title: 'سورة يوسف (أحسن القصص)',
-          axis: 'اليقين بالفرج والصبر الجميل وثقة المؤمن بتدبير الخالق سبحانه.',
-          color: '#F59E0B',
-          nodes: [
-            { id: 1, title: 'الرؤيا والمؤامرة', desc: 'رؤيا يوسف عليه السلام، وحسد إخوته وإلقائه في الجب (1-20)' },
-            { id: 2, title: 'الابتلاء والفتنة', desc: 'يوسف في بيت العزيز، فتنة امرأة العزيز ودخول السجن (21-53)' },
-            { id: 3, title: 'التمكين والملك', desc: 'تأويل رؤيا الملك، وتعيينه على خزائن الأرض وإدارة القحط (54-80)' },
-            { id: 4, title: 'لم الشمل والفرج', desc: 'اعتراف الإخوة بالخطأ وسجودهم وتحقق الرؤيا والفرج الجميل (81-100)' }
-          ]
-        };
-      case 'الكهف':
-        return {
-          title: 'سورة الكهف (عصمة الفتن)',
-          axis: 'الفتن الأربع الكبرى وعلاجها: الفتنة في الدين، المال، العلم، والملك.',
-          color: '#EC4899',
-          nodes: [
-            { id: 1, title: 'فتنة الدين (أصحاب الكهف)', desc: 'فرار الفتية بدينهم للاحتماء بالكهف وتثبيتهم بخرق العادة (9-26)' },
-            { id: 2, title: 'فتنة المال (صاحب الجنتين)', desc: 'جحود النعمة واعتزاز الفرد بأمواله وتدمير جنتيه للوعي (32-44)' },
-            { id: 3, title: 'فتنة العلم (موسى والخضر)', desc: 'الرحلة لطلب العلم والصبر على تدابير القدر التي خفيت حكمتها (60-82)' },
-            { id: 4, title: 'فتنة السلطة (ذو القرنين)', desc: 'التمكين في الأرض والعدل وبناء السد لحماية الضعفاء (83-98)' }
-          ]
-        };
-      default:
-        return null;
-    }
-  };
-
-  const data = getSurahData(selectedSurah);
-
-  const handleToggleNode = (node) => {
-    const key = `${selectedSurah}_${node.id}`;
-    const currentVal = !!completedNodes[key];
-    const newVal = !currentVal;
-
-    const updated = { ...completedNodes, [key]: newVal };
-    saveCompletedNodes(updated);
-
-    if (newVal) {
-      const totalNodes = data?.nodes || [];
-      const completedSurahNodesCount = totalNodes.filter(n => !!updated[`${selectedSurah}_${n.id}`]).length;
-
-      if (completedSurahNodesCount === totalNodes.length) {
-        notifyAndCelebrate({
-          title: `🌟 إتقان الخريطة الذهنية لـ ${data.title}!`,
-          message: `مبارك! أتممت استيعاب وحفظ كافة المحاور البصرية الشجرية لـ ${data.title} بنجاح واقتدار!`,
-          type: 'mindmap',
-          xpBonus: 200,
-          badgeTitle: 'خبير الخرائط القرآنية'
-        });
-      } else {
-        notifyAndCelebrate({
-          title: `🗺️ إنجاز محور في الخريطة الذهنية!`,
-          message: `أتقنت واستوعبت محور "${node.title}" في ${data.title}!`,
-          type: 'mindmap',
-          xpBonus: 60,
-          badgeTitle: 'بطل الخرائط الذهنية'
-        });
-      }
-    }
-  };
-
-  const totalSurahNodes = data?.nodes?.length || 0;
-  const completedSurahNodes = data?.nodes?.filter(n => !!completedNodes[`${selectedSurah}_${n.id}`]).length || 0;
-  const progressPercent = totalSurahNodes ? Math.round((completedSurahNodes / totalSurahNodes) * 100) : 0;
-
-  return (
-    <Card style={{ padding: '32px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', margin: 0 }}>🗺️ الخرائط الذهنية التفاعلية للسور</h2>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '14px' }}>تصور شجري للمحاور الكبرى والمقاصد لتثبيت الحفظ البصري.</p>
-        </div>
-        
-        {/* Dropdown Selector & Favorite Button */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '14px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>اختر السورة:</span>
-            <select 
-              value={selectedSurah} 
-              onChange={(e) => setSelectedSurah(e.target.value)}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '10px',
-                border: '1px solid var(--glass-border)',
-                background: 'var(--bg-color)',
-                color: 'var(--text-primary)',
-                fontWeight: 'bold',
-                outline: 'none',
-                fontFamily: 'var(--font-body)',
-                cursor: 'pointer'
-              }}
-            >
-              {surahOptions.map(opt => (
-                <option key={opt} value={opt}>{opt}</option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            type="button"
-            onClick={toggleSurahFavorite}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '8px 14px',
-              borderRadius: '10px',
-              border: `1px solid ${isSurahFavorited ? '#F59E0B' : 'var(--glass-border)'}`,
-              background: isSurahFavorited ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
-              color: isSurahFavorited ? '#D97706' : 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 'bold',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Star size={16} fill={isSurahFavorited ? '#F59E0B' : 'none'} color={isSurahFavorited ? '#F59E0B' : 'currentColor'} />
-            {isSurahFavorited ? 'في المفضلة' : 'حفظ بالمفضلة'}
-          </button>
-        </div>
-      </div>
-
-      {/* Mindmap Box */}
-      {data && (
-        <div style={{
-          padding: '32px',
-          borderRadius: '24px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--glass-border)',
-          position: 'relative'
-        }}>
-          {/* Surah title, axis & Progress Header */}
-          <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-            <h3 style={{ fontSize: '22px', color: data.color, margin: '0 0 8px 0' }}>{data.title}</h3>
-            <p style={{ fontSize: '15px', color: 'var(--text-primary)', fontWeight: 'bold', maxWidth: '600px', margin: '0 auto 16px', lineHeight: 1.6 }}>
-              {data.axis}
-            </p>
-
-            {/* Mindmap Completion Badge */}
-            <div style={{
-              maxWidth: '450px',
-              margin: '0 auto',
-              padding: '12px 20px',
-              borderRadius: '16px',
-              background: 'var(--bg-color)',
-              border: '1px solid var(--glass-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px'
-            }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
-                استيعاب محاور السورة: {completedSurahNodes} من {totalSurahNodes} ({progressPercent}%)
-              </span>
-              <div style={{ width: '120px', height: '8px', background: 'var(--glass-border)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${progressPercent}%`, height: '100%', background: data.color, transition: 'width 0.3s ease' }} />
-              </div>
-            </div>
-          </div>
-
-          {/* Tree Flowchart Container */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', maxWidth: '720px', margin: '0 auto' }}>
-            {data.nodes.map((node, index) => {
-              const nodeKey = `${selectedSurah}_${node.id}`;
-              const isNodeDone = !!completedNodes[nodeKey];
-
-              return (
-                <div 
-                  key={node.id} 
-                  style={{
-                    display: 'flex',
-                    gap: '20px',
-                    alignItems: 'flex-start',
-                    position: 'relative',
-                    background: isNodeDone ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)' : 'var(--bg-color)',
-                    padding: '20px',
-                    borderRadius: '16px',
-                    border: `1px solid ${isNodeDone ? 'var(--primary)' : 'var(--glass-border)'}`,
-                    transition: 'all 0.25s ease',
-                    boxShadow: 'var(--shadow-soft)'
-                  }}
-                >
-                  {/* Vertical connector line */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0 }}>
-                    <div style={{ 
-                      width: '36px', 
-                      height: '36px', 
-                      borderRadius: '50%', 
-                      background: isNodeDone ? 'var(--primary)' : data.color, 
-                      color: 'white', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'center',
-                      fontWeight: 'bold',
-                      fontSize: '15px'
-                    }}>
-                      {isNodeDone ? <Check size={18} /> : index + 1}
-                    </div>
-                    {index < data.nodes.length - 1 && (
-                      <div style={{ width: '3px', height: '52px', background: `linear-gradient(to bottom, ${data.color}30, transparent)` }} />
-                    )}
-                  </div>
-
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '6px' }}>
-                      <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>{node.title}</h4>
-                      <button
-                        onClick={() => handleToggleNode(node)}
-                        style={{
-                          padding: '6px 14px',
-                          borderRadius: '20px',
-                          border: `1px solid ${isNodeDone ? 'var(--primary)' : 'var(--glass-border)'}`,
-                          background: isNodeDone ? 'var(--primary-light)' : 'var(--bg-surface)',
-                          color: isNodeDone ? 'var(--primary)' : 'var(--text-secondary)',
-                          fontSize: '12px',
-                          fontWeight: 'bold',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'all 0.2s ease'
-                        }}
-                      >
-                        {isNodeDone ? (
-                          <>
-                            <CheckCircle size={14} color="var(--primary)" />
-                            تم الحفظ والاستيعاب 🟢
-                          </>
-                        ) : (
-                          <>
-                            <Sparkles size={14} />
-                            تحديد كـ مستوعب ومحفوظ
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{node.desc}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-    </Card>
-  );
-};
-
-const SimilaritiesView = () => {
-  const [activeSearch, setActiveSearch] = useState('');
-
-  const similarityItems = [
-    {
-      id: 1,
-      topic: 'قولوا آمنا (البقرة) vs قل آمنا (آل عمران)',
-      verses: [
-        { surah: 'سورة البقرة (136)', text: 'قُولُوا آمَنَّا بِاللَّهِ وَمَا أُنْزِلَ إِلَيْنَا...' },
-        { surah: 'سورة آل عمران (84)', text: 'قُلْ آمَنَّا بِاللَّهِ وَمَا أُنْزِلَ عَلَيْنَا...' }
-      ],
-      rule: 'سورة البقرة هي أطول سور القرآن وبها نداءات للمؤمنين جماعة فخوطب فيها بالجمع (قولوا)، بينما آل عمران خوطب فيها النبي مفرداً (قل).'
-    },
-    {
-      id: 2,
-      topic: 'بلداً آمناً (البقرة) vs البلد آمناً (إبراهيم)',
-      verses: [
-        { surah: 'سورة البقرة (126)', text: 'وَإِذْ قَالَ إِبْرَاهِيمُ رَبِّ اجْعَلْ هَٰذَا بَلَدًا آمِنًا...' },
-        { surah: 'سورة إبراهيم (35)', text: 'وَإِذْ قَالَ إِبْرَاهِيمُ رَبِّ اجْعَلْ هَٰذَا الْبَلَدَ آمِنًا...' }
-      ],
-      rule: 'دعاء البقرة كان قبل بناء البيت فجاء نكرة (بلداً)، ودعاء إبراهيم كان بعد استقرار السكن وعمارتها فجاءت معرفة (البلد).'
-    },
-    {
-      id: 3,
-      topic: 'تساقط عليك (مريم) vs يساقط عليك (مريم قراءة)',
-      verses: [
-        { surah: 'سورة مريم (25)', text: 'وَهُزِّي إِلَيْكِ بِجِذْعِ النَّخْلَةِ تُسَاقِطْ عَلَيْكِ رُطَبًا جَنِيًّا...' },
-        { surah: 'قراءات متواترة أخرى', text: '...تَسَّاقَطْ أو يَسَّاقَطْ عَلَيْكِ رُطَبًا...' }
-      ],
-      rule: 'تُساقط بالتاء لتناسب تأنيث النخلة (بجذع النخلة)، ويَساقط بالياء لتناسب تذكير الرطب (رطباً).'
-    }
-  ];
-
-  const filteredItems = similarityItems.filter(item => 
-    item.topic.toLowerCase().includes(activeSearch.toLowerCase()) ||
-    item.rule.toLowerCase().includes(activeSearch.toLowerCase())
-  );
-
-  return (
-    <Card style={{ padding: '32px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
-          <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', margin: 0 }}>🔍 مرشد المتشابهات اللفظية الذكي</h2>
-          <p style={{ color: 'var(--text-secondary)', margin: '4px 0 0 0', fontSize: '14px' }}>حلول وقواعد ذهبية للربط بين الآيات المتشابهة لتلاوة دون تلعثم.</p>
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-          <Search size={18} color="var(--text-secondary)" />
-          <input 
-            type="text" 
-            placeholder="ابحث عن متشابهة..." 
-            value={activeSearch}
-            onChange={(e) => setActiveSearch(e.target.value)}
-            style={{ border: 'none', background: 'transparent', outline: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '14px' }}
-          />
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {filteredItems.map(item => (
-          <div 
-            key={item.id}
-            style={{
-              padding: '24px',
-              borderRadius: '20px',
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--glass-border)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '16px'
-            }}
-          >
-            <h4 style={{ margin: 0, fontSize: '17px', color: 'var(--primary)', fontWeight: 'bold' }}>{item.topic}</h4>
-            
-            {/* Verses Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              {item.verses.map((v, i) => (
-                <div key={i} style={{ padding: '16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'bold', display: 'block', marginBottom: '8px' }}>{v.surah}</span>
-                  <p style={{ margin: 0, fontSize: '18px', fontFamily: 'serif', color: 'var(--text-primary)', direction: 'rtl', textAlign: 'right', lineHeight: 1.6 }}>
-                    ﴿ {v.text} ﴾
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            {/* Rule Box */}
-            <div style={{ padding: '14px 18px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.08)', borderRight: '4px solid #F59E0B' }}>
-              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#B45309', display: 'block', marginBottom: '4px' }}>💡 القاعدة الذهبية للتذكر:</span>
-              <p style={{ margin: 0, fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.6 }}>{item.rule}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </Card>
   );
 };
 

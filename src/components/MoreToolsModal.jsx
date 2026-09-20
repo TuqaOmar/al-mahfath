@@ -8,11 +8,12 @@ import {
   Users, 
   Trophy, 
   BarChart3, 
-  Sparkles,
-  ShieldCheck,
-  ChevronRight,
-  ChevronLeft,
-  Presentation
+  Sparkles, 
+  ShieldCheck, 
+  ChevronRight, 
+  ChevronLeft, 
+  Presentation,
+  Compass
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -22,6 +23,20 @@ export const MoreToolsModal = ({ isOpen, onClose, activeTab, setActiveTab }) => 
   if (!isOpen) return null;
 
   const tools = [
+    {
+      id: 'quran-map',
+      title: lang === 'ar' ? 'خريطة المصحف وأجزاء القرآن' : 'Quran Map & Juz Explorer',
+      desc: lang === 'ar' ? 'تصفح بصري شامل لكافة الأجزاء، السور، ومعدل إنجاز الحفظ' : 'Visual exploration of all Juzs, Surahs, and completion levels',
+      icon: Compass,
+      color: '#059669'
+    },
+    {
+      id: 'ai-assistant',
+      title: lang === 'ar' ? 'المعلم القرآني الذكي' : 'Quran AI Guide',
+      desc: lang === 'ar' ? 'مساعدك الذكي للإجابة عن المتشابهات والأحكام وخطة الحفظ' : 'Your smart AI companion for verses, rules, and plans',
+      icon: Sparkles,
+      color: '#10B981'
+    },
     {
       id: 'mind-maps',
       title: lang === 'ar' ? 'الخرائط الذهنية الموضوعية' : 'Thematic Mind Maps',

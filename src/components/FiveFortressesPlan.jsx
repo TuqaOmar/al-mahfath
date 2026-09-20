@@ -493,7 +493,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                  boxShadow: '0 4px 12px rgba(55, 125, 113, 0.35)'
                 }}
               >
                 <Sparkles size={16} />
@@ -949,7 +949,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                   width: '130px',
                   height: '130px',
                   borderRadius: '50%',
-                  background: currentReps >= targetReps ? 'linear-gradient(135deg, #10B981, #059669)' : 'linear-gradient(135deg, #3B82F6, #1D4ED8)',
+                  background: currentReps >= targetReps ? 'linear-gradient(135deg, #10B981, #059669)' : 'linear-gradient(135deg, #059669, #0F172A)',
                   color: 'white',
                   border: 'none',
                   fontSize: '42px',
@@ -959,7 +959,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: '0 10px 25px rgba(59, 130, 246, 0.3)',
+                  boxShadow: '0 10px 25px rgba(22, 56, 73, 0.3)',
                   transition: 'transform 0.1s ease',
                   userSelect: 'none'
                 }}

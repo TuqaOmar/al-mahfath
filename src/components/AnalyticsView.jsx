@@ -128,16 +128,16 @@ export const AnalyticsView = () => {
         {/* KPI 3: Streak Discipline */}
         <Card style={{ padding: isMobile ? '14px' : '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>رباط القرآن المتتالي</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>أيام صحبة القرآن</span>
             <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(245, 158, 11, 0.15)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Flame size={18} />
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
             <span style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{streak}</span>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>يوم متصل</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>يوم صحبة متصل</span>
           </div>
-          <span style={{ fontSize: '11px', color: '#F59E0B', display: 'block', marginTop: '4px' }}>🔥 نسبة التزام الشهر: 96%</span>
+          <span style={{ fontSize: '11px', color: '#F59E0B', display: 'block', marginTop: '4px' }}>📖 نسبة التزام الشهر: 96%</span>
         </Card>
 
         {/* KPI 4: Recall Latency */}

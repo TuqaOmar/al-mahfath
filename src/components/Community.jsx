@@ -387,7 +387,7 @@ export const Community = ({ setActiveTab }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)'
               }}
             >
               <Share2 size={16} />
@@ -881,7 +881,7 @@ export const Community = ({ setActiveTab }) => {
                   <img src={member.avatar} alt="" style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-surface)' }} />
                   <div>
                     <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>{member.name} {member.isUser && '(أنت)'}</h4>
-                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>الاستمرار: {member.streak} 🔥</span>
+                    <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>صحبة القرآن: {member.streak} 📖</span>
                   </div>
                 </div>
                 <span style={{ fontSize: '16px', fontWeight: 'bold', color: 'var(--primary)' }}>{member.points}</span>

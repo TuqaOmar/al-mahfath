@@ -58,6 +58,22 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     }
   }, [isOpen, initialMode]);
 
+  // Helper to determine if an account has already completed setup
+  const isAccountReady = (u) => {
+    if (!u) return false;
+    const hasPrefs = u.preferences && typeof u.preferences === 'object' && Object.keys(u.preferences).length > 0;
+    return Boolean(
+      u.hasCompletedWizard === true ||
+      u.hasCompletedWizard === 1 ||
+      u.hasCompletedWizard === 'true' ||
+      hasPrefs ||
+      Number(u.memorizedPagesCount) > 0 ||
+      Number(u.totalJuz) > 0 ||
+      u.role === 'admin' ||
+      u.role === 'teacher'
+    );
+  };
+
   // Google Sign-In Trigger
   const handleGoogleClick = async () => {
     setIsLoading(true);
@@ -73,7 +89,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           if (res.success && res.user) {
             setIsLoading(false);
             onClose();
-            navigate(res.user.hasCompletedWizard ? '/dashboard' : '/wizard');
+            navigate(isAccountReady(res.user) ? '/dashboard' : '/wizard');
             return;
           }
         }
@@ -95,7 +111,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       const res = await loginWithGoogle(accEmail, accName, accPhoto);
       if (res.success && res.user) {
         onClose();
-        navigate(res.user.hasCompletedWizard ? '/dashboard' : '/wizard');
+        navigate(isAccountReady(res.user) ? '/dashboard' : '/wizard');
       } else {
         setError(res.message || (isRTL ? 'فشل تسجيل الدخول بحساب جوجل' : 'Failed to login with Google'));
       }
@@ -138,11 +154,11 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
       if (result.success && result.user) {
         onClose();
-        navigate(result.user.hasCompletedWizard ? '/dashboard' : '/wizard');
+        navigate(isAccountReady(result.user) ? '/dashboard' : '/wizard');
       } else if (result.success) {
         onClose();
         const storedUser = JSON.parse(localStorage.getItem('ma7fath_user') || '{}');
-        navigate(storedUser.hasCompletedWizard ? '/dashboard' : '/wizard');
+        navigate(isAccountReady(storedUser) ? '/dashboard' : '/wizard');
       } else {
         setError(result.message || (isRTL ? 'فشلت العملية، يرجى التحقق من المدخلات' : 'Operation failed, please check inputs'));
       }
