@@ -16,6 +16,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    flavorDimensions "environment"
+    productFlavors {
+        dev {
+            dimension "environment"
+            applicationIdSuffix ".dev"
+            resValue "string", "app_name", "محفظ AI (Dev)"
+        }
+        prod {
+            dimension "environment"
+            resValue "string", "app_name", "محفظ AI"
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false

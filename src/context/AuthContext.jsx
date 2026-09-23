@@ -1,4 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { auth, db } from '../lib/firebase';
+import { 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword, 
+  signOut, 
+  onAuthStateChanged,
+  updateProfile,
+  signInAnonymously
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -8,132 +18,73 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Check stored user session on mount
+  // Sync with Firebase Auth State
   useEffect(() => {
-    const storedUser = localStorage.getItem('ma7fath_user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          // Fetch additional user data from Firestore
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+          
+          let userData = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+          };
 
-  // Real REST API: Test Account Login
-  const loginWithTestAccount = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/auth/demo', { method: 'POST' });
-      const data = await res.json();
-      if (data.success && data.user) {
-        localStorage.setItem('ma7fath_user', JSON.stringify(data.user));
-        setUser(data.user);
-      }
-    } catch (e) {
-      console.log('Using local fallback:', e);
-      // Fallback demo account
-      const fallbackUser = {
-        uid: 'demo_user_123',
-        name: 'أحمد محمد',
-        email: 'demo@ma7fath.ai',
-        photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
-        hasCompletedWizard: true,
-        streak: 23,
-        xp: 2450,
-        level: 12,
-        preferences: {
-          level: 'متوسط (أحفظ بعض الأجزاء)',
-          dailyTarget: 'صفحة واحدة يومياً',
-          learningStyle: 'سمعي بصري (مختلط)',
-          motivation: 'تثبيت حفظ سورة البقرة وآل عمران والتقرب إلى الله',
-          reminder: 'بعد صلاة الفجر'
+          if (userDocSnap.exists()) {
+            userData = { ...userData, ...userDocSnap.data() };
+          } else if (!firebaseUser.isAnonymous) {
+            // If doc doesn't exist but user logged in (e.g. Google), create it
+            userData = {
+              ...userData,
+              hasCompletedWizard: false,
+              role: 'user',
+              createdAt: new Date().toISOString()
+            };
+            await setDoc(userDocRef, userData);
+          }
+
+          localStorage.setItem('ma7fath_user', JSON.stringify(userData));
+          setUser(userData);
+        } catch (error) {
+          console.error("Error fetching user data from Firestore:", error);
+          // Fallback to basic info if Firestore fails
+          const basicInfo = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email,
+            name: firebaseUser.displayName,
+          };
+          setUser(basicInfo);
         }
-      };
-      localStorage.setItem('ma7fath_user', JSON.stringify(fallbackUser));
-      setUser(fallbackUser);
-    }
-    setLoading(false);
-  };
-
-  // Real REST API: Email/Password Login, with local fallback
-  const login = async (rawEmail, password) => {
-    setLoading(true);
-    const email = (rawEmail || '').trim().toLowerCase();
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password: password ? password.trim() : '' })
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.user) {
-        const userObj = {
-          ...data.user,
-          hasCompletedWizard: Boolean(data.user.hasCompletedWizard)
-        };
-        localStorage.setItem('ma7fath_user', JSON.stringify(userObj));
-        setUser(userObj);
-        setLoading(false);
-        return { success: true, user: userObj };
       } else {
-        setLoading(false);
-        return { success: false, message: data.message || 'فشل تسجيل الدخول' };
-      }
-    } catch (e) {
-      // Local fallback: check stored users in localStorage
-      console.log('Backend unavailable, trying local auth...', e);
-      const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
-      const storedEntry = localUsers[email];
-      if (storedEntry && storedEntry.password === password) {
-        const userData = {
-          ...storedEntry.user,
-          hasCompletedWizard: Boolean(storedEntry.user.hasCompletedWizard)
-        };
-        localStorage.setItem('ma7fath_user', JSON.stringify(userData));
-        setUser(userData);
-        setLoading(false);
-        return { success: true, user: userData };
+        localStorage.removeItem('ma7fath_user');
+        setUser(null);
       }
       setLoading(false);
-      return { success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' };
-    }
-  };
+    });
 
-  // Real REST API: Email/Password Signup, with local fallback
+    return () => unsubscribe();
+  }, []);
+
+  // Email/Password Signup
   const signup = async (name, rawEmail, password) => {
     setLoading(true);
     const email = (rawEmail || '').trim().toLowerCase();
     try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: (name || '').trim(), email, password: password ? password.trim() : '' })
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(userCredential.user, { 
+        displayName: name,
+        photoURL: ''
       });
-      const data = await res.json();
-      if (res.ok && data.success && data.user) {
-        const userObj = {
-          ...data.user,
-          hasCompletedWizard: Boolean(data.user.hasCompletedWizard)
-        };
-        localStorage.setItem('ma7fath_user', JSON.stringify(userObj));
-        setUser(userObj);
-        setLoading(false);
-        return { success: true, user: userObj };
-      } else {
-        setLoading(false);
-        return { success: false, message: data.message || 'فشل إنشاء الحساب' };
-      }
-    } catch (e) {
-      // Local fallback: store user locally
-      console.log('Backend unavailable, creating local account...', e);
-      const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
-      if (localUsers[email]) {
-        setLoading(false);
-        return { success: false, message: 'البريد الإلكتروني مسجل بالفعل' };
-      }
+      
       const newUser = {
-        uid: 'local_' + Date.now(),
+        uid: userCredential.user.uid,
         name: (name || '').trim() || 'حافظ جديد',
         email,
-        photoURL: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(name || 'User')}`,
+        photoURL: userCredential.user.photoURL,
         hasCompletedWizard: false,
         role: 'user',
         streak: 1,
@@ -142,250 +93,132 @@ export const AuthProvider = ({ children }) => {
         memorizedPagesCount: 0,
         memoryScore: 100,
         totalJuz: 0,
-        preferences: {}
+        preferences: {},
+        createdAt: new Date().toISOString()
       };
-      localUsers[email] = { password, user: newUser };
-      localStorage.setItem('ma7fath_local_users', JSON.stringify(localUsers));
-      localStorage.setItem('ma7fath_user', JSON.stringify(newUser));
+
+      await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
       setUser(newUser);
+      
       setLoading(false);
       return { success: true, user: newUser };
-    }
-  };
-
-  // Google Login helper
-  const loginWithGoogle = async (providedEmail = null, providedName = null, providedPhoto = null) => {
-    setLoading(true);
-    const googleEmail = (providedEmail || '').trim().toLowerCase();
-    const googleName = (providedName || '').trim() || (googleEmail ? googleEmail.split('@')[0] : 'مستخدم Google');
-    const googlePhoto = providedPhoto || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(googleName)}`;
-
-    try {
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: googleEmail,
-          name: googleName,
-          photoURL: googlePhoto
-        })
-      });
-      const data = await res.json();
-      if (res.ok && data.success && data.user) {
-        const normalizedUser = {
-          ...data.user,
-          hasCompletedWizard: Boolean(data.user.hasCompletedWizard)
-        };
-        localStorage.setItem('ma7fath_user', JSON.stringify(normalizedUser));
-        setUser(normalizedUser);
-        setLoading(false);
-        return { success: true, user: normalizedUser };
-      } else {
-        setLoading(false);
-        return { success: false, message: data.message || 'فشل تسجيل الدخول بحساب جوجل' };
-      }
-    } catch (e) {
-      console.log('Backend Google login failed, using local Google auth fallback:', e);
-      const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
-      const existingEntry = localUsers[googleEmail]?.user;
-      const googleUser = existingEntry ? {
-        ...existingEntry,
-        name: googleName || existingEntry.name,
-        photoURL: googlePhoto || existingEntry.photoURL
-      } : {
-        uid: googleEmail ? `google_${Date.now()}` : `google_user_${Date.now()}`,
-        name: googleName,
-        email: googleEmail,
-        photoURL: googlePhoto,
-        hasCompletedWizard: false,
-        role: 'user',
-        streak: 1,
-        xp: 100,
-        level: 1,
-        memorizedPagesCount: 0,
-        memoryScore: 100,
-        totalJuz: 0,
-        preferences: {}
-      };
-      
-      if (googleEmail) {
-        localUsers[googleEmail] = { password: '', user: googleUser };
-        localStorage.setItem('ma7fath_local_users', JSON.stringify(localUsers));
-      }
-      
-      localStorage.setItem('ma7fath_user', JSON.stringify(googleUser));
-      setUser(googleUser);
+    } catch (error) {
       setLoading(false);
-      return { success: true, user: googleUser };
+      let message = 'فشل إنشاء الحساب';
+      if (error.code === 'auth/email-already-in-use') message = 'البريد الإلكتروني مسجل بالفعل';
+      if (error.code === 'auth/weak-password') message = 'كلمة المرور ضعيفة جداً';
+      return { success: false, message };
     }
   };
 
+  // Email/Password Login
+  const login = async (rawEmail, password) => {
+    setLoading(true);
+    const email = (rawEmail || '').trim().toLowerCase();
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle the rest
+      setLoading(false);
+      return { success: true };
+    } catch (error) {
+      setLoading(false);
+      let message = 'فشل تسجيل الدخول';
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        message = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+      }
+      return { success: false, message };
+    }
+  };
 
-  const logout = () => {
-    localStorage.removeItem('ma7fath_user');
-    setUser(null);
+  // Google Login helper (Called from AuthModal after signInWithPopup)
+  const loginWithGoogle = async (providedEmail, providedName, providedPhoto) => {
+    // onAuthStateChanged will catch the user automatically, but we can ensure Firestore is synced
+    if (auth.currentUser) {
+      const userDocRef = doc(db, 'users', auth.currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      if (!userDocSnap.exists()) {
+        const newUser = {
+          uid: auth.currentUser.uid,
+          name: providedName || auth.currentUser.displayName,
+          email: providedEmail || auth.currentUser.email,
+          photoURL: providedPhoto || auth.currentUser.photoURL,
+          hasCompletedWizard: false,
+          role: 'user',
+          streak: 1,
+          xp: 100,
+          level: 1,
+          memorizedPagesCount: 0,
+          memoryScore: 100,
+          totalJuz: 0,
+          preferences: {},
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(userDocRef, newUser);
+      }
+      return { success: true, user: auth.currentUser };
+    }
+    return { success: false, message: 'Google Auth Failed' };
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem('ma7fath_user');
+      setUser(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   const deleteAccount = async () => {
-    const targetUid = user?.uid;
-    const targetEmail = user?.email;
-
-    // Remove stored user session and remove from saved local users list
-    localStorage.removeItem('ma7fath_user');
-    localStorage.removeItem('ma7fath_quran_pages');
-    localStorage.removeItem('ma7fath_community_posts');
-
-    if (targetEmail) {
-      try {
-        const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
-        delete localUsers[targetEmail];
-        localStorage.setItem('ma7fath_local_users', JSON.stringify(localUsers));
-      } catch (e) {
-        console.error('Error cleaning localUsers:', e);
-      }
-    }
-    
-    // Reset React user state immediately
-    setUser(null);
-
-    // Send delete request to backend database
-    if (targetUid || targetEmail) {
-      try {
-        await fetch(`/api/user/${targetUid || 'by_email'}?email=${encodeURIComponent(targetEmail || '')}`, {
-          method: 'DELETE'
-        });
-      } catch (e) {
-        console.log('Failed to delete account on backend:', e);
-      }
-    }
-
-    return { success: true };
-  };
-
-  // Real REST API: Admin Test Account Login
-  const loginWithAdminAccount = async () => {
-    setLoading(true);
     try {
-      const res = await fetch('/api/auth/admin', { method: 'POST' });
-      const data = await res.json();
-      if (data.success && data.user) {
-        localStorage.setItem('ma7fath_user', JSON.stringify(data.user));
-        setUser(data.user);
+      if (auth.currentUser) {
+        await auth.currentUser.delete();
+        setUser(null);
+        localStorage.removeItem('ma7fath_user');
+        return { success: true };
       }
-    } catch (e) {
-      console.log('Using local admin fallback:', e);
-      const fallbackAdmin = {
-        uid: 'admin_123',
-        name: 'مدير النظام (أدمن)',
-        email: 'admin@ma7fath.ai',
-        photoURL: 'https://api.dicebear.com/7.x/bottts/svg?seed=Admin',
-        hasCompletedWizard: true,
-        role: 'admin',
-        streak: 15,
-        xp: 9999,
-        level: 99,
-        memorizedPagesCount: 604,
-        memoryScore: 100,
-        totalJuz: 30,
-        preferences: {
-          level: 'حافظ كامل المصحف',
-          dailyTarget: 'مراجعة جزئين يومياً',
-          learningStyle: 'مختلط (شامل)',
-          motivation: 'إدارة وتوجيه مجتمع حفاظ القرآن الكريم',
-          reminder: 'على مدار اليوم'
-        }
-      };
-      localStorage.setItem('ma7fath_user', JSON.stringify(fallbackAdmin));
-      setUser(fallbackAdmin);
+    } catch (error) {
+      console.error("Error deleting account:", error);
+      return { success: false, message: error.message };
     }
-    setLoading(false);
   };
 
-  // Real REST API: Update User Data & Preferences in DB
   const updateUserData = async (updates) => {
     const updatedUser = { ...user, ...updates };
     setUser(updatedUser);
     localStorage.setItem('ma7fath_user', JSON.stringify(updatedUser));
 
-    // Also synchronize to ma7fath_local_users so subsequent logins keep completed wizard state
-    if (updatedUser?.email) {
-      try {
-        const localUsers = JSON.parse(localStorage.getItem('ma7fath_local_users') || '{}');
-        const emailKey = updatedUser.email.toLowerCase();
-        if (localUsers[emailKey]) {
-          localUsers[emailKey].user = {
-            ...localUsers[emailKey].user,
-            ...updates
-          };
-          localStorage.setItem('ma7fath_local_users', JSON.stringify(localUsers));
-        }
-      } catch (err) {
-        console.error('Error syncing localUsers:', err);
-      }
-    }
-
     if (user?.uid) {
       try {
-        await fetch(`/api/user/${user.uid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(updates)
-        });
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, updates);
       } catch (e) {
-        console.log('Failed DB sync:', e);
+        console.error('Failed DB sync:', e);
       }
     }
   };
 
-  // Real REST API: Refresh and sync user progress & stats from backend
   const refreshUserData = async () => {
-    if (!user?.uid) {
-      // If guest or no user, refresh from localStorage
-      const stored = localStorage.getItem('ma7fath_user');
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setUser(parsed);
-          return { success: true, user: parsed };
-        } catch (e) {}
-      }
-      return { success: true, user: null };
-    }
-
-    try {
-      const res = await fetch(`/api/user/${user.uid}`);
-      if (res.ok) {
-        const data = await res.json();
-        if (data.success && data.user) {
-          const merged = {
-            ...user,
-            ...data.user,
-            hasCompletedWizard: Boolean(data.user.hasCompletedWizard ?? user.hasCompletedWizard)
-          };
-          localStorage.setItem('ma7fath_user', JSON.stringify(merged));
-          setUser(merged);
-          return { success: true, user: merged };
-        }
-      }
-    } catch (e) {
-      console.log('Backend user refresh error, syncing from localStorage:', e);
-    }
-
-    // Fallback: reload latest from localStorage
-    const localStored = localStorage.getItem('ma7fath_user');
-    if (localStored) {
+    if (auth.currentUser) {
       try {
-        const parsed = JSON.parse(localStored);
-        setUser(parsed);
-        return { success: true, user: parsed };
-      } catch (e) {}
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          const freshData = { uid: auth.currentUser.uid, ...userDocSnap.data() };
+          setUser(freshData);
+          localStorage.setItem('ma7fath_user', JSON.stringify(freshData));
+          return { success: true, user: freshData };
+        }
+      } catch (e) {
+        console.error("Refresh error:", e);
+      }
     }
-
     return { success: true, user };
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, loginWithTestAccount, loginWithAdminAccount, logout, deleteAccount, updateUserData, refreshUserData }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout, deleteAccount, updateUserData, refreshUserData }}>
       {!loading && children}
     </AuthContext.Provider>
   );
