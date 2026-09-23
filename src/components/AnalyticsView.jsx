@@ -104,10 +104,14 @@ export const AnalyticsView = () => {
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-            <span style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: 'bold', color: 'var(--text-primary)' }}>{memoryScore}%</span>
-            <span style={{ fontSize: '11px', color: '#10B981', fontWeight: 'bold' }}>+3.2% 📈</span>
+            <span style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+              {memorizedPages > 0 ? `${memoryScore}%` : '--%'}
+            </span>
+            {memorizedPages > 0 && <span style={{ fontSize: '11px', color: '#10B981', fontWeight: 'bold' }}>+3.2% 📈</span>}
           </div>
-          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>استقرار ممتاز وفق منحنى Ebbinghaus</span>
+          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block', marginTop: '4px' }}>
+            {memorizedPages > 0 ? 'استقرار ممتاز وفق منحنى Ebbinghaus' : 'لم يتم تسجيل بيانات مراجعة بعد'}
+          </span>
         </Card>
 
         {/* KPI 2: Mastered Pages */}

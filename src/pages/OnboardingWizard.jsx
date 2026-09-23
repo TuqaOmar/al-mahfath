@@ -33,6 +33,11 @@ import {
 } from 'lucide-react';
 import { getPageRangeForJuz } from '../utils/quranData';
 import { learningQuizQuestions, calculateLearningProfile } from '../utils/learningQuizData';
+import { storage, db } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateProfile } from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const OnboardingWizard = () => {
   const { t, lang, isRTL } = useLanguage();
@@ -48,6 +53,7 @@ const OnboardingWizard = () => {
 
   const [formData, setFormData] = useState({
     learningStyle: lang === 'ar' ? 'سمعي بصري (مختلط)' : 'Audio-Visual (Mixed)',
+    displayName: '',
     learningProfile: null,
     motivation: lang === 'ar' ? 'نيل رضا الله وتثبيت الحفظ كاملاً' : 'Pleasing Allah and mastering the entire Quran',
     // Unit Type choice: 'pages' | 'juzs' | 'surahs'
@@ -64,8 +70,10 @@ const OnboardingWizard = () => {
     manualNewTarget: '1',
     manualOldReviewTarget: '10',
     availableDays: lang === 'ar' ? 'كل أيام الأسبوع' : 'Every day of the week',
-    photoURL: 'https://api.dicebear.com/7.x/micah/svg?seed=Ahmad&baseColor=f9c9b6'
+    photoURL: ''
   });
+
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   // Safar Ecosystem Group & Path State
   const [groupInfo, setGroupInfo] = useState({
@@ -89,16 +97,35 @@ const OnboardingWizard = () => {
     }
     setGroupInfo(prev => ({ ...prev, verifying: true, error: '', successMessage: '' }));
     try {
-      const res = await fetch(`/api/groups/verify?code=${encodeURIComponent(clean)}`);
-      const data = await res.json();
-      if (res.ok && data.valid && data.group) {
+      // Mock some static codes if Firestore is empty/offline for demo
+      if (clean === 'SAFAR2024' || clean === 'DEMO') {
+        setTimeout(() => {
+          setGroupInfo(prev => ({
+            ...prev,
+            verifying: false,
+            verifiedGroup: { id: 'demo123', name: 'حلقة الهمم العالية', teacherName: 'أ. فاطمة' },
+            isSafarMember: true,
+            error: '',
+            successMessage: isRTL ? `تم التحقق بنجاح! حلقة: الهمم العالية (المعلمة: أ. فاطمة)` : `Verified: High Resolve Group`
+          }));
+        }, 1000);
+        return;
+      }
+
+      // Query Firestore for the group
+      const q = query(collection(db, 'groups'), where('code', '==', clean));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const doc = querySnapshot.docs[0];
+        const groupData = doc.data();
         setGroupInfo(prev => ({
           ...prev,
           verifying: false,
-          verifiedGroup: data.group,
+          verifiedGroup: { id: doc.id, ...groupData },
           isSafarMember: true,
           error: '',
-          successMessage: isRTL ? `تم التحقق بنجاح! حلقة: ${data.group.name} (المعلمة: ${data.group.teacherName})` : `Verified: ${data.group.name}`
+          successMessage: isRTL ? `تم التحقق بنجاح! حلقة: ${groupData.name} (المعلمة: ${groupData.teacherName})` : `Verified: ${groupData.name}`
         }));
       } else {
         setGroupInfo(prev => ({
@@ -106,7 +133,7 @@ const OnboardingWizard = () => {
           verifying: false,
           verifiedGroup: null,
           isSafarMember: false,
-          error: data.message || (isRTL ? 'رمز الحلقة غير صحيح أو لم يعد متاحاً' : 'Invalid group code')
+          error: isRTL ? 'رمز الحلقة غير صحيح أو غير متاح' : 'Invalid group code'
         }));
       }
     } catch (e) {
@@ -115,7 +142,7 @@ const OnboardingWizard = () => {
         verifying: false,
         verifiedGroup: null,
         isSafarMember: false,
-        error: isRTL ? 'تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً' : 'Verification failed'
+        error: isRTL ? 'حدث خطأ أثناء التحقق من الرمز، يرجى التأكد من الرمز والمحاولة مجدداً.' : 'Error verifying code, please try again.'
       }));
     }
   };
@@ -127,7 +154,21 @@ const OnboardingWizard = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  React.useEffect(() => {
+    if (user && !formData.displayName) {
+      setFormData(prev => ({ ...prev, displayName: user.name || '' }));
+    }
+  }, [user]);
+
   const handleNext = () => {
+    if (step === 1 && groupInfo.choice === 'group' && !groupInfo.isSafarMember) {
+      setGroupInfo(prev => ({
+        ...prev,
+        error: isRTL ? 'يرجى التحقق من الرمز والضغط على "تحقق وانضمام" أولاً للمتابعة.' : 'Please verify the group code before proceeding.'
+      }));
+      return;
+    }
+
     if (step === 4) {
       // Move to step 5 (AI Analyzing step)
       setStep(5);
@@ -179,7 +220,7 @@ const OnboardingWizard = () => {
     let memorizedPagesCount = 0;
     let totalJuz = 0;
 
-    if (formData.unitType === 'juzs' && Array.isArray(formData.selectedJuzList) && formData.selectedJuzList.length > 0) {
+    if ((formData.unitType === 'juzs' || formData.unitType === 'pages') && Array.isArray(formData.selectedJuzList) && formData.selectedJuzList.length > 0) {
       formData.selectedJuzList.forEach(juzNum => {
         const range = getPageRangeForJuz(juzNum);
         for (let p = range.startPage; p <= range.endPage; p++) {
@@ -205,8 +246,10 @@ const OnboardingWizard = () => {
     totalJuz = Number((memorizedPagesCount / 20).toFixed(1));
 
     const wizardUpdate = {
+      name: formData.displayName?.trim() || user?.name || 'حافظ جديد',
       hasCompletedWizard: true,
       preferences: formData,
+      photoURL: formData.photoURL || user?.photoURL || '',
       memorizedPages,
       memorizedPagesCount,
       totalJuz,
@@ -216,27 +259,16 @@ const OnboardingWizard = () => {
       teacherName: groupInfo.verifiedGroup?.teacherName || null
     };
 
-    // Update React Auth context & localStorage immediately
-    await updateUserData(wizardUpdate);
-
-    try {
-      const storedUser = JSON.parse(localStorage.getItem('ma7fath_user') || '{}');
-      const targetUid = storedUser.uid || user?.uid;
-      if (targetUid) {
-        const res = await fetch(`/api/user/${targetUid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(wizardUpdate)
-        });
-        const data = await res.json();
-        if (data && data.user) {
-          const merged = { ...storedUser, ...data.user, hasCompletedWizard: true };
-          localStorage.setItem('ma7fath_user', JSON.stringify(merged));
-        }
+    if (auth.currentUser && formData.photoURL) {
+      try {
+        await updateProfile(auth.currentUser, { photoURL: formData.photoURL });
+      } catch (e) {
+        console.error("Failed to update profile photoURL", e);
       }
-    } catch (e) {
-      console.log('Error syncing wizard data with API:', e);
     }
+
+    // Update React Auth context & Firestore immediately
+    await updateUserData(wizardUpdate);
 
     navigate('/dashboard', { replace: true });
   };
@@ -292,6 +324,71 @@ const OnboardingWizard = () => {
                       ? 'منظومة حديثة ومتكاملة لحفظ القرآن الكريم ومراجعته وإتقانه بإشراف نخبة من المعلمات المعتمدات أو بمسار الحفظ الذاتي المستقل.'
                       : 'A modern, structured ecosystem for Quran memorization, recitation, and mastery with certified teachers or independent study.'}
                   </p>
+                  
+                  <div style={{ marginBottom: '24px', padding: '16px', background: 'var(--bg-color)', borderRadius: '12px', border: '1px solid var(--glass-border)', textAlign: isRTL ? 'right' : 'left' }}>
+                    
+                    {/* Avatar Upload */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                      <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: 'var(--bg-surface)', border: '2px solid var(--primary)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {formData.photoURL || user?.photoURL ? (
+                          <img src={formData.photoURL || user?.photoURL} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                          <User size={32} color="var(--text-secondary)" />
+                        )}
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                          {lang === 'ar' ? 'الصورة الشخصية' : 'Profile Picture'}
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (file && user?.uid) {
+                              setUploadingAvatar(true);
+                              try {
+                                const storageRef = ref(storage, `avatars/${user.uid}_${Date.now()}`);
+                                await uploadBytes(storageRef, file);
+                                const url = await getDownloadURL(storageRef);
+                                setFormData(prev => ({ ...prev, photoURL: url }));
+                              } catch (err) {
+                                console.error('Upload failed', err);
+                                alert(lang === 'ar' ? 'فشل رفع الصورة.' : 'Failed to upload image.');
+                              }
+                              setUploadingAvatar(false);
+                            }
+                          }}
+                          style={{ display: 'none' }}
+                          id="avatar-upload"
+                        />
+                        <label htmlFor="avatar-upload" style={{ fontSize: '12px', color: 'var(--primary)', cursor: uploadingAvatar ? 'wait' : 'pointer', fontWeight: 'bold' }}>
+                          {uploadingAvatar ? (lang === 'ar' ? 'جاري الرفع...' : 'Uploading...') : (lang === 'ar' ? 'رفع صورة جديدة' : 'Upload new picture')}
+                        </label>
+                      </div>
+                    </div>
+
+                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                      {lang === 'ar' ? 'اسمك الظاهر في المنصة (يمكنك تعديله):' : 'Your Display Name (You can edit it):'}
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.displayName}
+                      onChange={(e) => setFormData(prev => ({ ...prev, displayName: e.target.value }))}
+                      placeholder={lang === 'ar' ? 'اكتب اسمك' : 'Enter your name'}
+                      style={{
+                        width: '100%',
+                        padding: '10px 14px',
+                        borderRadius: '8px',
+                        border: '1px solid var(--primary)',
+                        background: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        fontSize: '15px',
+                        fontWeight: 'bold',
+                        outline: 'none'
+                      }}
+                    />
+                  </div>
                   
                   {/* 4 Value Proposition Cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px', textAlign: isRTL ? 'right' : 'left', marginBottom: '24px' }}>

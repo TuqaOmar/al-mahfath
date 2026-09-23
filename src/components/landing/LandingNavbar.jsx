@@ -39,37 +39,16 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
           <Logo size={34} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
-                {isRTL ? 'مُحَفِّظ' : 'Ma7fath'} <span style={{ color: 'var(--primary)' }}>AI</span>
-              </span>
-              <span style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                padding: '2px 7px',
-                borderRadius: '6px',
-                background: 'var(--primary-light)',
-                color: 'var(--primary)',
-                border: '1px solid var(--primary-border)'
-              }}>
-                {isRTL ? 'الإصدار الذكي' : 'Smart AI'}
+              <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'flex', gap: '4px' }}>
+                <span>{isRTL ? 'المُحَفِّظ' : 'Al-Mahfath'}</span>
+                <span style={{ color: 'var(--primary)' }}>{isRTL ? 'الإلكتروني' : 'Electronic'}</span>
               </span>
             </div>
-            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', display: 'block', marginTop: '-1px' }}>
-              {isRTL ? 'منظومة إتقان القرآن الكريم' : 'Quran Mastery Platform'}
-            </span>
           </div>
         </div>
 
         {/* Center Nav Links (Desktop) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }} className="nav-links-desktop">
-          <a 
-            href="#features" 
-            style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >
-            {isRTL ? 'المميزات الذكية' : 'Features'}
-          </a>
           <a 
             href="#showcase" 
             style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
@@ -87,6 +66,14 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
             {isRTL ? 'خطة الحصون الخمسة' : '5 Fortresses'}
           </a>
           <a 
+            href="#features" 
+            style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
+            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
+            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+          >
+            {isRTL ? 'المميزات الذكية' : 'Features'}
+          </a>
+          <a 
             href="#faq" 
             style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
             onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
@@ -94,28 +81,6 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
           >
             {isRTL ? 'الأسئلة الشائعة' : 'FAQ'}
           </a>
-
-          {/* Documentation Link */}
-          <button
-            onClick={onOpenDocs}
-            style={{
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontSize: '13.5px',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              transition: 'color 0.2s',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: 0
-            }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >
-            <span>{isRTL ? 'توثيق المنصة 📚' : 'Documentation 📚'}</span>
-          </button>
         </div>
 
         {/* Right Actions */}
@@ -167,7 +132,7 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
           </button>
 
           {/* Theme Toggle */}
-          <ThemeToggle variant="pill" size="small" />
+          <ThemeToggle variant="icon" size="small" />
 
           {/* User Auth Buttons */}
           {user ? (
