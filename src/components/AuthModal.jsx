@@ -6,7 +6,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider } from '../lib/firebase';
 import { signInWithPopup } from 'firebase/auth';
-import { Logo } from '../ui/Logo';
+import { Logo } from './ui/Logo';
 
 export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
