@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تسجيل الدخول باستخدام Google</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f1f3f4;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .card {
+      background: white;
+      border: 1px solid #dadce0;
+      border-radius: 8px;
+      width: 450px;
+      padding: 40px;
+      box-sizing: border-box;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .logo {
+      width: 75px;
+      margin-bottom: 20px;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 400;
+      color: #202124;
+      margin: 0 0 8px 0;
+    }
+    p {
+      font-size: 16px;
+      color: #5f6368;
+      margin: 0 0 30px 0;
+    }
+    .input-group {
+      margin-bottom: 24px;
+      text-align: right;
+    }
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #3c4043;
+      margin-bottom: 8px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #dadce0;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input:focus {
+      border-color: #1a73e8;
+    }
+    .btn {
+      background-color: #1a73e8;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+      transition: background-color 0.2s;
+    }
+    .btn:hover {
+      background-color: #1557b0;
+    }
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #70757a;
+      display: flex;
+      justify-content: space-between;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="logo">
+    <h1>تسجيل الدخول</h1>
+    <p>المتابعة إلى تطبيق محفظ AI</p>
+
+    <form id="loginForm">
+      <div class="input-group">
+        <label for="name">الاسم بالكامل</label>
+        <input type="text" id="name" required placeholder="أدخل اسمك الكريم..." value="أحمد محمد">
+      </div>
+      <div class="input-group">
+        <label for="email">البريد الإلكتروني (Gmail)</label>
+        <input type="email" id="email" required placeholder="name@gmail.com" value="tuaa.1999@gmail.com">
+      </div>
+      <button type="submit" class="btn">التالي</button>
+    </form>
+
+    <div class="footer">
+      <span>العربية</span>
+      <span>مساعدة • الخصوصية • البنود</span>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+
+      if (window.opener) {
+        // Send credentials back to AuthModal
+        window.opener.postMessage({
+          type: 'GOOGLE_SIGN_IN_SUCCESS',
+          name: name,
+          email: email
+        }, '*');
+        window.close();
+      }
+    });
+  </script>
+
+</body>
+</html>

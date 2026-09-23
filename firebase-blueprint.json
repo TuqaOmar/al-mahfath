@@ -1,0 +1,175 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User account profile and memorization progress metrics",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "hasCompletedWizard": { "type": "boolean" },
+        "role": { "type": "string" },
+        "isSafarMember": { "type": "boolean" },
+        "groupId": { "type": "string" },
+        "groupName": { "type": "string" },
+        "groupCode": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "status": { "type": "string" },
+        "streak": { "type": "number" },
+        "xp": { "type": "number" },
+        "level": { "type": "number" },
+        "memorizedPagesCount": { "type": "number" },
+        "memoryScore": { "type": "number" },
+        "totalJuz": { "type": "number" },
+        "preferences": { "type": "string" }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Group": {
+      "title": "Safar Study Group",
+      "description": "Safar memorization group / halaqah led by a teacher",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "teacherName": { "type": "string" },
+        "description": { "type": "string" },
+        "membersCount": { "type": "number" },
+        "activeStudentsCount": { "type": "number" },
+        "commitmentRate": { "type": "number" },
+        "targetJuz": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["code", "name", "teacherId", "teacherName"]
+    },
+    "QuranPage": {
+      "title": "Quran Page Status",
+      "description": "Memorization and review metrics for a specific Quran page",
+      "type": "object",
+      "properties": {
+        "pageNumber": { "type": "number" },
+        "status": { "type": "string" },
+        "score": { "type": "number" },
+        "surahName": { "type": "string" },
+        "juz": { "type": "number" },
+        "lastReviewed": { "type": "string" },
+        "errorsCount": { "type": "number" }
+      },
+      "required": ["pageNumber", "status"]
+    },
+    "CommunityPost": {
+      "title": "Community Post",
+      "description": "Discussion post in the Quran learner community",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "author": { "type": "string" },
+        "avatar": { "type": "string" },
+        "isAnonymous": { "type": "number" },
+        "category": { "type": "string" },
+        "timeAgo": { "type": "string" },
+        "content": { "type": "string" },
+        "likes": { "type": "number" },
+        "answers": { "type": "string" }
+      },
+      "required": ["author", "content"]
+    },
+    "FiveFortressesPlan": {
+      "title": "Five Fortresses Revision Plan",
+      "description": "Five Fortresses Quran memorization and revision schedule linked to the user's last reached Juz",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "lastJuzReached": { "type": "number" },
+        "currentPage": { "type": "number" },
+        "currentSurah": { "type": "string" },
+        "dailyTarget": { "type": "string" },
+        "fortress1_khatmah": { "type": "string" },
+        "fortress2_preparation": { "type": "string" },
+        "fortress3_newMemorization": { "type": "string" },
+        "fortress4_nearRevision": { "type": "string" },
+        "fortress5_farRevision": { "type": "string" },
+        "completionStatus": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "lastJuzReached", "currentPage"]
+    },
+    "AyahProgress": {
+      "title": "Ayah Memorization Progress",
+      "description": "User personal portfolio item tracking memorization, repetition, and AI recitation status for an individual Ayah",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "surahNumber": { "type": "number" },
+        "ayahNumber": { "type": "number" },
+        "globalAyahNumber": { "type": "number" },
+        "status": { "type": "string" },
+        "repetitionCount": { "type": "number" },
+        "recitationScore": { "type": "number" },
+        "lastReviewed": { "type": "string" },
+        "notes": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "surahNumber", "ayahNumber", "status"]
+    },
+    "RecitationSession": {
+      "title": "Recitation Session & Accuracy Record",
+      "description": "Historical recitation attempt with accuracy score, word-level correction, and status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "pageNumber": { "type": "number" },
+        "surahNumber": { "type": "number" },
+        "surahName": { "type": "string" },
+        "ayahNumber": { "type": "number" },
+        "accuracy": { "type": "number" },
+        "type": { "type": "string" },
+        "status": { "type": "string" },
+        "transcribedText": { "type": "string" },
+        "expectedText": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["userId", "pageNumber", "ayahNumber", "accuracy"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile collection"
+    },
+    "/users/{userId}/quranPages/{pageId}": {
+      "schema": "QuranPage",
+      "description": "Quran pages memorization progress for a user"
+    },
+    "/users/{userId}/five_fortresses_plans/{planId}": {
+      "schema": "FiveFortressesPlan",
+      "description": "Five Fortresses revision plan linked to the user's progress"
+    },
+    "/users/{userId}/ayah_progress/{ayahId}": {
+      "schema": "AyahProgress",
+      "description": "Per-ayah memorization portfolio for a user"
+    },
+    "/users/{userId}/recitation_sessions/{sessionId}": {
+      "schema": "RecitationSession",
+      "description": "Historical recitation attempts and accuracy logs for a user"
+    },
+    "/community_posts/{postId}": {
+      "schema": "CommunityPost",
+      "description": "Community posts collection"
+    },
+    "/groups/{groupId}": {
+      "schema": "Group",
+      "description": "Safar study groups / halaqahs collection"
+    }
+  }
+}

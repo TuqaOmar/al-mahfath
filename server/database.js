@@ -1,0 +1,724 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import crypto from 'crypto';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DB_PATH = path.join(__dirname, 'db.json');
+
+// Password hashing helper using crypto PBKDF2
+export function hashPassword(password) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return { salt, hash };
+}
+
+export function verifyPassword(password, salt, storedHash) {
+  if (!salt || !storedHash) return false;
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
+  return hash === storedHash;
+}
+
+// In-Memory Database State
+let dbState = {
+  users: [],
+  quran_pages: [],
+  community_posts: [],
+  ai_chat_history: [],
+  portfolio_ayahs: [],
+  recitation_sessions: []
+};
+
+function loadDb() {
+  try {
+    if (fs.existsSync(DB_PATH)) {
+      const data = JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
+      if (Array.isArray(data.users)) dbState.users = data.users;
+      if (Array.isArray(data.quranPages)) dbState.quran_pages = data.quranPages;
+      if (Array.isArray(data.quran_pages)) dbState.quran_pages = data.quran_pages;
+      if (Array.isArray(data.communityPosts)) dbState.community_posts = data.communityPosts;
+      if (Array.isArray(data.community_posts)) dbState.community_posts = data.community_posts;
+      if (Array.isArray(data.aiChatHistory)) dbState.ai_chat_history = data.aiChatHistory;
+      if (Array.isArray(data.ai_chat_history)) dbState.ai_chat_history = data.ai_chat_history;
+      if (Array.isArray(data.portfolioAyahs)) dbState.portfolio_ayahs = data.portfolioAyahs;
+      if (Array.isArray(data.portfolio_ayahs)) dbState.portfolio_ayahs = data.portfolio_ayahs;
+      if (Array.isArray(data.recitationSessions)) dbState.recitation_sessions = data.recitationSessions;
+      if (Array.isArray(data.recitation_sessions)) dbState.recitation_sessions = data.recitation_sessions;
+    }
+  } catch (e) {
+    console.error('Error loading db.json:', e);
+  }
+}
+
+function saveDb() {
+  try {
+    fs.writeFileSync(DB_PATH, JSON.stringify({
+      users: dbState.users,
+      quranPages: dbState.quran_pages,
+      communityPosts: dbState.community_posts,
+      aiChatHistory: dbState.ai_chat_history,
+      portfolioAyahs: dbState.portfolio_ayahs,
+      recitationSessions: dbState.recitation_sessions
+    }, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error saving db.json:', e);
+  }
+}
+
+// Seed Initial Data if empty
+function seedDb() {
+  loadDb();
+
+  // Admin User Seed
+  if (!dbState.users.some(u => u.uid === 'admin_123')) {
+    const { salt, hash } = hashPassword('admin123');
+    dbState.users.push({
+      uid: 'admin_123',
+      name: 'مدير النظام (أدمن)',
+      email: 'admin@ma7fath.ai',
+      photoURL: 'https://api.dicebear.com/7.x/bottts/svg?seed=Admin',
+      hasCompletedWizard: 1,
+      role: 'admin',
+      streak: 15,
+      xp: 9999,
+      level: 99,
+      memorizedPagesCount: 604,
+      memoryScore: 100,
+      totalJuz: 30.0,
+      salt,
+      passwordHash: hash,
+      preferences: JSON.stringify({
+        level: 'حافظ كامل المصحف',
+        dailyTarget: 'مراجعة جزئين يومياً',
+        learningStyle: 'مختلط (شامل)',
+        motivation: 'إدارة وتوجيه مجتمع حفاظ القرآن الكريم',
+        reminder: 'على مدار اليوم'
+      })
+    });
+  }
+
+  // Demo User Seed
+  if (!dbState.users.some(u => u.uid === 'demo_user_123')) {
+    const { salt, hash } = hashPassword('demo123');
+    dbState.users.push({
+      uid: 'demo_user_123',
+      name: 'أحمد محمد',
+      email: 'demo@ma7fath.ai',
+      photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
+      hasCompletedWizard: 1,
+      role: 'user',
+      streak: 23,
+      xp: 2450,
+      level: 12,
+      memorizedPagesCount: 49,
+      memoryScore: 87,
+      totalJuz: 2.5,
+      salt,
+      passwordHash: hash,
+      preferences: JSON.stringify({
+        level: 'متوسط (أحفظ بعض الأجزاء)',
+        dailyTarget: 'صفحة واحدة يومياً',
+        learningStyle: 'سمعي بصري (مختلط)',
+        motivation: 'تثبيت حفظ سورة البقرة وآل عمران والتقرب إلى الله',
+        reminder: 'بعد صلاة الفجر'
+      })
+    });
+  }
+
+  // Quran Pages Seed
+  if (dbState.quran_pages.length < 20) {
+    const pagesData = [
+      [1,  'excellent', 98, 'الفاتحة',     1, 'اليوم',        0],
+      [2,  'excellent', 95, 'البقرة',       1, 'اليوم',        0],
+      [3,  'excellent', 92, 'البقرة',       1, 'أمس',          1],
+      [4,  'review',    78, 'البقرة',       1, 'منذ يومين',    2],
+      [5,  'review',    81, 'البقرة',       1, 'منذ يومين',    1],
+      [6,  'review',    75, 'البقرة',       1, 'منذ 3 أيام',   3],
+      [7,  'weak',      65, 'البقرة',       1, 'منذ أسبوع',    5],
+      [8,  'weak',      60, 'البقرة',       1, 'منذ أسبوع',    4],
+      [9,  'review',    80, 'البقرة',       1, 'منذ 4 أيام',   2],
+      [10, 'excellent', 96, 'البقرة',       1, 'أمس',          0],
+      [11, 'excellent', 94, 'البقرة',       1, 'اليوم',        0],
+      [12, 'review',    82, 'البقرة',       1, 'منذ 3 أيام',   1],
+      [13, 'review',    77, 'البقرة',       1, 'منذ 5 أيام',   3],
+      [14, 'excellent', 97, 'البقرة',       1, 'أمس',          0],
+      [15, 'review',    73, 'البقرة',       1, 'منذ أسبوع',    4],
+      [16, 'excellent', 99, 'البقرة',       2, 'اليوم',        0],
+      [17, 'excellent', 93, 'البقرة',       2, 'أمس',          0],
+      [18, 'review',    76, 'البقرة',       2, 'منذ 3 أيام',   2],
+      [19, 'weak',      58, 'البقرة',       2, 'منذ أسبوعين',  6],
+      [20, 'review',    85, 'البقرة',       2, 'منذ يومين',    1],
+      [21, 'excellent', 91, 'البقرة',       2, 'أمس',          0],
+      [22, 'excellent', 95, 'البقرة',       2, 'اليوم',        0],
+      [23, 'review',    79, 'البقرة',       2, 'منذ 4 أيام',   2],
+      [24, 'weak',      63, 'البقرة',       2, 'منذ أسبوع',    5],
+      [25, 'review',    83, 'البقرة',       2, 'منذ يومين',    1],
+      [26, 'excellent', 94, 'البقرة',       2, 'أمس',          0],
+      [27, 'excellent', 97, 'البقرة',       2, 'اليوم',        0],
+      [28, 'review',    74, 'البقرة',       2, 'منذ 5 أيام',   3],
+      [29, 'review',    80, 'البقرة',       2, 'منذ 3 أيام',   2],
+      [30, 'excellent', 96, 'البقرة',       2, 'أمس',          0],
+      [31, 'excellent', 93, 'البقرة',       3, 'اليوم',        0],
+      [32, 'review',    77, 'البقرة',       3, 'منذ 4 أيام',   3],
+      [33, 'weak',      61, 'البقرة',       3, 'منذ أسبوع',    5],
+      [34, 'excellent', 98, 'البقرة',       3, 'أمس',          0],
+      [35, 'excellent', 95, 'البقرة',       3, 'اليوم',        0],
+      [36, 'review',    76, 'البقرة',       3, 'منذ 3 أيام',   2],
+      [37, 'review',    82, 'البقرة',       3, 'منذ يومين',    1],
+      [38, 'excellent', 94, 'البقرة',       3, 'أمس',          0],
+      [39, 'review',    71, 'البقرة',       3, 'منذ 5 أيام',   4],
+      [40, 'review',    84, 'البقرة',       3, 'منذ يومين',    1],
+      [41, 'excellent', 96, 'البقرة',       3, 'اليوم',        0],
+      [42, 'excellent', 92, 'البقرة',       3, 'أمس',          0],
+      [43, 'review',    78, 'البقرة',       3, 'منذ 4 أيام',   2],
+      [44, 'weak',      62, 'البقرة',       3, 'منذ أسبوع',    5],
+      [45, 'excellent', 97, 'البقرة',       3, 'أمس',          0],
+      [46, 'excellent', 95, 'البقرة',       3, 'اليوم',        0],
+      [47, 'review',    75, 'البقرة',       3, 'منذ 3 أيام',   3],
+      [48, 'review',    80, 'البقرة',       3, 'منذ يومين',    2],
+      [49, 'excellent', 93, 'البقرة',       3, 'أمس',          0]
+    ];
+    for (const p of pagesData) {
+      if (!dbState.quran_pages.some(qp => qp.pageNumber === p[0])) {
+        dbState.quran_pages.push({
+          pageNumber: p[0],
+          status: p[1],
+          score: p[2],
+          surahName: p[3],
+          juz: p[4],
+          lastReviewed: p[5],
+          errorsCount: p[6]
+        });
+      }
+    }
+  }
+
+  // Community Posts Seed - Single Impactful Engaging Post
+  dbState.community_posts = [
+    {
+      id: 1,
+      author: 'مشرف مجتمع المحفظ القرآني',
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=QuranCommunity',
+      isAnonymous: 0,
+      category: 'تدبر وتثبيت',
+      timeAgo: 'منشور مثبت 📌',
+      content: 'قال رسول الله ﷺ: «تَعَاهَدُوا هَذَا الْقُرْآنَ، فَوَالَّذِي نَفْسُ مُحَمَّدٍ بِيَدِهِ لَهُوَ أَشَدُّ تَفَلُّتًا مِنَ الْإِبِلِ فِي عُقُلِهَا».\n\n🌿 إلى كل صاحب همّة يمر من هنا:\nكم من صفحة حفظتها ثم شعرت بثقل في مراجعتها؟ وكم من آية بكى قلبك عند تدبرها؟\nاعلم أن القرآن عزيز.. لا يُنال بفضول الأوقات، بل يُنال بصدق النيات، وصبر المجاهدة، ولذة المناجاة في صلاة الليل.\n\n💬 شاركونا في هذا المنشور الموحّد:\n1️⃣ ما هو أكبر تحدٍ يواجهك حالياً في تثبيت حفظك؟\n2️⃣ وما هي الآية أو القاعدة التي إذا تذكرتها هان عليك التعب وشحذت همتك؟\n\n🕊️ اكتب تجربتك أو سؤالك، ولنتعاهد كتاب الله معاً وندعو لبعضنا بالثبات 🤍🤲',
+      likes: 128,
+      answers: JSON.stringify([
+        { 
+          id: 101, 
+          author: 'د. عبد الرحمن (معلم قرآن)', 
+          text: 'نصيحة من تجربة: أعظم ما يثبت الحفظ في صدرك هو (الحصن الخامس: الصلاة بالمحفوظ في ركعتي الليل). الصفحة التي لا تقرأ بها في صلاتك تفلت سريعاً!' 
+        },
+        { 
+          id: 102, 
+          author: 'أحمد محمد', 
+          text: 'كنت أعاني من تفلت الأوجه الأخيرة حتى طبقت قاعدة التكرار 20 مرة للآية و40 للربط.. نسأل الله أن يجعلنا وإياكم من أهل القرآن الذين هم أهل الله وخاصته.' 
+        }
+      ])
+    }
+  ];
+
+  saveDb();
+}
+
+seedDb();
+
+// Query Dispatcher
+export async function runQuery(sql, params = []) {
+  const upper = sql.replace(/\s+/g, ' ').trim().toUpperCase();
+
+  if (upper.startsWith('INSERT INTO USERS')) {
+    const userObj = {
+      uid: params[0],
+      name: params[1],
+      email: params[2],
+      photoURL: params[3],
+      hasCompletedWizard: params[4] ? 1 : 0,
+      role: params[5],
+      streak: params[6],
+      xp: params[7],
+      level: params[8],
+      memorizedPagesCount: params[9],
+      memoryScore: params[10],
+      totalJuz: params[11],
+      salt: params[12],
+      passwordHash: params[13],
+      preferences: params[14]
+    };
+    dbState.users = dbState.users.filter(u => u.uid !== userObj.uid);
+    dbState.users.push(userObj);
+    saveDb();
+    return { lastID: userObj.uid, changes: 1 };
+  }
+
+  if (upper.includes('UPDATE USERS SET') && (upper.includes('HASCOMPLETEDWIZARD = ?') || upper.includes('PHOTOURL = ?'))) {
+    let name, photoURL, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid;
+    if (upper.includes('PHOTOURL = ?')) {
+      [name, photoURL, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid] = params;
+    } else {
+      [name, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid] = params;
+    }
+    const user = dbState.users.find(u => u.uid === uid);
+    if (user) {
+      if (name !== undefined) user.name = name;
+      if (photoURL !== undefined) user.photoURL = photoURL;
+      user.hasCompletedWizard = hasCompletedWizard ? 1 : 0;
+      user.streak = streak;
+      user.xp = xp;
+      user.level = level;
+      user.memorizedPagesCount = memorizedPagesCount;
+      user.memoryScore = memoryScore;
+      user.totalJuz = totalJuz;
+      user.preferences = preferences;
+      saveDb();
+      return { changes: 1 };
+    }
+    return { changes: 0 };
+  }
+
+  if (upper.includes('UPDATE USERS SET') && upper.includes('LEVEL = ?')) {
+    const [name, level, xp, memorizedPagesCount, totalJuz, uid] = params;
+    const user = dbState.users.find(u => u.uid === uid);
+    if (user) {
+      user.name = name;
+      user.level = level;
+      user.xp = xp;
+      user.memorizedPagesCount = memorizedPagesCount;
+      user.totalJuz = totalJuz;
+      saveDb();
+      return { changes: 1 };
+    }
+    return { changes: 0 };
+  }
+
+  if (upper.startsWith('DELETE FROM USERS WHERE UID = ?')) {
+    const uid = params[0];
+    const lenBefore = dbState.users.length;
+    dbState.users = dbState.users.filter(u => u.uid !== uid);
+    saveDb();
+    return { changes: lenBefore - dbState.users.length };
+  }
+
+  if (upper.includes('UPDATE QURAN_PAGES') && upper.includes("SET STATUS = 'EXCELLENT'")) {
+    const pageNum = Number(params[0]);
+    let count = 0;
+    dbState.quran_pages.forEach(p => {
+      if (p.pageNumber <= pageNum) {
+        p.status = 'excellent';
+        p.score = 98;
+        count++;
+      }
+    });
+    saveDb();
+    return { changes: count };
+  }
+
+  if (upper.startsWith('UPDATE QURAN_PAGES SET STATUS = ?, SCORE = ?')) {
+    const [status, score, pageNumber] = params;
+    const p = dbState.quran_pages.find(qp => qp.pageNumber === Number(pageNumber));
+    if (p) {
+      p.status = status;
+      p.score = score;
+      p.lastReviewed = 'اليوم';
+      saveDb();
+      return { changes: 1 };
+    }
+    return { changes: 0 };
+  }
+
+  if (upper.startsWith('INSERT INTO QURAN_PAGES') || upper.startsWith('INSERT OR IGNORE INTO QURAN_PAGES')) {
+    const [pageNumber, status, score, surahName, juz, lastReviewed, errorsCount] = params;
+    const existing = dbState.quran_pages.find(qp => qp.pageNumber === Number(pageNumber));
+    if (!existing) {
+      dbState.quran_pages.push({
+        pageNumber: Number(pageNumber),
+        status: status || 'excellent',
+        score: score || 95,
+        surahName: surahName || `صفحة ${pageNumber}`,
+        juz: juz || Math.ceil(Number(pageNumber) / 20),
+        lastReviewed: lastReviewed || 'اليوم',
+        errorsCount: errorsCount || 0
+      });
+      saveDb();
+      return { changes: 1 };
+    }
+    return { changes: 0 };
+  }
+
+  if (upper.startsWith('INSERT INTO COMMUNITY_POSTS')) {
+    const author = params[0] || 'حافظ القرآن';
+    const avatar = params[1] || null;
+    const isAnonymous = params[2] ? 1 : 0;
+    const category = params[3] || 'تدبر وتثبيت';
+    let timeAgo = 'الآن';
+    let content = '';
+    let likes = 0;
+    let answers = '[]';
+
+    if (params.length >= 6) {
+      timeAgo = params[4] || 'الآن';
+      content = params[5] || '';
+      likes = params[6] || 0;
+      answers = params[7] || '[]';
+    } else if (params.length === 5) {
+      timeAgo = 'الآن';
+      content = params[4] || '';
+    } else {
+      content = params[4] || params[0] || '';
+    }
+
+    const newId = (dbState.community_posts.reduce((max, p) => Math.max(max, p.id || 0), 0)) + 1;
+    const post = {
+      id: newId,
+      author,
+      avatar,
+      isAnonymous,
+      category,
+      timeAgo: timeAgo || 'الآن',
+      content: String(content || ''),
+      likes: Number(likes) || 0,
+      answers: typeof answers === 'string' ? answers : JSON.stringify(answers || [])
+    };
+    dbState.community_posts.unshift(post);
+    saveDb();
+    return { lastID: newId, changes: 1 };
+  }
+
+  if (upper.startsWith('DELETE FROM COMMUNITY_POSTS WHERE ID = ?')) {
+    const id = Number(params[0]);
+    const prevLen = dbState.community_posts.length;
+    dbState.community_posts = dbState.community_posts.filter(p => p.id !== id);
+    saveDb();
+    return { changes: prevLen - dbState.community_posts.length };
+  }
+
+  if (upper.startsWith('UPDATE COMMUNITY_POSTS SET LIKES = ?')) {
+    const [likes, id] = params;
+    const post = dbState.community_posts.find(p => p.id === Number(id));
+    if (post) {
+      post.likes = likes;
+      saveDb();
+      return { changes: 1 };
+    }
+    return { changes: 0 };
+  }
+
+  if (upper.startsWith('UPDATE COMMUNITY_POSTS SET ANSWERS = ?')) {
+    const [answers, id] = params;
+    const post = dbState.community_posts.find(p => p.id === Number(id));
+    if (post) {
+      post.answers = typeof answers === 'string' ? answers : JSON.stringify(answers);
+      saveDb();
+      return { changes: 1 };
+    }
+    return { changes: 0 };
+  }
+
+  if (upper.startsWith('DELETE FROM COMMUNITY_POSTS')) {
+    dbState.community_posts = [];
+    saveDb();
+    return { changes: 1 };
+  }
+
+  if (upper.startsWith('INSERT INTO AI_CHAT_HISTORY')) {
+    const [sender, text, userId] = params;
+    const newId = Date.now() + Math.floor(Math.random() * 1000);
+    dbState.ai_chat_history.push({ id: newId, sender, text, userId: userId || 'default', timestamp: Math.floor(Date.now() / 1000) });
+    saveDb();
+    return { lastID: newId, changes: 1 };
+  }
+
+  if (upper.startsWith('DELETE FROM AI_CHAT_HISTORY')) {
+    const uid = params[0];
+    if (uid) {
+      const lenBefore = dbState.ai_chat_history.length;
+      dbState.ai_chat_history = dbState.ai_chat_history.filter(h => h.userId !== uid);
+      saveDb();
+      return { changes: lenBefore - dbState.ai_chat_history.length };
+    }
+    dbState.ai_chat_history = [];
+    saveDb();
+    return { changes: 1 };
+  }
+
+  saveDb();
+  return { changes: 0 };
+}
+
+export async function getRow(sql, params = []) {
+  const sqlTrim = sql.trim();
+  const upper = sqlTrim.toUpperCase();
+
+  if (upper.includes('FROM USERS WHERE EMAIL = ?')) {
+    const email = (params[0] || '').trim().toLowerCase();
+    const user = dbState.users.find(u => (u.email || '').trim().toLowerCase() === email);
+    return user ? { ...user } : null;
+  }
+
+  if (upper.includes('FROM USERS WHERE UID = ?')) {
+    const uid = params[0];
+    const user = dbState.users.find(u => u.uid === uid);
+    return user ? { ...user } : null;
+  }
+
+  if (upper.includes('FROM QURAN_PAGES WHERE PAGENUMBER = ?')) {
+    const pageNum = Number(params[0]);
+    const p = dbState.quran_pages.find(qp => qp.pageNumber === pageNum);
+    return p ? { ...p } : null;
+  }
+
+  if (upper.includes('FROM COMMUNITY_POSTS WHERE ID = ?')) {
+    const id = Number(params[0]);
+    const post = dbState.community_posts.find(p => p.id === id);
+    return post ? { ...post } : null;
+  }
+
+  if (upper.includes('COUNT(*) AS COUNT FROM QURAN_PAGES')) {
+    return { count: dbState.quran_pages.length };
+  }
+
+  if (upper.includes('COUNT(*) AS COUNT FROM COMMUNITY_POSTS')) {
+    return { count: dbState.community_posts.length };
+  }
+
+  return null;
+}
+
+export async function allRows(sql, params = []) {
+  const sqlTrim = sql.trim();
+  const upper = sqlTrim.toUpperCase();
+
+  if (upper.includes('FROM USERS')) {
+    return dbState.users.map(u => ({ ...u }));
+  }
+
+  if (upper.includes('FROM QURAN_PAGES')) {
+    return dbState.quran_pages.map(p => ({ ...p }));
+  }
+
+  if (upper.includes('FROM COMMUNITY_POSTS')) {
+    const posts = dbState.community_posts.map(p => ({ ...p }));
+    if (upper.includes('ORDER BY ID DESC')) {
+      posts.sort((a, b) => (b.id || 0) - (a.id || 0));
+    }
+    return posts;
+  }
+
+  if (upper.includes('FROM AI_CHAT_HISTORY')) {
+    let history = dbState.ai_chat_history.map(h => ({ ...h }));
+    if (params && params[0]) {
+      history = history.filter(h => h.userId === params[0]);
+    }
+    if (upper.includes('ORDER BY ID ASC')) {
+      history.sort((a, b) => (a.id || 0) - (b.id || 0));
+    }
+    return history.slice(0, 100);
+  }
+
+  return [];
+}
+
+// Portfolio helper functions
+export function getUserPortfolio(userId) {
+  if (!userId) return [];
+  return (dbState.portfolio_ayahs || []).filter(item => item.userId === userId);
+}
+
+export function saveAyahToPortfolio(userId, item) {
+  if (!userId || !item) return null;
+  const surahNum = Number(item.surahNumber);
+  const ayahNum = Number(item.ayahNumber);
+  
+  let existingIndex = (dbState.portfolio_ayahs || []).findIndex(
+    p => p.userId === userId && Number(p.surahNumber) === surahNum && Number(p.ayahNumber) === ayahNum
+  );
+
+  const entry = {
+    id: `${userId}_${surahNum}_${ayahNum}`,
+    userId,
+    surahNumber: surahNum,
+    ayahNumber: ayahNum,
+    globalAyahNumber: item.globalAyahNumber || null,
+    status: item.status || 'memorized',
+    repetitionCount: Number(item.repetitionCount) || 0,
+    recitationScore: Number(item.recitationScore) || 0,
+    lastReviewed: item.lastReviewed || new Date().toISOString(),
+    notes: item.notes || '',
+    updatedAt: new Date().toISOString()
+  };
+
+  if (existingIndex >= 0) {
+    dbState.portfolio_ayahs[existingIndex] = { ...dbState.portfolio_ayahs[existingIndex], ...entry };
+  } else {
+    if (!dbState.portfolio_ayahs) dbState.portfolio_ayahs = [];
+    dbState.portfolio_ayahs.push(entry);
+  }
+
+  saveDb();
+  return entry;
+}
+
+export function bulkSaveSurahToPortfolio(userId, surahNumber, items) {
+  if (!userId || !Array.isArray(items)) return [];
+  const results = [];
+  for (const item of items) {
+    const saved = saveAyahToPortfolio(userId, { ...item, surahNumber });
+    if (saved) results.push(saved);
+  }
+  return results;
+}
+
+// Recitation Sessions & Accuracy Storage
+export function saveRecitationSession(session) {
+  if (!session) return null;
+  const newId = 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+  const accuracy = Math.max(0, Math.min(100, Math.round(Number(session.accuracy) || 0)));
+  const pageNum = Number(session.pageNumber) || 1;
+  const isFullPage = Boolean(session.isFullPage);
+  const ayahNum = isFullPage ? null : (Number(session.ayahNumber) || 1);
+  const surahNum = Number(session.surahNumber) || 1;
+
+  let statusTag = 'weak';
+  if (accuracy >= 90) statusTag = 'excellent';
+  else if (accuracy >= 75) statusTag = 'review';
+
+  const entry = {
+    id: newId,
+    userId: session.userId || 'demo_user_123',
+    pageNumber: pageNum,
+    surahNumber: surahNum,
+    surahName: session.surahName || 'سورة الشريفة',
+    ayahNumber: ayahNum,
+    isFullPage,
+    accuracy,
+    stats: session.stats || {
+      totalWords: 0,
+      correctCount: 0,
+      diacriticCount: 0,
+      grammarCount: 0,
+      errorCount: 0
+    },
+    results: session.results || [],
+    ayahBreakdown: session.ayahBreakdown || [],
+    transcribedText: session.transcribedText || '',
+    expectedText: session.expectedText || '',
+    type: session.type || 'voice',
+    status: statusTag,
+    createdAt: new Date().toISOString()
+  };
+
+  if (!dbState.recitation_sessions) dbState.recitation_sessions = [];
+  dbState.recitation_sessions.unshift(entry);
+
+  // Keep last 500 recitation sessions in memory
+  if (dbState.recitation_sessions.length > 500) {
+    dbState.recitation_sessions = dbState.recitation_sessions.slice(0, 500);
+  }
+
+  // Update page review status & score in quran_pages
+  const page = dbState.quran_pages.find(p => p.pageNumber === pageNum);
+  if (page) {
+    // Weighted update so recent recitation reflects in Quran map
+    page.score = Math.round((Number(page.score || 0) * 0.3) + (accuracy * 0.7));
+    if (page.score >= 90) page.status = 'excellent';
+    else if (page.score >= 75) page.status = 'review';
+    else page.status = 'weak';
+    page.lastReviewed = 'اليوم';
+    page.errorsCount = entry.stats?.errorCount || entry.stats?.grammarCount || 0;
+  } else {
+    dbState.quran_pages.push({
+      pageNumber: pageNum,
+      status: statusTag,
+      score: accuracy,
+      surahName: session.surahName || `صفحة ${pageNum}`,
+      juz: Math.ceil(pageNum / 20),
+      lastReviewed: 'اليوم',
+      errorsCount: entry.stats?.errorCount || entry.stats?.grammarCount || 0
+    });
+  }
+
+  // Update in portfolio_ayahs
+  if (isFullPage && Array.isArray(session.ayahBreakdown) && session.ayahBreakdown.length > 0) {
+    session.ayahBreakdown.forEach(a => {
+      saveAyahToPortfolio(session.userId || 'demo_user_123', {
+        surahNumber: surahNum,
+        ayahNumber: a.ayahNumber,
+        status: a.accuracy >= 75 ? 'memorized' : 'learning',
+        recitationScore: a.accuracy,
+        repetitionCount: 1
+      });
+    });
+  } else if (ayahNum) {
+    saveAyahToPortfolio(session.userId || 'demo_user_123', {
+      surahNumber: surahNum,
+      ayahNumber: ayahNum,
+      status: accuracy >= 75 ? 'memorized' : 'learning',
+      recitationScore: accuracy,
+      repetitionCount: 1
+    });
+  }
+
+  // Reward XP and update memory score in user record
+  const user = dbState.users.find(u => u.uid === session.userId);
+  if (user) {
+    const gainedXp = isFullPage
+      ? (accuracy >= 90 ? 100 : (accuracy >= 75 ? 60 : 25))
+      : (accuracy >= 95 ? 50 : (accuracy >= 75 ? 25 : 10));
+    user.xp = (Number(user.xp) || 100) + gainedXp;
+    if (accuracy >= 75) {
+      user.memoryScore = Math.min(100, Math.round(((Number(user.memoryScore) || 85) * 0.85) + (accuracy * 0.15)));
+    }
+  }
+
+  saveDb();
+  return entry;
+}
+
+export function getRecitationHistory(userId, options = {}) {
+  let list = dbState.recitation_sessions || [];
+  if (userId) {
+    list = list.filter(item => item.userId === userId);
+  }
+  if (options.pageNumber) {
+    list = list.filter(item => item.pageNumber === Number(options.pageNumber));
+  }
+  if (options.ayahNumber) {
+    list = list.filter(item => item.ayahNumber === Number(options.ayahNumber));
+  }
+  if (options.surahNumber) {
+    list = list.filter(item => item.surahNumber === Number(options.surahNumber));
+  }
+  const limit = Number(options.limit) || 50;
+  return list.slice(0, limit);
+}
+
+export function getPageRecitationStats(pageNumber) {
+  const pNum = Number(pageNumber);
+  const attempts = (dbState.recitation_sessions || []).filter(s => s.pageNumber === pNum);
+  if (attempts.length === 0) {
+    return {
+      hasAttempts: false,
+      totalAttempts: 0,
+      averageAccuracy: 0,
+      bestAccuracy: 0,
+      lastRecitedAt: null,
+      recentAttempts: []
+    };
+  }
+
+  const accuracies = attempts.map(a => Number(a.accuracy) || 0);
+  const total = accuracies.reduce((sum, val) => sum + val, 0);
+  const avg = Math.round(total / accuracies.length);
+  const best = Math.max(...accuracies);
+
+  return {
+    hasAttempts: true,
+    totalAttempts: attempts.length,
+    averageAccuracy: avg,
+    bestAccuracy: best,
+    lastRecitedAt: attempts[0].createdAt,
+    recentAttempts: attempts.slice(0, 10)
+  };
+}

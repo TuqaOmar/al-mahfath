@@ -1,0 +1,1190 @@
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import path from 'path';
+import { createServer as createViteServer } from 'vite';
+import { GoogleGenAI } from '@google/genai';
+import { 
+  runQuery, 
+  getRow, 
+  allRows, 
+  hashPassword, 
+  verifyPassword,
+  getUserPortfolio,
+  saveAyahToPortfolio,
+  bulkSaveSurahToPortfolio,
+  saveRecitationSession,
+  getRecitationHistory,
+  getPageRecitationStats
+} from './database.js';
+import { analyzeRecitation, compareRecitation, comparePageRecitation } from './recitationEngine.js';
+import { 
+  getGroups, 
+  lookupGroupByCode, 
+  joinGroupByCode, 
+  leaveGroup, 
+  getTeacherDashboard, 
+  getTeacherStudents, 
+  getStudentProfile, 
+  getAdminOverview, 
+  getAdminUsersList, 
+  assignTeacherRole, 
+  removeTeacherRole,
+  createNewTeacherDirect,
+  addStudentByTeacher,
+  getAvailableStudentsForTeacher,
+  enrollStudentInTeacherGroup,
+  distributeStudentByAdmin,
+  submitEnrollmentRequest,
+  getEnrollmentRequests,
+  approveEnrollmentRequest,
+  getMemorizationPerformanceStats
+} from './safarEcosystem.js';
+
+dotenv.config();
+
+const app = express();
+const PORT = 3000;
+
+app.use(cors());
+app.use(express.json({ limit: '25mb' }));
+app.use(express.urlencoded({ extended: true, limit: '25mb' }));
+
+// Logger middleware for API endpoints
+app.use((req, res, next) => {
+  if (req.url.startsWith('/api')) {
+    console.log(`[API ${new Date().toLocaleTimeString()}] ${req.method} ${req.url}`);
+  }
+  next();
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', message: 'خادم محفظ AI يعمل بنجاح 🚀', timestamp: new Date() });
+});
+
+// Helper to safely parse user preferences whether stored as string or object
+function safeParsePreferences(prefs) {
+  if (!prefs) return {};
+  if (typeof prefs === 'object') return prefs;
+  try {
+    return JSON.parse(prefs);
+  } catch (e) {
+    return {};
+  }
+}
+
+// --- AUTHENTICATION & USER ENDPOINTS ---
+
+// Signup Endpoint
+app.post('/api/auth/signup', async (req, res) => {
+  const { name, email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'البريد الإلكتروني وكلمة المرور مطلوبة' });
+  }
+
+  try {
+    const userExists = await getRow('SELECT * FROM users WHERE email = ?', [email]);
+    if (userExists) {
+      return res.status(400).json({ success: false, message: 'البريد الإلكتروني مسجل بالفعل' });
+    }
+
+    const { salt, hash } = hashPassword(password);
+    const uid = 'user_' + Math.random().toString(36).substr(2, 9);
+    const role = email === 'admin@ma7fath.ai' ? 'admin' : 'user';
+
+    await runQuery(`
+      INSERT INTO users (uid, name, email, photoURL, hasCompletedWizard, role, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, salt, passwordHash, preferences)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      uid,
+      name || 'حافظ جديد',
+      email,
+      'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(name || 'User'),
+      0,
+      role,
+      1,
+      100,
+      1,
+      1,
+      90,
+      0.05,
+      salt,
+      hash,
+      '{}'
+    ]);
+
+    const newUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if (newUser) delete newUser.passwordHash && delete newUser.salt;
+
+    res.json({ success: true, user: newUser });
+  } catch (error) {
+    console.error('Error during signup:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء التسجيل' });
+  }
+});
+
+// Login Endpoint
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  try {
+    const user = await getRow('SELECT * FROM users WHERE email = ?', [email]);
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
+    }
+
+    // If password is not provided (e.g. legacy or test account quick login handles this)
+    if (password) {
+      const isValid = verifyPassword(password, user.salt, user.passwordHash);
+      if (!isValid) {
+        return res.status(400).json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
+      }
+    }
+
+    // Remove sensitive fields
+    delete user.passwordHash;
+    delete user.salt;
+    user.preferences = safeParsePreferences(user.preferences);
+    user.hasCompletedWizard = Boolean(user.hasCompletedWizard);
+
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء تسجيل الدخول' });
+  }
+});
+
+// Dedicated Google SSO Auth Endpoint
+app.post('/api/auth/google', async (req, res) => {
+  const { email, name, photoURL, uid: clientUid } = req.body;
+  if (!email) {
+    return res.status(400).json({ success: false, message: 'البريد الإلكتروني لحساب جوجل مطلوب' });
+  }
+
+  const normalizedEmail = email.trim().toLowerCase();
+  const userName = name || normalizedEmail.split('@')[0] || 'مستخدم Google';
+  const userPhoto = photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName)}`;
+
+  try {
+    let user = await getRow('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
+
+    if (user) {
+      if (name && name.trim() && user.name !== name.trim()) {
+        user.name = name.trim();
+        await runQuery('UPDATE users SET name = ? WHERE uid = ?', [user.name, user.uid]);
+      }
+      delete user.passwordHash;
+      delete user.salt;
+      user.preferences = safeParsePreferences(user.preferences);
+      user.hasCompletedWizard = Boolean(user.hasCompletedWizard);
+      return res.json({ success: true, user });
+    }
+
+    // Create new Google user
+    const uid = clientUid || ('google_' + Math.random().toString(36).substr(2, 9));
+    const role = normalizedEmail === 'admin@ma7fath.ai' ? 'admin' : 'user';
+
+    await runQuery(`
+      INSERT INTO users (uid, name, email, photoURL, hasCompletedWizard, role, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, salt, passwordHash, preferences)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      uid,
+      userName,
+      normalizedEmail,
+      userPhoto,
+      0,
+      role,
+      1,
+      100,
+      1,
+      1,
+      90,
+      0.05,
+      'google_sso_salt',
+      'google_sso_hash',
+      '{}'
+    ]);
+
+    const newUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if (newUser) {
+      delete newUser.passwordHash;
+      delete newUser.salt;
+      try {
+        newUser.preferences = JSON.parse(newUser.preferences);
+      } catch (e) {
+        newUser.preferences = {};
+      }
+    }
+
+    res.json({ success: true, user: newUser });
+  } catch (error) {
+    console.error('Error during Google authentication:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء تسجيل الدخول بحساب جوجل' });
+  }
+});
+app.post('/api/auth/demo', async (req, res) => {
+  try {
+    const user = await getRow("SELECT * FROM users WHERE uid = 'demo_user_123'");
+    if (user) {
+      delete user.passwordHash;
+      delete user.salt;
+      user.preferences = safeParsePreferences(user.preferences);
+    }
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// Admin Test Account Login
+app.post('/api/auth/admin', async (req, res) => {
+  try {
+    const user = await getRow("SELECT * FROM users WHERE uid = 'admin_123'");
+    if (user) {
+      delete user.passwordHash;
+      delete user.salt;
+      user.preferences = safeParsePreferences(user.preferences);
+    }
+    res.json({ success: true, user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// Get User Profile & Stats
+app.get('/api/user/:uid', async (req, res) => {
+  try {
+    const user = await getRow('SELECT * FROM users WHERE uid = ?', [req.params.uid]);
+    if (user) {
+      delete user.passwordHash;
+      delete user.salt;
+      user.preferences = safeParsePreferences(user.preferences);
+      res.json({ success: true, user });
+    } else {
+      res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// Update User Preferences, stats
+app.put('/api/user/:uid', async (req, res) => {
+  const { uid } = req.params;
+  const updates = req.body;
+
+  try {
+    const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    const name = updates.name !== undefined ? updates.name : user.name;
+    const photoURL = updates.photoURL !== undefined ? updates.photoURL : user.photoURL;
+    const hasCompletedWizard = updates.hasCompletedWizard !== undefined ? (updates.hasCompletedWizard ? 1 : 0) : user.hasCompletedWizard;
+    const streak = updates.streak !== undefined ? updates.streak : user.streak;
+    const xp = updates.xp !== undefined ? updates.xp : user.xp;
+    const level = updates.level !== undefined ? updates.level : user.level;
+    const memorizedPagesCount = updates.memorizedPagesCount !== undefined ? updates.memorizedPagesCount : user.memorizedPagesCount;
+    const memoryScore = updates.memoryScore !== undefined ? updates.memoryScore : user.memoryScore;
+    const totalJuz = updates.totalJuz !== undefined ? updates.totalJuz : user.totalJuz;
+    const preferences = updates.preferences !== undefined ? JSON.stringify(updates.preferences) : user.preferences;
+
+    await runQuery(`
+      UPDATE users 
+      SET name = ?, photoURL = ?, hasCompletedWizard = ?, streak = ?, xp = ?, level = ?, memorizedPagesCount = ?, memoryScore = ?, totalJuz = ?, preferences = ?
+      WHERE uid = ?
+    `, [name, photoURL, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid]);
+
+    // Automatically mark pre-memorized pages as excellent in SQLite database
+    if (Number(memorizedPagesCount) > 0) {
+      await runQuery(`
+        UPDATE quran_pages 
+        SET status = 'excellent', score = 98
+        WHERE pageNumber <= ?
+      `, [Number(memorizedPagesCount)]);
+    }
+
+    const updatedUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    delete updatedUser.passwordHash;
+    delete updatedUser.salt;
+    updatedUser.preferences = safeParsePreferences(updatedUser.preferences);
+    updatedUser.hasCompletedWizard = Boolean(updatedUser.hasCompletedWizard);
+
+    res.json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في تحديث البيانات' });
+  }
+});
+
+// Save / Update User Fortress Plan
+app.post('/api/user/fortress-plan', async (req, res) => {
+  const { userId, plan } = req.body;
+  if (!userId || !plan) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم والخطة مطلوبان' });
+  }
+  try {
+    const user = await getRow('SELECT * FROM users WHERE uid = ?', [userId]);
+    if (user) {
+      let prefs = {};
+      try {
+        prefs = JSON.parse(user.preferences || '{}');
+      } catch (e) {}
+      prefs.fortressPlan = plan;
+      prefs.fortressesToday = plan.completionStatus || prefs.fortressesToday;
+      await runQuery('UPDATE users SET preferences = ? WHERE uid = ?', [JSON.stringify(prefs), userId]);
+    }
+    res.json({ success: true, plan });
+  } catch (error) {
+    console.error('Error saving fortress plan:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ في حفظ الخطة' });
+  }
+});
+
+// Get User Fortress Plan
+app.get('/api/user/fortress-plan/:uid', async (req, res) => {
+  const { uid } = req.params;
+  try {
+    const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if (user && user.preferences) {
+      try {
+        const prefs = JSON.parse(user.preferences);
+        if (prefs.fortressPlan) {
+          return res.json({ success: true, plan: prefs.fortressPlan });
+        }
+      } catch (e) {}
+    }
+    res.json({ success: false, message: 'لا توجد خطة محفوظة' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// --- USER PERSONAL MEMORIZATION PORTFOLIO (محفظة الحفظ الشخصية) ---
+// Get all portfolio ayahs for user
+app.get('/api/user/:uid/portfolio', async (req, res) => {
+  const { uid } = req.params;
+  try {
+    const portfolio = getUserPortfolio(uid);
+    res.json({ success: true, portfolio });
+  } catch (error) {
+    console.error('Error fetching portfolio:', error);
+    res.status(500).json({ success: false, message: 'تعذر جلب بيانات المحفظة' });
+  }
+});
+
+// Update or save single ayah memorization progress
+app.post('/api/user/:uid/portfolio/ayah', async (req, res) => {
+  const { uid } = req.params;
+  const ayahData = req.body;
+  try {
+    const saved = saveAyahToPortfolio(uid, ayahData);
+    res.json({ success: true, item: saved });
+  } catch (error) {
+    console.error('Error saving ayah to portfolio:', error);
+    res.status(500).json({ success: false, message: 'تعذر حفظ تقدم الآية في المحفظة' });
+  }
+});
+
+// Bulk update surah ayahs in portfolio (e.g. mark full surah as memorized)
+app.post('/api/user/:uid/portfolio/bulk-surah', async (req, res) => {
+  const { uid } = req.params;
+  const { surahNumber, ayahs } = req.body;
+  try {
+    const results = bulkSaveSurahToPortfolio(uid, surahNumber, ayahs);
+    res.json({ success: true, count: results.length, items: results });
+  } catch (error) {
+    console.error('Error bulk updating surah:', error);
+    res.status(500).json({ success: false, message: 'تعذر تحديث السورة في المحفظة' });
+  }
+});
+
+// Delete User Account
+app.delete('/api/user/:uid', async (req, res) => {
+  const { uid } = req.params;
+  const email = req.query.email;
+  try {
+    if (uid && uid !== 'by_email') {
+      await runQuery('DELETE FROM users WHERE uid = ?', [uid]);
+    }
+    if (email) {
+      await runQuery('DELETE FROM users WHERE email = ?', [email]);
+    }
+    await runQuery('DELETE FROM quran_pages');
+    res.json({ success: true, message: 'تم حذف الحساب بنجاح' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.json({ success: true, message: 'تم حذف الحساب بنجاح' });
+  }
+});
+
+// --- ADMIN ENDPOINTS ---
+
+app.get('/api/admin/users', async (req, res) => {
+  try {
+    const users = await allRows('SELECT * FROM users');
+    users.forEach(u => {
+      delete u.passwordHash;
+      delete u.salt;
+      u.preferences = safeParsePreferences(u.preferences);
+    });
+    res.json({ success: true, users });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.put('/api/admin/user/:uid', async (req, res) => {
+  const { uid } = req.params;
+  const updates = req.body;
+
+  try {
+    const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
+    }
+
+    const name = updates.name !== undefined ? updates.name : user.name;
+    const level = updates.level !== undefined ? updates.level : user.level;
+    const xp = updates.xp !== undefined ? updates.xp : user.xp;
+    const memorizedPagesCount = updates.memorizedPagesCount !== undefined ? updates.memorizedPagesCount : user.memorizedPagesCount;
+    const totalJuz = updates.totalJuz !== undefined ? updates.totalJuz : user.totalJuz;
+
+    await runQuery(`
+      UPDATE users SET name = ?, level = ?, xp = ?, memorizedPagesCount = ?, totalJuz = ?
+      WHERE uid = ?
+    `, [name, level, xp, memorizedPagesCount, totalJuz, uid]);
+
+    const updatedUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    delete updatedUser.passwordHash;
+    delete updatedUser.salt;
+    updatedUser.preferences = safeParsePreferences(updatedUser.preferences);
+    updatedUser.hasCompletedWizard = Boolean(updatedUser.hasCompletedWizard);
+
+    res.json({ success: true, user: updatedUser });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.delete('/api/admin/user/:uid', async (req, res) => {
+  const { uid } = req.params;
+  try {
+    await runQuery('DELETE FROM users WHERE uid = ?', [uid]);
+    res.json({ success: true, message: 'تم حذف المستخدم بنجاح' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// --- COMMUNITY POSTS ENDPOINTS ---
+
+app.get('/api/community/posts', async (req, res) => {
+  try {
+    const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
+    posts.forEach(p => {
+      try {
+        p.answers = JSON.parse(p.answers);
+      } catch (e) {
+        p.answers = [];
+      }
+    });
+    res.json({ success: true, posts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.post('/api/community/posts', async (req, res) => {
+  const { author, avatar, isAnonymous, category, content } = req.body;
+
+  try {
+    const parsedAuthor = isAnonymous ? 'هوية مخفية' : (author || 'أحمد محمد');
+    const parsedAvatar = isAnonymous ? null : avatar;
+    const parsedAnon = isAnonymous ? 1 : 0;
+    const timeAgo = 'الآن';
+
+    await runQuery(`
+      INSERT INTO community_posts (author, avatar, isAnonymous, category, timeAgo, content, likes, answers)
+      VALUES (?, ?, ?, ?, ?, ?, 0, '[]')
+    `, [parsedAuthor, parsedAvatar, parsedAnon, category || 'تدبر', timeAgo, content]);
+
+    const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
+    posts.forEach(p => {
+      try {
+        p.answers = JSON.parse(p.answers);
+      } catch (e) {
+        p.answers = [];
+      }
+    });
+
+    res.json({ success: true, post: posts[0], posts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.post('/api/community/posts/:id/like', async (req, res) => {
+  const postId = Number(req.params.id);
+  try {
+    const post = await getRow('SELECT * FROM community_posts WHERE id = ?', [postId]);
+    if (post) {
+      const likes = (post.likes || 0) + 1;
+      await runQuery('UPDATE community_posts SET likes = ? WHERE id = ?', [likes, postId]);
+      post.likes = likes;
+      try {
+        post.answers = JSON.parse(post.answers);
+      } catch (e) {}
+      return res.json({ success: true, likes, post });
+    }
+    res.status(404).json({ success: false, message: 'المنشور غير موجود' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.post('/api/community/posts/:id/comment', async (req, res) => {
+  const postId = Number(req.params.id);
+  const { author, text } = req.body;
+
+  try {
+    const post = await getRow('SELECT * FROM community_posts WHERE id = ?', [postId]);
+    if (post) {
+      let answers = [];
+      try {
+        answers = JSON.parse(post.answers) || [];
+      } catch (e) {}
+
+      const newAnswer = {
+        id: Date.now(),
+        author: author || 'أحمد محمد',
+        text
+      };
+      answers.push(newAnswer);
+
+      await runQuery('UPDATE community_posts SET answers = ? WHERE id = ?', [JSON.stringify(answers), postId]);
+      post.answers = answers;
+
+      return res.json({ success: true, answer: newAnswer, post });
+    }
+    res.status(404).json({ success: false, message: 'المنشور غير موجود' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// --- QURAN MAP 604 PAGES ENDPOINT ---
+
+app.get('/api/quran/pages', async (req, res) => {
+  try {
+    const pages = await allRows('SELECT * FROM quran_pages');
+    res.json({ success: true, pages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.post('/api/quran/pages/:pageNumber/review', async (req, res) => {
+  const pageNumber = Number(req.params.pageNumber);
+  const { status, score, surahName, juz } = req.body;
+
+  try {
+    let page = await getRow('SELECT * FROM quran_pages WHERE pageNumber = ?', [pageNumber]);
+    if (page) {
+      await runQuery(`
+        UPDATE quran_pages SET status = ?, score = ?, lastReviewed = 'اليوم'
+        WHERE pageNumber = ?
+      `, [status || 'excellent', score || 95, pageNumber]);
+    } else {
+      await runQuery(`
+        INSERT INTO quran_pages (pageNumber, status, score, surahName, juz, lastReviewed, errorsCount)
+        VALUES (?, ?, ?, ?, ?, 'اليوم', 0)
+      `, [pageNumber, status || 'excellent', score || 95, surahName || ('صفحة ' + pageNumber), juz || Math.ceil(pageNumber / 20)]);
+    }
+
+    const updatedPage = await getRow('SELECT * FROM quran_pages WHERE pageNumber = ?', [pageNumber]);
+    const pages = await allRows('SELECT * FROM quran_pages');
+
+    res.json({ success: true, page: updatedPage, pages });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+
+app.delete('/api/community/posts/:id', async (req, res) => {
+  const postId = Number(req.params.id);
+  try {
+    await runQuery('DELETE FROM community_posts WHERE id = ?', [postId]);
+    const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
+    posts.forEach(p => {
+      try { p.answers = JSON.parse(p.answers); } catch (e) { p.answers = []; }
+    });
+    res.json({ success: true, posts });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+// --- AI CHATBOT ENDPOINT ---
+
+app.get('/api/ai/chat', async (req, res) => {
+  const userId = req.query.userId || 'default';
+  try {
+    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100', [userId]);
+    res.json({ success: true, history });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false });
+  }
+});
+
+app.delete('/api/ai/chat', async (req, res) => {
+  const userId = req.query.userId || req.body?.userId;
+  try {
+    await runQuery('DELETE FROM ai_chat_history', [userId]);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false });
+  }
+});
+
+function getSmartFallbackResponse(message, userContext = {}) {
+  const msg = message.toLowerCase();
+  const page = userContext.currentPage || ((userContext.memorizedPagesCount || 0) + 1);
+  const surah = userContext.currentSurah || 'البقرة';
+  const juz = userContext.currentJuz || Math.min(30, Math.max(1, Math.ceil(page / 20)));
+  const nearReviewStart = Math.max(1, page - 20);
+  const nearReviewEnd = Math.max(1, page - 1);
+  const nextNightPrepPage = page + 1;
+
+  if (/سلام|مرحب|أهل|اهل|هلا|صباح|مساء/.test(msg)) {
+    return `وعليكم السلام ورحمة الله وبركاته ومغفرته! 🌿✨\n\nأهلاً بك يا حافظ كتاب الله (${userContext.name || 'أخي الكريم'}). أنت الآن عند **الصفحة ${page} (سورة ${surah} - الجزء ${juz})**، وقد أتممت بفضل الله ${userContext.memorizedPagesCount || 0} صفحة.\n\nكيف يمكنني إعانتك اليوم؟ يمكنك سؤالي عن خطة الحصون الخمسة، تثبيت المتشابهات، جدول التكرار، أو كيفية مراجعة الأجزاء السابقة.`;
+  } else if (/خطة|جدول|حصون|خمسة|ورد اليوم|ايش اراجع|شو اراجع|وين وصلت|اين وصلت|متى اراجع|الحصون الخمسة/.test(msg)) {
+    return `🏰 **خطتك اليومية الدقيقة بنظام الحصون الخمسة (بناءً على موقعك الحالي):**\n\n` +
+      `📍 **موقعك الحالي:** الصفحة **${page}** من سورة **${surah}** (الجزء ${juz}).\n` +
+      `📊 **الصفحات المحفوظة:** ${userContext.memorizedPagesCount || 0} صفحة.\n\n` +
+      `---\n\n` +
+      `1️⃣ **الحصن الأول (قراءة الاستماع والورد نظراً):**\n` +
+      `• **المطلوب اليوم:** قراءة **الجزء ${juz}** كاملاً (الصفحات ${(juz - 1) * 20 + 1} إلى ${juz * 20}) نظراً بالحدر السريع المتقن في 20 دقيقة.\n` +
+      `• **الهدف:** شحن الذاكرة البصرية وتثبيت أماكن الآيات ورؤوس الفواصل.\n\n` +
+      `2️⃣ **الحصن الثاني (التحضير الثلاثي):**\n` +
+      `• **التحضير الأسبوعي:** سماع سورة **${surah}** كاملة 3 مرات مع تدبر مقاصدها.\n` +
+      `• **التحضير الليلي (الليلة قبل النوم):** تلاوة **الصفحة ${nextNightPrepPage}** من 5 إلى 10 مرات وسماعها بتركيز.\n` +
+      `• **التحضير القريب (قبل الحفظ بـ 15 دقيقة):** تلاوة **الصفحة ${page}** 15 مرة لتصفية الذهن.\n\n` +
+      `3️⃣ **الحصن الثالث (الحفظ الجديد الفعلي):**\n` +
+      `• **المطلوب اليوم:** حفظ **الصفحة ${page}** من سورة **${surah}**.\n` +
+      `• **طريقة الإتقان:** تكرار كل آية 20 مرة، وكل مقطع 20 مرة، وسرد الصفحة كاملة غيباً 40 مرة حتى تكون كالفاتحة.\n\n` +
+      `4️⃣ **الحصن الرابع (المراجعة القريبة اليومية):**\n` +
+      `• **المطلوب اليوم:** مراجعة غيباً وسرداً بالحدر للصفحات من **${nearReviewStart} إلى ${nearReviewEnd}** (آخر 20 صفحة تم حفظها) في 20 دقيقة.\n\n` +
+      `5️⃣ **الحصن الخامس (المراجعة البعيدة والمعاهدة في الصلاة):**\n` +
+      `• **المطلوب اليوم:** مراجعة جزء من قديم المحفوظ وتلاوة ما حفظته في ركعات السنن، الوتر، وقيام الليل.\n\n` +
+      `✨ *القاعدة الذهبية لد. سعيد حمزة: "من قرأ القرآن في صلاته ثَبَت، ومن قرأه في غير صلاته كَثُر ثوابه وتفلت حفظه".*`;
+  } else if (/تكرار|كم مرة|طريقة الحفظ|كيف احفظ|سر التكرار|40 مرة|20 مرة/.test(msg)) {
+    return `🔁 **قاعدة التكرار الذهبية في منهجية الحصون الخمسة:**\n\n1. **تكرار الآية الواحدة:** كرر كل آية (20 مرة) غيباً مع النظر في المصحف فقط عند التعثر، حتى تطبع الآية في ذهنك كالصورة.\n2. **تكرار الربط بين الآيات:** عند الانتهاء من الآية الأولى والثانية، اقرأهما معاً (20 مرة) لربط الفواصل.\n3. **تكرار الصفحة كاملة:** بعد حفظ الصفحة كاملة، اسردها غيباً بصوت مسموع (40 مرة) متفرقة على مدار اليوم.\n\n💡 *سر النجاح:* لا تنتقل إلى صفحة جديدة إلا بعد أن تصبح صفحة اليوم جارية على لسانك كالفاتحة دون أدنى تردد.`;
+  } else if (/متشابه|تشابه|ربط|تثبيت|فواصل/.test(msg)) {
+    return `🌿 **ضوابط وقواعد ضبط المتشابهات القرآنية:**\n\n1. **الربط بالحرف المشترك:** اربط الحرف المميز في الآية باسم السورة (مثلاً: إن الله بما تعملون خبير / بصير).\n2. **قاعدة العناية بالسياق العام:** الآية المتشابهة دائماً تخدم سياق السورة وموضوعها الأساسي.\n3. **السرد بالحدر بصوت مسموع:** التكرار الصوتي المسموع يرسخ الفواصل في الذاكرة السمعية.\n4. **تدوين المتشابه في هامش المصحف:** اكتب الآية المقابلة في مصحفك الخاص حتى لا تلتبس عليك عند التسميع.`;
+  } else if (/صلاة|قيام|ليل|وتر|نافلة|ركعتين/.test(msg)) {
+    return `🤲 **الحصن الخامس (الصلاة بالمحفوظ):**\n\nقال السلف الصالح: **"لا يثبت القرآن في الصدر إلا بقيام الليل"**.\n\n• اجعل صفحة اليوم (الصفحة ${page}) وورد المراجعة القريبة (${nearReviewStart} - ${nearReviewEnd}) هما وردك في ركعتي الوتر أو قيام الليل.\n• القراءة في الصلاة تُخرج الحفظ من دائرة الذاكرة المؤقتة إلى الاستقرار القلبي العميق.\n• إذا تعثرت في الصلاة، فذلك ينبهك فوراً للمواضع التي تحتاج إعادة تكرار في الغد.`;
+  } else if (/نسيان|انسى|أنسى|تفلت|ضعيف|مش حافظ/.test(msg)) {
+    return `💚 **علاج تفلت الحفظ ونسيان الآيات:**\n\nقال النبي ﷺ: **"تعاهدوا هذا القرآن، فوالذي نفسي بيده لهو أشد تفلتاً من الإبل في عقلها"**.\n\n1. لا تقلق، فالنسيان طبيعي والحل يكمن في **المعاهدة اليومية (المراجعة القريبة بالحدر 20 دقيقة)**.\n2. تأكد من إتقان **قراءة الاستماع نظراً**؛ فالنظر في المصحف يقوي الحفظ البصري بنسبة 70%.\n3. لا تحفظ حفظاً جديداً إذا كان القديم متفلتاً؛ اجعل اليوم يوم تثبيت لما سبق حتى يرسخ.\n4. الاستغفار وترك المعاصي: قال الشافعي: "شكوت إلى وكيع سوء حفظي... فأرشدني إلى ترك المعاصي".`;
+  } else if (/تجويد|مخارج|إدغام|ادغام|إخفاء|اخفاء|قلقلة|مد|غنة/.test(msg)) {
+    return `✨ **أهم أصول وضوابط أحكام التجويد للحافظ:**\n\n- **النون الساكنة والتنوين:** الإظهار الحلقي (أ، هـ، ع، ح، غ، خ)، الإدغام (يرملون: بغنة في 'ينمو' وبغير غنة في 'ر، ل')، الإقلاب (ب)، الإخفاء الحقيقي (بقية 15 حرفاً).\n- **المدود:** المد الطبيعي (حركتان)، المتصل والمنفصل (4-5 حركات)، اللازم (6 حركات كلمي وحرفي).\n- **القلقلة:** قطب جد (صغرى في وسط الكلمة، كبرى عند الوقف).\n\n💡 *وصية:* الحدر في الحصون الخمسة لا يعني إسقاط الأحكام، بل الإسراع مع ضبط الغنن والمدود ومخارج الحروف.`;
+  } else if (/تشجيع|محفزة|همة|تعبت|صعب|فرح/.test(msg)) {
+    return `🌟 **بشارة لك يا صاحب القرآن:**\n\nقال رسول الله ﷺ: **"يُقَالُ لِصَاحِبِ الْقُرْآنِ: اقْرَأْ وَارْتَقِ وَرَتِّلْ كَمَا كُنْتَ تَرَتِّلُ فِي الدُّنْيَا، فَإِنَّ مَنْزِلَتَكَ عِنْدَ آخِرِ آيَةٍ تَقْرَؤُهَا"** [رواه الترمذي وصححه الألباني].\n\nتذكر أن كل حرف تتلوه وتكرره لك به حسنة، والحسنة بعشر أمثالها.. فتكرارك لآية واحدة 20 مرة يثقل ميزانك بآلاف الحسنات. استعن بالله ولا تعجز!`;
+  } else {
+    return `🌿 **نصيحة مخصصة لسؤالك حول "${message.slice(0, 40)}":**\n\nبناءً على موقعك الحالي في **الصفحة ${page} من سورة ${surah} (الجزء ${juz})**:\n\n• احرص اليوم على ضبط الورد بدقة ولا تؤجل المراجعة.\n• قسّم وقتك: 20 دقيقة للورد نظراً بالحدر، و30 دقيقة للحفظ بالتكرار، و20 دقيقة لمراجعة الأوجه السابقة.\n• إن كان لديك أي سؤال محدد حول متشابهات آية معينة، حكم تجويدي، أو كيفية تنظيم وقتك، فاكتب لي وسأجيبك بالتفصيل! 📖✨`;
+  }
+}
+
+app.post('/api/ai/chat', async (req, res) => {
+  const { message, userId, userContext, history: clientHistory } = req.body;
+  const targetUser = userId || 'default';
+  const uCtx = userContext || {};
+  if (!message || !message.trim()) {
+    return res.status(400).json({ success: false, message: 'الرسالة فارغة' });
+  }
+
+  try {
+    let responseText = '';
+    const apiKey = (req.body.apiKey && req.body.apiKey.trim()) || process.env.GEMINI_API_KEY;
+
+    const userStatePrompt = `
+[بيانات الحافظ الحالية]:
+- الاسم: ${uCtx.name || 'حافظ القرآن'}
+- الصفحة الحالية للحفظ: ${uCtx.currentPage || 1}
+- السورة الحالية: ${uCtx.currentSurah || 'الفاتحة'}
+- الجزء الحالي: ${uCtx.currentJuz || 1}
+- نمط الحفظ: ${uCtx.learningStyle || 'سمعي بصري'}
+- عدد الصفحات المحفوظة: ${uCtx.memorizedPagesCount || 0}
+- الحصون المنجزة اليوم: ${JSON.stringify(uCtx.fortressesToday || {})}
+- الهدف اليومي المختار: ${uCtx.dailyTarget || 'صفحة واحدة'}
+`;
+
+    if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
+      // Valid modern Gemini models
+      const candidateModels = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.1-flash-lite'];
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: { 'User-Agent': 'aistudio-build' }
+        }
+      });
+
+      for (const modelName of candidateModels) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName,
+            contents: `${userStatePrompt}\n\n[سؤال أو طلب المستخدم]: ${message}`,
+            config: {
+              systemInstruction: "أنت معلم ومساعد قرآني خبير ومتقن في تطبيق محفظ AI، متخصص في منهجية (الحصون الخمسة) للشيخ د. سعيد أبو العلا حمزة. مهمتك إرشاد الحافظ وإجابته بدقة وعمق بناءً على سؤاله المحدد وموقعه الحالي في المصحف. أجب على سؤاله مباشرة وفصّل الحلول العملية باللغة العربية الفصحى مع التنسيق الجميل والرموز التعبيرية الهادئة والمشجعة. تجنب إعطاء نفس الإجابة النمطية المتكررة."
+            }
+          });
+
+          if (response && response.text && response.text.trim()) {
+            responseText = response.text.trim();
+            console.log(`✅ Live Gemini AI response generated successfully using [${modelName}]!`);
+            break;
+          }
+        } catch (modelErr) {
+          console.log(`💡 Model [${modelName}] notice: ${modelErr.message}`);
+        }
+      }
+    }
+
+    if (!responseText || !responseText.trim()) {
+      responseText = getSmartFallbackResponse(message, uCtx);
+    }
+
+    await runQuery('INSERT INTO ai_chat_history (sender, text, userId) VALUES (?, ?, ?)', ['user', message, targetUser]);
+    await runQuery('INSERT INTO ai_chat_history (sender, text, userId) VALUES (?, ?, ?)', ['ai', responseText, targetUser]);
+
+    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100', [targetUser]);
+    res.json({ success: true, reply: responseText, history });
+  } catch (e) {
+    console.error('AI Chat error:', e);
+    const fallbackText = getSmartFallbackResponse(message, uCtx);
+    res.json({
+      success: true,
+      reply: fallbackText,
+      history: [
+        { id: Date.now(), sender: 'user', text: message, userId: targetUser },
+        { id: Date.now() + 1, sender: 'ai', text: fallbackText, userId: targetUser }
+      ]
+    });
+  }
+});
+
+// --- RECITATION VOICE AI & QURAN CHECK ENDPOINTS ---
+
+// Check recitation by recorded audio or transcribed text, with accuracy calculation
+app.post('/api/ai/recitation-check', async (req, res) => {
+  const { 
+    audioBase64, 
+    spokenText, 
+    expectedText, 
+    ayahs,
+    isFullPage,
+    token, 
+    autoSave, 
+    userId, 
+    pageNumber, 
+    surahNumber, 
+    surahName, 
+    ayahNumber, 
+    type 
+  } = req.body;
+
+  if (!expectedText && (!ayahs || ayahs.length === 0)) {
+    return res.status(400).json({ success: false, message: 'نص الآية أو قائمة آيات الصفحة مطلوبة للمقارنة' });
+  }
+
+  try {
+    let result = null;
+    const fullExpected = expectedText || (Array.isArray(ayahs) ? ayahs.map(a => a.text).join(' ') : '');
+
+    // 1. If audio is provided, process through Whisper ASR with Gemini fallback
+    if (audioBase64) {
+      const base64Data = audioBase64.includes(',') ? audioBase64.split(',')[1] : audioBase64;
+      const audioBuffer = Buffer.from(base64Data, 'base64');
+
+      const analysis = await analyzeRecitation({
+        audioBuffer,
+        expectedText: fullExpected,
+        ayahs: ayahs || [],
+        isFullPage: Boolean(isFullPage),
+        token
+      });
+
+      result = analysis;
+    } 
+    // 2. If spokenText is already provided (e.g. from Web Speech Recognition or typing)
+    else if (spokenText && spokenText.trim()) {
+      if (isFullPage && Array.isArray(ayahs) && ayahs.length > 0) {
+        const comparison = comparePageRecitation(ayahs, spokenText);
+        result = {
+          transcribedText: spokenText.trim(),
+          ...comparison
+        };
+      } else {
+        const comparison = compareRecitation(fullExpected, spokenText);
+        result = {
+          transcribedText: spokenText.trim(),
+          ...comparison
+        };
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'يرجى إرسال التسجيل الصوتي أو النص المنطوق' });
+    }
+
+    // Auto-save recitation accuracy to DB if requested
+    let savedSession = null;
+    if (autoSave && result) {
+      savedSession = saveRecitationSession({
+        userId: userId || 'demo_user_123',
+        pageNumber: Number(pageNumber) || 1,
+        surahNumber: Number(surahNumber) || 1,
+        surahName: surahName || 'سورة الشريفة',
+        ayahNumber: isFullPage ? null : (Number(ayahNumber) || 1),
+        isFullPage: Boolean(isFullPage),
+        accuracy: result.accuracy || result.pageAccuracy,
+        stats: result.stats,
+        results: result.results,
+        ayahBreakdown: result.ayahBreakdown || [],
+        transcribedText: result.transcribedText || result.transcribedSpoken,
+        expectedText: fullExpected,
+        type: type || (audioBase64 ? 'voice' : 'text')
+      });
+    }
+
+    return res.json({
+      success: true,
+      ...result,
+      savedSession
+    });
+  } catch (err) {
+    console.error('Recitation check error:', err);
+    return res.status(500).json({
+      success: false,
+      message: err.message || 'حدث خطأ أثناء فحص وتصحيح التلاوة'
+    });
+  }
+});
+
+// Explicit endpoint to save recitation session & accuracy score
+app.post('/api/recitation/save', async (req, res) => {
+  try {
+    const sessionData = req.body;
+    if (!sessionData) {
+      return res.status(400).json({ success: false, message: 'بيانات جلسة التسميع مطلوبة' });
+    }
+
+    const saved = saveRecitationSession(sessionData);
+    if (!saved) {
+      return res.status(500).json({ success: false, message: 'تعذر حفظ بيانات دقة التسميع' });
+    }
+
+    // Return updated user stats
+    const user = await getRow('SELECT uid, xp, level, memoryScore, streak, memorizedPagesCount FROM users WHERE uid = ?', [saved.userId]);
+
+    res.json({
+      success: true,
+      message: 'تم حفظ دقة التسميع بنجاح 🎯',
+      session: saved,
+      user
+    });
+  } catch (error) {
+    console.error('Error saving recitation session:', error);
+    res.status(500).json({ success: false, message: 'حدث خطأ أثناء حفظ دقة التسميع' });
+  }
+});
+
+// Get recitation history for a user
+app.get('/api/recitation/history', async (req, res) => {
+  const { userId, pageNumber, ayahNumber, surahNumber, limit } = req.query;
+  try {
+    const history = getRecitationHistory(userId, { pageNumber, ayahNumber, surahNumber, limit });
+    res.json({ success: true, count: history.length, history });
+  } catch (error) {
+    console.error('Error fetching recitation history:', error);
+    res.status(500).json({ success: false, message: 'تعذر جلب سجل التسميع' });
+  }
+});
+
+// Get aggregated recitation stats for a Quran page
+app.get('/api/recitation/page-stats/:pageNumber', async (req, res) => {
+  const { pageNumber } = req.params;
+  try {
+    const stats = getPageRecitationStats(Number(pageNumber));
+    res.json({ success: true, pageNumber: Number(pageNumber), stats });
+  } catch (error) {
+    console.error('Error fetching page recitation stats:', error);
+    res.status(500).json({ success: false, message: 'تعذر جلب إحصائيات تسميع الصفحة' });
+  }
+});
+
+// Status of recitation engine
+app.get('/api/ai/recitation-status', (req, res) => {
+  const hasToken = Boolean(process.env.HUGGINGFACE_TOKEN);
+  const hasGemini = Boolean(process.env.GEMINI_API_KEY);
+  res.json({
+    success: true,
+    hasToken,
+    hasGemini,
+    models: [
+      'tarteel-ai/whisper-base-ar-quran',
+      'openai/whisper-large-v3-turbo',
+      'gemini-2.5-flash-asr'
+    ],
+    activeModel: 'Whisper Quran + Gemini 2.5 Flash + Web Speech Recognition'
+  });
+});
+
+// --- SAFAR ECOSYSTEM ROUTES (GROUPS, TEACHER, ADMIN, ONBOARDING) ---
+
+// Get all groups or teacher's groups
+app.get('/api/groups', (req, res) => {
+  const { teacherId } = req.query;
+  const groups = getGroups(teacherId);
+  res.json({ success: true, count: groups.length, groups });
+});
+
+// Lookup group by code (for onboarding invitation code flow)
+app.get('/api/groups/lookup', (req, res) => {
+  const { code } = req.query;
+  if (!code) {
+    return res.status(400).json({ success: false, message: 'رمز الحلقة مطلوب' });
+  }
+  const group = lookupGroupByCode(code);
+  if (!group) {
+    return res.status(404).json({ success: false, message: 'لم يتم العثور على حلقة بهذا الرمز' });
+  }
+  res.json({ success: true, group });
+});
+
+// Join group via code
+app.post('/api/groups/join', (req, res) => {
+  const { userId, email, name, code } = req.body;
+  if (!code) {
+    return res.status(400).json({ success: false, message: 'رمز الحلقة مطلوب' });
+  }
+  const result = joinGroupByCode(userId, email, name, code);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Leave group
+app.post('/api/groups/leave', (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
+  }
+  const result = leaveGroup(userId);
+  res.json(result);
+});
+
+// Teacher Dashboard
+app.get('/api/teacher/:teacherId/dashboard', (req, res) => {
+  const { teacherId } = req.params;
+  const dashboard = getTeacherDashboard(teacherId);
+  res.json({ success: true, ...dashboard });
+});
+
+// Teacher Students List with Search, Filter & Sort
+app.get('/api/teacher/:teacherId/students', (req, res) => {
+  const { teacherId } = req.params;
+  const { search, filter, sort } = req.query;
+  const students = getTeacherStudents(teacherId, search, filter, sort);
+  res.json({ success: true, count: students.length, students });
+});
+
+// Detailed Student Profile
+app.get('/api/teacher/:teacherId/student/:studentId', (req, res) => {
+  const { studentId } = req.params;
+  const profile = getStudentProfile(studentId);
+  if (!profile) {
+    return res.status(404).json({ success: false, message: 'الملف الشخصي للطالب غير موجود' });
+  }
+  res.json({ success: true, student: profile });
+});
+
+// Admin Platform Overview Stats
+app.get('/api/admin/overview', (req, res) => {
+  const stats = getAdminOverview();
+  res.json({ success: true, ...stats });
+});
+
+// Admin Users List with full search and filtering
+app.get('/api/admin/users', (req, res) => {
+  const { search, filter } = req.query;
+  const users = getAdminUsersList(search, filter);
+  res.json({ success: true, count: users.length, users });
+});
+
+// Admin Assign Teacher Role
+app.post('/api/admin/assign-teacher', (req, res) => {
+  const { uid } = req.body;
+  if (!uid) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
+  }
+  const result = assignTeacherRole(uid);
+  res.json(result);
+});
+
+// Admin Remove Teacher Role
+app.post('/api/admin/remove-teacher', (req, res) => {
+  const { uid } = req.body;
+  if (!uid) {
+    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
+  }
+  const result = removeTeacherRole(uid);
+  res.json(result);
+});
+
+// Admin / System Direct Create New Teacher
+app.post('/api/admin/create-teacher', (req, res) => {
+  const { name, email, specialty } = req.body;
+  if (!name) {
+    return res.status(400).json({ success: false, message: 'اسم المعلمة مطلوب' });
+  }
+  const result = createNewTeacherDirect({ name, email, specialty });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Teacher: Search and fetch available registered students/learners to enroll
+app.get('/api/teacher/:teacherId/available-students', (req, res) => {
+  const { teacherId } = req.params;
+  const { search } = req.query;
+  const students = getAvailableStudentsForTeacher(teacherId, search);
+  res.json({ success: true, count: students.length, students });
+});
+
+// Teacher: Gather and enroll a student directly into her circle
+app.post('/api/teacher/:teacherId/enroll-student', (req, res) => {
+  const { teacherId } = req.params;
+  const { studentUid, email, name, groupId, currentTarget } = req.body;
+  const result = enrollStudentInTeacherGroup(teacherId, { studentUid, email, name, groupId, currentTarget });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Teacher Adds Student Directly
+app.post('/api/teacher/:teacherId/add-student', (req, res) => {
+  const { teacherId } = req.params;
+  const { name, email, memorizedJuz, currentTarget, groupId } = req.body;
+  const result = addStudentByTeacher(teacherId, { name, email, memorizedJuz, currentTarget, groupId });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Admin Distribute Student to Group and Teacher
+app.post('/api/admin/distribute-student', (req, res) => {
+  const { studentUid, groupId, teacherId } = req.body;
+  if (!studentUid || !groupId) {
+    return res.status(400).json({ success: false, message: 'معرف الطالبة ومعرف المجموعة مطلوبان' });
+  }
+  const result = distributeStudentByAdmin({ studentUid, groupId, teacherId });
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Student Enrollment Request (Submit)
+app.post('/api/safar/enrollment-request', (req, res) => {
+  const result = submitEnrollmentRequest(req.body);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Admin Get Enrollment Requests
+app.get('/api/admin/enrollment-requests', (req, res) => {
+  const requests = getEnrollmentRequests();
+  res.json({ success: true, count: requests.length, requests });
+});
+
+// Admin Approve Enrollment Request
+app.post('/api/admin/enrollment-requests/approve', (req, res) => {
+  const { requestId, groupId, teacherId } = req.body;
+  if (!requestId || !groupId) {
+    return res.status(400).json({ success: false, message: 'معرف الطلب والمجموعة مطلوبان' });
+  }
+  const result = approveEnrollmentRequest(requestId, groupId, teacherId);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Admin Memorization Performance & Progress Analytics
+app.get('/api/admin/memorization-performance', (req, res) => {
+  const performance = getMemorizationPerformanceStats();
+  res.json(performance);
+});
+
+// Serve Vite dev middleware or production static files
+async function startServer() {
+  if (process.env.NODE_ENV !== 'production') {
+    const vite = await createViteServer({
+      server: { middlewareMode: true, allowedHosts: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  } else {
+    const distPath = path.join(process.cwd(), 'dist');
+    app.use(express.static(distPath, {
+      setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.html')) {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.setHeader('Pragma', 'no-cache');
+          res.setHeader('Expires', '0');
+        }
+      }
+    }));
+    app.get('*all', (req, res) => {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.sendFile(path.join(distPath, 'index.html'));
+    });
+  }
+
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log('=================================');
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log('=================================');
+  });
+}
+
+if (!process.env.VERCEL) {
+  startServer();
+}
+
+export default app;

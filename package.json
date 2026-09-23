@@ -1,0 +1,41 @@
+{
+  "name": "ma7fath-ai",
+  "private": true,
+  "version": "0.0.0",
+  "description": "منصة ذكية تفاعلية لمساعدة حفاظ القرآن الكريم على تخطيط وتثبيت ومراجعة حفظهم باستخدام الذكاء الاصطناعي (Gemini AI)",
+  "type": "module",
+  "scripts": {
+    "dev": "node server/index.js",
+    "build": "vite build",
+    "lint": "vite build --mode development",
+    "start": "node server/index.js",
+    "preview": "vite preview",
+    "cap:sync": "vite build && cap sync",
+    "cap:android": "vite build && cap sync android && cap open android",
+    "cap:ios": "vite build && cap sync ios && cap open ios"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1",
+    "pptxgenjs": "^4.0.1",
+    "typescript": "~6.0.2",
+    "vite": "^8.1.1"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/core": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
+    "@google/genai": "^2.15.0",
+    "@vitejs/plugin-react": "^6.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "firebase": "^12.17.1",
+    "framer-motion": "^12.42.2",
+    "lucide-react": "^1.25.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router-dom": "^7.18.1",
+    "recharts": "^3.10.1"
+  }
+}
