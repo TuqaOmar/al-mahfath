@@ -542,10 +542,12 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                  {user?.memoryScore || 100}%
+                  {user?.memorizedPagesCount > 0 ? `${user?.memoryScore || 100}%` : '--%'}
                 </div>
-                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {isMobile ? 'ثبات ممتاز' : 'معدل استقرار ممتاز'}
+                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: user?.memorizedPagesCount > 0 ? 'var(--success)' : 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {user?.memorizedPagesCount > 0 
+                    ? (isMobile ? 'ثبات ممتاز' : 'معدل استقرار ممتاز') 
+                    : (isMobile ? 'في انتظار جلستك' : 'في انتظار الجلسة الأولى')}
                 </span>
               </Card>
 

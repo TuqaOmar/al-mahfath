@@ -1,6 +1,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, getDocFromServer, setDoc } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -14,6 +15,7 @@ if (!getApps().length) {
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefined);
+export const storage = getStorage(app);
 
 // Firebase Cloud Messaging (FCM) Instance
 let messagingInstance = null;
@@ -60,7 +62,8 @@ export async function requestFcmToken(userId = null) {
     }
 
     const token = await getToken(msg, {
-      serviceWorkerRegistration: swReg || undefined
+      serviceWorkerRegistration: swReg || undefined,
+      vapidKey: 'BOsvnqeC6u84s29JVGyWTUEsGtptKDx9vpKR23ICE6sbFR3eR9LsKgl8Qd0IPxlYPxDRSh0F52TjIbXERvN40I0'
     });
 
     if (token) {
@@ -112,14 +115,7 @@ export async function onForegroundMessage(callback) {
   return () => {};
 }
 
-// Ensure user has at least anonymous auth for Firestore security rules
-onAuthStateChanged(auth, (currentUser) => {
-  if (!currentUser) {
-    signInAnonymously(auth).catch((err) => {
-      console.warn('Anonymous auth note (can use offline/public):', err?.message);
-    });
-  }
-});
+// Anonymous auth disabled by default to prefer explicit login/signup
 
 // Validate Firestore connection on boot
 async function testConnection() {
