@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { db } from '../../lib/firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
 const getActivityIcon = (icon) => {
   if (!icon) return CheckCircle2;
@@ -49,12 +51,42 @@ export const TeacherDashboard = ({ onOpenStudentProfile, onViewAllStudents, onVi
   const fetchTeacherDashboard = async () => {
     setLoading(true);
     try {
-      const teacherId = user?.uid || 'teacher_aisha';
-      const res = await fetch(`/api/teacher/${teacherId}/dashboard`);
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setDashboardData(data);
-      }
+      if (!user?.uid) return;
+      const teacherId = user.uid;
+
+      // 1. Fetch teacher's groups
+      const qGroups = query(collection(db, 'groups'), where('teacherId', '==', teacherId));
+      const groupsSnap = await getDocs(qGroups);
+      const groupIds = groupsSnap.docs.map(d => d.id);
+
+      // 2. Fetch all users and filter students belonging to these groups
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const allUsers = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
+      
+      const myStudents = allUsers.filter(u => u.groupId && groupIds.includes(u.groupId) && u.role !== 'teacher' && u.role !== 'admin');
+
+      setDashboardData({
+        stats: {
+          studentsCount: myStudents.length,
+          activeThisWeek: Math.floor(myStudents.length * 0.8), // Placeholder calculation
+          weeklyCommitment: myStudents.length > 0 ? 85 : 0,
+          needsAttentionCount: myStudents.filter(u => u.status === 'inactive').length || 0
+        },
+        studentsWhoNeedAttention: myStudents.slice(0, 4).map(st => ({
+          uid: st.uid,
+          name: st.name,
+          photoURL: st.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${st.name}`,
+          memorizedJuz: st.memorizedJuz || 0,
+          attentionReason: 'بحاجة لمتابعة وتقييم',
+          lastRecitationDate: 'مؤخراً',
+          consistencyRate: 70
+        })),
+        smartInsights: [
+          { id: 'target_completed', type: 'success', text: `${myStudents.length} طالبة مسجلة في حلقاتك 🎯`, filterTag: 'excellent' },
+        ],
+        recentActivities: []
+      });
+
     } catch (e) {
       console.error('Failed to load teacher dashboard:', e);
     } finally {
@@ -63,32 +95,15 @@ export const TeacherDashboard = ({ onOpenStudentProfile, onViewAllStudents, onVi
   };
 
   const stats = dashboardData?.stats || {
-    studentsCount: 24,
-    activeThisWeek: 21,
-    weeklyCommitment: 87,
-    needsAttentionCount: 4
+    studentsCount: 0,
+    activeThisWeek: 0,
+    weeklyCommitment: 0,
+    needsAttentionCount: 0
   };
 
-  const studentsNeedAttention = dashboardData?.studentsWhoNeedAttention || [
-    { uid: 'student_mona', name: 'منى عبد العزيز', photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=MonaA', memorizedJuz: 8, attentionReason: 'لم تسجل أي تسميع منذ 4 أيام', lastRecitationDate: 'منذ 4 أيام', consistencyRate: 74 },
-    { uid: 'student_reem', name: 'ريم الدوسري', photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ReemD', memorizedJuz: 10, attentionReason: 'الورد الأسبوعي غير مكتمل', lastRecitationDate: 'منذ 6 أيام', consistencyRate: 65 },
-    { uid: 'student_arwa', name: 'أروى القحطاني', photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=ArwaQ', memorizedJuz: 6, attentionReason: 'انخفاض في دقة التلاوة وتكرار أخطاء الوقف', lastRecitationDate: 'منذ يومين', consistencyRate: 71 },
-    { uid: 'student_hind', name: 'هند العتيبي', photoURL: 'https://api.dicebear.com/7.x/avataaars/svg?seed=HindO', memorizedJuz: 9, attentionReason: 'تباطأ معدل الإنجاز هذا الأسبوع', lastRecitationDate: 'منذ 3 أيام', consistencyRate: 68 }
-  ];
-
-  const smartInsights = dashboardData?.smartInsights || [
-    { id: 'target_completed', type: 'success', text: '18 من أصل 24 طالبة أكملن وردهن الأسبوعي بنجاح 🎯', filterTag: 'excellent' },
-    { id: 'no_recitation_3_days', type: 'warning', text: '4 طالبات لم يقدمن أي تسميع خلال الـ 3 أيام الماضية ⚠️', filterTag: 'needs_attention' },
-    { id: 'decreased_consistency', type: 'alert', text: 'طالبتان شهدتا تراجعاً في نسبة الالتزام اليومي 📉', filterTag: 'needs_attention' },
-    { id: 'improved_rate', type: 'highlight', text: '5 طالبات رفعن معدل الحفظ والإتقان هذا الأسبوع بنسبة تفوق 10% 🌟', filterTag: 'excellent' }
-  ];
-
-  const recentActivities = dashboardData?.recentActivities || [
-    { id: 1, studentName: 'سارة الخالدي', type: 'memorization', action: 'أتمت حفظ الوجه 15 من سورة آل عمران', time: 'منذ 25 دقيقة', icon: BookOpen },
-    { id: 2, studentName: 'خديجة العمري', type: 'recitation', action: 'أكملت تسميع الجزء العشرين بنسبة دقة 98%', time: 'منذ ساعة', icon: Mic },
-    { id: 3, studentName: 'لينة الأنصاري', type: 'goal', action: 'حققت هدفها الأسبوعي بتسميع 4 أوجه متتالية', time: 'منذ ساعتين', icon: Award },
-    { id: 4, studentName: 'نورة الشمري', type: 'revision', action: 'أنجزت الحصن البعيد بمراجعة سورة البقرة في قيام الليل', time: 'اليوم فجراً', icon: CheckCircle2 }
-  ];
+  const studentsNeedAttention = dashboardData?.studentsWhoNeedAttention || [];
+  const smartInsights = dashboardData?.smartInsights || [];
+  const recentActivities = dashboardData?.recentActivities || [];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
