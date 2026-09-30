@@ -308,67 +308,7 @@ export const QuickSettingsMenu = ({
             </span>
           </button>
 
-          {/* 4. Presentation & Docs (Platform Resources) */}
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '6px',
-            marginTop: '2px'
-          }}>
-            <button
-              id="menu-deck-btn"
-              onClick={() => {
-                triggerHaptic(12);
-                setIsOpen(false);
-                if (onOpenPresentation) onOpenPresentation();
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 10px',
-                borderRadius: '10px',
-                background: 'rgba(16, 185, 129, 0.08)',
-                border: '1px solid rgba(16, 185, 129, 0.2)',
-                color: 'var(--primary)',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                textAlign: isRTL ? 'right' : 'left'
-              }}
-            >
-              <Presentation size={14} />
-              <span>{isRTL ? 'عرض المنصة 📽️' : 'Deck 📽️'}</span>
-            </button>
 
-            <button
-              id="menu-docs-btn"
-              onClick={() => {
-                triggerHaptic(12);
-                setIsOpen(false);
-                if (onOpenDocs) onOpenDocs();
-              }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                padding: '8px 10px',
-                borderRadius: '10px',
-                background: 'rgba(59, 130, 246, 0.08)',
-                border: '1px solid rgba(59, 130, 246, 0.2)',
-                color: '#3B82F6',
-                fontSize: '11.5px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                textAlign: isRTL ? 'right' : 'left'
-              }}
-            >
-              <BookOpen size={14} />
-              <span>{isRTL ? 'دليل التوثيق 📚' : 'Docs 📚'}</span>
-            </button>
-          </div>
-
-          <div style={{ height: '1px', background: 'var(--glass-border)', margin: '4px 0' }} />
 
           {/* 5. Account & Profile Action */}
           <button

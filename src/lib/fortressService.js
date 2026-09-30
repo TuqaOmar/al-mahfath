@@ -172,7 +172,25 @@ export async function getFortressPlanFromFirestore(userId, lastJuz = 1, currentP
     const snapshot = await getDoc(planRef);
 
     if (snapshot.exists()) {
-      const data = snapshot.data();
+      let data = snapshot.data();
+      
+      // Daily reset check: If the plan was last updated before today, reset completion status
+      const today = new Date().toISOString().split('T')[0];
+      const planDate = data.updatedAt ? new Date(data.updatedAt).toISOString().split('T')[0] : '';
+      
+      if (planDate !== today && data.completionStatus) {
+        data.completionStatus = {
+          khatmah: false,
+          preparation: false,
+          newMemorization: false,
+          nearRevision: false,
+          farRevision: false
+        };
+        data.updatedAt = new Date().toISOString();
+        // Save the reset state silently in the background
+        saveFortressPlanToFirestore(userId, data).catch(() => {});
+      }
+
       localStorage.setItem(`ma7fath_fortress_plan_${userId}`, JSON.stringify(data));
       return data;
     }
@@ -184,7 +202,14 @@ export async function getFortressPlanFromFirestore(userId, lastJuz = 1, currentP
   const cached = localStorage.getItem(`ma7fath_fortress_plan_${userId}`);
   if (cached) {
     try {
-      return JSON.parse(cached);
+      let data = JSON.parse(cached);
+      const today = new Date().toISOString().split('T')[0];
+      const planDate = data.updatedAt ? new Date(data.updatedAt).toISOString().split('T')[0] : '';
+      if (planDate !== today && data.completionStatus) {
+        data.completionStatus = { khatmah: false, preparation: false, newMemorization: false, nearRevision: false, farRevision: false };
+        data.updatedAt = new Date().toISOString();
+      }
+      return data;
     } catch (e) {}
   }
 
