@@ -75,9 +75,10 @@ export const generateQuranAiResponse = async (userMessage = '', userContext = {}
   const isVisual = learningStyle.includes('بصري') || learningStyle.includes('مرئي');
   const userName = userContext.name || 'يا صاحب القرآن';
 
-  // 1. Check if user has provided a custom Gemini API Key in localStorage or context
+  // 1. Check if user has provided a custom Gemini API Key in localStorage, context, or .env file
   const storedKey = typeof window !== 'undefined' ? localStorage.getItem('ma7fath_gemini_api_key') : null;
-  const activeKey = userContext.apiKey || storedKey;
+  const envKey = import.meta.env?.VITE_GEMINI_API_KEY || null;
+  const activeKey = userContext.apiKey || storedKey || envKey;
 
   if (activeKey && activeKey.trim()) {
     try {

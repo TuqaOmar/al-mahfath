@@ -1235,55 +1235,7 @@ const Dashboard = () => {
                       <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
                     </button>
 
-                    {/* Presentation Deck */}
-                    <button
-                      id="header-presentation-btn"
-                      onClick={() => setShowPresentationModal(true)}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '12px',
-                        background: 'rgba(16, 185, 129, 0.1)',
-                        color: 'var(--primary)',
-                        border: '1px solid rgba(16, 185, 129, 0.25)',
-                        fontWeight: 'bold',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s ease',
-                        height: '36px'
-                      }}
-                      title={isRTL ? 'عرض تقديمي تعريفي للمنصة 📽️' : 'Platform Presentation Deck 📽️'}
-                    >
-                      <Presentation size={15} />
-                      <span>{isRTL ? 'عرض المنصة' : 'Deck'}</span>
-                    </button>
 
-                    {/* Documentation */}
-                    <button
-                      id="header-docs-btn"
-                      onClick={() => setShowDocsModal(true)}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '12px',
-                        background: 'rgba(59, 130, 246, 0.1)',
-                        color: '#3B82F6',
-                        border: '1px solid rgba(59, 130, 246, 0.25)',
-                        fontWeight: 'bold',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        transition: 'all 0.2s ease',
-                        height: '36px'
-                      }}
-                      title={isRTL ? 'دليل وتوثيق المنصة الشامل 📚' : 'Platform Documentation 📚'}
-                    >
-                      <BookOpen size={15} />
-                      <span>{isRTL ? 'التوثيق' : 'Docs'}</span>
-                    </button>
 
                     {/* Sound Toggle */}
                     <button
