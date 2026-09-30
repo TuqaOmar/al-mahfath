@@ -19,7 +19,9 @@ import {
   Calendar, 
   Check, 
   X,
-  ChevronLeft
+  ChevronLeft,
+  MessageSquare,
+  Award
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { AdminPerformanceDashboard } from './AdminPerformanceDashboard';
@@ -196,7 +198,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             { id: 'users', label: 'المستخدمون والأدوار', icon: Users },
             { id: 'teachers', label: 'المعلمات', icon: GraduationCap },
             { id: 'groups', label: 'المجموعات القرآنية', icon: Layers },
-            { id: 'analytics', label: 'التحليلات والنمو', icon: TrendingUp }
+            { id: 'analytics', label: 'التحليلات والنمو', icon: TrendingUp },
+            { id: 'community', label: 'إدارة المنتدى', icon: MessageSquare },
+            { id: 'badges', label: 'الأوسمة والمكافآت', icon: Award }
           ].map((tab) => {
             const isActive = currentTab === tab.id;
             const Icon = tab.icon;
@@ -774,6 +778,101 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
           </div>
         </div>
       )}
+
+      {/* VIEW 5: COMMUNITY MODERATION */}
+      {currentTab === 'community' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  إدارة المنتدى والمجتمع القرآني
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                  راجع المنشورات الجديدة، وافق عليها، أو قم بحذف المحتوى المخالف لضمان بيئة آمنة للمشتركين.
+                </p>
+              </div>
+              <button style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle2 size={16} /> موافقة على الكل
+              </button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[1, 2].map((post, idx) => (
+                <div key={idx} style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold' }}>ط</div>
+                    <div>
+                      <strong style={{ display: 'block', fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>طالب علم قرآني</strong>
+                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>منذ ساعتين • قيد المراجعة</span>
+                      <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
+                        "الحمد لله الذي بنعمته تتم الصالحات، أتممت اليوم حفظ الجزء الأول من سورة البقرة وتثبيته من خلال الخطة الذهنية، شكراً لكم!"
+                      </p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <button style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>موافقة ونشر</button>
+                    <button style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>رفض وحذف</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW 6: BADGES SYSTEM */}
+      {currentTab === 'badges' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div>
+                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  إدارة الأوسمة والمكافآت التقديرية 🏆
+                </h3>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
+                  تحكم بأنواع الأوسمة وشروط الحصول عليها أو امنح الأوسمة يدوياً للمتميزين.
+                </p>
+              </div>
+              <button style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                + إنشاء وسام جديد
+              </button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+              {[
+                { name: 'بطل البقرة', desc: 'يُمنح عند إتمام حفظ سورة البقرة بمعدل إتقان 90%+', type: 'تلقائي', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
+                { name: 'مواظب الأسبوع', desc: 'يُمنح عند الحضور والتسميع لمدة 7 أيام متتالية', type: 'تلقائي', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
+                { name: 'نجم الحلقة', desc: 'يُمنح يدوياً من قِبل المعلمة للطالب المتميز', type: 'يدوي', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' }
+              ].map((badge, idx) => (
+                <div key={idx} style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: badge.bg, color: badge.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Award size={20} />
+                      </div>
+                      <strong style={{ fontSize: '14.5px', color: 'var(--text-primary)' }}>{badge.name}</strong>
+                    </div>
+                    <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '6px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
+                      نظام: {badge.type}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                    {badge.desc}
+                  </p>
+                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+                    <button style={{ flex: 1, padding: '6px', borderRadius: '8px', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>تعديل الشروط</button>
+                    {badge.type === 'يدوي' && (
+                      <button style={{ flex: 1, padding: '6px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>منح لطالب</button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
 
       {/* MODAL: ASSIGN / REMOVE TEACHER ROLE CONFIRMATION */}
       {confirmTeacherModal && (

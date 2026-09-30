@@ -5,8 +5,7 @@ import { Button } from '../ui/Button';
 import { BookOpen, Target, RotateCcw, Book, Bell, CheckCircle2, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { notificationManager } from '../../utils/NotificationManager';
-import { db } from '../../lib/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { saveFortressPlanToFirestore } from '../../lib/fortressService';
 import { useNavigate } from 'react-router-dom';
 
 const STEPS = [
@@ -27,7 +26,7 @@ export const FortressSetupWizard = ({ onComplete }) => {
     nearRevision: { recentParts: '' },
     farRevision: { oldParts: '', dailyTarget: 'نصف جزء' },
     reading: { startPart: 'الجزء الأول', dailyTarget: 'جزء واحد' },
-    notifications: { enabled: false, reminderTime: '05:00' }
+    notifications: { enabled: false, reminderTimes: ['05:00'] }
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -67,8 +66,7 @@ export const FortressSetupWizard = ({ onComplete }) => {
 
       // تحديث بيانات المستخدم في السياق وقاعدة البيانات
       if (user?.uid) {
-        const userRef = doc(db, 'users', user.uid);
-        await setDoc(userRef, { fortressPlan }, { merge: true });
+        await saveFortressPlanToFirestore(user.uid, fortressPlan);
       }
       
       if (updateUserData) {
@@ -265,13 +263,40 @@ export const FortressSetupWizard = ({ onComplete }) => {
 
                 {formData.notifications.enabled && (
                   <div style={{ width: '100%' }}>
-                    <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', marginBottom: '8px', color: 'var(--text-primary)' }}>وقت التذكير المفضل:</label>
-                    <input 
-                      type="time" 
-                      value={formData.notifications.reminderTime}
-                      onChange={(e) => setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, reminderTime: e.target.value } }))}
-                      style={inputStyle}
-                    />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <label style={{ fontSize: '13px', fontWeight: 'bold', color: 'var(--text-primary)', margin: 0 }}>أوقات التذكير المفضلة:</label>
+                      <button 
+                        onClick={() => setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, reminderTimes: [...prev.notifications.reminderTimes, '16:00'] } }))}
+                        style={{ background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', borderRadius: '4px', padding: '4px 8px', fontSize: '12px', cursor: 'pointer', fontWeight: 'bold' }}
+                      >
+                        + إضافة وقت
+                      </button>
+                    </div>
+                    {formData.notifications.reminderTimes.map((time, index) => (
+                      <div key={index} style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                        <input 
+                          type="time" 
+                          value={time}
+                          onChange={(e) => {
+                            const newTimes = [...formData.notifications.reminderTimes];
+                            newTimes[index] = e.target.value;
+                            setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, reminderTimes: newTimes } }));
+                          }}
+                          style={{...inputStyle, flex: 1}}
+                        />
+                        {formData.notifications.reminderTimes.length > 1 && (
+                          <button 
+                            onClick={() => {
+                              const newTimes = formData.notifications.reminderTimes.filter((_, i) => i !== index);
+                              setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, reminderTimes: newTimes } }));
+                            }}
+                            style={{ background: 'transparent', color: '#ff4d4f', border: '1px solid #ff4d4f', borderRadius: '8px', padding: '0 12px', cursor: 'pointer' }}
+                          >
+                            حذف
+                          </button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

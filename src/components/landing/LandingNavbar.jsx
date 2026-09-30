@@ -85,28 +85,6 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
 
         {/* Right Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          {/* Docs Quick Button */}
-          <button
-            onClick={onOpenDocs}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '6px 10px',
-              borderRadius: '9px',
-              border: '1px solid rgba(59, 130, 246, 0.25)',
-              background: 'rgba(59, 130, 246, 0.1)',
-              color: '#3B82F6',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title={isRTL ? 'توثيق ودليل المنصة الشامل' : 'Platform Documentation'}
-          >
-            <BookOpen size={14} />
-            <span>{isRTL ? 'التوثيق' : 'Docs'}</span>
-          </button>
 
           {/* Language Switch */}
           <button
