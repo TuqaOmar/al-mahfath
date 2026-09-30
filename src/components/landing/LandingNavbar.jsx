@@ -177,36 +177,6 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <button
-                onClick={onDemoLogin}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '7px 12px',
-                  borderRadius: '9px',
-                  border: '1px solid var(--glass-border)',
-                  background: 'var(--bg-surface)',
-                  color: 'var(--text-primary)',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={e => {
-                  e.currentTarget.style.borderColor = 'var(--primary)';
-                  e.currentTarget.style.color = 'var(--primary)';
-                }}
-                onMouseOut={e => {
-                  e.currentTarget.style.borderColor = 'var(--glass-border)';
-                  e.currentTarget.style.color = 'var(--text-primary)';
-                }}
-              >
-                <Sparkles size={13} color="var(--primary)" />
-                <span>{isRTL ? 'تجربة سريعة ⚡' : 'Quick Demo ⚡'}</span>
-              </button>
-
-              <button
                 onClick={() => onOpenAuth('signup')}
                 style={{
                   display: 'flex',

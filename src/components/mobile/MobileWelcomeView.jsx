@@ -229,24 +229,7 @@ export const MobileWelcomeView = ({ onOpenAuth, onDemoLogin }) => {
           <span>لدي حساب بالفعل (تسجيل الدخول)</span>
         </button>
 
-        {onDemoLogin && (
-          <button
-            onClick={onDemoLogin}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: 'var(--primary)',
-              fontSize: '13px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              padding: '8px',
-              marginTop: '4px',
-              textDecoration: 'underline'
-            }}
-          >
-            تجربة فورية سريعة بحساب تجريبي
-          </button>
-        )}
+
       </div>
     </div>
   );

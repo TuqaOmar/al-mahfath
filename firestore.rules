@@ -15,43 +15,54 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    
+    // Check if the current user is an admin
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    // Check if the current user is a teacher
+    function isTeacher() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    }
 
     // Users Collection
     match /users/{userId} {
-      allow read, write: if isSignedIn();
+      // Anyone signed in can read user profiles (needed for groups/community)
+      allow read: if isSignedIn();
+      // Only the user themselves, or an Admin can modify the user document
+      allow write: if isOwner(userId) || isAdmin();
       
-      // User Quran Pages Subcollection
-      match /quranPages/{pageId} {
-        allow read, write: if isSignedIn();
-      }
-
-      // User Five Fortresses Plans Subcollection
-      match /five_fortresses_plans/{planId} {
-        allow read, write: if isSignedIn();
-      }
-
-      // User Ayah Progress (Personal Memorization Portfolio)
-      match /ayah_progress/{ayahId} {
-        allow read, write: if isSignedIn();
-      }
-
-      // User Recitation Sessions & Accuracy History
-      match /recitation_sessions/{sessionId} {
-        allow read, write: if isSignedIn();
+      // Protect all subcollections (ayah_progress, plans, logs, etc.)
+      match /{subcollection}/{document=**} {
+        allow read: if isSignedIn();
+        allow write: if isOwner(userId) || isAdmin();
       }
     }
 
-    // Community Posts Collection (Public Quran community feed)
+    // Community Posts Collection
     match /community_posts/{postId} {
+      // Anyone can read posts
       allow read: if true;
-      allow create, update: if true;
-      allow delete: if isSignedIn();
+      // Anyone signed in can create a post
+      allow create: if isSignedIn();
+      // Only the author of the post or an Admin can update or delete it
+      allow update, delete: if isSignedIn() && (request.auth.uid == resource.data.authorId || isAdmin());
     }
 
-    // Safar Groups / Halaqahs Collection
+    // Groups / Halaqahs Collection
     match /groups/{groupId} {
-      allow read: if true;
-      allow write: if isSignedIn();
+      // Any signed in user can view groups (students need to see groups to join)
+      allow read: if isSignedIn();
+      
+      // Only teachers can create groups, and they must set themselves as the teacher
+      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
+      
+      // Only the teacher who owns the group or an admin can fully update/delete it
+      // Note: If a student adds themselves to the group, ideally this is done via a secure Cloud Function,
+      // or we can allow array-union updates on the 'students' field only. 
+      // For now, we restrict direct writes to the teacher/admin.
+      allow update, delete: if isSignedIn() && (resource.data.teacherId == request.auth.uid || isAdmin());
     }
   }
 }

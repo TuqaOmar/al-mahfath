@@ -186,37 +186,7 @@ export const LandingHero = ({ onOpenAuth, onDemoLogin }) => {
                     {isRTL ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
                   </button>
 
-                  <button
-                    onClick={onDemoLogin}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '14px 22px',
-                      borderRadius: '14px',
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--glass-border)',
-                      color: 'var(--text-primary)',
-                      fontSize: '14.5px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      boxShadow: 'var(--shadow-soft)',
-                      transition: 'all 0.2s ease'
-                    }}
-                    onMouseOver={e => {
-                      e.currentTarget.style.borderColor = 'var(--primary)';
-                      e.currentTarget.style.color = 'var(--primary)';
-                      e.currentTarget.style.transform = 'translateY(-2px)';
-                    }}
-                    onMouseOut={e => {
-                      e.currentTarget.style.borderColor = 'var(--glass-border)';
-                      e.currentTarget.style.color = 'var(--text-primary)';
-                      e.currentTarget.style.transform = 'translateY(0)';
-                    }}
-                  >
-                    <Zap size={16} color="var(--primary)" />
-                    <span>{isRTL ? 'تجربة سريعة بدون تسجيل ⚡' : 'Quick Demo (No Signup) ⚡'}</span>
-                  </button>
+
                 </>
               )}
             </div>
