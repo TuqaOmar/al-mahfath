@@ -68,22 +68,10 @@ const buildQuranPagesData = (user) => {
       lastReviewed = custom.lastReviewed || 'اليوم';
       errorsCount = custom.errorsCount || 0;
     } else if (isMemorized) {
-      if (i % 9 === 0) {
-        status = 'review';
-        score = 78;
-        lastReviewed = 'منذ يومين';
-        errorsCount = 1;
-      } else if (i % 17 === 0) {
-        status = 'critical';
-        score = 55;
-        lastReviewed = 'منذ ٤ أيام';
-        errorsCount = 3;
-      } else {
-        status = 'excellent';
-        score = 96;
-        lastReviewed = 'اليوم';
-        errorsCount = 0;
-      }
+      status = 'excellent';
+      score = 100;
+      lastReviewed = 'اليوم';
+      errorsCount = 0;
     }
 
     pages.push({
