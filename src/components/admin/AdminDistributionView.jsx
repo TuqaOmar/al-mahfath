@@ -14,7 +14,9 @@ import {
   Mail, 
   BookOpen, 
   RefreshCw,
-import { Sparkles, Check } from 'lucide-react';
+  Sparkles,
+  Check
+} from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { db } from '../../lib/firebase';
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -87,9 +89,6 @@ export const AdminDistributionView = () => {
     } catch (err) {
       setFeedback({ type: 'error', text: 'تعذر الاتصال بقاعدة البيانات' });
     } finally {
-      setIsSubmitting(false);
-    }
-  };
       setIsSubmitting(false);
     }
   };
