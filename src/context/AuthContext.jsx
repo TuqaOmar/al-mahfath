@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
                 if (diffDays === 1) {
                   newStreak += 1;
                 } else if (diffDays > 1) {
-                  newStreak = 1;
+                  newStreak = 1; // reset streak if missed a day
                 }
               }
               
@@ -64,7 +64,6 @@ export const AuthProvider = ({ children }) => {
               updateDoc(userDocRef, { streak: newStreak, lastActiveDate: todayString }).catch(e => console.error(e));
             }
             // --------------------
-            
           } else if (!firebaseUser.isAnonymous) {
             // If doc doesn't exist but user logged in (e.g. Google), create it
             userData = {
