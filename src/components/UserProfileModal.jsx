@@ -69,6 +69,14 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
           setPhotoURL(downloadURL);
           setUploadProgress(0);
           setSuccessMsg(isRTL ? 'تم رفع الصورة بنجاح!' : 'Image uploaded successfully!');
+          
+          // Automatically update the user profile so they don't have to click Save just for the avatar
+          try {
+            await updateUserData({ photoURL: downloadURL });
+          } catch (e) {
+            console.error('Error auto-saving avatar:', e);
+          }
+
           setTimeout(() => setSuccessMsg(''), 3000);
         }
       );
