@@ -18,6 +18,8 @@ import {
   Check
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { db } from '../../lib/firebase';
+import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
 
 export const AdminDistributionView = () => {
   const { lang, isRTL } = useLanguage();
@@ -43,27 +45,22 @@ export const AdminDistributionView = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [reqRes, groupsRes, usersRes] = await Promise.all([
-        fetch('/api/admin/enrollment-requests'),
-        fetch('/api/groups'),
-        fetch('/api/admin/users')
-      ]);
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const groupsSnap = await getDocs(collection(db, 'groups'));
+      // Optional: const reqSnap = await getDocs(collection(db, 'enrollmentRequests'));
 
-      const reqData = await reqRes.json();
-      const grpData = await groupsRes.json();
-      const usrData = await usersRes.json();
+      const allUsers = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
+      const allGroups = groupsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      if (reqData.success) setRequests(reqData.requests || []);
-      if (grpData.success) {
-        setGroups(grpData.groups || []);
-        if (grpData.groups?.length > 0 && !targetGroupId) {
-          setTargetGroupId(grpData.groups[0].id);
-        }
+      setRequests([]); // No requests collection yet
+      
+      setGroups(allGroups);
+      if (allGroups.length > 0 && !targetGroupId) {
+        setTargetGroupId(allGroups[0].id);
       }
-      if (usrData.success) {
-        setStudents(usrData.users?.filter(u => u.role !== 'admin') || []);
-        setTeachers(usrData.users?.filter(u => u.role === 'teacher') || []);
-      }
+      
+      setStudents(allUsers.filter(u => u.role !== 'admin' && u.role !== 'teacher'));
+      setTeachers(allUsers.filter(u => u.role === 'teacher'));
     } catch (e) {
       console.error('Failed to load distribution data:', e);
     } finally {
@@ -77,26 +74,20 @@ export const AdminDistributionView = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/admin/enrollment-requests/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          requestId: selectedRequest.id,
+      // In a real app we'd also update the request doc to 'approved'
+      // For now we just update the user document if they have a uid attached to the request
+      if (selectedRequest.userUid) {
+        await updateDoc(doc(db, 'users', selectedRequest.userUid), {
           groupId: targetGroupId,
-          teacherId: targetTeacherId || null
-        })
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setFeedback({ type: 'success', text: data.message });
-        setSelectedRequest(null);
-        fetchAllData();
-      } else {
-        setFeedback({ type: 'error', text: data.message || 'فشلت عملية التعيين' });
+          teacherId: targetTeacherId || null,
+          isSafarMember: true
+        });
       }
+      setFeedback({ type: 'success', text: 'تمت الموافقة بنجاح' });
+      setSelectedRequest(null);
+      fetchAllData();
     } catch (err) {
-      setFeedback({ type: 'error', text: 'تعذر الاتصال بالخادم' });
+      setFeedback({ type: 'error', text: 'تعذر الاتصال بقاعدة البيانات' });
     } finally {
       setIsSubmitting(false);
     }
@@ -108,26 +99,19 @@ export const AdminDistributionView = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/admin/distribute-student', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          studentUid: selectedStudentToMove.uid,
-          groupId: targetGroupId,
-          teacherId: targetTeacherId || null
-        })
+      const groupTarget = groups.find(g => g.id === targetGroupId);
+      await updateDoc(doc(db, 'users', selectedStudentToMove.uid), {
+        groupId: targetGroupId,
+        groupName: groupTarget?.name || '',
+        teacherId: targetTeacherId || null,
+        isSafarMember: true
       });
-
-      const data = await res.json();
-      if (data.success) {
-        setFeedback({ type: 'success', text: data.message });
-        setSelectedStudentToMove(null);
-        fetchAllData();
-      } else {
-        setFeedback({ type: 'error', text: data.message || 'فشل نقل الطالبة' });
-      }
+      
+      setFeedback({ type: 'success', text: 'تم توزيع الطالبة بنجاح' });
+      setSelectedStudentToMove(null);
+      fetchAllData();
     } catch (err) {
-      setFeedback({ type: 'error', text: 'تعذر الاتصال بالخادم' });
+      setFeedback({ type: 'error', text: 'فشلت عملية النقل' });
     } finally {
       setIsSubmitting(false);
     }
