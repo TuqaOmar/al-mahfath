@@ -26,8 +26,10 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { AdminPerformanceDashboard } from './AdminPerformanceDashboard';
 import { AdminDistributionView } from './AdminDistributionView';
+import { AdminCommunityView } from './AdminCommunityView';
+import { AdminBadgesView } from './AdminBadgesView';
 import { db } from '../../lib/firebase';
-import { collection, getDocs, doc, updateDoc, getCountFromServer } from 'firebase/firestore';
+import { collection, getDocs, doc, updateDoc, deleteDoc, getCountFromServer } from 'firebase/firestore';
 export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) => {
   const { lang, isRTL } = useLanguage();
 
@@ -35,6 +37,8 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
   const [overview, setOverview] = useState(null);
   const [users, setUsers] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [badges, setBadges] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [userFilter, setUserFilter] = useState('all'); // 'all' | 'safar_member' | 'independent' | 'teacher' | 'active' | 'inactive'
@@ -63,6 +67,17 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
       const allGroups = groupsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       setGroups(allGroups);
       const groupsCount = allGroups.length;
+
+      // Fetch posts and badges
+      try {
+        const postsSnap = await getDocs(collection(db, 'posts'));
+        setPosts(postsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch(e) { console.warn('No posts collection yet'); }
+      
+      try {
+        const badgesSnap = await getDocs(collection(db, 'badges'));
+        setBadges(badgesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch(e) { console.warn('No badges collection yet'); }
 
       const allUsers = allUsersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
       
@@ -140,21 +155,46 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
     }
   };
 
+  const handleApprovePost = async (postId) => {
+    try {
+      await updateDoc(doc(db, 'posts', postId), { status: 'approved' });
+      setPosts(posts.map(p => p.id === postId ? { ...p, status: 'approved' } : p));
+      setActionFeedback({ type: 'success', text: 'تمت الموافقة على المنشور ونشره' });
+    } catch (error) {
+      setActionFeedback({ type: 'error', text: 'فشلت عملية الموافقة' });
+    } finally {
+      setTimeout(() => setActionFeedback(null), 3500);
+    }
+  };
+
+  const handleRejectPost = async (postId) => {
+    try {
+      await deleteDoc(doc(db, 'posts', postId));
+      setPosts(posts.filter(p => p.id !== postId));
+      setActionFeedback({ type: 'success', text: 'تم رفض وحذف المنشور' });
+    } catch (error) {
+      setActionFeedback({ type: 'error', text: 'فشلت عملية الحذف' });
+    } finally {
+      setTimeout(() => setActionFeedback(null), 3500);
+    }
+  };
+
+
   const stats = overview?.stats || {
-    totalRegisteredUsers: 12842,
-    safarMembers: 4281,
-    teachersCount: 186,
-    independentUsers: 8561,
-    groupsCount: 142
+    totalRegisteredUsers: 0,
+    safarMembers: 0,
+    teachersCount: 0,
+    independentUsers: 0,
+    groupsCount: 0
   };
 
   const realTime = overview?.realTimeActivity || {
-    activeToday: 1420,
-    activeThisWeek: 6890,
-    newRegistrationsWeek: 342,
-    newGroupJoinsWeek: 94,
-    activeTeachers: 174,
-    activeGroups: 138
+    activeToday: 0,
+    activeThisWeek: 0,
+    newRegistrationsWeek: 0,
+    newGroupJoinsWeek: 0,
+    activeTeachers: 0,
+    activeGroups: 0
   };
 
   return (
@@ -766,12 +806,12 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
               <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>معدل إكمال الأوراد الأسبوعية</span>
-                <strong style={{ fontSize: '24px', color: '#10B981', display: 'block', margin: '4px 0' }}>84.5%</strong>
-                <span style={{ fontSize: '11px', color: '#10B981' }}>↑ تحسن بنسبة 6% هذا الشهر</span>
+                <strong style={{ fontSize: '24px', color: '#10B981', display: 'block', margin: '4px 0' }}>0%</strong>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>بانتظار تجميع البيانات...</span>
               </div>
               <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>جلسات التسميع الصوتي شهرياً</span>
-                <strong style={{ fontSize: '24px', color: '#3B82F6', display: 'block', margin: '4px 0' }}>42,800+</strong>
+                <strong style={{ fontSize: '24px', color: '#3B82F6', display: 'block', margin: '4px 0' }}>0</strong>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>جلسة مراجعة وحفظ وتثبيت</span>
               </div>
             </div>
@@ -781,96 +821,16 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
       {/* VIEW 5: COMMUNITY MODERATION */}
       {currentTab === 'community' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  إدارة المنتدى والمجتمع القرآني
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                  راجع المنشورات الجديدة، وافق عليها، أو قم بحذف المحتوى المخالف لضمان بيئة آمنة للمشتركين.
-                </p>
-              </div>
-              <button style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={16} /> موافقة على الكل
-              </button>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[1, 2].map((post, idx) => (
-                <div key={idx} style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px' }}>
-                  <div style={{ display: 'flex', gap: '12px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--primary-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', fontWeight: 'bold' }}>ط</div>
-                    <div>
-                      <strong style={{ display: 'block', fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>طالب علم قرآني</strong>
-                      <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>منذ ساعتين • قيد المراجعة</span>
-                      <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>
-                        "الحمد لله الذي بنعمته تتم الصالحات، أتممت اليوم حفظ الجزء الأول من سورة البقرة وتثبيته من خلال الخطة الذهنية، شكراً لكم!"
-                      </p>
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <button style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.1)', color: '#10B981', border: '1px solid rgba(16, 185, 129, 0.2)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>موافقة ونشر</button>
-                    <button style={{ padding: '6px 12px', borderRadius: '8px', background: 'rgba(239, 68, 68, 0.1)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.2)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>رفض وحذف</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <AdminCommunityView 
+          posts={posts} 
+          handleApprovePost={handleApprovePost} 
+          handleRejectPost={handleRejectPost} 
+        />
       )}
 
       {/* VIEW 6: BADGES SYSTEM */}
       {currentTab === 'badges' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  إدارة الأوسمة والمكافآت التقديرية 🏆
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                  تحكم بأنواع الأوسمة وشروط الحصول عليها أو امنح الأوسمة يدوياً للمتميزين.
-                </p>
-              </div>
-              <button style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                + إنشاء وسام جديد
-              </button>
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-              {[
-                { name: 'بطل البقرة', desc: 'يُمنح عند إتمام حفظ سورة البقرة بمعدل إتقان 90%+', type: 'تلقائي', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-                { name: 'مواظب الأسبوع', desc: 'يُمنح عند الحضور والتسميع لمدة 7 أيام متتالية', type: 'تلقائي', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
-                { name: 'نجم الحلقة', desc: 'يُمنح يدوياً من قِبل المعلمة للطالب المتميز', type: 'يدوي', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' }
-              ].map((badge, idx) => (
-                <div key={idx} style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: badge.bg, color: badge.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Award size={20} />
-                      </div>
-                      <strong style={{ fontSize: '14.5px', color: 'var(--text-primary)' }}>{badge.name}</strong>
-                    </div>
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '6px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
-                      نظام: {badge.type}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                    {badge.desc}
-                  </p>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                    <button style={{ flex: 1, padding: '6px', borderRadius: '8px', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>تعديل الشروط</button>
-                    {badge.type === 'يدوي' && (
-                      <button style={{ flex: 1, padding: '6px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>منح لطالب</button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <AdminBadgesView badges={badges} />
       )}
 
 

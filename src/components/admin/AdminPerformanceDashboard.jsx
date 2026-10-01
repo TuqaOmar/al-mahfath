@@ -1,22 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  BookOpen, 
-  Award, 
-  TrendingUp, 
-  CheckCircle2, 
-  Clock, 
-  Target, 
-  Calculator, 
   Users, 
-  Sparkles, 
-  GraduationCap, 
-  Calendar, 
-  ArrowUpRight,
-  Layers,
-  BarChart3,
   RefreshCw
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { db } from '../../lib/firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export const AdminPerformanceDashboard = () => {
   const { lang, isRTL } = useLanguage();
@@ -34,11 +23,31 @@ export const AdminPerformanceDashboard = () => {
   const fetchPerformanceData = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/memorization-performance');
-      const json = await res.json();
-      if (json.success) {
-        setData(json);
-      }
+      const usersSnap = await getDocs(collection(db, 'users'));
+      const groupsSnap = await getDocs(collection(db, 'groups'));
+      const allUsers = usersSnap.docs.map(d => d.data());
+      
+      const teachers = allUsers.filter(u => u.role === 'teacher').length;
+      const students = allUsers.filter(u => u.isSafarMember).length;
+      const independent = allUsers.filter(u => !u.isSafarMember && u.role !== 'teacher' && u.role !== 'admin').length;
+      const memorizedTotal = allUsers.reduce((sum, u) => sum + ((u.memorizedJuz || 0) * 20), 0);
+      
+      setData({
+        stats: {
+          totalStudentsCount: students,
+          independentUsersCount: independent,
+          totalLearners: students + independent,
+          totalPagesMemorized: memorizedTotal,
+          studentSpecificPages: memorizedTotal,
+          averagePagesPerStudent: students > 0 ? (memorizedTotal / students).toFixed(1) : 0,
+          averageDailyTargetPages: 0,
+          totalWeeklySessions: 0,
+          averageAccuracy: 0,
+          estimatedGraduatesThisYear: 0,
+          groupsCount: groupsSnap.docs.length,
+          teachersCount: teachers
+        }
+      });
     } catch (e) {
       console.error('Failed to load memorization performance:', e);
     } finally {
@@ -47,18 +56,18 @@ export const AdminPerformanceDashboard = () => {
   };
 
   const stats = data?.stats || {
-    totalStudentsCount: 24,
-    independentUsersCount: 8,
-    totalLearners: 32,
-    totalPagesMemorized: 249820,
-    studentSpecificPages: 1320,
-    averagePagesPerStudent: 55,
-    averageDailyTargetPages: 1.6,
-    totalWeeklySessions: 3468,
-    averageAccuracy: 96.2,
-    estimatedGraduatesThisYear: 194,
-    groupsCount: 5,
-    teachersCount: 3
+    totalStudentsCount: 0,
+    independentUsersCount: 0,
+    totalLearners: 0,
+    totalPagesMemorized: 0,
+    studentSpecificPages: 0,
+    averagePagesPerStudent: 0,
+    averageDailyTargetPages: 0,
+    totalWeeklySessions: 0,
+    averageAccuracy: 0,
+    estimatedGraduatesThisYear: 0,
+    groupsCount: 0,
+    teachersCount: 0
   };
 
   // Remaining pages calculation

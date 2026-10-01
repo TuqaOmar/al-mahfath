@@ -120,5 +120,106 @@ export const RoleSwitcher = ({ onRoleChanged }) => {
 
   const Icon = activeOption.icon;
 
-  return null;
+  // Only show the switcher if the actual logged-in user (in DB) is an admin.
+  // But wait, the RoleSwitcher modifies the user context, so we just show it if it's rendered.
+  
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 16px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--glass-border)',
+          borderRadius: '16px',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{
+            width: '36px', height: '36px',
+            borderRadius: '10px',
+            background: `${activeOption.color}15`,
+            color: activeOption.color,
+            display: 'flex', alignItems: 'center', justifyContent: 'center'
+          }}>
+            <Icon size={18} />
+          </div>
+          <div style={{ textAlign: isRTL ? 'right' : 'left' }}>
+            <strong style={{ display: 'block', fontSize: '13px', color: 'var(--text-primary)' }}>
+              {activeOption.title}
+            </strong>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+              {activeOption.badge}
+            </span>
+          </div>
+        </div>
+        <ChevronDown size={16} color="var(--text-secondary)" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0)' }} />
+      </button>
+
+      {isOpen && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 8px)',
+          left: 0, right: 0,
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--glass-border)',
+          borderRadius: '16px',
+          padding: '8px',
+          zIndex: 50,
+          boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '4px'
+        }}>
+          {roles.map((r) => {
+            const isActive = r.id === activeOption.id;
+            const RIcon = r.icon;
+            return (
+              <button
+                key={r.id}
+                onClick={() => handleSelect(r)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  width: '100%',
+                  padding: '10px',
+                  borderRadius: '12px',
+                  background: isActive ? `${r.color}10` : 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  textAlign: isRTL ? 'right' : 'left',
+                }}
+              >
+                <div style={{
+                  width: '32px', height: '32px',
+                  borderRadius: '8px',
+                  background: `${r.color}15`,
+                  color: r.color,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  <RIcon size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ display: 'block', fontSize: '12px', color: isActive ? r.color : 'var(--text-primary)' }}>
+                    {r.title}
+                  </strong>
+                  <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
+                    {r.subtitle}
+                  </span>
+                </div>
+                {isActive && <Check size={16} color={r.color} />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 };
