@@ -220,25 +220,6 @@ const Dashboard = () => {
   }, []);
 
   const renderTabContent = () => {
-    // If Teacher lands on home, render their dedicated Teacher Dashboard
-    if (activeTab === 'home' && user?.role === 'teacher') {
-      return (
-        <TeacherDashboard
-          onOpenStudentProfile={(sId) => setSelectedStudentId(sId)}
-          onViewAllStudents={(filter) => {
-            setStudentFilter(filter || 'all');
-            setActiveTab('teacher-students');
-          }}
-          onViewGroups={() => setActiveTab('teacher-groups')}
-        />
-      );
-    }
-
-    // If Admin lands on home, render their dedicated Admin Dashboard
-    if (activeTab === 'home' && user?.role === 'admin') {
-      return <AdminDashboard activeAdminTab="dashboard" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
-    }
-
     switch (activeTab) {
       case 'teacher-dashboard':
         return (
