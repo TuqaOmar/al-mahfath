@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Save, CheckCircle2, Sparkles, Trophy, Flame, Shield, Camera } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { IslamicAvatarSelector } from './IslamicAvatarSelector';
-
+import { storage } from '../lib/firebase';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 export const UserProfileModal = ({ isOpen, onClose }) => {
   const { user, updateUserData } = useAuth();
   const { lang, isRTL } = useLanguage();
@@ -13,20 +13,71 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
   const [photoURL, setPhotoURL] = useState('');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const fileInputRef = React.useRef(null);
 
   useEffect(() => {
     if (user && isOpen) {
       setName(user.name || '');
       setPhotoURL(user.photoURL || '');
-      setShowAvatarPicker(false);
+      setUploadProgress(0);
       setSuccessMsg('');
       setErrorMsg('');
     }
   }, [user, isOpen]);
 
   if (!isOpen) return null;
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setErrorMsg(isRTL ? 'يرجى اختيار ملف صورة صحيح' : 'Please select a valid image file');
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) { // 2MB limit
+      setErrorMsg(isRTL ? 'حجم الصورة يجب أن لا يتجاوز 2MB' : 'Image size must not exceed 2MB');
+      return;
+    }
+
+    try {
+      setErrorMsg('');
+      setUploadProgress(1); // Start progress
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `avatars/${user.uid}_${Date.now()}.${fileExt}`;
+      const storageRef = ref(storage, fileName);
+      
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      uploadTask.on('state_changed', 
+        (snapshot) => {
+          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error('Upload failed:', error);
+          setErrorMsg(isRTL ? 'فشل رفع الصورة، يرجى المحاولة مرة أخرى' : 'Failed to upload image, please try again');
+          setUploadProgress(0);
+        },
+        async () => {
+          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+          setPhotoURL(downloadURL);
+          setUploadProgress(0);
+          setSuccessMsg(isRTL ? 'تم رفع الصورة بنجاح!' : 'Image uploaded successfully!');
+          setTimeout(() => setSuccessMsg(''), 3000);
+        }
+      );
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(isRTL ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
+      setUploadProgress(0);
+    }
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -220,12 +271,13 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                   borderRadius: '50%',
                   border: '3px solid var(--primary)',
                   boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
-                  backgroundColor: 'var(--bg-surface)'
+                  backgroundColor: 'var(--bg-surface)',
+                  objectFit: 'cover'
                 }}
               />
               <button
                 type="button"
-                onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                onClick={() => fileInputRef.current?.click()}
                 style={{
                   position: 'absolute',
                   bottom: 0,
@@ -241,41 +293,27 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                   justifyContent: 'center',
                   cursor: 'pointer'
                 }}
-                title={isRTL ? 'تغيير الصورة الرمزية' : 'Change Avatar'}
+                title={isRTL ? 'تغيير الصورة الشخصية' : 'Change Avatar'}
               >
                 <Camera size={14} />
               </button>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                onChange={handleImageChange} 
+                accept="image/*" 
+                style={{ display: 'none' }} 
+              />
             </div>
 
-            <button
-              type="button"
-              onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--primary)',
-                fontSize: '13px',
-                fontWeight: 'bold',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}
-            >
-              <Sparkles size={14} />
-              {showAvatarPicker ? (isRTL ? 'إخفاء خيارات الصور' : 'Hide Avatars') : (isRTL ? 'اختر صورة رمزية إسلامية مناسبة' : 'Choose Islamic Avatar')}
-            </button>
-
-            {/* Avatar Selector Panel */}
-            {showAvatarPicker && (
-              <div style={{ width: '100%', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--glass-border)' }}>
-                <IslamicAvatarSelector
-                  currentAvatar={photoURL}
-                  onSelectAvatar={(newAvatarUrl) => {
-                    setPhotoURL(newAvatarUrl);
-                    setShowAvatarPicker(false);
-                  }}
-                />
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div style={{ width: '100%', marginTop: '8px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '4px' }}>
+                  {isRTL ? `جاري الرفع... ${Math.round(uploadProgress)}%` : `Uploading... ${Math.round(uploadProgress)}%`}
+                </div>
+                <div style={{ width: '100%', height: '4px', background: 'var(--glass-border)', borderRadius: '2px', overflow: 'hidden' }}>
+                  <div style={{ width: `${uploadProgress}%`, height: '100%', background: 'var(--primary)', transition: 'width 0.2s' }}></div>
+                </div>
               </div>
             )}
           </div>
