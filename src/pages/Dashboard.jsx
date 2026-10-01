@@ -74,7 +74,7 @@ import { FloatingAiButton } from '../components/FloatingAiButton';
 import { QuickSettingsMenu } from '../components/QuickSettingsMenu';
 import { SimilaritiesView } from '../components/SimilaritiesView';
 import { MindMapsView } from '../components/MindMapsView';
-import { RoleSwitcher } from '../components/RoleSwitcher';
+
 import { JoinGroupModal } from '../components/onboarding/JoinGroupModal';
 import { TeacherDashboard } from '../components/teacher/TeacherDashboard';
 import { TeacherStudentsView } from '../components/teacher/TeacherStudentsView';
@@ -1097,7 +1097,6 @@ const Dashboard = () => {
 
               {/* Right / End: RoleSwitcher, Notification, Theme & Quick Settings */}
               <div className="flex-center" style={{ gap: '6px', flexWrap: 'nowrap' }}>
-                <RoleSwitcher />
                 <NotificationCenter />
                 <ThemeToggle variant="pill" size="small" />
                 <QuickSettingsMenu
@@ -1170,11 +1169,8 @@ const Dashboard = () => {
                 </span>
               </div>
 
-              {/* Right / End: RoleSwitcher + Desktop Tools & Actions */}
-              <div className="flex-center" style={{ gap: isLaptop ? '6px' : '10px', flexWrap: 'nowrap' }}>
-                <RoleSwitcher />
-
-                {/* On wider screens without drawer constraints, display direct quick buttons */}
+              {/* Right / End: Desktop Tools & Actions */}
+              <div className="flex-center" style={{ gap: isLaptop ? '6px' : '10px', flexWrap: 'nowrap' }}>                {/* On wider screens without drawer constraints, display direct quick buttons */}
                 {!isLaptop && (
                   <>
                     {/* Sync & Refresh Button */}
