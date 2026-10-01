@@ -36,6 +36,35 @@ export const AuthProvider = ({ children }) => {
 
           if (userDocSnap.exists()) {
             userData = { ...userData, ...userDocSnap.data() };
+            
+            // --- STREAK LOGIC ---
+            const today = new Date();
+            const todayString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
+            const lastActiveString = userData.lastActiveDate;
+            
+            if (lastActiveString !== todayString) {
+              let newStreak = userData.streak || 1;
+              if (lastActiveString) {
+                const [lYear, lMonth, lDay] = lastActiveString.split('-').map(Number);
+                const lastDate = new Date(lYear, lMonth - 1, lDay);
+                const currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                const diffDays = Math.round((currentDate - lastDate) / (1000 * 60 * 60 * 24)); 
+                if (diffDays === 1) {
+                  newStreak += 1;
+                } else if (diffDays > 1) {
+                  newStreak = 1;
+                }
+              }
+              
+              userData.streak = newStreak;
+              userData.lastActiveDate = todayString;
+              
+              // We do this asynchronously so it doesn't block UI loading too much
+              updateDoc(userDocRef, { streak: newStreak, lastActiveDate: todayString }).catch(e => console.error(e));
+            }
+            // --------------------
+            
           } else if (!firebaseUser.isAnonymous) {
             // If doc doesn't exist but user logged in (e.g. Google), create it
             userData = {
