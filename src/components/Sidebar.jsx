@@ -62,6 +62,14 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
           { id: 'admin-groups', label: lang === 'ar' ? 'الحلقات والمجموعات' : 'Groups', icon: Layers },
           { id: 'admin-analytics', label: lang === 'ar' ? 'التحليلات ومعدلات النمو' : 'Analytics', icon: TrendingUp }
         ]
+      },
+      {
+        title: lang === 'ar' ? 'مساري القرآني (طالب)' : 'My Journey (Student)',
+        items: [
+          { id: 'home', label: lang === 'ar' ? 'رئيسية الطالب' : 'Student Home', icon: Home },
+          { id: 'quran-map', label: lang === 'ar' ? 'مصحفي وخريطة الختمة' : 'My Quran', icon: Compass },
+          { id: 'five-fortresses', label: lang === 'ar' ? 'الحصون وإنجازاتي' : 'Five Fortresses', icon: ShieldCheck }
+        ]
       }
     ];
   } else if (userRole === 'teacher') {
@@ -81,6 +89,14 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
           { id: 'daily-session', label: lang === 'ar' ? 'المصحف والتسميع' : 'Quran & Recitation', icon: BookOpen },
           { id: 'similarities', label: lang === 'ar' ? 'المتشابهات القرآنية' : 'Similarities', icon: BookOpen },
           { id: 'mind-maps', label: lang === 'ar' ? 'الخرائط الذهنية' : 'Mind Maps', icon: Map }
+        ]
+      },
+      {
+        title: lang === 'ar' ? 'مساري القرآني (طالب)' : 'My Journey (Student)',
+        items: [
+          { id: 'home', label: lang === 'ar' ? 'رئيسية الطالب' : 'Student Home', icon: Home },
+          { id: 'quran-map', label: lang === 'ar' ? 'مصحفي وخريطة الختمة' : 'My Quran', icon: Compass },
+          { id: 'five-fortresses', label: lang === 'ar' ? 'الحصون وإنجازاتي' : 'Five Fortresses', icon: ShieldCheck }
         ]
       }
     ];
