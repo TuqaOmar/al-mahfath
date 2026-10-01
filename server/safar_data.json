@@ -1,1 +1,1599 @@
-{}
+{
+  "groups": [
+    {
+      "id": "group_nur",
+      "code": "SAFAR-NUR",
+      "name": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "teacherAvatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha",
+      "description": "حلقة نموذجية تركز على حفظ وتثبيت سورة البقرة بمنهجية الحصون الخمسة والتسميع التفاعلي المتقن.",
+      "membersCount": 25,
+      "activeStudentsCount": 21,
+      "commitmentRate": 87,
+      "activityLevel": "مرتفع",
+      "targetJuz": "الأجزاء 1 - 3",
+      "createdAt": "2026-01-10",
+      "status": "active"
+    },
+    {
+      "id": "group_fajr",
+      "code": "SAFAR-FAJR",
+      "name": "حلقة الفجر القرآنية",
+      "teacherId": "teacher_fatima",
+      "teacherName": "أ. فاطمة الزهراء",
+      "teacherAvatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima",
+      "description": "حلقة صباحية مباركة لمراجعة الأجزاء العشرة الأخيرة وتصحيح مخارج الحروف وأحكام التجويد.",
+      "membersCount": 18,
+      "activeStudentsCount": 16,
+      "commitmentRate": 89,
+      "activityLevel": "مرتفع",
+      "targetJuz": "الأجزاء 21 - 30",
+      "createdAt": "2026-02-01",
+      "status": "active"
+    },
+    {
+      "id": "group_bayan",
+      "code": "SAFAR-BAYAN",
+      "name": "حلقة تيجان البيان",
+      "teacherId": "teacher_maryam",
+      "teacherName": "أ. مريم السالم",
+      "teacherAvatar": "https://api.dicebear.com/7.x/avataaars/svg?seed=Maryam",
+      "description": "حلقة مخصصة لتثبيت المفصل وضبط المتشابهات اللفظية والتدبر العملي للآيات.",
+      "membersCount": 15,
+      "activeStudentsCount": 12,
+      "commitmentRate": 80,
+      "activityLevel": "متوسط",
+      "targetJuz": "سورة الكهف إلى سورة الناس",
+      "createdAt": "2026-03-05",
+      "status": "active"
+    }
+  ],
+  "teachers": [
+    {
+      "uid": "teacher_aisha",
+      "name": "أ. عائشة العتيبي",
+      "email": "aisha@safar.org",
+      "role": "teacher",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha",
+      "specialty": "إجازة في القراءات العشر، مشرفة حلقات التثبيت المنهجي",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "groupId": "group_nur",
+      "studentsCount": 24,
+      "activeThisWeek": 21,
+      "weeklyCommitment": 87,
+      "needsAttentionCount": 4,
+      "joinDate": "2025-11-01",
+      "lastActive": "منذ 10 دقائق"
+    },
+    {
+      "uid": "teacher_fatima",
+      "name": "أ. فاطمة الزهراء",
+      "email": "fatima@safar.org",
+      "role": "teacher",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima",
+      "specialty": "مدربة معتمدة في أحكام التجويد ومخارج الحروف",
+      "groupName": "حلقة الفجر القرآنية",
+      "groupId": "group_fajr",
+      "studentsCount": 18,
+      "activeThisWeek": 16,
+      "weeklyCommitment": 89,
+      "needsAttentionCount": 2,
+      "joinDate": "2025-12-15",
+      "lastActive": "منذ ساعتين"
+    },
+    {
+      "uid": "teacher_maryam",
+      "name": "أ. مريم السالم",
+      "email": "maryam@safar.org",
+      "role": "teacher",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Maryam",
+      "specialty": "باحثة في إعجاز القرآن وضبط المتشابهات",
+      "groupName": "حلقة تيجان البيان",
+      "groupId": "group_bayan",
+      "studentsCount": 15,
+      "activeThisWeek": 12,
+      "weeklyCommitment": 80,
+      "needsAttentionCount": 3,
+      "joinDate": "2026-01-20",
+      "lastActive": "أمس"
+    }
+  ],
+  "students": [
+    {
+      "uid": "student_1790827472247",
+      "name": "Test",
+      "email": "test@test.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Test",
+      "memorizedJuz": 1,
+      "memorizedPagesCount": 20,
+      "thisWeekSessions": 2,
+      "consistencyRate": 90,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "صفحة واحدة يومياً",
+      "currentSurah": "البقرة",
+      "currentJuz": 2,
+      "goalCompletionRate": 35,
+      "totalSessionsCount": 2,
+      "joinDate": "2026-10-01",
+      "lastActive": "الآن",
+      "recitationStats": {
+        "sessionsCount": 2,
+        "averageAccuracy": 96,
+        "errorsCount": 1,
+        "hesitationsCount": 0,
+        "recentFeedbacks": [
+          "بداية موفقة ومباركة في المجموعة!"
+        ]
+      }
+    },
+    {
+      "uid": "student_sara",
+      "name": "سارة الخالدي",
+      "email": "sara.k@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=SaraK",
+      "memorizedJuz": 14,
+      "thisWeekSessions": 4,
+      "consistencyRate": 96,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "إتمام حفظ سورة آل عمران كاملة",
+      "currentSurah": "آل عمران",
+      "currentJuz": 3,
+      "goalCompletionRate": 85,
+      "totalSessionsCount": 42,
+      "joinDate": "2026-01-15",
+      "lastActive": "منذ 25 دقيقة",
+      "recitationStats": {
+        "sessionsCount": 42,
+        "averageAccuracy": 97,
+        "errorsCount": 1,
+        "repeatedMistakes": [
+          "أواخر آيات التوحيد والصفات",
+          "تتابع المدود"
+        ],
+        "hesitationPoints": [
+          "آل عمران آية 144"
+        ],
+        "improvementRate": "+15%"
+      },
+      "revisionStats": {
+        "frequency": "يومي بمعدل حزبين",
+        "lastRevision": "اليوم فجراً",
+        "reinforcementAreas": [
+          "أواخر سورة البقرة",
+          "بداية الجزء الثالث"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 28,
+        "missedDays": 0
+      }
+    },
+    {
+      "uid": "student_noura",
+      "name": "نورة الشمري",
+      "email": "noura.sh@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=NouraSh",
+      "memorizedJuz": 12,
+      "thisWeekSessions": 3,
+      "consistencyRate": 92,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة آل عمران الوجه 15",
+      "currentSurah": "آل عمران",
+      "currentJuz": 3,
+      "goalCompletionRate": 74,
+      "totalSessionsCount": 36,
+      "joinDate": "2026-01-16",
+      "lastActive": "منذ ساعتين",
+      "recitationStats": {
+        "sessionsCount": 36,
+        "averageAccuracy": 95,
+        "errorsCount": 2,
+        "repeatedMistakes": [
+          "مواضع الإدغام الناقص"
+        ],
+        "hesitationPoints": [
+          "البقرة آية 282"
+        ],
+        "improvementRate": "+10%"
+      },
+      "revisionStats": {
+        "frequency": "يومي بمعدل جزء",
+        "lastRevision": "أمس مساءً",
+        "reinforcementAreas": [
+          "سورة البقرة - الربع الخامس"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 19,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_mona",
+      "name": "منى عبد العزيز",
+      "email": "mona.a@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=MonaA",
+      "memorizedJuz": 8,
+      "thisWeekSessions": 1,
+      "consistencyRate": 74,
+      "lastRecitationDate": "منذ 4 أيام",
+      "status": "needs_attention",
+      "attentionReason": "لم تسجل أي تسميع منذ 4 أيام",
+      "currentTarget": "تثبيت الربع الأول من الجزء الثاني",
+      "currentSurah": "البقرة",
+      "currentJuz": 2,
+      "goalCompletionRate": 50,
+      "totalSessionsCount": 24,
+      "joinDate": "2026-01-20",
+      "lastActive": "منذ 4 أيام",
+      "recitationStats": {
+        "sessionsCount": 24,
+        "averageAccuracy": 86,
+        "errorsCount": 5,
+        "repeatedMistakes": [
+          "تشابه خواتيم الآيات (عزيز حكيم / عليم حكيم)",
+          "أحكام النون الساكنة"
+        ],
+        "hesitationPoints": [
+          "البقرة آية 142",
+          "البقرة آية 158"
+        ],
+        "improvementRate": "-5%"
+      },
+      "revisionStats": {
+        "frequency": "متقطع (مرتان أسبوعياً)",
+        "lastRevision": "منذ 4 أيام",
+        "reinforcementAreas": [
+          "أول الجزء الثاني كاملاً"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          0,
+          0,
+          0,
+          0,
+          1,
+          1,
+          0
+        ],
+        "streak": 0,
+        "missedDays": 4
+      }
+    },
+    {
+      "uid": "student_reem",
+      "name": "ريم الدوسري",
+      "email": "reem.d@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=ReemD",
+      "memorizedJuz": 10,
+      "thisWeekSessions": 0,
+      "consistencyRate": 65,
+      "lastRecitationDate": "منذ 6 أيام",
+      "status": "needs_attention",
+      "attentionReason": "الورد الأسبوعي غير مكتمل",
+      "currentTarget": "مراجعة الأوجه 30 إلى 40 من البقرة",
+      "currentSurah": "البقرة",
+      "currentJuz": 2,
+      "goalCompletionRate": 40,
+      "totalSessionsCount": 20,
+      "joinDate": "2026-01-18",
+      "lastActive": "منذ 6 أيام",
+      "recitationStats": {
+        "sessionsCount": 20,
+        "averageAccuracy": 84,
+        "errorsCount": 6,
+        "repeatedMistakes": [
+          "أحكام الوقف والابتداء",
+          "نسيان أوائل الأرباع"
+        ],
+        "hesitationPoints": [
+          "البقرة آية 197"
+        ],
+        "improvementRate": "-8%"
+      },
+      "revisionStats": {
+        "frequency": "أسبوعي غير منتظم",
+        "lastRevision": "منذ أسبوع",
+        "reinforcementAreas": [
+          "سورة البقرة الأرباع الأخيرة"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "streak": 0,
+        "missedDays": 6
+      }
+    },
+    {
+      "uid": "student_arwa",
+      "name": "أروى القحطاني",
+      "email": "arwa.q@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=ArwaQ",
+      "memorizedJuz": 6,
+      "thisWeekSessions": 2,
+      "consistencyRate": 71,
+      "lastRecitationDate": "منذ يومين",
+      "status": "needs_attention",
+      "attentionReason": "انخفاض في دقة التلاوة وتكرار أخطاء الوقف",
+      "currentTarget": "حفظ صفحة 45 من سورة البقرة",
+      "currentSurah": "البقرة",
+      "currentJuz": 3,
+      "goalCompletionRate": 60,
+      "totalSessionsCount": 28,
+      "joinDate": "2026-01-22",
+      "lastActive": "منذ يومين",
+      "recitationStats": {
+        "sessionsCount": 28,
+        "averageAccuracy": 82,
+        "errorsCount": 7,
+        "repeatedMistakes": [
+          "تكرار أخطاء التشكيل في أواخر الكلمات",
+          "الخلط بين آيات الربا والإنفاق"
+        ],
+        "hesitationPoints": [
+          "البقرة آية 275",
+          "البقرة آية 280"
+        ],
+        "improvementRate": "-4%"
+      },
+      "revisionStats": {
+        "frequency": "3 مرات أسبوعياً",
+        "lastRevision": "منذ يومين",
+        "reinforcementAreas": [
+          "أواخر سورة البقرة"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          0,
+          0,
+          1,
+          0,
+          1,
+          0,
+          0
+        ],
+        "streak": 0,
+        "missedDays": 2
+      }
+    },
+    {
+      "uid": "student_hind",
+      "name": "هند العتيبي",
+      "email": "hind.o@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=HindO",
+      "memorizedJuz": 9,
+      "thisWeekSessions": 1,
+      "consistencyRate": 68,
+      "lastRecitationDate": "منذ 3 أيام",
+      "status": "needs_attention",
+      "attentionReason": "تباطأ معدل الإنجاز هذا الأسبوع",
+      "currentTarget": "إكمال الورد الأسبوعي صفحتين",
+      "currentSurah": "البقرة",
+      "currentJuz": 2,
+      "goalCompletionRate": 55,
+      "totalSessionsCount": 30,
+      "joinDate": "2026-01-19",
+      "lastActive": "منذ 3 أيام",
+      "recitationStats": {
+        "sessionsCount": 30,
+        "averageAccuracy": 85,
+        "errorsCount": 4,
+        "repeatedMistakes": [
+          "تبديل حروف الجر",
+          "التشابه مع سورة النساء"
+        ],
+        "hesitationPoints": [
+          "البقرة آية 213"
+        ],
+        "improvementRate": "-3%"
+      },
+      "revisionStats": {
+        "frequency": "مرتان أسبوعياً",
+        "lastRevision": "منذ 3 أيام",
+        "reinforcementAreas": [
+          "الجزء الثاني"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          0,
+          0,
+          0,
+          1,
+          1,
+          0,
+          0
+        ],
+        "streak": 0,
+        "missedDays": 3
+      }
+    },
+    {
+      "uid": "student_khadija",
+      "name": "خديجة العمري",
+      "email": "khadija.o@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=KhadijaO",
+      "memorizedJuz": 20,
+      "thisWeekSessions": 4,
+      "consistencyRate": 98,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "مراجعة الجزء العشرين وتثبيت سورة النمل",
+      "currentSurah": "النمل",
+      "currentJuz": 20,
+      "goalCompletionRate": 94,
+      "totalSessionsCount": 65,
+      "joinDate": "2026-01-10",
+      "lastActive": "منذ ساعة",
+      "recitationStats": {
+        "sessionsCount": 65,
+        "averageAccuracy": 98,
+        "errorsCount": 0,
+        "repeatedMistakes": [],
+        "hesitationPoints": [],
+        "improvementRate": "+18%"
+      },
+      "revisionStats": {
+        "frequency": "يومي 3 أجزاء",
+        "lastRevision": "اليوم بعد الظهر",
+        "reinforcementAreas": [
+          "الأجزاء 18-20"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 35,
+        "missedDays": 0
+      }
+    },
+    {
+      "uid": "student_zainab",
+      "name": "زينب السديري",
+      "email": "zainab.s@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=ZainabS",
+      "memorizedJuz": 16,
+      "thisWeekSessions": 3,
+      "consistencyRate": 94,
+      "lastRecitationDate": "أمس",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة الإسراء",
+      "currentSurah": "الإسراء",
+      "currentJuz": 15,
+      "goalCompletionRate": 88,
+      "totalSessionsCount": 52,
+      "joinDate": "2026-01-12",
+      "lastActive": "أمس",
+      "recitationStats": {
+        "sessionsCount": 52,
+        "averageAccuracy": 96,
+        "errorsCount": 1,
+        "repeatedMistakes": [
+          "مواضع التشابه في التسبيح"
+        ],
+        "hesitationPoints": [
+          "الإسراء آية 70"
+        ],
+        "improvementRate": "+12%"
+      },
+      "revisionStats": {
+        "frequency": "يومي جزءان",
+        "lastRevision": "أمس",
+        "reinforcementAreas": [
+          "الكهف ومريم"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          1,
+          0,
+          1,
+          1
+        ],
+        "streak": 22,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_somaya",
+      "name": "سمية المطيري",
+      "email": "somaya.m@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=SomayaM",
+      "memorizedJuz": 5,
+      "thisWeekSessions": 0,
+      "consistencyRate": 35,
+      "lastRecitationDate": "منذ أسبوعين",
+      "status": "inactive",
+      "attentionReason": "غير نشطة لأكثر من 10 أيام",
+      "currentTarget": "تثبيت سورة الفاتحة وأول البقرة",
+      "currentSurah": "البقرة",
+      "currentJuz": 1,
+      "goalCompletionRate": 25,
+      "totalSessionsCount": 14,
+      "joinDate": "2026-01-25",
+      "lastActive": "منذ 14 يوماً",
+      "recitationStats": {
+        "sessionsCount": 14,
+        "averageAccuracy": 78,
+        "errorsCount": 8,
+        "repeatedMistakes": [
+          "تفلت الحفظ في الأوجه الأولى"
+        ],
+        "hesitationPoints": [
+          "البقرة آية 20"
+        ],
+        "improvementRate": "-15%"
+      },
+      "revisionStats": {
+        "frequency": "متوقف مؤقتاً",
+        "lastRevision": "منذ أسبوعين",
+        "reinforcementAreas": [
+          "الجزء الأول كاملاً"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "streak": 0,
+        "missedDays": 14
+      }
+    },
+    {
+      "uid": "student_hafsa",
+      "name": "حفصة الغامدي",
+      "email": "hafsa.g@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=HafsaG",
+      "memorizedJuz": 11,
+      "thisWeekSessions": 3,
+      "consistencyRate": 91,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة التوبة",
+      "currentSurah": "التوبة",
+      "currentJuz": 10,
+      "goalCompletionRate": 80,
+      "totalSessionsCount": 38,
+      "joinDate": "2026-01-14",
+      "lastActive": "منذ 3 ساعات",
+      "recitationStats": {
+        "sessionsCount": 38,
+        "averageAccuracy": 94,
+        "errorsCount": 2,
+        "repeatedMistakes": [
+          "أحكام الراء المرققة"
+        ],
+        "hesitationPoints": [
+          "التوبة آية 36"
+        ],
+        "improvementRate": "+11%"
+      },
+      "revisionStats": {
+        "frequency": "يومي جزء",
+        "lastRevision": "اليوم صباحاً",
+        "reinforcementAreas": [
+          "الأنفال والتوبة"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          0,
+          1,
+          1,
+          1
+        ],
+        "streak": 15,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_dana",
+      "name": "دانة الحربي",
+      "email": "dana.h@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=DanaH",
+      "memorizedJuz": 7,
+      "thisWeekSessions": 3,
+      "consistencyRate": 88,
+      "lastRecitationDate": "أمس",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "إتقان سورة المائدة",
+      "currentSurah": "المائدة",
+      "currentJuz": 6,
+      "goalCompletionRate": 72,
+      "totalSessionsCount": 31,
+      "joinDate": "2026-01-18",
+      "lastActive": "أمس",
+      "recitationStats": {
+        "sessionsCount": 31,
+        "averageAccuracy": 93,
+        "errorsCount": 2,
+        "repeatedMistakes": [
+          "أحكام القلقلة الصغرى"
+        ],
+        "hesitationPoints": [
+          "المائدة آية 51"
+        ],
+        "improvementRate": "+9%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "أمس",
+        "reinforcementAreas": [
+          "النساء والمائدة"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          0,
+          1,
+          1,
+          1,
+          1,
+          0
+        ],
+        "streak": 14,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_leena",
+      "name": "لينة الأنصاري",
+      "email": "leena.a@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=LeenaA",
+      "memorizedJuz": 15,
+      "thisWeekSessions": 4,
+      "consistencyRate": 95,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة النور والفرقان",
+      "currentSurah": "النور",
+      "currentJuz": 18,
+      "goalCompletionRate": 91,
+      "totalSessionsCount": 47,
+      "joinDate": "2026-01-11",
+      "lastActive": "منذ نصف ساعة",
+      "recitationStats": {
+        "sessionsCount": 47,
+        "averageAccuracy": 97,
+        "errorsCount": 1,
+        "repeatedMistakes": [
+          "مواضع الإظهار الحلقي"
+        ],
+        "hesitationPoints": [
+          "النور آية 35"
+        ],
+        "improvementRate": "+16%"
+      },
+      "revisionStats": {
+        "frequency": "يومي حزبين",
+        "lastRevision": "اليوم",
+        "reinforcementAreas": [
+          "سورة المؤمنون والنور"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 26,
+        "missedDays": 0
+      }
+    },
+    {
+      "uid": "student_salma",
+      "name": "سلمى باوزير",
+      "email": "salma.b@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=SalmaB",
+      "memorizedJuz": 10,
+      "thisWeekSessions": 3,
+      "consistencyRate": 90,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "تثبيت سورة يونس",
+      "currentSurah": "يونس",
+      "currentJuz": 11,
+      "goalCompletionRate": 77,
+      "totalSessionsCount": 35,
+      "joinDate": "2026-01-16",
+      "lastActive": "منذ ساعتين",
+      "recitationStats": {
+        "sessionsCount": 35,
+        "averageAccuracy": 95,
+        "errorsCount": 1,
+        "repeatedMistakes": [],
+        "hesitationPoints": [
+          "يونس آية 22"
+        ],
+        "improvementRate": "+14%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "أمس",
+        "reinforcementAreas": [
+          "الأعراف ويونس"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 18,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_mariam_k",
+      "name": "مريم الكعبي",
+      "email": "mariam.k@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=MariamK",
+      "memorizedJuz": 13,
+      "thisWeekSessions": 3,
+      "consistencyRate": 93,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة الرعد وإبراهيم",
+      "currentSurah": "الرعد",
+      "currentJuz": 13,
+      "goalCompletionRate": 83,
+      "totalSessionsCount": 41,
+      "joinDate": "2026-01-13",
+      "lastActive": "منذ 4 ساعات",
+      "recitationStats": {
+        "sessionsCount": 41,
+        "averageAccuracy": 96,
+        "errorsCount": 1,
+        "repeatedMistakes": [],
+        "hesitationPoints": [
+          "الرعد آية 11"
+        ],
+        "improvementRate": "+13%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "اليوم",
+        "reinforcementAreas": [
+          "يوسف والرعد"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          1,
+          0,
+          1,
+          1
+        ],
+        "streak": 21,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_fatima_m",
+      "name": "فاطمة المهيدب",
+      "email": "fatima.m@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=FatimaM",
+      "memorizedJuz": 18,
+      "thisWeekSessions": 4,
+      "consistencyRate": 97,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "مراجعة الربع الأخير من سورة القصص",
+      "currentSurah": "القصص",
+      "currentJuz": 20,
+      "goalCompletionRate": 92,
+      "totalSessionsCount": 58,
+      "joinDate": "2026-01-10",
+      "lastActive": "منذ ساعة",
+      "recitationStats": {
+        "sessionsCount": 58,
+        "averageAccuracy": 98,
+        "errorsCount": 0,
+        "repeatedMistakes": [],
+        "hesitationPoints": [],
+        "improvementRate": "+17%"
+      },
+      "revisionStats": {
+        "frequency": "يومي حزبين",
+        "lastRevision": "اليوم صباحاً",
+        "reinforcementAreas": [
+          "النمل والقصص"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 30,
+        "missedDays": 0
+      }
+    },
+    {
+      "uid": "student_asma",
+      "name": "أسماء البلوشي",
+      "email": "asma.b@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=AsmaB",
+      "memorizedJuz": 9,
+      "thisWeekSessions": 3,
+      "consistencyRate": 89,
+      "lastRecitationDate": "أمس",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة الأعراف الأوجه الأخيرة",
+      "currentSurah": "الأعراف",
+      "currentJuz": 9,
+      "goalCompletionRate": 75,
+      "totalSessionsCount": 33,
+      "joinDate": "2026-01-17",
+      "lastActive": "أمس",
+      "recitationStats": {
+        "sessionsCount": 33,
+        "averageAccuracy": 94,
+        "errorsCount": 2,
+        "repeatedMistakes": [
+          "مواضع همزة الوصل والقطع"
+        ],
+        "hesitationPoints": [
+          "الأعراف آية 175"
+        ],
+        "improvementRate": "+11%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "أمس",
+        "reinforcementAreas": [
+          "الأنعام والأعراف"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 16,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_rahaf",
+      "name": "رهف الزهراني",
+      "email": "rahaf.z@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=RahafZ",
+      "memorizedJuz": 11,
+      "thisWeekSessions": 3,
+      "consistencyRate": 91,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة الأنبياء",
+      "currentSurah": "الأنبياء",
+      "currentJuz": 17,
+      "goalCompletionRate": 81,
+      "totalSessionsCount": 37,
+      "joinDate": "2026-01-15",
+      "lastActive": "منذ ساعتين",
+      "recitationStats": {
+        "sessionsCount": 37,
+        "averageAccuracy": 95,
+        "errorsCount": 1,
+        "repeatedMistakes": [],
+        "hesitationPoints": [
+          "الأنبياء آية 87"
+        ],
+        "improvementRate": "+12%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "اليوم",
+        "reinforcementAreas": [
+          "الإسراء والكهف"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          0,
+          1,
+          1,
+          1
+        ],
+        "streak": 17,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_joud",
+      "name": "جود العسيري",
+      "email": "joud.a@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=JoudA",
+      "memorizedJuz": 8,
+      "thisWeekSessions": 2,
+      "consistencyRate": 86,
+      "lastRecitationDate": "أمس",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "تثبيت سورة الأنعام",
+      "currentSurah": "الأنعام",
+      "currentJuz": 7,
+      "goalCompletionRate": 70,
+      "totalSessionsCount": 29,
+      "joinDate": "2026-01-21",
+      "lastActive": "أمس",
+      "recitationStats": {
+        "sessionsCount": 29,
+        "averageAccuracy": 92,
+        "errorsCount": 2,
+        "repeatedMistakes": [
+          "أحكام التفخيم والترقيق"
+        ],
+        "hesitationPoints": [
+          "الأنعام آية 95"
+        ],
+        "improvementRate": "+8%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "أمس",
+        "reinforcementAreas": [
+          "المائدة والأنعام"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          0,
+          1,
+          1,
+          1,
+          0,
+          1
+        ],
+        "streak": 11,
+        "missedDays": 2
+      }
+    },
+    {
+      "uid": "student_ghada",
+      "name": "غادة الصالح",
+      "email": "ghada.s@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=GhadaS",
+      "memorizedJuz": 13,
+      "thisWeekSessions": 3,
+      "consistencyRate": 92,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة الحجر والنحل",
+      "currentSurah": "النحل",
+      "currentJuz": 14,
+      "goalCompletionRate": 84,
+      "totalSessionsCount": 43,
+      "joinDate": "2026-01-12",
+      "lastActive": "منذ 3 ساعات",
+      "recitationStats": {
+        "sessionsCount": 43,
+        "averageAccuracy": 96,
+        "errorsCount": 1,
+        "repeatedMistakes": [],
+        "hesitationPoints": [
+          "النحل آية 90"
+        ],
+        "improvementRate": "+14%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "اليوم",
+        "reinforcementAreas": [
+          "إبراهيم والحجر"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          1,
+          0,
+          1,
+          1
+        ],
+        "streak": 20,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_shurooq",
+      "name": "شروق التميمي",
+      "email": "shurooq.t@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=ShurooqT",
+      "memorizedJuz": 10,
+      "thisWeekSessions": 3,
+      "consistencyRate": 89,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة هود",
+      "currentSurah": "هود",
+      "currentJuz": 12,
+      "goalCompletionRate": 76,
+      "totalSessionsCount": 34,
+      "joinDate": "2026-01-16",
+      "lastActive": "منذ 4 ساعات",
+      "recitationStats": {
+        "sessionsCount": 34,
+        "averageAccuracy": 94,
+        "errorsCount": 1,
+        "repeatedMistakes": [],
+        "hesitationPoints": [
+          "هود آية 41"
+        ],
+        "improvementRate": "+10%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "أمس",
+        "reinforcementAreas": [
+          "يونس وهود"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          0,
+          1,
+          1,
+          1,
+          1
+        ],
+        "streak": 16,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_raghad",
+      "name": "رغد الرويلي",
+      "email": "raghad.r@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=RaghadR",
+      "memorizedJuz": 12,
+      "thisWeekSessions": 3,
+      "consistencyRate": 91,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة طه",
+      "currentSurah": "طه",
+      "currentJuz": 16,
+      "goalCompletionRate": 82,
+      "totalSessionsCount": 39,
+      "joinDate": "2026-01-14",
+      "lastActive": "منذ ساعتين",
+      "recitationStats": {
+        "sessionsCount": 39,
+        "averageAccuracy": 95,
+        "errorsCount": 1,
+        "repeatedMistakes": [],
+        "hesitationPoints": [
+          "طه آية 14"
+        ],
+        "improvementRate": "+12%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "اليوم",
+        "reinforcementAreas": [
+          "مريم وطه"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          0,
+          1,
+          1,
+          1
+        ],
+        "streak": 18,
+        "missedDays": 1
+      }
+    },
+    {
+      "uid": "student_amira",
+      "name": "أميرة الشريف",
+      "email": "amira.sh@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=AmiraSh",
+      "memorizedJuz": 6,
+      "thisWeekSessions": 0,
+      "consistencyRate": 45,
+      "lastRecitationDate": "منذ 9 أيام",
+      "status": "inactive",
+      "attentionReason": "انقطاع عن التسميع لأكثر من أسبوع",
+      "currentTarget": "مراجعة سورة النساء",
+      "currentSurah": "النساء",
+      "currentJuz": 5,
+      "goalCompletionRate": 35,
+      "totalSessionsCount": 18,
+      "joinDate": "2026-01-23",
+      "lastActive": "منذ 9 أيام",
+      "recitationStats": {
+        "sessionsCount": 18,
+        "averageAccuracy": 80,
+        "errorsCount": 6,
+        "repeatedMistakes": [
+          "تشابه بدايات الآيات"
+        ],
+        "hesitationPoints": [
+          "النساء آية 34"
+        ],
+        "improvementRate": "-10%"
+      },
+      "revisionStats": {
+        "frequency": "غير منتظم",
+        "lastRevision": "منذ 9 أيام",
+        "reinforcementAreas": [
+          "النساء"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          1
+        ],
+        "streak": 0,
+        "missedDays": 9
+      }
+    },
+    {
+      "uid": "student_nouf",
+      "name": "نوف القاسمي",
+      "email": "nouf.q@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=NoufQ",
+      "memorizedJuz": 4,
+      "thisWeekSessions": 0,
+      "consistencyRate": 40,
+      "lastRecitationDate": "منذ 11 يوماً",
+      "status": "inactive",
+      "attentionReason": "انقطاع عن التسميع",
+      "currentTarget": "حفظ سورة آل عمران",
+      "currentSurah": "آل عمران",
+      "currentJuz": 3,
+      "goalCompletionRate": 30,
+      "totalSessionsCount": 15,
+      "joinDate": "2026-01-26",
+      "lastActive": "منذ 11 يوماً",
+      "recitationStats": {
+        "sessionsCount": 15,
+        "averageAccuracy": 79,
+        "errorsCount": 7,
+        "repeatedMistakes": [
+          "أحكام الميم الساكنة"
+        ],
+        "hesitationPoints": [
+          "آل عمران آية 18"
+        ],
+        "improvementRate": "-12%"
+      },
+      "revisionStats": {
+        "frequency": "متوقف",
+        "lastRevision": "منذ 11 يوماً",
+        "reinforcementAreas": [
+          "آل عمران"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "streak": 0,
+        "missedDays": 11
+      }
+    },
+    {
+      "uid": "student_manar",
+      "name": "منار الحربي",
+      "email": "manar.h@gmail.com",
+      "role": "student",
+      "isSafarMember": true,
+      "groupId": "group_nur",
+      "groupName": "حلقة النور والهدى (إتقان سورة البقرة)",
+      "teacherId": "teacher_aisha",
+      "teacherName": "أ. عائشة العتيبي",
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=ManarH",
+      "memorizedJuz": 14,
+      "thisWeekSessions": 3,
+      "consistencyRate": 93,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "attentionReason": null,
+      "currentTarget": "حفظ سورة الحج",
+      "currentSurah": "الحج",
+      "currentJuz": 17,
+      "goalCompletionRate": 86,
+      "totalSessionsCount": 44,
+      "joinDate": "2026-01-13",
+      "lastActive": "منذ ساعتين",
+      "recitationStats": {
+        "sessionsCount": 44,
+        "averageAccuracy": 96,
+        "errorsCount": 1,
+        "repeatedMistakes": [],
+        "hesitationPoints": [
+          "الحج آية 1"
+        ],
+        "improvementRate": "+15%"
+      },
+      "revisionStats": {
+        "frequency": "يومي",
+        "lastRevision": "اليوم",
+        "reinforcementAreas": [
+          "الأنبياء والحج"
+        ]
+      },
+      "consistencyLogs": {
+        "dailyActivity": [
+          1,
+          1,
+          1,
+          0,
+          1,
+          1,
+          1
+        ],
+        "streak": 20,
+        "missedDays": 1
+      }
+    }
+  ],
+  "independentUsers": [
+    {
+      "uid": "demo_user_123",
+      "name": "أحمد محمد",
+      "email": "demo@ma7fath.ai",
+      "role": "user",
+      "isSafarMember": false,
+      "groupId": null,
+      "groupName": null,
+      "groupCode": null,
+      "teacherId": null,
+      "teacherName": null,
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad",
+      "memorizedJuz": 2.5,
+      "memorizedPagesCount": 49,
+      "thisWeekSessions": 2,
+      "consistencyRate": 84,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "joinDate": "2026-01-01",
+      "lastActive": "منذ دقائق"
+    },
+    {
+      "uid": "indep_tariq",
+      "name": "طارق العلي",
+      "email": "tariq.ali@gmail.com",
+      "role": "user",
+      "isSafarMember": false,
+      "groupId": null,
+      "groupName": null,
+      "groupCode": null,
+      "teacherId": null,
+      "teacherName": null,
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Tariq",
+      "memorizedJuz": 5,
+      "memorizedPagesCount": 100,
+      "thisWeekSessions": 3,
+      "consistencyRate": 88,
+      "lastRecitationDate": "أمس",
+      "status": "excellent",
+      "joinDate": "2026-02-10",
+      "lastActive": "أمس"
+    },
+    {
+      "uid": "indep_layla",
+      "name": "ليلى الكردي",
+      "email": "layla.k@gmail.com",
+      "role": "user",
+      "isSafarMember": false,
+      "groupId": null,
+      "groupName": null,
+      "groupCode": null,
+      "teacherId": null,
+      "teacherName": null,
+      "photoURL": "https://api.dicebear.com/7.x/avataaars/svg?seed=Layla",
+      "memorizedJuz": 10,
+      "memorizedPagesCount": 200,
+      "thisWeekSessions": 4,
+      "consistencyRate": 94,
+      "lastRecitationDate": "اليوم",
+      "status": "excellent",
+      "joinDate": "2026-01-20",
+      "lastActive": "منذ ساعة"
+    }
+  ],
+  "enrollmentRequests": [
+    {
+      "id": "req_1",
+      "name": "ريم الحربي",
+      "email": "reem.h@gmail.com",
+      "phone": "+966 50 123 4567",
+      "memorizedJuz": 5,
+      "dailyGoal": "صفحة واحدة يومياً",
+      "preferredTime": "الفترة المسائية (بعد العصر)",
+      "preferredLevel": "متوسط",
+      "notes": "أرغب بالانضمام لمجموعة تركز على تثبيت الحفظ القديم مع أ. عائشة أو أي معلمة متاحة.",
+      "requestDate": "2026-03-12",
+      "status": "pending"
+    },
+    {
+      "id": "req_2",
+      "name": "أسماء القحطاني",
+      "email": "asmaa.q@outlook.com",
+      "phone": "+966 55 987 6543",
+      "memorizedJuz": 2,
+      "dailyGoal": "نصف صفحة يومياً",
+      "preferredTime": "الفترة الصباحية",
+      "preferredLevel": "مبتدئ",
+      "notes": "حفظت جزء عم وتبارك وأود البدء في سورة البقرة بتدرج منظم.",
+      "requestDate": "2026-03-13",
+      "status": "pending"
+    },
+    {
+      "id": "req_3",
+      "name": "مريم فؤاد الشامي",
+      "email": "maryam.f@gmail.com",
+      "phone": "+966 54 333 2211",
+      "memorizedJuz": 12,
+      "dailyGoal": "صفحتان يومياً",
+      "preferredTime": "فجر أو مساء",
+      "preferredLevel": "متقدم",
+      "notes": "لدي نية إتمام المصحف كاملاً خلال عام 2026 بحول الله، أحتاج متابعة تسميع دقيقة.",
+      "requestDate": "2026-03-14",
+      "status": "pending"
+    }
+  ]
+}

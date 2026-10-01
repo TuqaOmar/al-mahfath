@@ -132,10 +132,10 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
   };
 
   const filterTabs = [
-    { id: 'all', label: 'الكل', count: 24 },
-    { id: 'excellent', label: 'متميزات 🟢', count: 17 },
-    { id: 'needs_attention', label: 'بحاجة لمتابعة 🟡', count: 4 },
-    { id: 'inactive', label: 'منقطعات 🔴', count: 3 }
+    { id: 'all', label: 'الكل', count: students.length },
+    { id: 'excellent', label: 'متميزات 🟢', count: students.filter(s => s.status === 'excellent').length },
+    { id: 'needs_attention', label: 'بحاجة لمتابعة 🟡', count: students.filter(s => s.status === 'needs_attention').length },
+    { id: 'inactive', label: 'منقطعات 🔴', count: students.filter(s => s.status === 'inactive').length }
   ];
 
   return (
