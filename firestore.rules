@@ -1,68 +1,125 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Global Deny Catch-All
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Helper functions
     function isSignedIn() {
       return request.auth != null;
+    }
+
+    function currentUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(roleName) {
+      return isSignedIn() && (
+        currentUserData().role == roleName ||
+        ('roles' in currentUserData() &&
+          roleName in currentUserData().roles &&
+          currentUserData().roles[roleName] == true)
+      );
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isTeacher() {
+      return hasRole('teacher');
     }
 
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-    
-    // Check if the current user is an admin
-    function isAdmin() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+
+    function isAssignedTeacher(studentData) {
+      return isTeacher() &&
+        'teacherId' in studentData &&
+        studentData.teacherId == request.auth.uid;
     }
 
-    // Check if the current user is a teacher
-    function isTeacher() {
-      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'teacher';
+    function isSafeInitialUser(userId) {
+      return isOwner(userId) &&
+        request.resource.data.keys().hasOnly([
+          'uid', 'name', 'email', 'photoURL', 'hasCompletedWizard',
+          'role', 'roles', 'streak', 'xp', 'level',
+          'memorizedPagesCount', 'memoryScore', 'totalJuz',
+          'preferences', 'createdAt'
+        ]) &&
+        request.resource.data.uid == userId &&
+        request.resource.data.email == request.auth.token.email &&
+        request.resource.data.role == 'user' &&
+        request.resource.data.roles == {'user': true} &&
+        request.resource.data.streak == 1 &&
+        request.resource.data.xp == 100 &&
+        request.resource.data.level == 1 &&
+        request.resource.data.memorizedPagesCount == 0 &&
+        request.resource.data.memoryScore == 100 &&
+        request.resource.data.totalJuz == 0 &&
+        request.resource.data.hasCompletedWizard == false;
     }
 
-    // Users Collection
+    function isSafeProfileUpdate() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'name', 'photoURL', 'preferences', 'favorites', 'fortressPlan',
+        'memorizedPages', 'memorizedPagesCount', 'totalJuz'
+      ]);
+    }
+
+    function isSafeOnboardingUpdate() {
+      return resource.data.hasCompletedWizard == false &&
+        request.resource.data.hasCompletedWizard == true &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'name', 'photoURL', 'preferences', 'favorites', 'fortressPlan',
+          'hasCompletedWizard', 'memorizedPages', 'memorizedPagesCount', 'totalJuz'
+        ]);
+    }
+
     match /users/{userId} {
-      // Anyone signed in can read user profiles (needed for groups/community)
-      allow read: if isSignedIn();
-      // Only the user themselves, or an Admin can modify the user document
-      allow write: if isOwner(userId) || isAdmin();
-      
-      // Protect all subcollections (ayah_progress, plans, logs, etc.)
+      allow create: if isSafeInitialUser(userId) || isAdmin();
+      allow read: if isOwner(userId) || isAdmin() || isAssignedTeacher(resource.data);
+      allow update: if (isAdmin() &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+            'groupId', 'groupName', 'teacherId', 'teacherName', 'isSafarMember'
+          ])) ||
+        (isOwner(userId) && (isSafeProfileUpdate() || isSafeOnboardingUpdate()));
+      allow delete: if isAdmin();
+
       match /{subcollection}/{document=**} {
-        allow read: if isSignedIn();
-        allow write: if isOwner(userId) || isAdmin();
+        allow read: if isOwner(userId) || isAdmin() ||
+          isAssignedTeacher(get(/databases/$(database)/documents/users/$(userId)).data);
+        // Server-computed practice sessions and their atomic aggregates cannot
+        // be forged through client writes, including administrative clients.
+        allow write: if !(subcollection in ['recitation_sessions', 'recitation_stats', 'page_progress']) &&
+          (isOwner(userId) || isAdmin());
       }
     }
 
-    // Community Posts Collection
     match /community_posts/{postId} {
-      // Anyone can read posts
       allow read: if true;
-      // Anyone signed in can create a post
-      allow create: if isSignedIn();
-      // Only the author of the post or an Admin can update or delete it
-      allow update, delete: if isSignedIn() && (request.auth.uid == resource.data.authorId || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update, delete: if isSignedIn() &&
+        (request.auth.uid == resource.data.authorId || isAdmin());
     }
 
-    // Groups / Halaqahs Collection
     match /groups/{groupId} {
-      // Any signed in user can view groups (students need to see groups to join)
       allow read: if isSignedIn();
-      
-      // Only teachers can create groups, and they must set themselves as the teacher
-      allow create: if isTeacher() && request.resource.data.teacherId == request.auth.uid;
-      
-      // Only the teacher who owns the group or an admin can fully update/delete it
-      // Note: If a student adds themselves to the group, ideally this is done via a secure Cloud Function,
-      // or we can allow array-union updates on the 'students' field only. 
-      // For now, we restrict direct writes to the teacher/admin.
-      allow update, delete: if isSignedIn() && (resource.data.teacherId == request.auth.uid || isAdmin());
+      // Group writes go through the API to keep memberships and counters atomic.
+      allow write: if false;
+    }
+
+    match /memberships/{userId} {
+      allow read: if isOwner(userId) || isAdmin() ||
+        (isTeacher() && resource.data.teacherId == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /enrollmentRequests/{requestId} {
+      allow read: if isAdmin() ||
+        (isSignedIn() && resource.data.submittedBy == request.auth.uid);
+      allow write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
