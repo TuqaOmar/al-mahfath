@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { fetchWithAuth } from './api';
 import { getSurahNameForPage, getJuzForPage, getPageRangeForJuz, getJuzStartPage } from '../utils/quranData';
 
 /**
@@ -140,15 +141,15 @@ export async function saveFortressPlanToFirestore(userId, planData) {
     // Save to local cache as backup
     localStorage.setItem(`ma7fath_fortress_plan_${userId}`, JSON.stringify(payload));
 
-    // Optional server sync
+    // Optional server sync (uses authenticated request since route requires auth)
     try {
-      await fetch('/api/user/fortress-plan', {
+      await fetchWithAuth('/api/user/fortress-plan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId, plan: payload })
       });
     } catch (apiErr) {
-      // Non-blocking
+      // Non-blocking - Firestore is primary storage
     }
 
     return { success: true, plan: payload };

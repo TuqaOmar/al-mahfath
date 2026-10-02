@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { fetchWithAuth } from '../lib/api';
 export const UserProfileModal = ({ isOpen, onClose }) => {
   const { user, updateUserData } = useAuth();
   const { lang, isRTL } = useLanguage();
@@ -111,7 +112,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       // 2. Sync with Backend Database API
       const targetUid = user?.uid;
       if (targetUid) {
-        await fetch(`/api/user/${targetUid}`, {
+        await fetchWithAuth(`/api/user/${targetUid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

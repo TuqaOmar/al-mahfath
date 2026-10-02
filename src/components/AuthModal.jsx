@@ -33,6 +33,9 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const isAccountReady = (u) => {
     if (!u) return false;
     const hasPrefs = u.preferences && typeof u.preferences === 'object' && Object.keys(u.preferences).length > 0;
+    // Multi-role support: check both single role field and roles map
+    const isAdmin = u.role === 'admin' || (u.roles && u.roles.admin === true);
+    const isTeacher = u.role === 'teacher' || (u.roles && u.roles.teacher === true);
     return Boolean(
       u.hasCompletedWizard === true ||
       u.hasCompletedWizard === 1 ||
@@ -40,8 +43,8 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       hasPrefs ||
       Number(u.memorizedPagesCount) > 0 ||
       Number(u.totalJuz) > 0 ||
-      u.role === 'admin' ||
-      u.role === 'teacher'
+      isAdmin ||
+      isTeacher
     );
   };
 

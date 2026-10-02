@@ -30,7 +30,10 @@ const ProtectedRoute = ({ children, requireWizard = true }) => {
   // User is considered to have completed the wizard if hasCompletedWizard is true,
   // OR if they already have non-empty preferences (dailyTarget, learningStyle),
   // OR have memorized pages count > 0, OR hold admin or teacher roles.
+  // Multi-role support: check both single role field and roles map.
   const hasValidPreferences = currentUser.preferences && typeof currentUser.preferences === 'object' && Object.keys(currentUser.preferences).length > 0;
+  const isAdmin = currentUser.role === 'admin' || (currentUser.roles && currentUser.roles.admin === true);
+  const isTeacher = currentUser.role === 'teacher' || (currentUser.roles && currentUser.roles.teacher === true);
   const wizardDone = Boolean(
     currentUser.hasCompletedWizard === true ||
     currentUser.hasCompletedWizard === 1 ||
@@ -38,8 +41,8 @@ const ProtectedRoute = ({ children, requireWizard = true }) => {
     hasValidPreferences ||
     Number(currentUser.memorizedPagesCount) > 0 ||
     Number(currentUser.totalJuz) > 0 ||
-    currentUser.role === 'admin' ||
-    currentUser.role === 'teacher'
+    isAdmin ||
+    isTeacher
   );
 
   // If the route requires the user to have completed the wizard, and they haven't

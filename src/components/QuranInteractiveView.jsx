@@ -32,6 +32,7 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useRecitationRecorder } from '../hooks/useRecitationRecorder';
+import { fetchWithAuth } from '../lib/api';
 import { surahs, getJuzForPage, getJuzStartPage } from '../utils/quranData';
 
 const recitersList = [
@@ -165,7 +166,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
 
   // Refresh recitation stats & history from server
   const refreshRecitationData = useCallback(() => {
-    fetch(`/api/recitation/page-stats/${pageNumber}`)
+    if (!user?.uid) return;
+    fetchWithAuth(`/api/recitation/page-stats/${pageNumber}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.stats) {
@@ -174,7 +176,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       })
       .catch(() => {});
 
-    fetch(`/api/recitation/history?pageNumber=${pageNumber}`)
+    fetchWithAuth(`/api/recitation/history?pageNumber=${pageNumber}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && Array.isArray(data.history)) {
@@ -189,7 +191,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
         }
       })
       .catch(() => {});
-  }, [pageNumber]);
+  }, [pageNumber, user?.uid]);
 
   useEffect(() => {
     refreshRecitationData();
@@ -213,7 +215,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       : (activeAyahObj?.text || '');
 
     const res = await stopAiAndAnalyze(targetExpected, {
-      userId: user?.uid || 'demo_user_123',
+      userId: user?.uid,
       pageNumber,
       surahNumber: activeAyahObj?.surah?.number || 1,
       surahName: activeAyahObj?.surah?.name || surahName,
@@ -223,19 +225,15 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       type: 'voice'
     });
 
-    if (res) {
+    if (res?.savedSession) {
       refreshRecitationData();
       if (res.accuracy >= 75) {
         if (isPage) {
           const newRecited = { ...recitedAyahs };
           ayahs.forEach(a => { newRecited[a.number] = true; });
           setRecitedAyahs(newRecited);
-          const xpGained = res.accuracy >= 90 ? 100 : 60;
-          updateUserData({ xp: (user?.xp || 100) + xpGained });
         } else {
           setRecitedAyahs(prev => ({ ...prev, [activeAyahNum]: true }));
-          const xpGained = res.accuracy >= 95 ? 50 : 25;
-          updateUserData({ xp: (user?.xp || 100) + xpGained });
         }
       }
     }
@@ -249,7 +247,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       : (activeAyahObj?.text || '');
 
     const res = await evaluateAiTextRecitation(writtenRecitation, targetExpected, {
-      userId: user?.uid || 'demo_user_123',
+      userId: user?.uid,
       pageNumber,
       surahNumber: activeAyahObj?.surah?.number || 1,
       surahName: activeAyahObj?.surah?.name || surahName,
@@ -259,19 +257,15 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       type: 'text'
     });
 
-    if (res) {
+    if (res?.savedSession) {
       refreshRecitationData();
       if (res.accuracy >= 75) {
         if (isPage) {
           const newRecited = { ...recitedAyahs };
           ayahs.forEach(a => { newRecited[a.number] = true; });
           setRecitedAyahs(newRecited);
-          const xpGained = res.accuracy >= 90 ? 100 : 60;
-          updateUserData({ xp: (user?.xp || 100) + xpGained });
         } else {
           setRecitedAyahs(prev => ({ ...prev, [activeAyahNum]: true }));
-          const xpGained = res.accuracy >= 95 ? 50 : 25;
-          updateUserData({ xp: (user?.xp || 100) + xpGained });
         }
       }
     }
@@ -1553,7 +1547,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                   </div>
                 </div>
 
-                {/* Storage & XP Confirmation */}
+                {/* Show a saved attempt only after the server commits it. */}
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
                   <span style={{
                     padding: '6px 12px',
@@ -1566,15 +1560,13 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                     alignItems: 'center',
                     gap: '6px'
                   }}>
-                    <CheckCircle2 size={14} />
-                    تم تخزين دقة {aiAnalysisResult.isFullPage ? `الصفحة ${pageNumber} كاملة` : 'الآية'} ({aiAnalysisResult.accuracy}%) في المحفظة 💾
+                    {aiSaveSuccess ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                    {aiSaveSuccess ? 'تم حفظ محاولة التسميع في سجلك' : 'هذه النتيجة غير محفوظة في حسابك'}
                   </span>
 
-                  {aiAnalysisResult.accuracy >= 75 && (
-                    <span style={{ fontSize: '12px', color: '#D97706', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <Award size={14} /> +{aiAnalysisResult.isFullPage ? 100 : (aiAnalysisResult.accuracy >= 95 ? 50 : 25)} XP خبرة حفظ
-                    </span>
-                  )}
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    نتيجة تدريب لمقارنة النص؛ اعتماد الحفظ يحتاج تقييمًا موثقًا.
+                  </span>
                 </div>
               </div>
 

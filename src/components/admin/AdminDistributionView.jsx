@@ -18,6 +18,7 @@ import {
   Check
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { fetchWithAuth } from '../../lib/api';
 
 export const AdminDistributionView = () => {
   const { lang, isRTL } = useLanguage();
@@ -36,6 +37,10 @@ export const AdminDistributionView = () => {
   const [targetTeacherId, setTargetTeacherId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Create Group State
+  const [newGroupData, setNewGroupData] = useState({ name: '', teacherId: '', targetJuz: '', description: '' });
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+
   useEffect(() => {
     fetchAllData();
   }, []);
@@ -44,14 +49,17 @@ export const AdminDistributionView = () => {
     setLoading(true);
     try {
       const [reqRes, groupsRes, usersRes] = await Promise.all([
-        fetch('/api/admin/enrollment-requests'),
-        fetch('/api/groups'),
-        fetch('/api/admin/users')
+        fetchWithAuth('/api/admin/enrollment-requests'),
+        fetchWithAuth('/api/groups'),
+        fetchWithAuth('/api/admin/users')
       ]);
 
       const reqData = await reqRes.json();
       const grpData = await groupsRes.json();
       const usrData = await usersRes.json();
+      if (!reqRes.ok || !groupsRes.ok || !usersRes.ok || !reqData.success || !grpData.success || !usrData.success) {
+        throw new Error(reqData.message || grpData.message || usrData.message || 'تعذر تحميل بيانات التوزيع');
+      }
 
       if (reqData.success) setRequests(reqData.requests || []);
       if (grpData.success) {
@@ -61,11 +69,12 @@ export const AdminDistributionView = () => {
         }
       }
       if (usrData.success) {
-        setStudents(usrData.users?.filter(u => u.role !== 'admin') || []);
-        setTeachers(usrData.users?.filter(u => u.role === 'teacher') || []);
+        setStudents(usrData.users?.filter(u => u.role !== 'admin' && !u.roles?.admin) || []);
+        setTeachers(usrData.users?.filter(u => u.role === 'teacher' || u.roles?.teacher) || []);
       }
     } catch (e) {
       console.error('Failed to load distribution data:', e);
+      setFeedback({ type: 'error', text: e.message || (lang === 'ar' ? 'تعذر تحميل البيانات' : 'Could not load data') });
     } finally {
       setLoading(false);
     }
@@ -77,7 +86,7 @@ export const AdminDistributionView = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/admin/enrollment-requests/approve', {
+      const res = await fetchWithAuth('/api/admin/enrollment-requests/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -108,7 +117,7 @@ export const AdminDistributionView = () => {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/admin/distribute-student', {
+      const res = await fetchWithAuth('/api/admin/distribute-student', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -125,6 +134,35 @@ export const AdminDistributionView = () => {
         fetchAllData();
       } else {
         setFeedback({ type: 'error', text: data.message || 'فشل نقل الطالبة' });
+      }
+    } catch (err) {
+      setFeedback({ type: 'error', text: 'تعذر الاتصال بالخادم' });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCreateGroup = async (e) => {
+    e.preventDefault();
+    if (!newGroupData.name) {
+      setFeedback({ type: 'error', text: 'اسم الحلقة مطلوب' });
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetchWithAuth('/api/admin/groups/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newGroupData)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFeedback({ type: 'success', text: data.message });
+        setNewGroupData({ name: '', teacherId: '', targetJuz: '', description: '' });
+        setShowCreateGroup(false);
+        fetchAllData();
+      } else {
+        setFeedback({ type: 'error', text: data.message });
       }
     } catch (err) {
       setFeedback({ type: 'error', text: 'تعذر الاتصال بالخادم' });
@@ -193,6 +231,60 @@ export const AdminDistributionView = () => {
         </div>
       )}
 
+      {/* Create New Group Section */}
+      <div style={{
+        padding: '20px',
+        borderRadius: '20px',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--glass-border)',
+        boxShadow: 'var(--shadow-soft)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showCreateGroup ? '16px' : '0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Layers size={18} />
+            </div>
+            <div>
+              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>إنشاء حلقة جديدة</h3>
+              <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>تأسيس مجموعة للحفظ وتعيين معلمة لها</span>
+            </div>
+          </div>
+          <button onClick={() => setShowCreateGroup(!showCreateGroup)} style={{ padding: '8px 14px', borderRadius: '10px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 700, fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            {showCreateGroup ? <Check size={16} /> : <Users size={16} />}
+            <span>{showCreateGroup ? 'إلغاء' : 'إنشاء حلقة'}</span>
+          </button>
+        </div>
+
+        {showCreateGroup && (
+          <form onSubmit={handleCreateGroup} style={{ display: 'grid', gap: '16px', background: 'var(--bg-color)', padding: '16px', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>اسم الحلقة *</label>
+                <input type="text" value={newGroupData.name} onChange={e => setNewGroupData({...newGroupData, name: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }} placeholder="مثال: حلقة النور" required />
+              </div>
+              <div>
+                <label htmlFor="create-group-teacher" style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>المعلمة المشرفة</label>
+                <select id="create-group-teacher" value={newGroupData.teacherId} onChange={e => setNewGroupData({...newGroupData, teacherId: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
+                  <option value="">بدون معلمة حالياً</option>
+                  {teachers.map(t => <option key={t.uid} value={t.uid}>{t.name}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>نطاق الحفظ (مثال: الجزء 30)</label>
+                <input type="text" value={newGroupData.targetJuz} onChange={e => setNewGroupData({...newGroupData, targetJuz: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }} placeholder="مثال: الأجزاء 1-5" />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: '6px' }}>وصف الحلقة</label>
+                <input type="text" value={newGroupData.description} onChange={e => setNewGroupData({...newGroupData, description: e.target.value})} style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)' }} placeholder="وصف قصير للحلقة" />
+              </div>
+            </div>
+            <button type="submit" disabled={isSubmitting} style={{ padding: '10px', borderRadius: '10px', background: 'var(--primary)', color: '#fff', border: 'none', fontWeight: 700, cursor: isSubmitting ? 'wait' : 'pointer' }}>
+              {isSubmitting ? 'جاري الإنشاء...' : 'حفظ وإنشاء الحلقة'}
+            </button>
+          </form>
+        )}
+      </div>
+
       {/* Section 1: Pending Enrollment Requests */}
       <div style={{
         padding: '20px',
@@ -240,6 +332,7 @@ export const AdminDistributionView = () => {
               return (
                 <div
                   key={req.id}
+                  data-testid={`request-${req.id}`}
                   style={{
                     padding: '16px',
                     borderRadius: '16px',
@@ -313,7 +406,7 @@ export const AdminDistributionView = () => {
                     </button>
                   ) : (
                     <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 700 }}>
-                      عضوة في {req.assignedGroup} (المعلمة: {req.assignedTeacher})
+                      عضوة في {groups.find(group => group.id === req.groupId)?.name || 'حلقة غير متاحة'} (المعلمة: {groups.find(group => group.id === req.groupId)?.teacherName || 'غير محددة'})
                     </div>
                   )}
                 </div>
@@ -363,6 +456,7 @@ export const AdminDistributionView = () => {
           {students.map((st) => (
             <div
               key={st.uid}
+              data-testid={`distribution-student-${st.uid}`}
               style={{
                 padding: '12px 16px',
                 borderRadius: '14px',
@@ -463,10 +557,11 @@ export const AdminDistributionView = () => {
 
             <form onSubmit={selectedRequest ? handleApproveRequest : handleDistributeStudent} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                <label htmlFor="distribution-target-group" style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
                   اختر المجموعة المستهدفة:
                 </label>
                 <select
+                  id="distribution-target-group"
                   value={targetGroupId}
                   onChange={(e) => setTargetGroupId(e.target.value)}
                   style={{
@@ -483,7 +578,7 @@ export const AdminDistributionView = () => {
                 >
                   {groups.map((g) => (
                     <option key={g.id} value={g.id}>
-                      {g.name} ({g.teacherName || 'معلمة معتمدة'}) - {g.membersCount || 0} طالبة
+                      {g.name} ({g.teacherName || 'معلمة معتمدة'}) - {g.studentsCount ?? 0} طالبة
                     </option>
                   ))}
                 </select>

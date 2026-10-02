@@ -16,6 +16,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { learningQuizQuestions, calculateLearningProfile } from '../utils/learningQuizData';
+import { fetchWithAuth } from '../lib/api';
 
 export const LearningStyleProfiler = () => {
   const { user, updateUserData } = useAuth();
@@ -74,7 +75,7 @@ export const LearningStyleProfiler = () => {
 
       if (user?.uid) {
         try {
-          await fetch(`/api/user/${user.uid}`, {
+          await fetchWithAuth(`/api/user/${user.uid}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

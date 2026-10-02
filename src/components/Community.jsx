@@ -22,6 +22,7 @@ import {
   Check
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { fetchWithAuth } from '../lib/api';
 import { db } from '../lib/firebase';
 import { 
   collection, 
@@ -159,6 +160,7 @@ export const Community = ({ setActiveTab }) => {
     const authorAvatar = isAnonymous ? null : (user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(authorName));
 
     const postPayload = {
+      authorId: user?.uid,
       author: authorName,
       avatar: authorAvatar,
       isAnonymous: isAnonymous ? 1 : 0,
@@ -217,9 +219,17 @@ export const Community = ({ setActiveTab }) => {
 
     if (typeof targetId === 'number') {
       try {
-        await fetch(`/api/community/posts/${targetId}`, { method: 'DELETE' });
+        const res = await fetchWithAuth(`/api/community/posts/${targetId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (!data.success) {
+          alert('لم يتم الحذف: ' + (data.message || 'غير مصرح'));
+          // revert UI state if failed
+          setPosts(prev => [...prev, post].sort((a,b) => b.id - a.id));
+        }
       } catch (e) {
         console.warn('Delete error:', e);
+        alert('حدث خطأ أثناء محاولة الحذف');
+        setPosts(prev => [...prev, post].sort((a,b) => b.id - a.id));
       }
     }
   };
@@ -300,6 +310,7 @@ export const Community = ({ setActiveTab }) => {
     const defaultShareText = `🌿 بفضل الله وتوفيقه، وصلت في خطة الحفظ إلى الصفحة ${currentPage} من سورة ${currentSurah} (الجزء ${currentJuz}).\n🏰 أنجزت اليوم ${doneFortressesCount} من أصل 5 حصون في نظام الحصون الخمسة! نسأل الله العظيم الثبات والبركة لجميع الإخوة الحفاظ 🤲✨`;
     
     const postPayload = {
+      authorId: user?.uid,
       author: user?.name || 'أحمد محمد',
       avatar: user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
       isAnonymous: 0,

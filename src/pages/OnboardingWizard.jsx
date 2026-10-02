@@ -33,11 +33,11 @@ import {
 } from 'lucide-react';
 import { getPageRangeForJuz } from '../utils/quranData';
 import { learningQuizQuestions, calculateLearningProfile } from '../utils/learningQuizData';
-import { storage, db } from '../lib/firebase';
+import { storage } from '../lib/firebase';
+import { fetchWithAuth } from '../lib/api';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateProfile } from 'firebase/auth';
 import { auth } from '../lib/firebase';
-import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const OnboardingWizard = () => {
   const { t, lang, isRTL } = useLanguage();
@@ -87,7 +87,7 @@ const OnboardingWizard = () => {
   });
 
   const navigate = useNavigate();
-  const { user, updateUserData } = useAuth();
+  const { user, updateUserData, refreshUserData } = useAuth();
 
   const handleVerifyGroupCode = async () => {
     const clean = groupInfo.code.trim().toUpperCase();
@@ -97,32 +97,14 @@ const OnboardingWizard = () => {
     }
     setGroupInfo(prev => ({ ...prev, verifying: true, error: '', successMessage: '' }));
     try {
-      // Mock some static codes if Firestore is empty/offline for demo
-      if (clean === 'SAFAR2024' || clean === 'DEMO') {
-        setTimeout(() => {
-          setGroupInfo(prev => ({
-            ...prev,
-            verifying: false,
-            verifiedGroup: { id: 'demo123', name: 'حلقة الهمم العالية', teacherName: 'أ. فاطمة' },
-            isSafarMember: true,
-            error: '',
-            successMessage: isRTL ? `تم التحقق بنجاح! حلقة: الهمم العالية (المعلمة: أ. فاطمة)` : `Verified: High Resolve Group`
-          }));
-        }, 1000);
-        return;
-      }
-
-      // Query Firestore for the group
-      const q = query(collection(db, 'groups'), where('code', '==', clean));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const doc = querySnapshot.docs[0];
-        const groupData = doc.data();
+      const res = await fetch(`/api/groups/lookup?code=${encodeURIComponent(clean)}`);
+      const data = await res.json();
+      if (res.ok && data.success && data.group) {
+        const groupData = data.group;
         setGroupInfo(prev => ({
           ...prev,
           verifying: false,
-          verifiedGroup: { id: doc.id, ...groupData },
+          verifiedGroup: groupData,
           isSafarMember: true,
           error: '',
           successMessage: isRTL ? `تم التحقق بنجاح! حلقة: ${groupData.name} (المعلمة: ${groupData.teacherName})` : `Verified: ${groupData.name}`
@@ -252,11 +234,7 @@ const OnboardingWizard = () => {
       photoURL: formData.photoURL || user?.photoURL || '',
       memorizedPages,
       memorizedPagesCount,
-      totalJuz,
-      isSafarMember: Boolean(groupInfo.isSafarMember),
-      groupId: groupInfo.verifiedGroup?.id || null,
-      groupName: groupInfo.verifiedGroup?.name || null,
-      teacherName: groupInfo.verifiedGroup?.teacherName || null
+      totalJuz
     };
 
     if (auth.currentUser && formData.photoURL) {
@@ -268,7 +246,23 @@ const OnboardingWizard = () => {
     }
 
     // Update React Auth context & Firestore immediately
-    await updateUserData(wizardUpdate);
+    const profileResult = await updateUserData(wizardUpdate);
+    if (!profileResult?.success) {
+      throw new Error(profileResult?.message || 'Failed to save onboarding profile');
+    }
+
+    if (groupInfo.isSafarMember && groupInfo.verifiedGroup?.code) {
+      const joinRes = await fetchWithAuth('/api/groups/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: groupInfo.verifiedGroup.code })
+      });
+      const joinData = await joinRes.json();
+      if (!joinRes.ok || !joinData.success) {
+        throw new Error(joinData.message || 'Failed to join group');
+      }
+      await refreshUserData();
+    }
 
     navigate('/dashboard', { replace: true });
   };
