@@ -1,26 +1,34 @@
 import { initializeApp, getApps } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer, setDoc } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, doc, getDocFromServer, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { resolveFirebaseTarget } from './firebaseEmulatorConfig';
+
+const target = resolveFirebaseTarget(import.meta.env, window.location.hostname, firebaseConfig);
 
 let app;
 if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
+  app = initializeApp(target.config);
 } else {
   app = getApps()[0];
 }
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId || undefined);
+export const db = getFirestore(app, target.config.firestoreDatabaseId || undefined);
 export const storage = getStorage(app);
+if (target.emulator) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+}
 
 // Firebase Cloud Messaging (FCM) Instance
 let messagingInstance = null;
 
 export async function getFcmMessaging() {
+  if (target.emulator) return null;
   if (messagingInstance) return messagingInstance;
   try {
     const supported = await isSupported();

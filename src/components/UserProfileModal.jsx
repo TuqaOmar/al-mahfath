@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { fetchWithAuth } from '../lib/api';
 export const UserProfileModal = ({ isOpen, onClose }) => {
   const { user, updateUserData } = useAuth();
   const { lang, isRTL } = useLanguage();
@@ -102,11 +103,24 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       const updatedName = name.trim();
       const updatedPhoto = photoURL || user?.photoURL;
 
-      // 1. Update AuthContext & localStorage (which also syncs to Firestore now)
+      // 1. Update AuthContext & localStorage
       await updateUserData({
         name: updatedName,
         photoURL: updatedPhoto
       });
+
+      // 2. Sync with Backend Database API
+      const targetUid = user?.uid;
+      if (targetUid) {
+        await fetchWithAuth(`/api/user/${targetUid}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: updatedName,
+            photoURL: updatedPhoto
+          })
+        });
+      }
 
       setSuccessMsg(isRTL ? 'تم حفظ وتحديث الاسم والملف الشخصي بنجاح! ✨' : 'Profile updated successfully! ✨');
       setTimeout(() => {

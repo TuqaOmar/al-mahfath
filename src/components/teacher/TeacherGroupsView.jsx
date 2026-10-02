@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { fetchWithAuth } from '../../lib/api';
 
 export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
   const { user } = useAuth();
@@ -30,8 +31,9 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
   const fetchGroups = async () => {
     setLoading(true);
     try {
-      const teacherId = user?.uid || 'teacher_aisha';
-      const res = await fetch(`/api/groups?teacherId=${teacherId}`);
+      if (!user?.uid) return;
+      const teacherId = user.uid;
+      const res = await fetchWithAuth(`/api/groups?teacherId=${encodeURIComponent(teacherId)}`);
       const data = await res.json();
       if (res.ok && data.success) {
         setGroups(data.groups);
@@ -164,7 +166,7 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', padding: '12px', borderRadius: '12px', background: 'var(--bg-color)' }}>
                 <div style={{ textAlign: 'center' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الطالبات</span>
-                  <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{group.membersCount}</strong>
+                  <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{group.studentsCount ?? 0}</strong>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>المقرر</span>

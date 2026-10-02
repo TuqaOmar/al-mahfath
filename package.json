@@ -8,6 +8,9 @@
     "dev": "node server/index.js",
     "build": "vite build",
     "lint": "vite build --mode development",
+    "test:security": "node --test tests/security.test.js tests/api-security.test.js tests/emulator-safety.test.js",
+    "test:emulator": "node scripts/runFirebaseEmulatorTests.mjs",
+    "test:emulator:browser": "node scripts/runFirebaseEmulatorTests.mjs --browser",
     "start": "node server/index.js",
     "preview": "vite preview",
     "cap:sync": "vite build && cap sync",
@@ -15,6 +18,7 @@
     "cap:ios": "vite build && cap sync ios && cap open ios"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "jsdom": "^30.0.1",
     "pptxgenjs": "^4.0.1",
     "typescript": "~6.0.2",

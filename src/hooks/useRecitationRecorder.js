@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { fetchWithAuth } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+
+const createSessionId = () => globalThis.crypto?.randomUUID?.() || `practice_${Date.now()}_${Math.random().toString(36).slice(2)}`;
 
 export function useRecitationRecorder() {
+  const { refreshUserData } = useAuth();
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -16,6 +21,8 @@ export function useRecitationRecorder() {
   const streamRef = useRef(null);
   const recognitionRef = useRef(null);
   const transcriptBufferRef = useRef('');
+  const sessionIdRef = useRef(null);
+  const textAttemptRef = useRef(null);
 
   const clearResult = useCallback(() => {
     setAnalysisResult(null);
@@ -24,9 +31,12 @@ export function useRecitationRecorder() {
     setSaveSuccess(false);
     setDuration(0);
     transcriptBufferRef.current = '';
+    sessionIdRef.current = null;
+    textAttemptRef.current = null;
   }, []);
 
   const startRecording = useCallback(async () => {
+    sessionIdRef.current = createSessionId();
     setError(null);
     setAnalysisResult(null);
     setLiveTranscript('');
@@ -147,11 +157,12 @@ export function useRecitationRecorder() {
         try {
           const payload = {
             expectedText,
+            sessionId: sessionIdRef.current,
             ayahs: meta.ayahs || undefined,
             isFullPage: Boolean(meta.isFullPage),
             spokenText: speechText || undefined,
             audioBase64: base64Audio || undefined,
-            autoSave: true,
+            autoSave: Boolean(meta.userId),
             userId: meta.userId,
             pageNumber: meta.pageNumber,
             surahNumber: meta.surahNumber,
@@ -160,7 +171,8 @@ export function useRecitationRecorder() {
             type: 'voice'
           };
 
-          const res = await fetch('/api/ai/recitation-check', {
+          const request = meta.userId ? fetchWithAuth : fetch;
+          const res = await request('/api/ai/recitation-check', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
@@ -172,11 +184,12 @@ export function useRecitationRecorder() {
           }
 
           setAnalysisResult(data);
-          setSaveSuccess(true);
+          setSaveSuccess(Boolean(data.savedSession));
+          if (data.savedSession) await refreshUserData();
           setIsAnalyzing(false);
 
           // Update local review cache for the Quran Map
-          if (meta.pageNumber && meta.userId) {
+          if (data.savedSession && meta.pageNumber && meta.userId) {
             try {
               const key = `ma7fath_${meta.userId}_quran_page_reviews`;
               const cached = JSON.parse(localStorage.getItem(key) || '{}');
@@ -247,7 +260,7 @@ export function useRecitationRecorder() {
         if (speechText) finishAnalysis(null);
       }
     });
-  }, [isRecording]);
+  }, [isRecording, refreshUserData]);
 
   // Evaluate text recitation directly (e.g. typing or pasting from memory)
   const evaluateTextRecitation = useCallback(async (spokenText, expectedText, meta = {}) => {
@@ -257,16 +270,23 @@ export function useRecitationRecorder() {
     }
 
     setIsAnalyzing(true);
+    setAnalysisResult(null);
     setError(null);
     setSaveSuccess(false);
 
     try {
+      const fingerprint = JSON.stringify({ spokenText: spokenText.trim(), expectedText, meta });
+      if (textAttemptRef.current?.fingerprint !== fingerprint) {
+        textAttemptRef.current = { fingerprint, sessionId: createSessionId() };
+      }
+      sessionIdRef.current = textAttemptRef.current.sessionId;
       const payload = {
         expectedText,
+        sessionId: sessionIdRef.current,
         ayahs: meta.ayahs || undefined,
         isFullPage: Boolean(meta.isFullPage),
         spokenText: spokenText.trim(),
-        autoSave: true,
+        autoSave: Boolean(meta.userId),
         userId: meta.userId,
         pageNumber: meta.pageNumber,
         surahNumber: meta.surahNumber,
@@ -275,7 +295,8 @@ export function useRecitationRecorder() {
         type: 'text'
       };
 
-      const res = await fetch('/api/ai/recitation-check', {
+      const request = meta.userId ? fetchWithAuth : fetch;
+      const res = await request('/api/ai/recitation-check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -287,10 +308,11 @@ export function useRecitationRecorder() {
       }
 
       setAnalysisResult(data);
-      setSaveSuccess(true);
+      setSaveSuccess(Boolean(data.savedSession));
+      if (data.savedSession) await refreshUserData();
       setIsAnalyzing(false);
 
-      if (meta.pageNumber && meta.userId) {
+      if (data.savedSession && meta.pageNumber && meta.userId) {
         try {
           const key = `ma7fath_${meta.userId}_quran_page_reviews`;
           const cached = JSON.parse(localStorage.getItem(key) || '{}');
@@ -311,38 +333,29 @@ export function useRecitationRecorder() {
       setIsAnalyzing(false);
       return null;
     }
-  }, []);
+  }, [refreshUserData]);
 
-  // Explicit save of current analysis result
+  // Confirm an existing server-computed attempt; never upload a score.
   const saveCurrentResult = useCallback(async (meta = {}) => {
     if (!analysisResult) return false;
     setIsSaving(true);
     try {
-      const payload = {
-        userId: meta.userId || 'demo_user_123',
-        pageNumber: Number(meta.pageNumber) || 1,
-        surahNumber: Number(meta.surahNumber) || 1,
-        surahName: meta.surahName || 'سورة الشريفة',
-        ayahNumber: meta.isFullPage ? null : (Number(meta.ayahNumber) || 1),
-        isFullPage: Boolean(meta.isFullPage),
-        accuracy: analysisResult.accuracy,
-        stats: analysisResult.stats,
-        results: analysisResult.results,
-        ayahBreakdown: analysisResult.ayahBreakdown || [],
-        transcribedText: analysisResult.transcribedText || analysisResult.transcribedSpoken,
-        expectedText: analysisResult.originalExpected,
-        type: meta.type || 'voice'
-      };
+      const sessionId = analysisResult.savedSession?.id;
+      if (!sessionId) throw new Error('لا توجد محاولة محفوظة لتأكيدها. أعد إرسال التسميع لحفظه.');
+      const payload = { sessionId };
 
-      const res = await fetch('/api/recitation/save', {
+      // Use fetchWithAuth since /api/recitation/save now requires authentication
+      const res = await fetchWithAuth('/api/recitation/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
 
       const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر تأكيد حفظ المحاولة.');
       if (data.success) {
         setSaveSuccess(true);
+        await refreshUserData();
         if (meta.pageNumber && meta.userId) {
           try {
             const key = `ma7fath_${meta.userId}_quran_page_reviews`;
@@ -361,10 +374,12 @@ export function useRecitationRecorder() {
       return data.success;
     } catch (e) {
       console.error('Failed to save recitation:', e);
+      setError(e.message || 'تعذر حفظ محاولة التسميع.');
+      setSaveSuccess(false);
       setIsSaving(false);
       return false;
     }
-  }, [analysisResult]);
+  }, [analysisResult, refreshUserData]);
 
   const cancelRecording = useCallback(() => {
     if (timerRef.current) {

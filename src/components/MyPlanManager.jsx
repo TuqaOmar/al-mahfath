@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { fetchWithAuth } from '../lib/api';
 import { LearningStyleProfiler } from './LearningStyleProfiler';
 import { JuzMultiSelector } from './JuzMultiSelector';
 import { 
@@ -68,7 +69,7 @@ export const MyPlanManager = () => {
 
     if (user?.uid) {
       try {
-        await fetch(`/api/user/${user.uid}`, {
+        await fetchWithAuth(`/api/user/${user.uid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ preferences: updatedPreferences })

@@ -1,71 +1,76 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
 import { 
   X, 
   BookOpen, 
   Mic, 
-  Calendar, 
   Flame, 
-  TrendingUp, 
-  AlertTriangle, 
-  CheckCircle2, 
-  ShieldCheck, 
-  Award, 
-  Sparkles,
-  ChevronRight,
-  Clock,
   Send,
   MessageSquare,
-  BarChart2,
   RefreshCw
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { fetchWithAuth } from '../../lib/api';
 
 export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   const { lang, isRTL } = useLanguage();
+  const { user } = useAuth();
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'recitation' | 'revision' | 'consistency'
-  const [noteText, setNoteText] = useState('');
-  const [sentToast, setSentToast] = useState(false);
+  const requestVersion = useRef(0);
+  const text = (ar, en) => lang === 'en' ? en : ar;
+
+  const fetchStudentProfile = useCallback(async () => {
+    const version = ++requestVersion.current;
+    setLoading(true);
+    setStudent(null);
+    setLoadError('');
+    try {
+      if (!user?.uid || !studentId) throw new Error('Authentication and student ID required');
+      const res = await fetchWithAuth(
+        `/api/teacher/${encodeURIComponent(user.uid)}/student/${encodeURIComponent(studentId)}`
+      );
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.student) throw new Error('Student profile request failed');
+      if (version === requestVersion.current) setStudent(data.student);
+    } catch (e) {
+      console.error('Failed to load student profile:', e);
+      if (version === requestVersion.current) setLoadError('failed');
+    } finally {
+      if (version === requestVersion.current) setLoading(false);
+    }
+  }, [studentId, user?.uid]);
 
   useEffect(() => {
     if (studentId && isOpen) {
+      setActiveTab('overview');
       fetchStudentProfile();
     }
-  }, [studentId, isOpen]);
-
-  const fetchStudentProfile = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/teacher/teacher_aisha/student/${studentId}`);
-      const data = await res.json();
-      if (res.ok && data.success && data.student) {
-        setStudent(data.student);
-      }
-    } catch (e) {
-      console.error('Failed to load student profile:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+    return () => { requestVersion.current += 1; };
+  }, [studentId, isOpen, fetchStudentProfile]);
 
   if (!isOpen) return null;
 
-  const handleSendNote = () => {
-    if (!noteText.trim()) return;
-    setSentToast(true);
-    setNoteText('');
-    setTimeout(() => setSentToast(false), 3000);
+  const numberLabel = (value, suffix = '') => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value))
+    ? `${Number(value)}${suffix}` : '—';
+  const dateLabel = value => {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleString(lang === 'en' ? 'en-GB' : 'ar-JO');
   };
+  const stats = student?.recitationStats || {};
+  const recentSessions = Array.isArray(student?.recentSessions) ? student.recentSessions : [];
 
   const statusColor = student?.status === 'needs_attention' 
     ? '#F59E0B' 
-    : (student?.status === 'inactive' ? '#EF4444' : '#10B981');
+    : (student?.status === 'inactive' ? '#EF4444' : '#64748B');
     
   const statusLabel = student?.status === 'needs_attention'
     ? 'بحاجة لمتابعة'
-    : (student?.status === 'inactive' ? 'منقطعة' : 'متميزة ونشطة');
+    : (student?.status === 'inactive' ? 'منقطعة' : 'لا يوجد تقييم نشاط معتمد');
 
   return (
     <div style={{
@@ -138,6 +143,13 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
             <div style={{ padding: '60px', textAlign: 'center', color: 'var(--text-secondary)' }}>
               جاري تحميل ملف الطالبة...
             </div>
+          ) : loadError ? (
+            <div role="alert" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+              <p>{text('تعذر تحميل ملف الطالبة. تحققي من الاتصال وصلاحية الوصول ثم أعيدي المحاولة.', 'Could not load this learner. Check your connection and access, then retry.')}</p>
+              <button onClick={fetchStudentProfile} style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+                {text('إعادة المحاولة', 'Retry')}
+              </button>
+            </div>
           ) : !student ? (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
               لم يتم العثور على بيانات الطالبة.
@@ -167,12 +179,12 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                       {student.name}
                     </h3>
                     <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                      <span>الحلقة: {student.groupName || 'حلقة النور والهدى'}</span>
+                      <span>الحلقة: {student.groupName || 'غير محددة'}</span>
                       <span>•</span>
-                      <span>المعلمة: {student.teacherName || 'أ. عائشة العتيبي'}</span>
+                      <span>المعلمة: {student.teacherName || 'غير محددة'}</span>
                     </div>
                     <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                      تاريخ الانضمام: {student.joinedDate}
+                      تاريخ الانضمام: {dateLabel(student.joinedDate)}
                     </div>
                   </div>
                 </div>
@@ -243,15 +255,15 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                         نسبة إنجاز الهدف المرحلي
                       </span>
                       <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>
-                        {student.goalPercent || 72}%
+                        {numberLabel(student.goalPercent, '%')}
                       </strong>
                     </div>
                     {/* Visual Progress Bar */}
                     <div style={{ width: '100%', height: '10px', borderRadius: '6px', background: 'var(--primary-light)', overflow: 'hidden' }}>
-                      <div style={{ width: `${student.goalPercent || 72}%`, height: '100%', borderRadius: '6px', background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)' }} />
+                      <div style={{ width: `${Math.min(100, Math.max(0, Number(student.goalPercent) || 0))}%`, height: '100%', borderRadius: '6px', background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)' }} />
                     </div>
                     <div style={{ marginTop: '10px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                      الهدف الحالي: <strong style={{ color: 'var(--text-primary)' }}>{student.currentTarget || 'إتمام حفظ سورة آل عمران وضبط متشابهاتها'}</strong>
+                      الهدف الحالي: <strong style={{ color: 'var(--text-primary)' }}>{student.currentTarget || 'غير محدد'}</strong>
                     </div>
                   </div>
 
@@ -259,24 +271,24 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>إجمالي الحفظ</span>
-                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{student.memorizedJuz} أجزاء</strong>
-                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>({student.memorizedPagesCount || (student.memorizedJuz * 20)} صفحة)</span>
+                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{numberLabel(student.memorizedJuz)} أجزاء</strong>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>({numberLabel(student.memorizedPagesCount)} صفحة)</span>
                     </div>
 
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>السورة الحالية</span>
-                      <strong style={{ fontSize: '15px', color: 'var(--text-primary)', display: 'block', marginTop: '2px' }}>{student.currentSurah || 'آل عمران'}</strong>
-                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>الوجه 16</span>
+                      <strong style={{ fontSize: '15px', color: 'var(--text-primary)', display: 'block', marginTop: '2px' }}>{student.currentSurah || 'غير محددة'}</strong>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)' }}>الوجه {numberLabel(student.currentPage)}</span>
                     </div>
 
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الجزء الحالي</span>
-                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>الجزء {student.currentJuz || 3}</strong>
+                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>الجزء {numberLabel(student.currentJuz)}</strong>
                     </div>
 
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>درجة الإتقان</span>
-                      <strong style={{ fontSize: '18px', color: '#10B981' }}>{student.memoryScore || 92}%</strong>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>مؤشر الذاكرة المسجل</span>
+                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{numberLabel(student.memoryScore, '%')}</strong>
                     </div>
                   </div>
                 </div>
@@ -285,50 +297,46 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
               {/* TAB 2: RECITATION DETAILS */}
               {activeTab === 'recitation' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
+                    {text('هذه محاولات تدريب بالمقارنة النصية. النص المرجعي غير متحقق منه؛ النتيجة لا تعتمد الحفظ أو التجويد ولا تمنح نقاط خبرة.', 'These are text comparison practice attempts. The reference text is unverified; results do not certify memorization or tajweed and award no XP.')}
+                  </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-color)', textAlign: 'center' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>جلسات التسميع</span>
-                      <strong style={{ fontSize: '17px', color: 'var(--text-primary)' }}>{student.totalSessions || 42} جلسة</strong>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{text('محاولات التدريب', 'Practice attempts')}</span>
+                      <strong data-testid="student-practice-count" style={{ fontSize: '17px', color: 'var(--text-primary)' }}>{numberLabel(stats.totalAttempts ?? stats.totalSessions ?? 0)}</strong>
                     </div>
                     <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-color)', textAlign: 'center' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>معدل الأخطاء</span>
-                      <strong style={{ fontSize: '17px', color: student.errorsCount > 5 ? '#EF4444' : '#10B981' }}>{student.errorsCount || 2} لكل وجه</strong>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{text('متوسط تطابق النص', 'Average text match')}</span>
+                      <strong data-testid="student-practice-average" style={{ fontSize: '17px', color: 'var(--text-primary)' }}>{stats.hasAttempts ? numberLabel(stats.averageAccuracy, '%') : '—'}</strong>
                     </div>
                     <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-color)', textAlign: 'center' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>معدل التحسن</span>
-                      <strong style={{ fontSize: '17px', color: '#10B981' }}>+{student.improvementRate || 14}%</strong>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{text('أفضل تطابق نصي', 'Best text match')}</span>
+                      <strong style={{ fontSize: '17px', color: 'var(--text-primary)' }}>{stats.hasAttempts ? numberLabel(stats.bestAccuracy, '%') : '—'}</strong>
                     </div>
                   </div>
-
-                  {/* Hesitation points & repeated mistakes */}
-                  <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <h4 style={{ margin: '0 0 8px 0', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      مواضع التردد والأخطاء المتكررة (تحليل المحرك الذكي)
-                    </h4>
-                    <ul style={{ margin: 0, paddingRight: '20px', fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                      <li>أواخر آيات التقوى والصفات في سورة آل عمران (الآيات 134-138)</li>
-                      <li>تكرار الوقف قبل تمام المعنى عند رأس الحزب السادس</li>
-                      <li>متشابهة: «ذَلِكَ بِأَنَّهُمْ قَالُوا» بين البقرة وآل عمران</li>
-                    </ul>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <span>{text('محاولات آخر سبعة أيام:', 'Attempts in the last seven days:')} {numberLabel(stats.totalWeeklySessions ?? 0)}</span>
+                    <span>{text('آخر محاولة:', 'Last attempt:')} {dateLabel(stats.lastRecitedAt)}</span>
                   </div>
 
                   {/* Recent Sessions List */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      أحدث جلسات التسميع
+                      {text('أحدث محاولات المقارنة النصية', 'Recent text comparison attempts')}
                     </h4>
-                    {(student.recentSessions || [
-                      { date: 'اليوم', target: 'آل عمران (الوجه 15)', score: 98, duration: '12 دقيقة' },
-                      { date: 'أمس', target: 'آل عمران (الوجه 14)', score: 94, duration: '15 دقيقة' },
-                      { date: 'منذ 3 أيام', target: 'مراجعة الجزء الثاني', score: 91, duration: '28 دقيقة' }
-                    ]).map((sess, idx) => (
-                      <div key={idx} style={{ padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {recentSessions.length === 0 && (
+                      <p data-testid="student-practice-empty" style={{ margin: 0, padding: '16px', borderRadius: '12px', background: 'var(--bg-color)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        {text('لا توجد محاولات تدريب محفوظة لهذه الطالبة.', 'No saved practice attempts for this learner.')}
+                      </p>
+                    )}
+                    {recentSessions.map(sess => (
+                      <div key={sess.id} data-testid={`student-practice-${sess.id}`} style={{ padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                         <div>
-                          <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{sess.target}</strong>
-                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{sess.date} • {sess.duration}</span>
+                          <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{sess.surahName || text('مقارنة نصية', 'Text comparison')} • {text('الصفحة', 'Page')} {numberLabel(sess.pageNumber)}</strong>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{dateLabel(sess.createdAt)} • {text('تدريب؛ مرجع غير متحقق', 'Practice; unverified reference')}</span>
                         </div>
-                        <span style={{ fontSize: '12px', fontWeight: 700, color: '#10B981', background: 'rgba(16, 185, 129, 0.12)', padding: '4px 10px', borderRadius: '8px' }}>
-                          {sess.score}% إتقان
+                        <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', background: 'var(--bg-surface)', padding: '4px 10px', borderRadius: '8px', whiteSpace: 'nowrap' }}>
+                          {numberLabel(sess.accuracy, '%')} {text('تطابق النص', 'text match')}
                         </span>
                       </div>
                     ))}
@@ -338,30 +346,8 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
 
               {/* TAB 3: REVISION & FORTRESSES */}
               {activeTab === 'revision' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      تطبيق منظومة الحصون الخمسة
-                    </h4>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                      <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-surface)' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الحصن القريب (آخر 20 صفحة):</span>
-                        <strong style={{ fontSize: '13px', color: '#10B981' }}>مكتمل بنسبة 95%</strong>
-                      </div>
-                      <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-surface)' }}>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الحصن البعيد (المراجعة الكبرى):</span>
-                        <strong style={{ fontSize: '13px', color: '#3B82F6' }}>جزء كامل كل يومين</strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>آخر موعد مراجعة شاملة:</span>
-                    <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{student.lastRevisionDate || 'اليوم فجراً'}</strong>
-                    <div style={{ marginTop: '8px', fontSize: '12.5px', color: '#F59E0B' }}>
-                      ⚠️ المواضع الموصى بإعادة تثبيتها: سورة البقرة (الربع الرابع والخامس)
-                    </div>
-                  </div>
+                <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  {text('متابعة المراجعة والحصون في هذا الملف غير متاحة بعد؛ لا توجد نتائج مراجعة مرتبطة بهذه الشاشة.', 'Revision and fortress tracking are not available in this profile yet; no revision results are connected to this view.')}
                 </div>
               )}
 
@@ -372,35 +358,23 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>سلسلة الأيام المتتالية</span>
                       <strong style={{ fontSize: '20px', color: '#F59E0B', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Flame size={18} /> {student.streak || 28} يوماً
+                        <Flame size={18} /> {numberLabel(student.streak)} يوماً
                       </strong>
                     </div>
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الأيام الفائتة هذا الشهر</span>
-                      <strong style={{ fontSize: '20px', color: '#10B981' }}>{student.missedDays || 1} يوم</strong>
+                      <strong style={{ fontSize: '20px', color: 'var(--text-primary)' }}>{numberLabel(student.missedDays)} يوم</strong>
                     </div>
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الالتزام الأسبوعي</span>
-                      <strong style={{ fontSize: '20px', color: 'var(--primary)' }}>{student.consistencyRate || 92}%</strong>
+                      <strong style={{ fontSize: '20px', color: 'var(--primary)' }}>{numberLabel(student.consistencyRate, '%')}</strong>
                     </div>
                   </div>
 
-                  {/* 7-day Activity Calendar Blocks */}
                   <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', display: 'block', marginBottom: '10px' }}>
-                      نشاط الأيام السبعة الأخيرة:
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      {text('تقويم النشاط اليومي غير متاح في هذا الملف بعد.', 'The daily activity calendar is not available in this profile yet.')}
                     </span>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '6px', textAlign: 'center' }}>
-                      {['السبت', 'الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة'].map((day, idx) => {
-                        const isDone = idx !== 5; // e.g. Thursday missed
-                        return (
-                          <div key={idx} style={{ padding: '8px 4px', borderRadius: '10px', background: isDone ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: isDone ? '#10B981' : '#EF4444' }}>
-                            <span style={{ fontSize: '10px', display: 'block' }}>{day}</span>
-                            <span style={{ fontSize: '14px', fontWeight: 800 }}>{isDone ? '✓' : '✗'}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
                   </div>
                 </div>
               )}
@@ -417,18 +391,15 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                   <span>إرسال توجيه أو تشجيع للطالبة</span>
                 </h4>
 
-                {sentToast && (
-                  <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', fontSize: '12.5px', marginBottom: '8px', fontWeight: 600 }}>
-                    ✓ تم إرسال التوجيه بنجاح وسيظهر في إشعارات الطالبة فوراً.
-                  </div>
-                )}
+                <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
+                  {text('إرسال الملاحظات غير متاح بعد؛ لا تُحفظ أو تُرسل ملاحظة من هذه الشاشة.', 'Teacher notes are not available yet; this view does not save or send a note.')}
+                </p>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
-                    placeholder="اكتبي ملاحظتك أو تشجيعك هنا..."
-                    value={noteText}
-                    onChange={(e) => setNoteText(e.target.value)}
+                    placeholder={text('إرسال الملاحظات غير متاح', 'Sending notes is unavailable')}
+                    disabled
                     style={{
                       flex: 1,
                       padding: '10px 14px',
@@ -441,8 +412,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     }}
                   />
                   <button
-                    onClick={handleSendNote}
-                    disabled={!noteText.trim()}
+                    disabled
                     style={{
                       padding: '10px 16px',
                       borderRadius: '10px',
@@ -451,8 +421,8 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                       border: 'none',
                       fontSize: '13px',
                       fontWeight: 700,
-                      cursor: noteText.trim() ? 'pointer' : 'not-allowed',
-                      opacity: noteText.trim() ? 1 : 0.6,
+                      cursor: 'not-allowed',
+                      opacity: 0.6,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px'

@@ -2,10 +2,12 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import { calculatePageRecitationStats } from './recitationStats.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DB_PATH = path.join(__dirname, 'db.json');
+const DB_PATH = process.env.NODE_ENV === 'test' && process.env.MA7FATH_TEST_DATA_DIR
+  ? path.join(process.env.MA7FATH_TEST_DATA_DIR, 'db.json') : path.join(__dirname, 'db.json');
 
 // Password hashing helper using crypto PBKDF2
 export function hashPassword(password) {
@@ -572,7 +574,7 @@ export function bulkSaveSurahToPortfolio(userId, surahNumber, items) {
 
 // Recitation Sessions & Accuracy Storage
 export function saveRecitationSession(session) {
-  if (!session) return null;
+  if (!session?.userId) return null;
   const newId = 'rec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
   const accuracy = Math.max(0, Math.min(100, Math.round(Number(session.accuracy) || 0)));
   const pageNum = Number(session.pageNumber) || 1;
@@ -586,7 +588,7 @@ export function saveRecitationSession(session) {
 
   const entry = {
     id: newId,
-    userId: session.userId || 'demo_user_123',
+    userId: session.userId,
     pageNumber: pageNum,
     surahNumber: surahNum,
     surahName: session.surahName || 'سورة الشريفة',
@@ -642,7 +644,7 @@ export function saveRecitationSession(session) {
   // Update in portfolio_ayahs
   if (isFullPage && Array.isArray(session.ayahBreakdown) && session.ayahBreakdown.length > 0) {
     session.ayahBreakdown.forEach(a => {
-      saveAyahToPortfolio(session.userId || 'demo_user_123', {
+      saveAyahToPortfolio(session.userId, {
         surahNumber: surahNum,
         ayahNumber: a.ayahNumber,
         status: a.accuracy >= 75 ? 'memorized' : 'learning',
@@ -651,7 +653,7 @@ export function saveRecitationSession(session) {
       });
     });
   } else if (ayahNum) {
-    saveAyahToPortfolio(session.userId || 'demo_user_123', {
+    saveAyahToPortfolio(session.userId, {
       surahNumber: surahNum,
       ayahNumber: ayahNum,
       status: accuracy >= 75 ? 'memorized' : 'learning',
@@ -694,31 +696,6 @@ export function getRecitationHistory(userId, options = {}) {
   return list.slice(0, limit);
 }
 
-export function getPageRecitationStats(pageNumber) {
-  const pNum = Number(pageNumber);
-  const attempts = (dbState.recitation_sessions || []).filter(s => s.pageNumber === pNum);
-  if (attempts.length === 0) {
-    return {
-      hasAttempts: false,
-      totalAttempts: 0,
-      averageAccuracy: 0,
-      bestAccuracy: 0,
-      lastRecitedAt: null,
-      recentAttempts: []
-    };
-  }
-
-  const accuracies = attempts.map(a => Number(a.accuracy) || 0);
-  const total = accuracies.reduce((sum, val) => sum + val, 0);
-  const avg = Math.round(total / accuracies.length);
-  const best = Math.max(...accuracies);
-
-  return {
-    hasAttempts: true,
-    totalAttempts: attempts.length,
-    averageAccuracy: avg,
-    bestAccuracy: best,
-    lastRecitedAt: attempts[0].createdAt,
-    recentAttempts: attempts.slice(0, 10)
-  };
+export function getPageRecitationStats(userId, pageNumber) {
+  return calculatePageRecitationStats(dbState.recitation_sessions, userId, pageNumber);
 }

@@ -37,39 +37,20 @@ export const AuthProvider = ({ children }) => {
           if (userDocSnap.exists()) {
             userData = { ...userData, ...userDocSnap.data() };
             
-            // --- STREAK LOGIC ---
-            const today = new Date();
-            const todayString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
-            const lastActiveString = userData.lastActiveDate;
-            
-            if (lastActiveString !== todayString) {
-              let newStreak = userData.streak || 1;
-              if (lastActiveString) {
-                const [lYear, lMonth, lDay] = lastActiveString.split('-').map(Number);
-                const lastDate = new Date(lYear, lMonth - 1, lDay);
-                const currentDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                
-                const diffDays = Math.round((currentDate - lastDate) / (1000 * 60 * 60 * 24)); 
-                if (diffDays === 1) {
-                  newStreak += 1;
-                } else if (diffDays > 1) {
-                  newStreak = 1; // reset streak if missed a day
-                }
-              }
-              
-              userData.streak = newStreak;
-              userData.lastActiveDate = todayString;
-              
-              // We do this asynchronously so it doesn't block UI loading too much
-              updateDoc(userDocRef, { streak: newStreak, lastActiveDate: todayString }).catch(e => console.error(e));
-            }
-            // --------------------
           } else if (!firebaseUser.isAnonymous) {
             // If doc doesn't exist but user logged in (e.g. Google), create it
             userData = {
               ...userData,
               hasCompletedWizard: false,
               role: 'user',
+              roles: { user: true },
+              streak: 1,
+              xp: 100,
+              level: 1,
+              memorizedPagesCount: 0,
+              memoryScore: 100,
+              totalJuz: 0,
+              preferences: {},
               createdAt: new Date().toISOString()
             };
             await setDoc(userDocRef, userData);
@@ -115,6 +96,8 @@ export const AuthProvider = ({ children }) => {
         photoURL: userCredential.user.photoURL,
         hasCompletedWizard: false,
         role: 'user',
+        // Multi-role support: roles map allows a single account to be student+teacher+admin
+        roles: { user: true },
         streak: 1,
         xp: 100,
         level: 1,
@@ -172,6 +155,8 @@ export const AuthProvider = ({ children }) => {
           photoURL: providedPhoto || auth.currentUser.photoURL,
           hasCompletedWizard: false,
           role: 'user',
+          // Multi-role support
+          roles: { user: true },
           streak: 1,
           xp: 100,
           level: 1,
@@ -213,18 +198,48 @@ export const AuthProvider = ({ children }) => {
   };
 
   const updateUserData = async (updates) => {
-    const updatedUser = { ...user, ...updates };
-    setUser(updatedUser);
-    localStorage.setItem('ma7fath_user', JSON.stringify(updatedUser));
+    const editableFields = new Set([
+      'name', 'photoURL', 'preferences', 'favorites', 'fortressPlan',
+      'hasCompletedWizard', 'memorizedPages', 'memorizedPagesCount', 'totalJuz'
+    ]);
+    const safeUpdates = Object.fromEntries(
+      Object.entries(updates || {}).filter(([key]) => editableFields.has(key))
+    );
+
+    if (Object.keys(safeUpdates).length === 0) {
+      return { success: false, message: 'No editable profile fields were provided' };
+    }
 
     if (user?.uid) {
       try {
         const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, updates);
+        await updateDoc(userRef, safeUpdates);
+        const updatedUser = { ...user, ...safeUpdates };
+        setUser(updatedUser);
+        localStorage.setItem('ma7fath_user', JSON.stringify(updatedUser));
+        return { success: true, user: updatedUser };
       } catch (e) {
         console.error('Failed DB sync:', e);
+        return { success: false, message: e.message };
       }
     }
+    return { success: false, message: 'Not authenticated' };
+  };
+
+  /**
+   * Check if the current user has a specific role.
+   * Supports both single role string and roles map for multi-role accounts.
+   * e.g., hasRole('admin'), hasRole('teacher'), hasRole('user')
+   */
+  const hasRole = (roleName) => {
+    if (!user) return false;
+    // Check single role field
+    if (user.role === roleName) return true;
+    // Check roles map (multi-role support)
+    if (user.roles && user.roles[roleName] === true) return true;
+    // Admin always has all permissions
+    if (roleName !== 'admin' && (user.role === 'admin' || (user.roles && user.roles.admin === true))) return true;
+    return false;
   };
 
   const refreshUserData = async () => {
@@ -246,7 +261,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout, deleteAccount, updateUserData, refreshUserData }}>
+    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout, deleteAccount, updateUserData, refreshUserData, hasRole }}>
       {!loading && children}
     </AuthContext.Provider>
   );

@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { fetchWithAuth } from '../../lib/api';
 
 export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfile }) => {
   const { user } = useAuth();
@@ -36,7 +37,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [addFeedback, setAddFeedback] = useState(null);
-  const [groupCode, setGroupCode] = useState('SAFAR-NUR');
+  const [groupCode, setGroupCode] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
   const [newStudentForm, setNewStudentForm] = useState({
     name: '',
@@ -56,11 +57,12 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
 
   const fetchGroupInfo = async () => {
     try {
-      const teacherId = user?.uid || 'teacher_aisha';
-      const res = await fetch(`/api/groups?teacherId=${teacherId}`);
+      if (!user?.uid) return;
+      const teacherId = user.uid;
+      const res = await fetchWithAuth(`/api/groups?teacherId=${encodeURIComponent(teacherId)}`);
       const data = await res.json();
       if (data.success && data.groups?.length > 0) {
-        setGroupCode(data.groups[0].code || 'SAFAR-NUR');
+        setGroupCode(data.groups[0].code || '');
       }
     } catch (e) {
       console.log('Error fetching teacher group info:', e);
@@ -70,13 +72,17 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
   const fetchStudents = async () => {
     setLoading(true);
     try {
-      const teacherId = user?.uid || 'teacher_aisha';
+      if (!user?.uid) {
+        setStudents([]);
+        return;
+      }
+      const teacherId = user.uid;
       const params = new URLSearchParams();
       if (searchQuery) params.append('search', searchQuery);
       if (activeFilter && activeFilter !== 'all') params.append('filter', activeFilter);
       if (sortBy) params.append('sort', sortBy);
 
-      const res = await fetch(`/api/teacher/${teacherId}/students?${params.toString()}`);
+      const res = await fetchWithAuth(`/api/teacher/${encodeURIComponent(teacherId)}/students?${params.toString()}`);
       const data = await res.json();
       if (res.ok && data.success) {
         setStudents(data.students);
@@ -101,8 +107,9 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
     setAddFeedback(null);
 
     try {
-      const teacherId = user?.uid || 'teacher_aisha';
-      const res = await fetch(`/api/teacher/${teacherId}/add-student`, {
+      if (!user?.uid) throw new Error('Authentication required');
+      const teacherId = user.uid;
+      const res = await fetchWithAuth(`/api/teacher/${encodeURIComponent(teacherId)}/add-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newStudentForm)
@@ -383,11 +390,11 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
                     <div style={{ position: 'relative' }}>
-                      <img
+                      {student.photoURL ? <img
                         src={student.photoURL}
                         alt={student.name}
                         style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: `2px solid ${statusColor}` }}
-                      />
+                      /> : <span style={{ width: '48px', height: '48px', borderRadius: '50%', border: `2px solid ${statusColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: statusColor, fontWeight: 800 }}>{student.name?.slice(0, 1) || '؟'}</span>}
                       <span style={{
                         position: 'absolute',
                         bottom: 0,

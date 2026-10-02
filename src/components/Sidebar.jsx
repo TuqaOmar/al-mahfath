@@ -78,7 +78,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
         title: lang === 'ar' ? 'بوابة المعلمة' : 'Teacher Portal',
         items: [
           { id: 'teacher-dashboard', label: lang === 'ar' ? 'الرئيسية' : 'Home', icon: Home },
-          { id: 'teacher-students', label: lang === 'ar' ? 'طالباتي (24)' : 'My Students', icon: Users },
+          { id: 'teacher-students', label: lang === 'ar' ? 'طالباتي' : 'My Students', icon: Users },
           { id: 'teacher-groups', label: lang === 'ar' ? 'حلقاتي القرآنية' : 'My Groups', icon: Layers },
           { id: 'teacher-reports', label: lang === 'ar' ? 'التقارير التحليلية' : 'Reports', icon: FileText }
         ]

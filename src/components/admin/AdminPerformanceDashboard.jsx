@@ -1,575 +1,199 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  RefreshCw
-} from 'lucide-react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Calculator, Clock, Layers, RefreshCw, Target, Users } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
-import { db } from '../../lib/firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { fetchWithAuth } from '../../lib/api';
+
+const recordedNumber = value => typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null;
+const panelStyle = {
+  padding: '20px', borderRadius: '20px', background: 'var(--bg-surface)',
+  border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-soft)'
+};
 
 export const AdminPerformanceDashboard = () => {
   const { lang, isRTL } = useLanguage();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const requestId = useRef(0);
+  const [simulatedDailyPages, setSimulatedDailyPages] = useState(0);
+  const [simulatedActiveStudents, setSimulatedActiveStudents] = useState(0);
+  const [simulatedRemainingPages, setSimulatedRemainingPages] = useState(604);
+  const text = (ar, en) => lang === 'ar' ? ar : en;
+  const format = value => value === null ? '—' : value.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 2 });
 
-  // Interactive Goal Simulator state
-  const [simulatedDailyPages, setSimulatedDailyPages] = useState(2);
-  const [simulatedActiveStudents, setSimulatedActiveStudents] = useState(150);
+  const fetchPerformanceData = useCallback(async () => {
+    const currentRequest = ++requestId.current;
+    setLoading(true);
+    setError(false);
+    setData(null);
+    try {
+      const response = await fetchWithAuth('/api/admin/memorization-performance');
+      const result = await response.json();
+      if (!response.ok || result.success !== true || !result.stats || !Array.isArray(result.groups) ||
+          typeof result.stats.hasAttempts !== 'boolean' ||
+          recordedNumber(result.stats.totalRecitationSessions) === null ||
+          recordedNumber(result.stats.totalWeeklySessions) === null) {
+        throw new Error('Performance report unavailable');
+      }
+      if (requestId.current === currentRequest) setData(result);
+    } catch (failure) {
+      console.error('Failed to load performance report:', failure);
+      if (requestId.current === currentRequest) setError(true);
+    } finally {
+      if (requestId.current === currentRequest) setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     fetchPerformanceData();
-  }, []);
+    return () => { requestId.current += 1; };
+  }, [fetchPerformanceData]);
 
-  const fetchPerformanceData = async () => {
-    setLoading(true);
-    try {
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const groupsSnap = await getDocs(collection(db, 'groups'));
-      const allUsers = usersSnap.docs.map(d => d.data());
-      
-      const teachers = allUsers.filter(u => u.role === 'teacher').length;
-      const students = allUsers.filter(u => u.isSafarMember).length;
-      const independent = allUsers.filter(u => !u.isSafarMember && u.role !== 'teacher' && u.role !== 'admin').length;
-      const memorizedTotal = allUsers.reduce((sum, u) => sum + ((u.memorizedJuz || 0) * 20), 0);
-      
-      setData({
-        stats: {
-          totalStudentsCount: students,
-          independentUsersCount: independent,
-          totalLearners: students + independent,
-          totalPagesMemorized: memorizedTotal,
-          studentSpecificPages: memorizedTotal,
-          averagePagesPerStudent: students > 0 ? (memorizedTotal / students).toFixed(1) : 0,
-          averageDailyTargetPages: 0,
-          totalWeeklySessions: 0,
-          averageAccuracy: 0,
-          estimatedGraduatesThisYear: 0,
-          groupsCount: groupsSnap.docs.length,
-          teachersCount: teachers
-        }
-      });
-    } catch (e) {
-      console.error('Failed to load memorization performance:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const stats = data?.stats || {
-    totalStudentsCount: 0,
-    independentUsersCount: 0,
-    totalLearners: 0,
-    totalPagesMemorized: 0,
-    studentSpecificPages: 0,
-    averagePagesPerStudent: 0,
-    averageDailyTargetPages: 0,
-    totalWeeklySessions: 0,
-    averageAccuracy: 0,
-    estimatedGraduatesThisYear: 0,
-    groupsCount: 0,
-    teachersCount: 0
-  };
-
-  // Remaining pages calculation
-  // Total Quran pages = 604
-  // Target total pages if all active group students complete the Quran = studentsCount * 604
-  const totalTargetPages = (stats.totalStudentsCount || 24) * 604;
-  const currentMemorized = stats.studentSpecificPages || 1320;
-  const remainingPagesForActiveStudents = Math.max(0, totalTargetPages - currentMemorized);
-
-  // Simulator calculations
-  const monthlyPagesPerStudent = simulatedDailyPages * 30;
-  const monthsToCompleteRemaining = (remainingPagesForActiveStudents / (simulatedActiveStudents * simulatedDailyPages * 30)).toFixed(1);
-  const projectedGraduates = Math.round(simulatedActiveStudents * (simulatedDailyPages >= 2 ? 0.85 : 0.65));
+  const stats = data?.stats;
+  const groups = Array.isArray(data?.groups) ? data.groups : [];
+  const metric = key => recordedNumber(stats?.[key]);
+  const monthlyHypotheticalPages = simulatedActiveStudents * simulatedDailyPages * 30;
+  const hypotheticalMonths = simulatedActiveStudents > 0 && simulatedDailyPages > 0
+    ? simulatedRemainingPages / (simulatedDailyPages * 30) : null;
+  const monthsPerStudent = hypotheticalMonths !== null && Number.isFinite(hypotheticalMonths) ? hypotheticalMonths : null;
+  const cards = [
+    { key: 'totalLearners', label: text('عدد المتعلمين المسجلين', 'Registered learners'), icon: Users },
+    { key: 'totalStudentsCount', label: text('طلاب المجموعات الحالية', 'Current group learners'), icon: Users },
+    { key: 'independentUsersCount', label: text('المتعلمون المستقلون', 'Independent learners'), icon: Users },
+    { key: 'teachersCount', label: text('المعلمون المسجلون', 'Registered teachers'), icon: Users },
+    { key: 'totalRecitationSessions', label: text('إجمالي جلسات التسميع المسجلة', 'All recorded recitation sessions'), icon: Clock },
+    { key: 'totalWeeklySessions', label: text('الجلسات في آخر 7 أيام', 'Sessions in the last 7 days'), icon: Clock },
+    { key: 'averageAccuracy', label: text('متوسط مطابقة النص', 'Average text match'), icon: Target, suffix: '%', requiresAttempts: true },
+    { key: 'groupsCount', label: text('عدد المجموعات المسجلة', 'Registered groups'), icon: Layers }
+  ];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-      
-      {/* Header */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        flexWrap: 'wrap',
-        gap: '12px'
-      }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              padding: '3px 10px',
-              borderRadius: '8px',
-              background: 'rgba(16, 185, 129, 0.12)',
-              color: 'var(--primary)',
-              fontSize: '12px',
-              fontWeight: 800
-            }}>
-              تحليلات الإدارة العليا
-            </span>
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-              تحديث إحصائي فوري
-            </span>
-          </div>
-          <h2 style={{ margin: '6px 0 2px 0', fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)' }}>
-            تحليلات الحفظ ومؤشرات إنجاز الطالبات والمجموعات 📊
+          <h2 style={{ margin: '0 0 6px', fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)' }}>
+            {text('تقرير التدريب والجلسات المسجلة', 'Recorded practice and sessions report')}
           </h2>
           <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)' }}>
-            حساب دقيق لعدد الصفحات المحفوظة، المتبقية، الورد اليومي، وتوقعات عدد الحفاظ لعام 2026
+            {text('مؤشرات من السجلات المحفوظة؛ تُحدّث عند تحميل التقرير.', 'Metrics from saved records, refreshed when the report is loaded.')}
           </p>
         </div>
-
         <button
           onClick={fetchPerformanceData}
-          style={{
-            padding: '9px 16px',
-            borderRadius: '12px',
-            background: 'var(--bg-surface)',
-            border: '1px solid var(--glass-border)',
-            color: 'var(--text-primary)',
-            fontSize: '13px',
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: 'var(--shadow-soft)'
-          }}
+          disabled={loading}
+          style={{ padding: '9px 16px', borderRadius: '12px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px', cursor: loading ? 'wait' : 'pointer' }}
         >
           <RefreshCw size={15} />
-          <span>تحديث الإحصائيات</span>
+          {text('تحديث التقرير', 'Refresh report')}
         </button>
       </div>
 
-      {/* KPI Highlight Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '14px'
-      }}>
-        
-        {/* Total Memorized Pages */}
-        <div style={{
-          padding: '18px',
-          borderRadius: '18px',
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0.02) 100%)',
-          border: '1px solid rgba(16, 185, 129, 0.25)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-              إجمالي الصفحات المحفوظة
-            </span>
-            <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '10px',
-              background: 'rgba(16, 185, 129, 0.15)',
-              color: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <BookOpen size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)' }}>
-            {Number(stats.totalPagesMemorized || 249820).toLocaleString('ar-EG')}
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '6px' }}>صفحة</span>
-          </div>
-          <div style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <ArrowUpRight size={14} />
-            <span>منها {stats.studentSpecificPages || 1320} صفحة لطالبات المجموعات الحالية</span>
-          </div>
+      {loading && <div role="status" style={panelStyle}>{text('جارٍ تحميل التقرير من السجلات…', 'Loading the report from saved records…')}</div>}
+      {!loading && error && (
+        <div role="alert" style={panelStyle}>
+          <p style={{ margin: '0 0 12px', color: 'var(--text-primary)' }}>
+            {text('تعذر تحميل التقرير. أعد المحاولة لاسترجاع البيانات المحفوظة.', 'The report could not be loaded. Retry to retrieve saved data.')}
+          </p>
+          <button onClick={fetchPerformanceData} style={{ padding: '8px 14px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', cursor: 'pointer' }}>
+            {text('إعادة المحاولة', 'Retry')}
+          </button>
         </div>
+      )}
 
-        {/* Remaining Pages */}
-        <div style={{
-          padding: '18px',
-          borderRadius: '18px',
-          background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%)',
-          border: '1px solid rgba(59, 130, 246, 0.25)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-              الصفحات المتبقية للختمة
-            </span>
-            <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '10px',
-              background: 'rgba(59, 130, 246, 0.15)',
-              color: '#3B82F6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Target size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)' }}>
-            {Number(remainingPagesForActiveStudents).toLocaleString('ar-EG')}
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '6px' }}>صفحة متبقية</span>
-          </div>
-          <div style={{ fontSize: '12px', color: '#3B82F6', fontWeight: 600 }}>
-            لإتمام الختمة الكاملة لجميع طالبات المجموعات المسجلات
-          </div>
-        </div>
-
-        {/* Forecasted Hafiz in 2026 */}
-        <div style={{
-          padding: '18px',
-          borderRadius: '18px',
-          background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0.02) 100%)',
-          border: '1px solid rgba(245, 158, 11, 0.25)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-              توقعات الخريجات الحافظات (2026)
-            </span>
-            <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '10px',
-              background: 'rgba(245, 158, 11, 0.15)',
-              color: '#F59E0B',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <GraduationCap size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)' }}>
-            ~{stats.estimatedGraduatesThisYear || 194}
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '6px' }}>حافظة متوقعة</span>
-          </div>
-          <div style={{ fontSize: '12px', color: '#D97706', fontWeight: 600 }}>
-            بناءً على سرعة الحفظ الحالية ونسب الالتزام الشهرية
-          </div>
-        </div>
-
-        {/* Daily Target Pages Average */}
-        <div style={{
-          padding: '18px',
-          borderRadius: '18px',
-          background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.08) 0%, rgba(139, 92, 246, 0.02) 100%)',
-          border: '1px solid rgba(139, 92, 246, 0.25)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '8px'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 700 }}>
-              متوسط الورد اليومي
-            </span>
-            <div style={{
-              width: '34px',
-              height: '34px',
-              borderRadius: '10px',
-              background: 'rgba(139, 92, 246, 0.15)',
-              color: '#8B5CF6',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Clock size={18} />
-            </div>
-          </div>
-          <div style={{ fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)' }}>
-            {stats.averageDailyTargetPages || 1.6}
-            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '6px' }}>صفحة / يومياً</span>
-          </div>
-          <div style={{ fontSize: '12px', color: '#8B5CF6', fontWeight: 600 }}>
-            يعادل ما يقارب 2.4 جزء شهرياً للطالبة الملتزمة
-          </div>
-        </div>
-
-      </div>
-
-      {/* Simulator Section: حاسبة مسار الإنجاز والتخرج للأدمن */}
-      <div style={{
-        padding: '22px',
-        borderRadius: '20px',
-        background: 'var(--bg-surface)',
-        border: '1px solid var(--glass-border)',
-        boxShadow: 'var(--shadow-soft)',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '18px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '38px',
-              height: '38px',
-              borderRadius: '12px',
-              background: 'rgba(16, 185, 129, 0.12)',
-              color: 'var(--primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Calculator size={20} />
-            </div>
-            <div>
-              <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                محاكي وتوقعات تخرج الحفاظ للعام الحالي 🎯
-              </h3>
-              <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                غيّر معدل الورد اليومي أو عدد الطالبات النشطات لمعرفة متى ستتم الختمة وكم حافظة ستتخرج
-              </span>
-            </div>
-          </div>
-
-          <span style={{
-            padding: '4px 10px',
-            borderRadius: '20px',
-            background: 'var(--bg-color)',
-            border: '1px solid var(--glass-border)',
-            fontSize: '12px',
-            fontWeight: 700,
-            color: 'var(--text-secondary)'
-          }}>
-            خوارزمية سفر التنبؤية
-          </span>
-        </div>
-
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-          gap: '20px',
-          alignItems: 'center'
-        }}>
-          {/* Controls */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  الورد اليومي المستهدف للطالبة:
-                </label>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
-                  {simulatedDailyPages} {simulatedDailyPages === 1 ? 'صفحة' : 'صفحات'} يومياً
-                </span>
-              </div>
-              <input
-                type="range"
-                min="0.5"
-                max="5"
-                step="0.5"
-                value={simulatedDailyPages}
-                onChange={(e) => setSimulatedDailyPages(Number(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                <span>نصف صفحة</span>
-                <span>صفحتان</span>
-                <span>5 صفحات (مكثف)</span>
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                <label style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  عدد الطالبات النشطات في المجموعات:
-                </label>
-                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)' }}>
-                  {simulatedActiveStudents} طالبة
-                </span>
-              </div>
-              <input
-                type="range"
-                min="20"
-                max="500"
-                step="10"
-                value={simulatedActiveStudents}
-                onChange={(e) => setSimulatedActiveStudents(Number(e.target.value))}
-                style={{ width: '100%', accentColor: 'var(--primary)', cursor: 'pointer' }}
-              />
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                <span>20 طالبة</span>
-                <span>250 طالبة</span>
-                <span>500 طالبة</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Results Display */}
-          <div style={{
-            padding: '18px',
-            borderRadius: '16px',
-            background: 'var(--bg-color)',
-            border: '1px solid var(--glass-border)',
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
-            gap: '14px'
-          }}>
-            <div style={{ padding: '10px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>
-                إنتاجية المجموعة شهرياً:
-              </span>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: 'var(--primary)', marginTop: '4px' }}>
-                {(simulatedActiveStudents * simulatedDailyPages * 30).toLocaleString('ar-EG')}
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '4px' }}>صفحة</span>
-              </div>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                أي بمعدل {((simulatedActiveStudents * simulatedDailyPages * 30) / 20).toFixed(0)} جزء شهرياً
-              </span>
-            </div>
-
-            <div style={{ padding: '10px' }}>
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>
-                الوقت المقدر للختمة الكاملة:
-              </span>
-              <div style={{ fontSize: '20px', fontWeight: 900, color: '#3B82F6', marginTop: '4px' }}>
-                {(604 / (simulatedDailyPages * 30)).toFixed(1)}
-                <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', marginRight: '4px' }}>أشهر</span>
-              </div>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                لكل طالبة تبدأ من الصفر
-              </span>
-            </div>
-
-            <div style={{ padding: '10px', gridColumn: 'span 2', borderTop: '1px solid var(--glass-border)', paddingTop: '12px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  توقع عدد الخريجات الحافظات لعام 2026:
-                </span>
-                <span style={{ fontSize: '22px', fontWeight: 900, color: '#F59E0B' }}>
-                  ~{projectedGraduates} حافظة متقنة 🎓
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Progress Breakdown & Top Groups */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '20px'
-      }}>
-        
-        {/* Status Distribution */}
-        <div style={{
-          padding: '20px',
-          borderRadius: '20px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--glass-border)',
-          boxShadow: 'var(--shadow-soft)'
-        }}>
-          <h3 style={{ margin: '0 0 14px 0', fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            توزيع الطالبات حسب وتيرة الإنجاز
-          </h3>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 700, color: '#10B981' }}>متميزات وسريعات الإتقان 🟢</span>
-                <strong style={{ color: 'var(--text-primary)' }}>49 طالبة (72%)</strong>
-              </div>
-              <div style={{ width: '100%', height: '8px', borderRadius: '4px', background: 'var(--bg-color)', overflow: 'hidden' }}>
-                <div style={{ width: '72%', height: '100%', background: '#10B981', borderRadius: '4px' }} />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 700, color: '#3B82F6' }}>على المسار المعتاد 🔵</span>
-                <strong style={{ color: 'var(--text-primary)' }}>15 طالبة (22%)</strong>
-              </div>
-              <div style={{ width: '100%', height: '8px', borderRadius: '4px', background: 'var(--bg-color)', overflow: 'hidden' }}>
-                <div style={{ width: '22%', height: '100%', background: '#3B82F6', borderRadius: '4px' }} />
-              </div>
-            </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', marginBottom: '4px' }}>
-                <span style={{ fontWeight: 700, color: '#EF4444' }}>بحاجة لمتابعة وتشجيع 🟡</span>
-                <strong style={{ color: 'var(--text-primary)' }}>4 طالبات (6%)</strong>
-              </div>
-              <div style={{ width: '100%', height: '8px', borderRadius: '4px', background: 'var(--bg-color)', overflow: 'hidden' }}>
-                <div style={{ width: '6%', height: '100%', background: '#EF4444', borderRadius: '4px' }} />
-              </div>
-            </div>
-          </div>
-
-          <div style={{
-            marginTop: '16px',
-            padding: '12px',
-            borderRadius: '12px',
-            background: 'rgba(16, 185, 129, 0.08)',
-            fontSize: '12px',
-            color: 'var(--primary)',
-            fontWeight: 600,
-            lineHeight: 1.6
-          }}>
-            💡 تم تسجيل <strong>{stats.totalWeeklySessions || 3468} جلسة تسميع وتصحيح ذكي</strong> هذا الأسبوع بمتوسط دقة <strong>{stats.averageAccuracy || 96.2}%</strong>.
-          </div>
-        </div>
-
-        {/* Top Performing Groups (المجموعات الأكثر إنجازاً) */}
-        <div style={{
-          padding: '20px',
-          borderRadius: '20px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--glass-border)',
-          boxShadow: 'var(--shadow-soft)'
-        }}>
-          <h3 style={{ margin: '0 0 14px 0', fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
-            المجموعات الأكثر إنجازاً وحفظاً
-          </h3>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {[
-              { name: 'مجموعة الإتقان والتثبيت', teacher: 'أ. عائشة المحمود', students: 24, pages: 1240, rate: 94 },
-              { name: 'مجموعة فجر الهدى (تأسيس)', teacher: 'أ. سارة المنصور', students: 18, pages: 890, rate: 89 },
-              { name: 'مجموعة رياض الصالحات', teacher: 'أ. منى الزهراني', students: 15, pages: 740, rate: 86 }
-            ].map((grp, idx) => (
-              <div
-                key={idx}
-                style={{
-                  padding: '12px 14px',
-                  borderRadius: '14px',
-                  background: 'var(--bg-color)',
-                  border: '1px solid var(--glass-border)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '10px'
-                }}
-              >
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                    {grp.name}
+      {!loading && !error && data && (
+        <>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
+            {cards.map(({ key, label, icon: Icon, suffix, requiresAttempts }) => {
+              const value = requiresAttempts && stats.hasAttempts !== true ? null : metric(key);
+              return (
+                <div key={key} style={panelStyle}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                    <span>{label}</span><Icon size={18} />
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    المعلمة: {grp.teacher} • {grp.students} طالبة
+                  <div data-testid={`performance-${key}`} style={{ marginTop: '12px', fontSize: '28px', fontWeight: 900, color: 'var(--text-primary)' }}>
+                    {format(value)}{value !== null ? suffix : ''}
                   </div>
                 </div>
-
-                <div style={{ textAlign: isRTL ? 'left' : 'right' }}>
-                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--primary)' }}>
-                    {grp.pages} صفحة
-                  </div>
-                  <div style={{ fontSize: '11.5px', color: '#10B981', fontWeight: 600 }}>
-                    إنجاز {grp.rate}%
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        </div>
+          <p style={{ margin: 0, padding: '14px 18px', borderRadius: '14px', background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.7 }}>
+            {text(
+              'دقة النص تقيس مطابقة النص المرسل بالنص المرجعي. المرجع غير موثق، وهذه النتيجة لا تعتمد الحفظ أو جودة التجويد. العدد الكلي يشمل جميع الجلسات المسجلة، وعدد آخر 7 أيام يستخدم نافذة متحركة. لا تُعرض نسبة دقة قبل وجود محاولة.',
+              'Text accuracy compares submitted text with a reference text. The reference is unverified; this score does not certify memorization or tajweed. The total includes all saved sessions; the last 7 days use a rolling window. Accuracy is unavailable until an attempt is recorded.'
+            )}
+          </p>
 
-      </div>
+          <div style={panelStyle}>
+            <h3 style={{ margin: '0 0 14px', fontSize: '17px', color: 'var(--text-primary)' }}>
+              {text('سجلات المجموعات', 'Group records')}
+            </h3>
+            <p style={{ margin: '0 0 14px', color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.7 }}>
+              {text('تُنسب محاولات الطالب إلى مجموعته الحالية، بما فيها المحاولات السابقة للنقل.', 'Learner attempts are attributed to their current group, including attempts recorded before a transfer.')}
+            </p>
+            {groups.length === 0 ? (
+              <p style={{ margin: 0, color: 'var(--text-secondary)' }}>
+                {text('لا توجد مجموعات في التقرير.', 'There are no groups in this report.')}
+              </p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {groups.map(group => (
+                  <div key={group.id} style={{ padding: '12px 14px', borderRadius: '14px', background: 'var(--bg-color)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>{group.name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        {text('طلاب المجموعة: ', 'Group learners: ')}{format(recordedNumber(group.membersCount))}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: isRTL ? 'left' : 'right', color: 'var(--text-primary)', fontSize: '13px', lineHeight: 1.8 }}>
+                      <div>{text('كل الجلسات: ', 'All sessions: ')}{format(recordedNumber(group.totalRecitationSessions))}</div>
+                      <div>{text('آخر 7 أيام: ', 'Last 7 days: ')}{format(recordedNumber(group.totalWeeklySessions))}</div>
+                      <div>{text('متوسط مطابقة النص: ', 'Average text match: ')}{format(group.hasAttempts === true ? recordedNumber(group.averageAccuracy) : null)}{group.hasAttempts === true && recordedNumber(group.averageAccuracy) !== null ? '%' : ''}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
 
+          <div style={{ ...panelStyle, display: 'flex', flexDirection: 'column', gap: '18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              <Calculator size={22} style={{ color: 'var(--primary)' }} />
+              <div>
+                <h3 style={{ margin: 0, fontSize: '17px', color: 'var(--text-primary)' }}>{text('محاكاة افتراضية مستقلة', 'Separate hypothetical calculator')}</h3>
+                <p style={{ margin: '4px 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                  {text('غيّر الافتراضات لحساب الصفحات والمدة عند الالتزام بـ30 يومًا شهريًا؛ هذه الأرقام من مدخلات المحاكاة.', 'Change assumptions to calculate pages and time at 30 study days per month; these figures come from the calculator inputs.')}
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
+              {[
+                { label: text('عدد الطلاب الافتراضي', 'Hypothetical learners'), value: simulatedActiveStudents, set: setSimulatedActiveStudents, step: '1' },
+                { label: text('صفحات يومية لكل طالب', 'Daily pages per learner'), value: simulatedDailyPages, set: setSimulatedDailyPages, step: '0.5' },
+                { label: text('صفحات متبقية لكل طالب', 'Remaining pages per learner'), value: simulatedRemainingPages, set: setSimulatedRemainingPages, step: '1', max: '604' }
+              ].map(control => (
+                <label key={control.label} style={{ display: 'flex', flexDirection: 'column', gap: '7px', fontSize: '13px', color: 'var(--text-primary)' }}>
+                  {control.label}
+                  <input
+                    type="number" min="0" max={control.max} step={control.step} value={control.value}
+                    onChange={event => {
+                      const value = Number(event.target.value);
+                      const adjusted = control.step === '1' ? Math.round(value) : value;
+                      control.set(Number.isFinite(adjusted) ? Math.min(control.max ? Number(control.max) : Number.MAX_SAFE_INTEGER, Math.max(0, adjusted)) : 0);
+                    }}
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '10px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)' }}
+                  />
+                </label>
+              ))}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', fontSize: '14px', color: 'var(--text-primary)' }}>
+              <span>{text('صفحات المجموعة الافتراضية شهريًا: ', 'Hypothetical group pages per month: ')}<strong>{format(monthlyHypotheticalPages)}</strong></span>
+              <span>{text('مدة إنهاء المتبقي لكل طالب بالأشهر: ', 'Months to finish remaining pages per learner: ')}<strong>{format(monthsPerStudent)}</strong></span>
+            </div>
+            {monthsPerStudent === null && <p style={{ margin: 0, color: 'var(--text-secondary)', fontSize: '12px' }}>{text('أدخل عدد طلاب ومعدلًا يوميًا أكبر من صفر لحساب المدة.', 'Enter a learner count and daily rate above zero to calculate time.')}</p>}
+          </div>
+        </>
+      )}
     </div>
   );
 };

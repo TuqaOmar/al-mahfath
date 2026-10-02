@@ -29,6 +29,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNotifications } from '../context/NotificationContext';
+import { fetchWithAuth } from '../lib/api';
 import { SimplifiedFortressPlan } from './SimplifiedFortressPlan';
 import { FiveFortressesVisualMap } from './FiveFortressesVisualMap';
 
@@ -180,7 +181,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
 
     if (user?.uid) {
       try {
-        await fetch(`/api/user/${user.uid}`, {
+        await fetchWithAuth(`/api/user/${user.uid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ preferences: updatedPreferences })
