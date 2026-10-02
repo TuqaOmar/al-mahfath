@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, 
@@ -15,10 +15,11 @@ import {
   Compass
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { fetchWithAuth } from '../../lib/api';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
-  const { user, updateUserData } = useAuth();
+  const { refreshUserData } = useAuth();
   const { lang, isRTL } = useLanguage();
 
   const [step, setStep] = useState('prompt'); // 'prompt' | 'enter_code' | 'confirm_group' | 'success'
@@ -27,14 +28,18 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [foundGroup, setFoundGroup] = useState(null);
 
+  useEffect(() => {
+    if (isOpen) {
+      setStep('prompt');
+      setGroupCode('');
+      setErrorMsg('');
+      setFoundGroup(null);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  // Sample quick codes for effortless testing
-  const sampleCodes = [
-    { code: 'SAFAR-NUR', name: 'حلقة النور والهدى', teacher: 'أ. عائشة العتيبي', badge: 'نموذجية' },
-    { code: 'SAFAR-FAJR', name: 'حلقة الفجر القرآنية', teacher: 'أ. فاطمة الزهراء', badge: 'صباحية' },
-    { code: 'SAFAR-BAYAN', name: 'حلقة تيجان البيان', teacher: 'أ. مريم السالم', badge: 'تثبيت' }
-  ];
+
 
   const handleLookup = async (codeToSearch) => {
     const code = (codeToSearch || groupCode).trim().toUpperCase();
@@ -70,31 +75,17 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
     setErrorMsg('');
 
     try {
-      const res = await fetch('/api/groups/join', {
+      const res = await fetchWithAuth('/api/groups/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          userId: user?.uid || 'demo_user_123',
-          email: user?.email || 'user@safar.org',
-          name: user?.name || 'حافظ سَفَر',
           code: foundGroup.code
         })
       });
 
       const data = await res.json();
       if (res.ok && data.success) {
-        // Update user state locally without changing role to teacher or admin!
-        if (updateUserData) {
-          updateUserData({
-            isSafarMember: true,
-            groupId: foundGroup.id,
-            groupName: foundGroup.name,
-            groupCode: foundGroup.code,
-            teacherId: foundGroup.teacherId,
-            teacherName: foundGroup.teacherName,
-            teacherAvatar: foundGroup.teacherAvatar
-          });
-        }
+        await refreshUserData();
         setStep('success');
         if (onJoined) onJoined(foundGroup);
       } else {
@@ -108,16 +99,17 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
     }
   };
 
-  const handleContinueIndependent = () => {
-    if (updateUserData) {
-      updateUserData({
-        isSafarMember: false,
-        groupId: null,
-        groupName: null,
-        teacherId: null
-      });
+  const handleContinueIndependent = async () => {
+    try {
+      const res = await fetchWithAuth('/api/groups/leave', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر الخروج من الحلقة');
+      await refreshUserData();
+      onClose();
+    } catch (error) {
+      console.error('Leave group error:', error);
+      setErrorMsg(error.message || (lang === 'ar' ? 'تعذر الخروج من الحلقة' : 'Could not leave the group'));
     }
-    onClose();
   };
 
   return (
@@ -159,6 +151,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
         }}>
           <button
             onClick={onClose}
+            aria-label={lang === 'ar' ? 'إغلاق نافذة الحلقة' : 'Close group dialog'}
             style={{
               position: 'absolute',
               top: '16px',
@@ -327,7 +320,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
               <div style={{ position: 'relative', marginBottom: '16px' }}>
                 <input
                   type="text"
-                  placeholder="مثال: SAFAR-NUR"
+                  placeholder={lang === 'ar' ? 'رمز الدعوة من المعلم' : 'Invitation code from your teacher'}
                   value={groupCode}
                   onChange={(e) => setGroupCode(e.target.value.toUpperCase())}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleLookup(); }}
@@ -346,46 +339,6 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                     boxSizing: 'border-box'
                   }}
                 />
-              </div>
-
-              {/* Sample Quick Codes for Easy Testing */}
-              <div style={{ marginBottom: '24px' }}>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>
-                  {lang === 'ar' ? 'رموز حلقات تجريبية جاهزة للاختبار السريع:' : 'Demo codes for testing:'}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {sampleCodes.map((item) => (
-                    <div
-                      key={item.code}
-                      onClick={() => {
-                        setGroupCode(item.code);
-                        handleLookup(item.code);
-                      }}
-                      style={{
-                        padding: '10px 14px',
-                        borderRadius: '12px',
-                        background: 'var(--bg-color)',
-                        border: '1px solid var(--glass-border)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        transition: 'all 0.15s ease'
-                      }}
-                      onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
-                      onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--glass-border)'}
-                    >
-                      <div>
-                        <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>{item.code}</strong>
-                        <span style={{ fontSize: '12px', color: 'var(--text-primary)', margin: '0 8px' }}>{item.name}</span>
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>({item.teacher})</span>
-                      </div>
-                      <span style={{ fontSize: '11px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '8px' }}>
-                        {item.badge}
-                      </span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <div style={{ display: 'flex', gap: '10px' }}>

@@ -21,8 +21,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { db } from '../../lib/firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
+import { fetchWithAuth } from '../../lib/api';
 
 const getActivityIcon = (icon) => {
   if (!icon) return CheckCircle2;
@@ -53,39 +52,12 @@ export const TeacherDashboard = ({ onOpenStudentProfile, onViewAllStudents, onVi
     try {
       if (!user?.uid) return;
       const teacherId = user.uid;
-
-      // 1. Fetch teacher's groups
-      const qGroups = query(collection(db, 'groups'), where('teacherId', '==', teacherId));
-      const groupsSnap = await getDocs(qGroups);
-      const groupIds = groupsSnap.docs.map(d => d.id);
-
-      // 2. Fetch all users and filter students belonging to these groups
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const allUsers = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
-      
-      const myStudents = allUsers.filter(u => u.groupId && groupIds.includes(u.groupId) && u.role !== 'teacher' && u.role !== 'admin');
-
-      setDashboardData({
-        stats: {
-          studentsCount: myStudents.length,
-          activeThisWeek: Math.floor(myStudents.length * 0.8), // Placeholder calculation
-          weeklyCommitment: myStudents.length > 0 ? 85 : 0,
-          needsAttentionCount: myStudents.filter(u => u.status === 'inactive').length || 0
-        },
-        studentsWhoNeedAttention: myStudents.slice(0, 4).map(st => ({
-          uid: st.uid,
-          name: st.name,
-          photoURL: st.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${st.name}`,
-          memorizedJuz: st.memorizedJuz || 0,
-          attentionReason: 'بحاجة لمتابعة وتقييم',
-          lastRecitationDate: 'مؤخراً',
-          consistencyRate: 70
-        })),
-        smartInsights: [
-          { id: 'target_completed', type: 'success', text: `${myStudents.length} طالبة مسجلة في حلقاتك 🎯`, filterTag: 'excellent' },
-        ],
-        recentActivities: []
-      });
+      const res = await fetchWithAuth(`/api/teacher/${encodeURIComponent(teacherId)}/dashboard`);
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to load teacher dashboard');
+      }
+      setDashboardData(data);
 
     } catch (e) {
       console.error('Failed to load teacher dashboard:', e);
