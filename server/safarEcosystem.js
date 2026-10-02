@@ -7,7 +7,8 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ECOSYSTEM_PATH = path.join(__dirname, 'safar_data.json');
+const ECOSYSTEM_PATH = process.env.NODE_ENV === 'test' && process.env.MA7FATH_TEST_DATA_DIR
+  ? path.join(process.env.MA7FATH_TEST_DATA_DIR, 'safar_data.json') : path.join(__dirname, 'safar_data.json');
 
 // Memory state for Safar ecosystem
 let ecosystemState = {
@@ -1445,10 +1446,16 @@ export function leaveGroup(userId) {
 }
 
 // Teacher Dashboard
-export function getTeacherDashboard(teacherId = 'teacher_aisha') {
+export function getTeacherDashboard(teacherId) {
   loadEcosystem();
-  const teacher = ecosystemState.teachers.find(t => t.uid === teacherId) || ecosystemState.teachers[0];
-  const students = ecosystemState.students.filter(s => s.teacherId === teacher.uid);
+  const teacher = ecosystemState.teachers.find(t => t.uid === teacherId) || {
+    uid: teacherId,
+    name: 'معلمة',
+    email: '',
+    photoURL: '',
+    groupName: ''
+  };
+  const students = ecosystemState.students.filter(s => s.teacherId === teacherId);
 
   const totalStudents = students.length;
   const activeThisWeek = students.filter(s => s.thisWeekSessions > 0).length;
@@ -1530,9 +1537,10 @@ export function getTeacherDashboard(teacherId = 'teacher_aisha') {
 }
 
 // Get Students for Teacher with Search, Filter & Sort
-export function getTeacherStudents(teacherId = 'teacher_aisha', query = '', filter = 'all', sort = 'name') {
+export function getTeacherStudents(teacherId, query = '', filter = 'all', sort = 'name') {
   loadEcosystem();
-  let students = ecosystemState.students.filter(s => s.teacherId === teacherId || !teacherId);
+  if (!teacherId) return [];
+  let students = ecosystemState.students.filter(s => s.teacherId === teacherId);
 
   // Search by name or email
   if (query && query.trim()) {
@@ -2326,5 +2334,46 @@ export function getMemorizationPerformanceStats() {
       { month: 'مارس (الحالي)', pages: totalSystemPages, students: allStudents.length }
     ]
   };
+}
+
+// -------------------------------------------------------------
+// ADMIN GROUPS MANAGEMENT
+// -------------------------------------------------------------
+export function createGroup({ name, teacherId, targetJuz, description }) {
+  loadEcosystem();
+  if (!name) return { success: false, message: 'اسم الحلقة مطلوب' };
+
+  const teacher = ecosystemState.teachers.find(t => t.uid === teacherId);
+  const teacherName = teacher?.name || 'بدون معلم';
+
+  // Generate code: SAFAR-XXXX
+  const code = 'SAFAR-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+  const newGroup = {
+    id: 'group_' + Date.now(),
+    code,
+    name: name.trim(),
+    teacherId: teacherId || '',
+    teacherName: teacherName,
+    description: description || '',
+    membersCount: 0,
+    activeStudentsCount: 0,
+    commitmentRate: 100,
+    activityLevel: 'جديد',
+    targetJuz: targetJuz || 'لم يحدد',
+    createdAt: new Date().toISOString().split('T')[0],
+    status: 'active'
+  };
+
+  if (!Array.isArray(ecosystemState.groups)) ecosystemState.groups = [];
+  ecosystemState.groups.unshift(newGroup);
+
+  // Update teacher's group info if assigned
+  if (teacher) {
+    teacher.groupId = newGroup.id;
+    teacher.groupName = newGroup.name;
+  }
+
+  saveEcosystem();
+  return { success: true, message: `تم إنشاء الحلقة "${newGroup.name}" برمز الدعوة "${code}" بنجاح`, group: newGroup };
 }
 

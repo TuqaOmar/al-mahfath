@@ -21,6 +21,7 @@ import { getSurahNameForPage, getJuzForPage, getPageRangeForJuz } from '../utils
 import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useLanguage } from '../context/LanguageContext';
+import { fetchWithAuth } from '../lib/api';
 
 // Helper to construct initial 604 pages accurately based on user's portfolio
 const buildQuranPagesData = (user) => {
@@ -202,7 +203,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
 
     if (user?.uid) {
       try {
-        await fetch(`/api/user/${user.uid}`, {
+        await fetchWithAuth(`/api/user/${user.uid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -295,7 +296,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
 
     if (user?.uid) {
       try {
-        await fetch(`/api/user/${user.uid}`, {
+        await fetchWithAuth(`/api/user/${user.uid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -361,7 +362,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
 
     if (user?.uid) {
       try {
-        await fetch(`/api/user/${user.uid}`, {
+        await fetchWithAuth(`/api/user/${user.uid}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

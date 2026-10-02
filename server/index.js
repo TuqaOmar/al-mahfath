@@ -12,34 +12,16 @@ import {
   verifyPassword,
   getUserPortfolio,
   saveAyahToPortfolio,
-  bulkSaveSurahToPortfolio,
-  saveRecitationSession,
-  getRecitationHistory,
-  getPageRecitationStats
+  bulkSaveSurahToPortfolio
 } from './database.js';
 import { analyzeRecitation, compareRecitation, comparePageRecitation } from './recitationEngine.js';
-import { 
-  getGroups, 
-  lookupGroupByCode, 
-  joinGroupByCode, 
-  leaveGroup, 
-  getTeacherDashboard, 
-  getTeacherStudents, 
-  getStudentProfile, 
-  getAdminOverview, 
-  getAdminUsersList, 
-  assignTeacherRole, 
-  removeTeacherRole,
-  createNewTeacherDirect,
-  addStudentByTeacher,
-  getAvailableStudentsForTeacher,
-  enrollStudentInTeacherGroup,
-  distributeStudentByAdmin,
-  submitEnrollmentRequest,
-  getEnrollmentRequests,
-  approveEnrollmentRequest,
-  getMemorizationPerformanceStats
-} from './safarEcosystem.js';
+import {
+  RecitationError, preparePracticeRequest, findPracticeAttempt, savePracticeAttempt,
+  confirmPracticeAttempt, readPracticeHistory, readPracticeStats, readPracticePageStats,
+  practicePerformanceReport
+} from './firestoreRecitation.js';
+import { requireAuth, optionalAuth, requireAdmin, db as adminDb } from './middleware/auth.js';
+import groupsRouter from './routes/groups.js';
 
 dotenv.config();
 
@@ -254,11 +236,19 @@ app.post('/api/auth/admin', async (req, res) => {
   }
 });
 
-// Get User Profile & Stats
-app.get('/api/user/:uid', async (req, res) => {
+// Get User Profile & Stats (requires auth - self or admin)
+app.get('/api/user/:uid', requireAuth, async (req, res) => {
+  const { uid } = req.params;
+  const userRole = req.user.role || '';
+  const userRoles = req.user.roles || {};
+  const isAdmin = userRole === 'admin' || userRoles.admin === true;
+  if (req.user.uid !== uid && !isAdmin) {
+    return res.status(403).json({ success: false, message: 'Forbidden: Cannot view another user profile' });
+  }
   try {
-    const user = await getRow('SELECT * FROM users WHERE uid = ?', [req.params.uid]);
-    if (user) {
+    const userDoc = await adminDb.collection('users').doc(uid).get();
+    if (userDoc.exists) {
+      const user = { ...userDoc.data(), uid };
       delete user.passwordHash;
       delete user.salt;
       user.preferences = safeParsePreferences(user.preferences);
@@ -273,43 +263,32 @@ app.get('/api/user/:uid', async (req, res) => {
 });
 
 // Update User Preferences, stats
-app.put('/api/user/:uid', async (req, res) => {
+app.put('/api/user/:uid', requireAuth, async (req, res) => {
   const { uid } = req.params;
   const updates = req.body;
 
+  // Authorization: Only the user can update their own profile
+  if (req.user.uid !== uid) {
+    return res.status(403).json({ success: false, message: 'Forbidden: Cannot modify another user' });
+  }
+
   try {
-    const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
-    if (!user) {
+    const userRef = adminDb.collection('users').doc(uid);
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
       return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
     }
 
-    const name = updates.name !== undefined ? updates.name : user.name;
-    const photoURL = updates.photoURL !== undefined ? updates.photoURL : user.photoURL;
-    const hasCompletedWizard = updates.hasCompletedWizard !== undefined ? (updates.hasCompletedWizard ? 1 : 0) : user.hasCompletedWizard;
-    const streak = updates.streak !== undefined ? updates.streak : user.streak;
-    const xp = updates.xp !== undefined ? updates.xp : user.xp;
-    const level = updates.level !== undefined ? updates.level : user.level;
-    const memorizedPagesCount = updates.memorizedPagesCount !== undefined ? updates.memorizedPagesCount : user.memorizedPagesCount;
-    const memoryScore = updates.memoryScore !== undefined ? updates.memoryScore : user.memoryScore;
-    const totalJuz = updates.totalJuz !== undefined ? updates.totalJuz : user.totalJuz;
-    const preferences = updates.preferences !== undefined ? JSON.stringify(updates.preferences) : user.preferences;
-
-    await runQuery(`
-      UPDATE users 
-      SET name = ?, photoURL = ?, hasCompletedWizard = ?, streak = ?, xp = ?, level = ?, memorizedPagesCount = ?, memoryScore = ?, totalJuz = ?, preferences = ?
-      WHERE uid = ?
-    `, [name, photoURL, hasCompletedWizard, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, preferences, uid]);
-
-    // Automatically mark pre-memorized pages as excellent in SQLite database
-    if (Number(memorizedPagesCount) > 0) {
-      await runQuery(`
-        UPDATE quran_pages 
-        SET status = 'excellent', score = 98
-        WHERE pageNumber <= ?
-      `, [Number(memorizedPagesCount)]);
+    const allowed = ['name', 'photoURL', 'preferences', 'hasCompletedWizard'];
+    if (Object.keys(updates).some(key => !allowed.includes(key))) {
+      return res.status(400).json({ success: false, message: 'تحديث يتضمن حقولًا غير مسموحة' });
     }
-
-    const updatedUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
+    if ('hasCompletedWizard' in updates && updates.hasCompletedWizard !== true) {
+      return res.status(400).json({ success: false, message: 'حالة الإعداد غير صالحة' });
+    }
+    if (!Object.keys(updates).length) return res.status(400).json({ success: false });
+    await userRef.update(updates);
+    const updatedUser = { ...(await userRef.get()).data(), uid };
     delete updatedUser.passwordHash;
     delete updatedUser.salt;
     updatedUser.preferences = safeParsePreferences(updatedUser.preferences);
@@ -323,10 +302,15 @@ app.put('/api/user/:uid', async (req, res) => {
 });
 
 // Save / Update User Fortress Plan
-app.post('/api/user/fortress-plan', async (req, res) => {
+// requireAuth: only the user themselves can save their own plan
+app.post('/api/user/fortress-plan', requireAuth, async (req, res) => {
   const { userId, plan } = req.body;
   if (!userId || !plan) {
     return res.status(400).json({ success: false, message: 'معرف المستخدم والخطة مطلوبان' });
+  }
+  // Authorization: only the authenticated user can modify their own plan
+  if (req.user.uid !== userId) {
+    return res.status(403).json({ success: false, message: 'Forbidden: Cannot modify another user\'s plan' });
   }
   try {
     const user = await getRow('SELECT * FROM users WHERE uid = ?', [userId]);
@@ -367,9 +351,12 @@ app.get('/api/user/fortress-plan/:uid', async (req, res) => {
 });
 
 // --- USER PERSONAL MEMORIZATION PORTFOLIO (محفظة الحفظ الشخصية) ---
-// Get all portfolio ayahs for user
-app.get('/api/user/:uid/portfolio', async (req, res) => {
+// Get all portfolio ayahs for user (authenticated, owner only)
+app.get('/api/user/:uid/portfolio', requireAuth, async (req, res) => {
   const { uid } = req.params;
+  if (req.user.uid !== uid) {
+    return res.status(403).json({ success: false, message: 'Forbidden: Cannot read another user\'s portfolio' });
+  }
   try {
     const portfolio = getUserPortfolio(uid);
     res.json({ success: true, portfolio });
@@ -379,9 +366,12 @@ app.get('/api/user/:uid/portfolio', async (req, res) => {
   }
 });
 
-// Update or save single ayah memorization progress
-app.post('/api/user/:uid/portfolio/ayah', async (req, res) => {
+// Update or save single ayah memorization progress (authenticated, owner only)
+app.post('/api/user/:uid/portfolio/ayah', requireAuth, async (req, res) => {
   const { uid } = req.params;
+  if (req.user.uid !== uid) {
+    return res.status(403).json({ success: false, message: 'Forbidden: Cannot modify another user\'s portfolio' });
+  }
   const ayahData = req.body;
   try {
     const saved = saveAyahToPortfolio(uid, ayahData);
@@ -392,9 +382,12 @@ app.post('/api/user/:uid/portfolio/ayah', async (req, res) => {
   }
 });
 
-// Bulk update surah ayahs in portfolio (e.g. mark full surah as memorized)
-app.post('/api/user/:uid/portfolio/bulk-surah', async (req, res) => {
+// Bulk update surah ayahs in portfolio (authenticated, owner only)
+app.post('/api/user/:uid/portfolio/bulk-surah', requireAuth, async (req, res) => {
   const { uid } = req.params;
+  if (req.user.uid !== uid) {
+    return res.status(403).json({ success: false, message: 'Forbidden: Cannot bulk-update another user\'s portfolio' });
+  }
   const { surahNumber, ayahs } = req.body;
   try {
     const results = bulkSaveSurahToPortfolio(uid, surahNumber, ayahs);
@@ -405,41 +398,13 @@ app.post('/api/user/:uid/portfolio/bulk-surah', async (req, res) => {
   }
 });
 
-// Delete User Account
-app.delete('/api/user/:uid', async (req, res) => {
-  const { uid } = req.params;
-  const email = req.query.email;
-  try {
-    if (uid && uid !== 'by_email') {
-      await runQuery('DELETE FROM users WHERE uid = ?', [uid]);
-    }
-    if (email) {
-      await runQuery('DELETE FROM users WHERE email = ?', [email]);
-    }
-    await runQuery('DELETE FROM quran_pages');
-    res.json({ success: true, message: 'تم حذف الحساب بنجاح' });
-  } catch (error) {
-    console.error('Error deleting user:', error);
-    res.json({ success: true, message: 'تم حذف الحساب بنجاح' });
-  }
-});
+// Delete User Account endpoint removed due to security vulnerability (missing auth and authorization)
+// and destructive global DELETE FROM quran_pages behavior.
 
 // --- ADMIN ENDPOINTS ---
 
-app.get('/api/admin/users', async (req, res) => {
-  try {
-    const users = await allRows('SELECT * FROM users');
-    users.forEach(u => {
-      delete u.passwordHash;
-      delete u.salt;
-      u.preferences = safeParsePreferences(u.preferences);
-    });
-    res.json({ success: true, users });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
+app.use('/api', groupsRouter);
+app.use('/api/admin', requireAuth, requireAdmin);
 
 app.put('/api/admin/user/:uid', async (req, res) => {
   const { uid } = req.params;
@@ -598,38 +563,29 @@ app.get('/api/quran/pages', async (req, res) => {
   }
 });
 
-app.post('/api/quran/pages/:pageNumber/review', async (req, res) => {
-  const pageNumber = Number(req.params.pageNumber);
-  const { status, score, surahName, juz } = req.body;
-
-  try {
-    let page = await getRow('SELECT * FROM quran_pages WHERE pageNumber = ?', [pageNumber]);
-    if (page) {
-      await runQuery(`
-        UPDATE quran_pages SET status = ?, score = ?, lastReviewed = 'اليوم'
-        WHERE pageNumber = ?
-      `, [status || 'excellent', score || 95, pageNumber]);
-    } else {
-      await runQuery(`
-        INSERT INTO quran_pages (pageNumber, status, score, surahName, juz, lastReviewed, errorsCount)
-        VALUES (?, ?, ?, ?, ?, 'اليوم', 0)
-      `, [pageNumber, status || 'excellent', score || 95, surahName || ('صفحة ' + pageNumber), juz || Math.ceil(pageNumber / 20)]);
-    }
-
-    const updatedPage = await getRow('SELECT * FROM quran_pages WHERE pageNumber = ?', [pageNumber]);
-    const pages = await allRows('SELECT * FROM quran_pages');
-
-    res.json({ success: true, page: updatedPage, pages });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
+app.post('/api/quran/pages/:pageNumber/review', requireAuth, (req, res) => {
+  // This legacy endpoint accepted arbitrary scores and awarded JSON XP. No
+  // current UI calls it; server comparison with a stable attempt ID replaces it.
+  res.status(410).json({ success: false, message: 'استخدم /api/ai/recitation-check مع sessionId لتسجيل محاولة مقارنة محسوبة في الخادم' });
 });
 
 
-app.delete('/api/community/posts/:id', async (req, res) => {
+app.delete('/api/community/posts/:id', requireAuth, async (req, res) => {
   const postId = Number(req.params.id);
   try {
+    const post = await getRow('SELECT * FROM community_posts WHERE id = ?', [postId]);
+    if (!post) {
+      return res.status(404).json({ success: false, message: 'المنشور غير موجود' });
+    }
+
+    let isAdmin = false;
+    const userRow = await getRow('SELECT role, name FROM users WHERE uid = ?', [req.user.uid]);
+    if (userRow && userRow.role === 'admin') isAdmin = true;
+
+    if (!isAdmin && post.author !== 'هوية مخفية' && post.author !== userRow?.name) {
+      return res.status(403).json({ success: false, message: 'لا تملك صلاحية حذف هذا المنشور' });
+    }
+
     await runQuery('DELETE FROM community_posts WHERE id = ?', [postId]);
     const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
     posts.forEach(p => {
@@ -794,7 +750,7 @@ app.post('/api/ai/chat', async (req, res) => {
 // --- RECITATION VOICE AI & QURAN CHECK ENDPOINTS ---
 
 // Check recitation by recorded audio or transcribed text, with accuracy calculation
-app.post('/api/ai/recitation-check', async (req, res) => {
+app.post('/api/ai/recitation-check', optionalAuth, async (req, res) => {
   const { 
     audioBase64, 
     spokenText, 
@@ -802,14 +758,12 @@ app.post('/api/ai/recitation-check', async (req, res) => {
     ayahs,
     isFullPage,
     token, 
-    autoSave, 
-    userId, 
-    pageNumber, 
-    surahNumber, 
-    surahName, 
-    ayahNumber, 
-    type 
+    autoSave
   } = req.body;
+
+  if (autoSave && !req.user?.uid) {
+    return res.status(401).json({ success: false, message: 'Authentication is required to save a recitation session' });
+  }
 
   if (!expectedText && (!ayahs || ayahs.length === 0)) {
     return res.status(400).json({ success: false, message: 'نص الآية أو قائمة آيات الصفحة مطلوبة للمقارنة' });
@@ -817,6 +771,14 @@ app.post('/api/ai/recitation-check', async (req, res) => {
 
   try {
     let result = null;
+    const prepared = autoSave ? preparePracticeRequest(req.body) : null;
+    if (prepared) {
+      const saved = await findPracticeAttempt(req.user.uid, prepared);
+      if (saved) return res.json({
+        success: true, ...saved.result, savedSession: saved.session,
+        recitationStats: await readPracticeStats(req.user.uid)
+      });
+    }
     const fullExpected = expectedText || (Array.isArray(ayahs) ? ayahs.map(a => a.text).join(' ') : '');
 
     // 1. If audio is provided, process through Whisper ASR with Gemini fallback
@@ -853,89 +815,69 @@ app.post('/api/ai/recitation-check', async (req, res) => {
       return res.status(400).json({ success: false, message: 'يرجى إرسال التسجيل الصوتي أو النص المنطوق' });
     }
 
-    // Auto-save recitation accuracy to DB if requested
+    // Store server-computed practice results only. Client references are not
+    // verified Quran data, so this cannot award XP or establish memorization.
     let savedSession = null;
-    if (autoSave && result) {
-      savedSession = saveRecitationSession({
-        userId: userId || 'demo_user_123',
-        pageNumber: Number(pageNumber) || 1,
-        surahNumber: Number(surahNumber) || 1,
-        surahName: surahName || 'سورة الشريفة',
-        ayahNumber: isFullPage ? null : (Number(ayahNumber) || 1),
-        isFullPage: Boolean(isFullPage),
-        accuracy: result.accuracy || result.pageAccuracy,
-        stats: result.stats,
-        results: result.results,
-        ayahBreakdown: result.ayahBreakdown || [],
-        transcribedText: result.transcribedText || result.transcribedSpoken,
-        expectedText: fullExpected,
-        type: type || (audioBase64 ? 'voice' : 'text')
-      });
+    let recitationStats;
+    if (prepared && result) {
+      const saved = await savePracticeAttempt(req.user.uid, prepared, result);
+      savedSession = saved.session;
+      result = saved.result;
+      recitationStats = await readPracticeStats(req.user.uid);
     }
 
     return res.json({
       success: true,
       ...result,
-      savedSession
+      classification: 'practice', referenceVerified: false, rewardedXp: 0,
+      savedSession, recitationStats
     });
   } catch (err) {
     console.error('Recitation check error:', err);
-    return res.status(500).json({
+    return res.status(err instanceof RecitationError ? err.status : autoSave ? 503 : 500).json({
       success: false,
       message: err.message || 'حدث خطأ أثناء فحص وتصحيح التلاوة'
     });
   }
 });
 
-// Explicit endpoint to save recitation session & accuracy score
-app.post('/api/recitation/save', async (req, res) => {
+// Confirm an already saved server analysis; never accept client-supplied scores.
+app.post('/api/recitation/save', requireAuth, async (req, res) => {
   try {
-    const sessionData = req.body;
-    if (!sessionData) {
-      return res.status(400).json({ success: false, message: 'بيانات جلسة التسميع مطلوبة' });
-    }
-
-    const saved = saveRecitationSession(sessionData);
-    if (!saved) {
-      return res.status(500).json({ success: false, message: 'تعذر حفظ بيانات دقة التسميع' });
-    }
-
-    // Return updated user stats
-    const user = await getRow('SELECT uid, xp, level, memoryScore, streak, memorizedPagesCount FROM users WHERE uid = ?', [saved.userId]);
-
+    const saved = await confirmPracticeAttempt(req.user.uid, req.body || {});
     res.json({
       success: true,
-      message: 'تم حفظ دقة التسميع بنجاح 🎯',
+      message: 'تم تأكيد محاولة التدريب المحفوظة',
       session: saved,
-      user
+      recitationStats: await readPracticeStats(req.user.uid)
     });
   } catch (error) {
     console.error('Error saving recitation session:', error);
-    res.status(500).json({ success: false, message: 'حدث خطأ أثناء حفظ دقة التسميع' });
+    res.status(error instanceof RecitationError ? error.status : 503).json({ success: false, message: error instanceof RecitationError ? error.message : 'تعذر تأكيد حفظ محاولة التدريب' });
   }
 });
 
 // Get recitation history for a user
-app.get('/api/recitation/history', async (req, res) => {
-  const { userId, pageNumber, ayahNumber, surahNumber, limit } = req.query;
+app.get('/api/recitation/history', requireAuth, async (req, res) => {
+  const { pageNumber, ayahNumber, surahNumber, limit } = req.query;
   try {
-    const history = getRecitationHistory(userId, { pageNumber, ayahNumber, surahNumber, limit });
+    const history = await readPracticeHistory(req.user.uid, { pageNumber, ayahNumber, surahNumber, limit });
     res.json({ success: true, count: history.length, history });
   } catch (error) {
     console.error('Error fetching recitation history:', error);
-    res.status(500).json({ success: false, message: 'تعذر جلب سجل التسميع' });
+    res.status(error instanceof RecitationError ? error.status : 503).json({ success: false, message: error instanceof RecitationError ? error.message : 'تعذر جلب سجل التسميع' });
   }
 });
 
 // Get aggregated recitation stats for a Quran page
-app.get('/api/recitation/page-stats/:pageNumber', async (req, res) => {
+app.get('/api/recitation/page-stats/:pageNumber', requireAuth, async (req, res) => {
   const { pageNumber } = req.params;
   try {
-    const stats = getPageRecitationStats(Number(pageNumber));
+    const stats = await readPracticePageStats(req.user.uid, pageNumber);
     res.json({ success: true, pageNumber: Number(pageNumber), stats });
   } catch (error) {
     console.error('Error fetching page recitation stats:', error);
-    res.status(500).json({ success: false, message: 'تعذر جلب إحصائيات تسميع الصفحة' });
+    res.status(error instanceof RecitationError ? error.status : 503).json({ success: false, message: error instanceof RecitationError ? error.message : 'تعذر جلب إحصائيات تسميع الصفحة' });
   }
 });
 
@@ -956,197 +898,13 @@ app.get('/api/ai/recitation-status', (req, res) => {
   });
 });
 
-// --- SAFAR ECOSYSTEM ROUTES (GROUPS, TEACHER, ADMIN, ONBOARDING) ---
-
-// Get all groups or teacher's groups
-app.get('/api/groups', (req, res) => {
-  const { teacherId } = req.query;
-  const groups = getGroups(teacherId);
-  res.json({ success: true, count: groups.length, groups });
-});
-
-// Lookup group by code (for onboarding invitation code flow)
-app.get('/api/groups/lookup', (req, res) => {
-  const { code } = req.query;
-  if (!code) {
-    return res.status(400).json({ success: false, message: 'رمز الحلقة مطلوب' });
-  }
-  const group = lookupGroupByCode(code);
-  if (!group) {
-    return res.status(404).json({ success: false, message: 'لم يتم العثور على حلقة بهذا الرمز' });
-  }
-  res.json({ success: true, group });
-});
-
-// Join group via code
-app.post('/api/groups/join', (req, res) => {
-  const { userId, email, name, code } = req.body;
-  if (!code) {
-    return res.status(400).json({ success: false, message: 'رمز الحلقة مطلوب' });
-  }
-  const result = joinGroupByCode(userId, email, name, code);
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
-// Leave group
-app.post('/api/groups/leave', (req, res) => {
-  const { userId } = req.body;
-  if (!userId) {
-    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
-  }
-  const result = leaveGroup(userId);
-  res.json(result);
-});
-
-// Teacher Dashboard
-app.get('/api/teacher/:teacherId/dashboard', (req, res) => {
-  const { teacherId } = req.params;
-  const dashboard = getTeacherDashboard(teacherId);
-  res.json({ success: true, ...dashboard });
-});
-
-// Teacher Students List with Search, Filter & Sort
-app.get('/api/teacher/:teacherId/students', (req, res) => {
-  const { teacherId } = req.params;
-  const { search, filter, sort } = req.query;
-  const students = getTeacherStudents(teacherId, search, filter, sort);
-  res.json({ success: true, count: students.length, students });
-});
-
-// Detailed Student Profile
-app.get('/api/teacher/:teacherId/student/:studentId', (req, res) => {
-  const { studentId } = req.params;
-  const profile = getStudentProfile(studentId);
-  if (!profile) {
-    return res.status(404).json({ success: false, message: 'الملف الشخصي للطالب غير موجود' });
-  }
-  res.json({ success: true, student: profile });
-});
-
-// Admin Platform Overview Stats
-app.get('/api/admin/overview', (req, res) => {
-  const stats = getAdminOverview();
-  res.json({ success: true, ...stats });
-});
-
-// Admin Users List with full search and filtering
-app.get('/api/admin/users', (req, res) => {
-  const { search, filter } = req.query;
-  const users = getAdminUsersList(search, filter);
-  res.json({ success: true, count: users.length, users });
-});
-
-// Admin Assign Teacher Role
-app.post('/api/admin/assign-teacher', (req, res) => {
-  const { uid } = req.body;
-  if (!uid) {
-    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
-  }
-  const result = assignTeacherRole(uid);
-  res.json(result);
-});
-
-// Admin Remove Teacher Role
-app.post('/api/admin/remove-teacher', (req, res) => {
-  const { uid } = req.body;
-  if (!uid) {
-    return res.status(400).json({ success: false, message: 'معرف المستخدم مطلوب' });
-  }
-  const result = removeTeacherRole(uid);
-  res.json(result);
-});
-
-// Admin / System Direct Create New Teacher
-app.post('/api/admin/create-teacher', (req, res) => {
-  const { name, email, specialty } = req.body;
-  if (!name) {
-    return res.status(400).json({ success: false, message: 'اسم المعلمة مطلوب' });
-  }
-  const result = createNewTeacherDirect({ name, email, specialty });
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
-// Teacher: Search and fetch available registered students/learners to enroll
-app.get('/api/teacher/:teacherId/available-students', (req, res) => {
-  const { teacherId } = req.params;
-  const { search } = req.query;
-  const students = getAvailableStudentsForTeacher(teacherId, search);
-  res.json({ success: true, count: students.length, students });
-});
-
-// Teacher: Gather and enroll a student directly into her circle
-app.post('/api/teacher/:teacherId/enroll-student', (req, res) => {
-  const { teacherId } = req.params;
-  const { studentUid, email, name, groupId, currentTarget } = req.body;
-  const result = enrollStudentInTeacherGroup(teacherId, { studentUid, email, name, groupId, currentTarget });
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
-// Teacher Adds Student Directly
-app.post('/api/teacher/:teacherId/add-student', (req, res) => {
-  const { teacherId } = req.params;
-  const { name, email, memorizedJuz, currentTarget, groupId } = req.body;
-  const result = addStudentByTeacher(teacherId, { name, email, memorizedJuz, currentTarget, groupId });
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
-// Admin Distribute Student to Group and Teacher
-app.post('/api/admin/distribute-student', (req, res) => {
-  const { studentUid, groupId, teacherId } = req.body;
-  if (!studentUid || !groupId) {
-    return res.status(400).json({ success: false, message: 'معرف الطالبة ومعرف المجموعة مطلوبان' });
-  }
-  const result = distributeStudentByAdmin({ studentUid, groupId, teacherId });
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
-// Student Enrollment Request (Submit)
-app.post('/api/safar/enrollment-request', (req, res) => {
-  const result = submitEnrollmentRequest(req.body);
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
-// Admin Get Enrollment Requests
-app.get('/api/admin/enrollment-requests', (req, res) => {
-  const requests = getEnrollmentRequests();
-  res.json({ success: true, count: requests.length, requests });
-});
-
-// Admin Approve Enrollment Request
-app.post('/api/admin/enrollment-requests/approve', (req, res) => {
-  const { requestId, groupId, teacherId } = req.body;
-  if (!requestId || !groupId) {
-    return res.status(400).json({ success: false, message: 'معرف الطلب والمجموعة مطلوبان' });
-  }
-  const result = approveEnrollmentRequest(requestId, groupId, teacherId);
-  if (!result.success) {
-    return res.status(400).json(result);
-  }
-  res.json(result);
-});
-
 // Admin Memorization Performance & Progress Analytics
-app.get('/api/admin/memorization-performance', (req, res) => {
-  const performance = getMemorizationPerformanceStats();
-  res.json(performance);
+app.get('/api/admin/memorization-performance', requireAuth, requireAdmin, async (req, res) => {
+  try { res.json(await practicePerformanceReport()); }
+  catch (error) {
+    console.error('Practice performance report failed:', error.message);
+    res.status(503).json({ success: false, message: 'تعذر قراءة تقرير محاولات التدريب' });
+  }
 });
 
 // Serve Vite dev middleware or production static files

@@ -27,6 +27,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { AdminPerformanceDashboard } from './AdminPerformanceDashboard';
 import { AdminDistributionView } from './AdminDistributionView';
 import { db } from '../../lib/firebase';
+import { fetchWithAuth } from '../../lib/api';
 import { collection, getDocs, doc, updateDoc, getCountFromServer } from 'firebase/firestore';
 export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) => {
   const { lang, isRTL } = useLanguage();
@@ -50,7 +51,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
   useEffect(() => {
     fetchAdminData();
-  }, [searchQuery, userFilter]);
+  }, [searchQuery, userFilter, currentTab]);
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -67,7 +68,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
       const allUsers = allUsersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
       
       // Calculate real stats from Firebase
-      const teachersCount = allUsers.filter(u => u.role === 'teacher').length;
+      const teachersCount = allUsers.filter(u => u.role === 'teacher' || u.roles?.teacher).length;
       const totalRegisteredUsers = allUsers.length;
       
       setOverview({
@@ -98,9 +99,10 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
       }
       
       if (userFilter === 'teacher') {
-        filtered = filtered.filter(u => u.role === 'teacher');
+        // Multi-role support: check both role field and roles map
+        filtered = filtered.filter(u => u.role === 'teacher' || (u.roles && u.roles.teacher === true));
       } else if (userFilter === 'independent') {
-        filtered = filtered.filter(u => !u.isSafarMember && !u.groupId && u.role !== 'teacher' && u.role !== 'admin');
+        filtered = filtered.filter(u => !u.isSafarMember && !u.groupId && u.role !== 'teacher' && u.role !== 'admin' && !(u.roles && (u.roles.teacher || u.roles.admin)));
       } else if (userFilter === 'safar_member') {
         filtered = filtered.filter(u => u.isSafarMember || u.groupId);
       }
@@ -120,32 +122,61 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
     
     try {
       const userRef = doc(db, 'users', user.uid);
-      const newRole = (action === 'assign' || action === 'assign_teacher') ? 'teacher' : action === 'assign_admin' ? 'admin' : 'user';
-      await updateDoc(userRef, { role: newRole });
-      
+      // Multi-role support: update roles map without overwriting existing roles
+      const currentRoles = user.roles || {};
+      let updatedRoles = { ...currentRoles };
+      let newPrimaryRole = user.role;
       let msg = '';
-      if (action === 'assign' || action === 'assign_teacher') msg = `تم تعيين ${user.name} كمعلمة بنجاح 🌿`;
-      else if (action === 'assign_admin') msg = `تمت ترقية ${user.name} لمدير بنجاح 👑`;
-      else if (action === 'remove_admin') msg = `تم إلغاء الإدارة عن ${user.name}`;
-      else msg = `تم إلغاء صفة معلمة عن ${user.name} بنجاح`;
+
+      if (action === 'assign' || action === 'assign_teacher') {
+        updatedRoles.teacher = true;
+        newPrimaryRole = 'teacher'; // primary role updated
+        msg = `\u062a\u0645 \u062a\u0639\u064a\u064a\u0646 ${user.name} \u0643\u0645\u0639\u0644\u0645\u0629 \u0628\u0646\u062c\u0627\u062d \u0633\u062a\u062d\u062a\u0641\u0638 \u0628\u0635\u0644\u0627\u062d\u064a\u0627\u062a\u0647\u0627 \u0627\u0644\u0633\u0627\u0628\u0642\u0629 \u0627\u064a\u0636\u0627\u064b \uD83C\uDF3F`;
+      } else if (action === 'assign_admin') {
+        updatedRoles.admin = true;
+        newPrimaryRole = 'admin'; // primary role updated, but keeps teacher/user roles
+        msg = `\u062a\u0645\u062a \u062a\u0631\u0642\u064a\u0629 ${user.name} \u0644\u0645\u062f\u064a\u0631 \u0648\u064a\u062d\u062a\u0641\u0638 \u0628\u062c\u0645\u064a\u0639 \u0623\u062f\u0648\u0627\u0631\u0647 \u0627\u0644\u0633\u0627\u0628\u0642\u0629 \u0627\u064a\u0636\u0627\u064b \uD83D\uDC51`;
+      } else if (action === 'remove_admin') {
+        delete updatedRoles.admin;
+        // Fallback primary role
+        newPrimaryRole = updatedRoles.teacher ? 'teacher' : 'user';
+        msg = `\u062a\u0645 \u0625\u0644\u063a\u0627\u0621 \u0635\u0644\u0627\u062d\u064a\u0627\u062a \u0627\u0644\u0625\u062f\u0627\u0631\u0629 \u0639\u0646 ${user.name} (\u0623\u062f\u0648\u0627\u0631\u0647 \u0627\u0644\u0623\u062e\u0631\u0649 \u0645\u062d\u0641\u0648\u0638\u0629)`;
+      } else { // remove teacher
+        delete updatedRoles.teacher;
+        // Fallback primary role
+        newPrimaryRole = updatedRoles.admin ? 'admin' : 'user';
+        msg = `\u062a\u0645 \u0625\u0644\u063a\u0627\u0621 \u0635\u0641\u0629 \u0645\u0639\u0644\u0645\u0629 \u0639\u0646 ${user.name} (\u0623\u062f\u0648\u0627\u0631\u0647 \u0627\u0644\u0623\u062e\u0631\u0649 \u0645\u062d\u0641\u0648\u0638\u0629)`;
+      }
+
+      if (action === 'assign_admin' || action === 'remove_admin') {
+        await updateDoc(userRef, { role: newPrimaryRole, roles: updatedRoles });
+      } else {
+        const endpoint = action === 'assign' || action === 'assign_teacher' ? 'assign-teacher' : 'remove-teacher';
+        const response = await fetchWithAuth(`/api/admin/${endpoint}`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid: user.uid })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) throw new Error(result.message || 'تعذر تحديث الدور');
+      }
 
       setActionFeedback({ type: 'success', text: msg });
       setConfirmTeacherModal(null);
       fetchAdminData();
     } catch (e) {
       console.error(e);
-      setActionFeedback({ type: 'error', text: 'حدث خطأ أثناء تنفيذ الإجراء، قد لا تملك الصلاحيات' });
+      setActionFeedback({ type: 'error', text: '\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u062a\u0646\u0641\u064a\u0630 \u0627\u0644\u0625\u062c\u0631\u0627\u0621\u060c \u0642\u062f \u0644\u0627 \u062a\u0645\u0644\u0643 \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0627\u062a' });
     } finally {
       setTimeout(() => setActionFeedback(null), 3500);
     }
   };
 
   const stats = overview?.stats || {
-    totalRegisteredUsers: 12842,
-    safarMembers: 4281,
-    teachersCount: 186,
-    independentUsers: 8561,
-    groupsCount: 142
+    totalRegisteredUsers: 0,
+    safarMembers: 0,
+    teachersCount: 0,
+    independentUsers: 0,
+    groupsCount: 0
   };
 
   const realTime = overview?.realTimeActivity || {
@@ -513,13 +544,14 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {users.map((u) => {
-                const isTeacher = u.role === 'teacher';
-                const isAdmin = u.role === 'admin';
+                const isTeacher = u.role === 'teacher' || (u.roles && u.roles.teacher === true);
+                const isAdmin = u.role === 'admin' || (u.roles && u.roles.admin === true);
                 const isSafar = Boolean(u.isSafarMember);
 
                 return (
                   <div
                     key={u.uid}
+                    data-testid={`user-${u.uid}`}
                     style={{
                       padding: '16px 20px',
                       borderRadius: '18px',
@@ -701,7 +733,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
           <div>
             <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
-              إدارة الحلقات والمجموعات (142 حلقة)
+              إدارة الحلقات والمجموعات ({groups.length} حلقة)
             </h2>
             <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
               قائمة الحلقات المسجلة في منصة سَفَر ورموز الانضمام والمعلمات المشرفات عليها
@@ -715,6 +747,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
               groups.map((grp) => (
                 <div
                   key={grp.id}
+                  data-testid={`group-${grp.id}`}
                   style={{
                     padding: '18px',
                     borderRadius: '18px',
@@ -738,12 +771,12 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
                   <div style={{ padding: '8px 12px', borderRadius: '10px', background: 'var(--bg-color)', border: '1px dashed var(--primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>رمز الحلقة:</span>
-                    <strong style={{ fontSize: '14px', color: 'var(--primary)' }}>{grp.joinCode || grp.id.substring(0,6)}</strong>
+                    <strong style={{ fontSize: '14px', color: 'var(--primary)' }} data-testid="group-code">{grp.code || 'غير متاح'}</strong>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    <span>عدد الطالبات: {grp.membersCount || (grp.students ? grp.students.length : 0)}</span>
-                    <span>المقرر: {grp.target || 'مفتوح'}</span>
+                    <span>عدد الطالبات: {grp.studentsCount ?? 0}</span>
+                    <span>المقرر: {grp.targetJuz || 'غير محدد'}</span>
                   </div>
                 </div>
               ))

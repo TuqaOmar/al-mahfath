@@ -1,5 +1,6 @@
 import { doc, getDoc, setDoc, collection, getDocs, onSnapshot, writeBatch } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { fetchWithAuth } from './api';
 import surahsCatalog from '../utils/quranSurahsList.json';
 
 /**
@@ -138,7 +139,7 @@ export async function fetchUserPortfolio(userId, memorizedPagesCount = 0) {
     }
 
     // 2. Try REST backend
-    const res = await fetch(`/api/user/${userId}/portfolio`);
+    const res = await fetchWithAuth(`/api/user/${userId}/portfolio`);
     if (res.ok) {
       const json = await res.json();
       if (json.success && Array.isArray(json.portfolio) && json.portfolio.length > 0) {
@@ -206,7 +207,7 @@ export async function saveAyahToPortfolio(userId, ayahData) {
 
   // Sync to backend REST API
   try {
-    fetch(`/api/user/${userId}/portfolio/ayah`, {
+    fetchWithAuth(`/api/user/${userId}/portfolio/ayah`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedRecord)
@@ -253,7 +254,7 @@ export async function saveBulkPortfolio(userId, portfolioMap) {
   // Also sync to REST
   try {
     if (items.length > 0 && items[0]?.surahNumber) {
-      fetch(`/api/user/${userId}/portfolio/bulk-surah`, {
+      fetchWithAuth(`/api/user/${userId}/portfolio/bulk-surah`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

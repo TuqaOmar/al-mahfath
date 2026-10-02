@@ -96,9 +96,16 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const { user, logout, deleteAccount, updateUserData, refreshUserData } = useAuth();
   const { lang, setLang, t, isRTL } = useLanguage();
-  const [activeTab, setActiveTab] = useState(
-    user?.role === 'admin' ? 'admin-dashboard' : (user?.role === 'teacher' ? 'teacher-dashboard' : 'home')
-  );
+  const getUserDefaultTab = (u) => {
+    if (!u) return 'home';
+    // Multi-role support: check both role string and roles map
+    const isAdmin = u.role === 'admin' || (u.roles && u.roles.admin === true);
+    const isTeacher = u.role === 'teacher' || (u.roles && u.roles.teacher === true);
+    if (isAdmin) return 'admin-dashboard';
+    if (isTeacher) return 'teacher-dashboard';
+    return 'home';
+  };
+  const [activeTab, setActiveTab] = useState(() => getUserDefaultTab(user));
   const [selectedQuranPage, setSelectedQuranPage] = useState(2);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -184,9 +191,12 @@ const Dashboard = () => {
     if (isNewUser || isRoleChanged) {
       lastUserIdRef.current = user?.uid;
       lastUserRoleRef.current = user?.role;
-      if (user?.role === 'admin') {
+      // Multi-role support: check both role string and roles map
+      const isAdmin = user?.role === 'admin' || (user?.roles && user?.roles.admin === true);
+      const isTeacher = user?.role === 'teacher' || (user?.roles && user?.roles.teacher === true);
+      if (isAdmin) {
         setActiveTab('admin-dashboard');
-      } else if (user?.role === 'teacher') {
+      } else if (isTeacher) {
         setActiveTab('teacher-dashboard');
       } else {
         setActiveTab('home');
@@ -267,6 +277,12 @@ const Dashboard = () => {
       case 'admin-groups':
         return <AdminDashboard activeAdminTab="groups" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
 
+      case 'admin-distribution':
+        return <AdminDashboard activeAdminTab="distribution" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
+      case 'admin-performance':
+        return <AdminDashboard activeAdminTab="performance" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
       case 'admin-analytics':
         return <AdminDashboard activeAdminTab="analytics" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
 
@@ -302,9 +318,9 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
-                  سَفَر نشط 🟢
-                </span>
+                <button onClick={() => setShowJoinGroupModal(true)} style={{ fontSize: '12px', padding: '8px 12px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--primary)', border: '1px solid var(--glass-border)', cursor: 'pointer' }}>
+                  {lang === 'ar' ? 'إدارة عضوية الحلقة' : 'Manage Group Membership'}
+                </button>
               </div>
             ) : (
               <div style={{
@@ -1552,7 +1568,7 @@ const Dashboard = () => {
         <JoinGroupModal
           isOpen={showJoinGroupModal}
           onClose={() => setShowJoinGroupModal(false)}
-          onJoinedSuccess={() => {
+          onJoined={() => {
             setShowJoinGroupModal(false);
             if (refreshUserData) refreshUserData();
           }}
