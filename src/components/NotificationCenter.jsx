@@ -20,6 +20,7 @@ import { useLanguage } from '../context/LanguageContext';
 export const NotificationCenter = () => {
   const {
     notifications,
+    refreshNotifications,
     unreadCount,
     markAsRead,
     markAllAsRead,
@@ -150,7 +151,12 @@ export const NotificationCenter = () => {
 
       {/* Bell Button */}
       <button
-        onClick={() => setIsOpen(!isOpen)}
+        aria-label={lang === 'ar' ? 'فتح مركز الإشعارات' : 'Open notifications'}
+        onClick={async () => {
+          const opening = !isOpen;
+          setIsOpen(opening);
+          if (opening) await refreshNotifications();
+        }}
         style={{
           width: '40px',
           height: '40px',
@@ -575,6 +581,7 @@ export const NotificationCenter = () => {
                   filteredNotifications.map(n => (
                     <div
                       key={n.id}
+                      data-testid={`notification-${n.id}`}
                       onClick={() => {
                         markAsRead(n.id);
                         if (n.type === 'wird' || n.type === 'mindmap' || n.type === 'badge' || n.type === 'achievement') {
@@ -623,11 +630,12 @@ export const NotificationCenter = () => {
                           <span style={{ fontSize: '13px', fontWeight: n.read ? 'normal' : 'bold', color: 'var(--text-primary)' }}>
                             {n.title}
                           </span>
-                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{n.timestamp}</span>
+                          <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{n.timestamp || (n.createdAt ? new Date(n.createdAt).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US') : '')}</span>
                         </div>
                         <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                           {n.message}
                         </p>
+                        {n.source?.startsWith('local-') && <span style={{ fontSize: '10px', color: '#D97706' }}>{lang === 'ar' ? 'تنبيه محلي على هذا الجهاز' : 'Local device alert'}</span>}
                       </div>
 
                       <button

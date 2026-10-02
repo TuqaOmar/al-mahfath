@@ -179,17 +179,29 @@ export async function readPracticePageStats(uid, pageNumber) {
 }
 
 export async function practicePerformanceReport() {
-  const [userDocs, groupDocs, memberDocs, sessionDocs] = await Promise.all([
+  const [userDocs, groupDocs, memberDocs, sessionDocs, ayahDocs] = await Promise.all([
     db.collection('users').get(), db.collection('groups').get(),
-    db.collection('memberships').get(), db.collectionGroup('recitation_sessions').get()
+    db.collection('memberships').get(), db.collectionGroup('recitation_sessions').get(),
+    db.collectionGroup('ayah_progress').get()
   ]);
   const sessions = sessionDocs.docs.map(publicSession);
   const membership = new Map(memberDocs.docs.map(member => [member.id, member.data()]));
+  const ayahsByUser = new Map();
+  ayahDocs.docs.forEach(doc => {
+    const uid = doc.ref.parent.parent?.id;
+    if (!uid) return;
+    const list = ayahsByUser.get(uid) || [];
+    list.push(doc.data());
+    ayahsByUser.set(uid, list);
+  });
   const learners = userDocs.docs.filter(user => !hasRole(user.data(), 'teacher') && !hasRole(user.data(), 'admin'));
   const students = learners.map(user => {
     const member = membership.get(user.id);
     const stats = summarize(sessions.filter(session => session.userId === user.id));
+    const recordedAyahs = ayahsByUser.get(user.id) || [];
     return { uid: user.id, name: user.data().name || '', groupId: member?.groupId ?? null, teacherId: member?.teacherId ?? null,
+      recordedAyahsCount: recordedAyahs.length,
+      recordedMemorizedAyahs: recordedAyahs.filter(ayah => ayah.status === 'memorized').length,
       totalRecitationSessions: stats.totalSessions, totalWeeklySessions: stats.totalWeeklySessions,
       averageAccuracy: stats.averageAccuracy, bestAccuracy: stats.bestAccuracy,
       lastRecitedAt: stats.lastRecitedAt, hasAttempts: stats.hasAttempts };
@@ -198,8 +210,10 @@ export async function practicePerformanceReport() {
     const members = memberDocs.docs.filter(member => member.data().groupId === group.id);
     const ids = new Set(members.map(member => member.id));
     const stats = summarize(sessions.filter(session => ids.has(session.userId)));
+    const recordedAyahsCount = [...ids].reduce((sum, uid) => sum + (ayahsByUser.get(uid)?.length || 0), 0);
     return { id: group.id, name: group.data().name || '', teacherId: group.data().teacherId,
       teacherName: group.data().teacherName || '', membersCount: members.length,
+      recordedAyahsCount,
       totalRecitationSessions: stats.totalSessions, totalWeeklySessions: stats.totalWeeklySessions,
       averageAccuracy: stats.averageAccuracy, bestAccuracy: stats.bestAccuracy, hasAttempts: stats.hasAttempts };
   });
@@ -212,6 +226,8 @@ export async function practicePerformanceReport() {
       teachersCount: userDocs.docs.filter(user => hasRole(user.data(), 'teacher')).length,
       totalRecitationSessions: stats.totalSessions, totalWeeklySessions: stats.totalWeeklySessions,
       averageAccuracy: stats.averageAccuracy, bestAccuracy: stats.bestAccuracy,
-      hasAttempts: stats.hasAttempts, verifiedMemorizedPages: 0 }, groups, students
+      hasAttempts: stats.hasAttempts, verifiedMemorizedPages: 0,
+      totalRecordedAyahs: ayahDocs.size,
+      learnersWithRecordedProgress: students.filter(student => student.recordedAyahsCount > 0).length }, groups, students
   };
 }

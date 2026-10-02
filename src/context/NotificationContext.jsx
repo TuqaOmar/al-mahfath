@@ -1,29 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import { fetchWithAuth } from '../lib/api';
 
 const NotificationContext = createContext();
-
-const DEFAULT_NOTIFICATIONS = [
-  {
-    id: 'notif_welcome',
-    title: 'مرحباً بك في منصة الْمَحْفَظَة AI 🎉',
-    message: 'تم إعداد حسابك وخطتك الذكية بنجاح. استعن بالله وابدأ رحلة الحفظ والتثبيت.',
-    type: 'system',
-    category: 'نظام',
-    timestamp: 'الآن',
-    read: false,
-    icon: '👋'
-  },
-  {
-    id: 'notif_streak_init',
-    title: 'بداية السلسلة اليومية ⚡',
-    message: 'حافظ على ورودك اليومي للحفاظ على شارة التتابع والتقدم المستمر.',
-    type: 'badge',
-    category: 'إنجاز',
-    timestamp: 'منذ ساعة',
-    read: false,
-    icon: '🔥'
-  }
-];
 
 const DEFAULT_REMINDER_SETTINGS = {
   enabled: true,
@@ -38,14 +17,8 @@ const DEFAULT_REMINDER_SETTINGS = {
 };
 
 export const NotificationProvider = ({ children }) => {
-  const [notifications, setNotifications] = useState(() => {
-    try {
-      const saved = localStorage.getItem('ma7fath_notifications');
-      return saved ? JSON.parse(saved) : DEFAULT_NOTIFICATIONS;
-    } catch {
-      return DEFAULT_NOTIFICATIONS;
-    }
-  });
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState([]);
 
   const [reminderSettings, setReminderSettings] = useState(() => {
     try {
@@ -82,14 +55,27 @@ export const NotificationProvider = ({ children }) => {
     setToast(null);
   };
 
-  // Save notifications to local storage on change
-  useEffect(() => {
+  const refreshNotifications = useCallback(async () => {
+    if (!user?.uid) { setNotifications([]); return false; }
     try {
-      localStorage.setItem('ma7fath_notifications', JSON.stringify(notifications));
-    } catch (e) {
-      console.error('Failed to save notifications', e);
+      const response = await fetchWithAuth('/api/notifications');
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل الإشعارات');
+      setNotifications(previous => [
+        ...(data.notifications || []).map(item => ({ ...item, source: 'server' })),
+        ...previous.filter(item => item.source !== 'server')
+      ]);
+      return true;
+    } catch (error) {
+      console.error('Failed to load notifications', error);
+      return false;
     }
-  }, [notifications]);
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid) { setNotifications([]); return; }
+    refreshNotifications();
+  }, [user?.uid, refreshNotifications]);
 
   // Save reminder settings to local storage on change
   useEffect(() => {
@@ -283,7 +269,8 @@ export const NotificationProvider = ({ children }) => {
       category: 'تذكير المراجعة',
       timestamp: 'الآن',
       read: false,
-      icon: '⏰'
+      icon: '⏰',
+      source: 'local-reminder'
     };
 
     setNotifications(prev => [newNotif, ...prev.filter(n => n.type !== 'reminder').slice(0, 20)]);
@@ -357,20 +344,39 @@ export const NotificationProvider = ({ children }) => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const markAsRead = (id) => {
+  const markAsRead = async (id) => {
+    const target = notifications.find(item => item.id === id);
+    if (!target) return false;
+    if (target.source === 'server') {
+      const response = await fetchWithAuth(`/api/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
+      if (!response.ok) return false;
+    }
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    return true;
   };
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    const response = await fetchWithAuth('/api/notifications/read-all', { method: 'POST' });
+    if (!response.ok) return false;
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    return true;
   };
 
-  const deleteNotification = (id) => {
+  const deleteNotification = async (id) => {
+    const target = notifications.find(item => item.id === id);
+    if (target?.source === 'server') {
+      const response = await fetchWithAuth(`/api/notifications/${encodeURIComponent(id)}`, { method: 'DELETE' });
+      if (!response.ok) return false;
+    }
     setNotifications(prev => prev.filter(n => n.id !== id));
+    return true;
   };
 
-  const clearAll = () => {
+  const clearAll = async () => {
+    const response = await fetchWithAuth('/api/notifications', { method: 'DELETE' });
+    if (!response.ok) return false;
     setNotifications([]);
+    return true;
   };
 
   const triggerCelebration = ({ title, message, badgeTitle, type = 'wird', xpBonus = 50, categoryName }) => {
@@ -424,7 +430,8 @@ export const NotificationProvider = ({ children }) => {
       timestamp: 'الآن',
       read: false,
       icon,
-      xpBonus
+      xpBonus,
+      source: 'local-achievement'
     };
 
     setNotifications(prev => [newNotif, ...prev]);
@@ -462,6 +469,7 @@ export const NotificationProvider = ({ children }) => {
   return (
     <NotificationContext.Provider value={{
       notifications,
+      refreshNotifications,
       unreadCount,
       markAsRead,
       markAllAsRead,

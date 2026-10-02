@@ -22,6 +22,7 @@ import {
 } from './firestoreRecitation.js';
 import { requireAuth, optionalAuth, requireAdmin, db as adminDb } from './middleware/auth.js';
 import groupsRouter from './routes/groups.js';
+import communityRouter from './routes/community.js';
 
 dotenv.config();
 
@@ -404,6 +405,7 @@ app.post('/api/user/:uid/portfolio/bulk-surah', requireAuth, async (req, res) =>
 // --- ADMIN ENDPOINTS ---
 
 app.use('/api', groupsRouter);
+app.use('/api', communityRouter);
 app.use('/api/admin', requireAuth, requireAdmin);
 
 app.put('/api/admin/user/:uid', async (req, res) => {
@@ -451,106 +453,6 @@ app.delete('/api/admin/user/:uid', async (req, res) => {
   }
 });
 
-// --- COMMUNITY POSTS ENDPOINTS ---
-
-app.get('/api/community/posts', async (req, res) => {
-  try {
-    const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
-    posts.forEach(p => {
-      try {
-        p.answers = JSON.parse(p.answers);
-      } catch (e) {
-        p.answers = [];
-      }
-    });
-    res.json({ success: true, posts });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
-
-app.post('/api/community/posts', async (req, res) => {
-  const { author, avatar, isAnonymous, category, content } = req.body;
-
-  try {
-    const parsedAuthor = isAnonymous ? 'هوية مخفية' : (author || 'أحمد محمد');
-    const parsedAvatar = isAnonymous ? null : avatar;
-    const parsedAnon = isAnonymous ? 1 : 0;
-    const timeAgo = 'الآن';
-
-    await runQuery(`
-      INSERT INTO community_posts (author, avatar, isAnonymous, category, timeAgo, content, likes, answers)
-      VALUES (?, ?, ?, ?, ?, ?, 0, '[]')
-    `, [parsedAuthor, parsedAvatar, parsedAnon, category || 'تدبر', timeAgo, content]);
-
-    const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
-    posts.forEach(p => {
-      try {
-        p.answers = JSON.parse(p.answers);
-      } catch (e) {
-        p.answers = [];
-      }
-    });
-
-    res.json({ success: true, post: posts[0], posts });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
-
-app.post('/api/community/posts/:id/like', async (req, res) => {
-  const postId = Number(req.params.id);
-  try {
-    const post = await getRow('SELECT * FROM community_posts WHERE id = ?', [postId]);
-    if (post) {
-      const likes = (post.likes || 0) + 1;
-      await runQuery('UPDATE community_posts SET likes = ? WHERE id = ?', [likes, postId]);
-      post.likes = likes;
-      try {
-        post.answers = JSON.parse(post.answers);
-      } catch (e) {}
-      return res.json({ success: true, likes, post });
-    }
-    res.status(404).json({ success: false, message: 'المنشور غير موجود' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
-
-app.post('/api/community/posts/:id/comment', async (req, res) => {
-  const postId = Number(req.params.id);
-  const { author, text } = req.body;
-
-  try {
-    const post = await getRow('SELECT * FROM community_posts WHERE id = ?', [postId]);
-    if (post) {
-      let answers = [];
-      try {
-        answers = JSON.parse(post.answers) || [];
-      } catch (e) {}
-
-      const newAnswer = {
-        id: Date.now(),
-        author: author || 'أحمد محمد',
-        text
-      };
-      answers.push(newAnswer);
-
-      await runQuery('UPDATE community_posts SET answers = ? WHERE id = ?', [JSON.stringify(answers), postId]);
-      post.answers = answers;
-
-      return res.json({ success: true, answer: newAnswer, post });
-    }
-    res.status(404).json({ success: false, message: 'المنشور غير موجود' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
-
 // --- QURAN MAP 604 PAGES ENDPOINT ---
 
 app.get('/api/quran/pages', async (req, res) => {
@@ -569,34 +471,6 @@ app.post('/api/quran/pages/:pageNumber/review', requireAuth, (req, res) => {
   res.status(410).json({ success: false, message: 'استخدم /api/ai/recitation-check مع sessionId لتسجيل محاولة مقارنة محسوبة في الخادم' });
 });
 
-
-app.delete('/api/community/posts/:id', requireAuth, async (req, res) => {
-  const postId = Number(req.params.id);
-  try {
-    const post = await getRow('SELECT * FROM community_posts WHERE id = ?', [postId]);
-    if (!post) {
-      return res.status(404).json({ success: false, message: 'المنشور غير موجود' });
-    }
-
-    let isAdmin = false;
-    const userRow = await getRow('SELECT role, name FROM users WHERE uid = ?', [req.user.uid]);
-    if (userRow && userRow.role === 'admin') isAdmin = true;
-
-    if (!isAdmin && post.author !== 'هوية مخفية' && post.author !== userRow?.name) {
-      return res.status(403).json({ success: false, message: 'لا تملك صلاحية حذف هذا المنشور' });
-    }
-
-    await runQuery('DELETE FROM community_posts WHERE id = ?', [postId]);
-    const posts = await allRows('SELECT * FROM community_posts ORDER BY id DESC');
-    posts.forEach(p => {
-      try { p.answers = JSON.parse(p.answers); } catch (e) { p.answers = []; }
-    });
-    res.json({ success: true, posts });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
 
 // --- AI CHATBOT ENDPOINT ---
 

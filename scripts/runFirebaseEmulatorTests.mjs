@@ -15,6 +15,9 @@ const config = JSON.parse(readFileSync(path.join(root, 'firebase.emulator.json')
 const rulesPath = path.join(runDir, 'firestore.rules');
 writeFileSync(rulesPath, readFileSync(path.join(root, 'firestore.rules')));
 config.firestore.rules = rulesPath;
+const storageRulesPath = path.join(runDir, 'storage.rules');
+writeFileSync(storageRulesPath, readFileSync(path.join(root, 'storage.rules')));
+config.storage.rules = storageRulesPath;
 const configPath = path.join(runDir, 'firebase.json');
 writeFileSync(configPath, JSON.stringify(config));
 const javaRoot = path.join(root, '.tools', 'java');
@@ -50,7 +53,7 @@ const command = existsSync(cliJs) ? process.execPath : standalone;
 const args = [
   ...(existsSync(cliJs) ? [cliJs] : []),
   'emulators:exec', '--project', env.GCLOUD_PROJECT, '--config', configPath,
-  '--only', 'auth,firestore', `"${process.execPath}" --test "${path.join(root, 'tests', 'emulator-safety.test.js')}" "${path.join(root, 'tests', browserTest ? 'firebase-browser.test.js' : 'firebase-emulator.test.js')}"`
+  '--only', browserTest ? 'auth,firestore,storage' : 'auth,firestore', `"${process.execPath}" --test "${path.join(root, 'tests', 'emulator-safety.test.js')}" "${path.join(root, 'tests', browserTest ? 'firebase-browser.test.js' : 'firebase-emulator.test.js')}"`
 ];
 if (!existsSync(command)) throw new Error('Install firebase-tools locally or download .tools/firebase.exe');
 const result = spawnSync(command, args, { env, stdio: 'inherit' });

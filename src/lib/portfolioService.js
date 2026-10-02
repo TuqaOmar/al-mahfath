@@ -1,6 +1,5 @@
-import { doc, getDoc, setDoc, collection, getDocs, onSnapshot, writeBatch } from 'firebase/firestore';
-import { db, auth } from './firebase';
-import { fetchWithAuth } from './api';
+import { doc, setDoc, collection, getDocs, onSnapshot, writeBatch } from 'firebase/firestore';
+import { db } from './firebase';
 import surahsCatalog from '../utils/quranSurahsList.json';
 
 /**
@@ -138,20 +137,8 @@ export async function fetchUserPortfolio(userId, memorizedPagesCount = 0) {
       return firestorePortfolio;
     }
 
-    // 2. Try REST backend
-    const res = await fetchWithAuth(`/api/user/${userId}/portfolio`);
-    if (res.ok) {
-      const json = await res.json();
-      if (json.success && Array.isArray(json.portfolio) && json.portfolio.length > 0) {
-        const restPortfolio = {};
-        json.portfolio.forEach(item => {
-          const key = makeAyahKey(item.surahNumber, item.ayahNumber);
-          restPortfolio[key] = item;
-        });
-        localStorage.setItem(cacheKey, JSON.stringify(restPortfolio));
-        return restPortfolio;
-      }
-    }
+    localStorage.setItem(cacheKey, JSON.stringify({}));
+    return {};
   } catch (error) {
     console.warn('Network fetch error for portfolio, using local fallback:', error);
   }
@@ -161,14 +148,7 @@ export async function fetchUserPortfolio(userId, memorizedPagesCount = 0) {
     return localData;
   }
 
-  // 4. Generate initial portfolio based on memorized pages count
-  const initial = generateInitialPortfolioFromPages(memorizedPagesCount);
-  if (Object.keys(initial).length > 0) {
-    localStorage.setItem(cacheKey, JSON.stringify(initial));
-    // Persist async to Firestore and REST
-    saveBulkPortfolio(userId, initial).catch(e => console.warn('Background sync failed:', e));
-  }
-  return initial;
+  return {};
 }
 
 /**
@@ -180,7 +160,7 @@ export async function saveAyahToPortfolio(userId, ayahData) {
   const key = makeAyahKey(ayahData.surahNumber, ayahData.ayahNumber);
   const cacheKey = `ma7fath_portfolio_${userId}`;
 
-  // Update local cache immediately for zero-latency UI
+  // Firestore is the source of truth. Cache only after the committed write.
   let currentPortfolio = {};
   try {
     const cached = localStorage.getItem(cacheKey);
@@ -194,25 +174,10 @@ export async function saveAyahToPortfolio(userId, ayahData) {
     updatedAt: new Date().toISOString()
   };
 
+  const docRef = doc(db, 'users', userId, 'ayah_progress', key);
+  await setDoc(docRef, updatedRecord, { merge: true });
   currentPortfolio[key] = updatedRecord;
   localStorage.setItem(cacheKey, JSON.stringify(currentPortfolio));
-
-  // Sync to Firestore
-  try {
-    const docRef = doc(db, 'users', userId, 'ayah_progress', key);
-    await setDoc(docRef, updatedRecord, { merge: true });
-  } catch (err) {
-    console.warn('Firestore write error for ayah:', err);
-  }
-
-  // Sync to backend REST API
-  try {
-    fetchWithAuth(`/api/user/${userId}/portfolio/ayah`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updatedRecord)
-    }).catch(() => {});
-  } catch (e) {}
 
   return updatedRecord;
 }
@@ -231,39 +196,21 @@ export async function saveBulkPortfolio(userId, portfolioMap) {
   } catch (e) {}
 
   const merged = { ...current, ...portfolioMap };
-  localStorage.setItem(cacheKey, JSON.stringify(merged));
 
   // Batch write to Firestore (in chunks of up to 400 docs)
   const items = Object.values(portfolioMap);
-  try {
-    const chunkSize = 300;
-    for (let i = 0; i < items.length; i += chunkSize) {
-      const chunk = items.slice(i, i + chunkSize);
-      const batch = writeBatch(db);
-      chunk.forEach(item => {
-        const key = makeAyahKey(item.surahNumber, item.ayahNumber);
-        const docRef = doc(db, 'users', userId, 'ayah_progress', key);
-        batch.set(docRef, { ...item, userId, updatedAt: new Date().toISOString() }, { merge: true });
-      });
-      await batch.commit();
-    }
-  } catch (err) {
-    console.warn('Batch Firestore write error:', err);
+  const chunkSize = 300;
+  for (let i = 0; i < items.length; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    chunk.forEach(item => {
+      const key = makeAyahKey(item.surahNumber, item.ayahNumber);
+      const docRef = doc(db, 'users', userId, 'ayah_progress', key);
+      batch.set(docRef, { ...item, userId, updatedAt: new Date().toISOString() }, { merge: true });
+    });
+    await batch.commit();
   }
-
-  // Also sync to REST
-  try {
-    if (items.length > 0 && items[0]?.surahNumber) {
-      fetchWithAuth(`/api/user/${userId}/portfolio/bulk-surah`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          surahNumber: items[0].surahNumber,
-          ayahs: items
-        })
-      }).catch(() => {});
-    }
-  } catch (e) {}
+  localStorage.setItem(cacheKey, JSON.stringify(merged));
 
   return merged;
 }

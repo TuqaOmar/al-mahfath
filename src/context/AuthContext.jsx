@@ -14,8 +14,21 @@ const AuthContext = createContext();
 
 export const useAuth = () => useContext(AuthContext);
 
+const roleOrder = ['user', 'teacher', 'admin'];
+const grantedRoles = (profile) => roleOrder.filter(role =>
+  profile?.role === role || profile?.roles?.[role] === true
+);
+const initialActiveRole = (profile) => {
+  const available = grantedRoles(profile);
+  if (!available.length) return 'user';
+  const saved = localStorage.getItem(`ma7fath_active_role_${profile.uid}`);
+  if (available.includes(saved)) return saved;
+  return available.includes(profile?.role) ? profile.role : available[0];
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [activeRole, setActiveRoleState] = useState('user');
   const [loading, setLoading] = useState(true);
 
   // Sync with Firebase Auth State
@@ -58,6 +71,7 @@ export const AuthProvider = ({ children }) => {
 
           localStorage.setItem('ma7fath_user', JSON.stringify(userData));
           setUser(userData);
+          setActiveRoleState(initialActiveRole(userData));
         } catch (error) {
           console.error("Error fetching user data from Firestore:", error);
           // Fallback to basic info if Firestore fails
@@ -71,6 +85,7 @@ export const AuthProvider = ({ children }) => {
       } else {
         localStorage.removeItem('ma7fath_user');
         setUser(null);
+        setActiveRoleState('user');
       }
       setLoading(false);
     });
@@ -242,6 +257,15 @@ export const AuthProvider = ({ children }) => {
     return false;
   };
 
+  const setActiveRole = (roleName) => {
+    if (!user || !grantedRoles(user).includes(roleName)) {
+      return { success: false, message: 'Role is not granted to this account' };
+    }
+    localStorage.setItem(`ma7fath_active_role_${user.uid}`, roleName);
+    setActiveRoleState(roleName);
+    return { success: true, role: roleName };
+  };
+
   const refreshUserData = async () => {
     if (auth.currentUser) {
       try {
@@ -250,6 +274,9 @@ export const AuthProvider = ({ children }) => {
         if (userDocSnap.exists()) {
           const freshData = { uid: auth.currentUser.uid, ...userDocSnap.data() };
           setUser(freshData);
+          if (!grantedRoles(freshData).includes(activeRole)) {
+            setActiveRoleState(initialActiveRole(freshData));
+          }
           localStorage.setItem('ma7fath_user', JSON.stringify(freshData));
           return { success: true, user: freshData };
         }
@@ -261,7 +288,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, signup, loginWithGoogle, logout, deleteAccount, updateUserData, refreshUserData, hasRole }}>
+    <AuthContext.Provider value={{ user, activeRole, availableRoles: grantedRoles(user), setActiveRole, loading, login, signup, loginWithGoogle, logout, deleteAccount, updateUserData, refreshUserData, hasRole }}>
       {!loading && children}
     </AuthContext.Provider>
   );

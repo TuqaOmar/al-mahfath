@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { fetchWithAuth } from '../lib/api';
 import { LearningStyleProfiler } from './LearningStyleProfiler';
 import { JuzMultiSelector } from './JuzMultiSelector';
 import { 
@@ -22,6 +21,8 @@ export const MyPlanManager = () => {
   const { user, updateUserData } = useAuth();
   const { lang, isRTL } = useLanguage();
   const [isSaved, setIsSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const preferences = user?.preferences || {};
 
@@ -63,22 +64,15 @@ export const MyPlanManager = () => {
       manualOldReviewTarget
     };
 
-    updateUserData({
-      preferences: updatedPreferences
-    });
-
-    if (user?.uid) {
-      try {
-        await fetchWithAuth(`/api/user/${user.uid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ preferences: updatedPreferences })
-        });
-      } catch (e) {
-        console.log('Error saving plan updates:', e);
-      }
+    setIsSaving(true);
+    setSaveError('');
+    setIsSaved(false);
+    const result = await updateUserData({ preferences: updatedPreferences });
+    setIsSaving(false);
+    if (!result?.success) {
+      setSaveError(lang === 'ar' ? 'تعذر حفظ الخطة؛ بقيت الخطة السابقة.' : 'Could not save the plan; the previous plan was kept.');
+      return;
     }
-
     setIsSaved(true);
     setTimeout(() => setIsSaved(false), 3000);
   };
@@ -114,6 +108,8 @@ export const MyPlanManager = () => {
 
         <button
           onClick={handleSavePlan}
+          disabled={isSaving}
+          data-testid="save-plan"
           style={{
             padding: '12px 24px',
             borderRadius: '12px',
@@ -130,12 +126,14 @@ export const MyPlanManager = () => {
           }}
         >
           {isSaved ? <CheckCircle size={18} /> : <Save size={18} />}
-          {isSaved 
+          {isSaving ? (lang === 'ar' ? 'جاري الحفظ...' : 'Saving...') : isSaved
             ? (lang === 'ar' ? 'تم حفظ التعديلات!' : 'Saved!') 
             : (lang === 'ar' ? 'حفظ الخطة المعدلة' : 'Save Plan Changes')
           }
         </button>
       </div>
+      {isSaved && <div role="status" data-testid="plan-save-success" style={{ color: '#047857', fontWeight: 700 }}>{lang === 'ar' ? 'تم حفظ الخطة في Firestore.' : 'Plan saved in Firestore.'}</div>}
+      {saveError && <div role="alert" data-testid="plan-save-error" style={{ color: '#B91C1C', fontWeight: 700 }}>{saveError}</div>}
 
       {/* 1. Unit Type Selector */}
       <div style={{ padding: '24px', borderRadius: '18px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
@@ -154,7 +152,12 @@ export const MyPlanManager = () => {
           ].map((u) => (
             <div
               key={u.id}
+              role="button"
+              tabIndex={0}
+              data-testid={`plan-unit-${u.id}`}
+              aria-pressed={unitType === u.id}
               onClick={() => setUnitType(u.id)}
+              onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') setUnitType(u.id); }}
               style={{
                 padding: '16px',
                 borderRadius: '14px',
@@ -237,6 +240,10 @@ export const MyPlanManager = () => {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '20px' }}>
           <div
+            role="button"
+            tabIndex={0}
+            data-testid="plan-mode-ai"
+            aria-pressed={planCreatorMode === 'ai'}
             onClick={() => setPlanCreatorMode('ai')}
             style={{
               padding: '18px',
@@ -256,6 +263,10 @@ export const MyPlanManager = () => {
           </div>
 
           <div
+            role="button"
+            tabIndex={0}
+            data-testid="plan-mode-manual"
+            aria-pressed={planCreatorMode === 'manual'}
             onClick={() => setPlanCreatorMode('manual')}
             style={{
               padding: '18px',
@@ -282,6 +293,7 @@ export const MyPlanManager = () => {
                 {lang === 'ar' ? 'مستهدف الحفظ الجديد اليومي (يدوياً):' : 'Manual Daily New Target:'}
               </label>
               <input
+                aria-label="مستهدف الحفظ الجديد اليومي"
                 type="text"
                 value={manualNewTarget}
                 onChange={(e) => setManualNewTarget(e.target.value)}
@@ -293,6 +305,7 @@ export const MyPlanManager = () => {
                 {lang === 'ar' ? 'مستهدف المراجعة القديمة اليومي (يدوياً):' : 'Manual Daily Old Review Target:'}
               </label>
               <input
+                aria-label="مستهدف المراجعة القديمة اليومي"
                 type="text"
                 value={manualOldReviewTarget}
                 onChange={(e) => setManualOldReviewTarget(e.target.value)}
