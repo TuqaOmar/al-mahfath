@@ -64,7 +64,9 @@ export const AdminPerformanceDashboard = () => {
     { key: 'totalRecitationSessions', label: text('إجمالي جلسات التسميع المسجلة', 'All recorded recitation sessions'), icon: Clock },
     { key: 'totalWeeklySessions', label: text('الجلسات في آخر 7 أيام', 'Sessions in the last 7 days'), icon: Clock },
     { key: 'averageAccuracy', label: text('متوسط مطابقة النص', 'Average text match'), icon: Target, suffix: '%', requiresAttempts: true },
-    { key: 'groupsCount', label: text('عدد المجموعات المسجلة', 'Registered groups'), icon: Layers }
+    { key: 'groupsCount', label: text('عدد المجموعات المسجلة', 'Registered groups'), icon: Layers },
+    { key: 'totalRecordedAyahs', label: text('سجلات تقدم الآيات', 'Recorded ayah progress'), icon: Target },
+    { key: 'learnersWithRecordedProgress', label: text('متعلمين لديهم تقدم آيات', 'Learners with ayah progress'), icon: Users }
   ];
 
   return (

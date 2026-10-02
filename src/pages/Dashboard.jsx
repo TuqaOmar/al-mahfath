@@ -94,18 +94,14 @@ const quranHadiths = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, logout, deleteAccount, updateUserData, refreshUserData } = useAuth();
+  const { user, activeRole, logout, deleteAccount, updateUserData, refreshUserData } = useAuth();
   const { lang, setLang, t, isRTL } = useLanguage();
-  const getUserDefaultTab = (u) => {
-    if (!u) return 'home';
-    // Multi-role support: check both role string and roles map
-    const isAdmin = u.role === 'admin' || (u.roles && u.roles.admin === true);
-    const isTeacher = u.role === 'teacher' || (u.roles && u.roles.teacher === true);
-    if (isAdmin) return 'admin-dashboard';
-    if (isTeacher) return 'teacher-dashboard';
+  const getUserDefaultTab = (role) => {
+    if (role === 'admin') return 'admin-dashboard';
+    if (role === 'teacher') return 'teacher-dashboard';
     return 'home';
   };
-  const [activeTab, setActiveTab] = useState(() => getUserDefaultTab(user));
+  const [activeTab, setActiveTab] = useState(() => getUserDefaultTab(activeRole));
   const [selectedQuranPage, setSelectedQuranPage] = useState(2);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -181,28 +177,19 @@ const Dashboard = () => {
   const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
 
   // Set default tab only when user logs in or user role changes
-  const lastUserRoleRef = useRef(user?.role);
+  const lastUserRoleRef = useRef(activeRole);
   const lastUserIdRef = useRef(user?.uid);
 
   useEffect(() => {
     const isNewUser = user?.uid && user?.uid !== lastUserIdRef.current;
-    const isRoleChanged = user?.role !== lastUserRoleRef.current;
+    const isRoleChanged = activeRole !== lastUserRoleRef.current;
 
     if (isNewUser || isRoleChanged) {
       lastUserIdRef.current = user?.uid;
-      lastUserRoleRef.current = user?.role;
-      // Multi-role support: check both role string and roles map
-      const isAdmin = user?.role === 'admin' || (user?.roles && user?.roles.admin === true);
-      const isTeacher = user?.role === 'teacher' || (user?.roles && user?.roles.teacher === true);
-      if (isAdmin) {
-        setActiveTab('admin-dashboard');
-      } else if (isTeacher) {
-        setActiveTab('teacher-dashboard');
-      } else {
-        setActiveTab('home');
-      }
+      lastUserRoleRef.current = activeRole;
+      setActiveTab(getUserDefaultTab(activeRole));
     }
-  }, [user?.uid, user?.role]);
+  }, [user?.uid, activeRole]);
 
   // Track screen size changes for responsiveness (Laptop & Mobile)
   useEffect(() => {
@@ -1032,7 +1019,8 @@ const Dashboard = () => {
                 title={isRTL ? 'عرض وتعديل الملف الشخصي' : 'View & edit profile'}
               >
                 <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <img 
+                  <img
+                    data-testid="header-profile-photo"
                     src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
                     alt="Profile" 
                     style={{ 

@@ -19,9 +19,9 @@ import { useAuth } from '../context/AuthContext';
 
 export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfile, isProfileOpen = false }) => {
   const { lang, isRTL } = useLanguage();
-  const { user } = useAuth();
+  const { activeRole } = useAuth();
 
-  const userRole = user?.role || 'user';
+  const userRole = activeRole || 'user';
 
   // Role-specific navigation tabs strictly respecting Section 10 of requirements
   let navTabs = [];

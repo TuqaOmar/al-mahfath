@@ -122,6 +122,26 @@ test('rules permit profile edits and isolate another student progress', async ()
   assert.equal((await firestore('multi-1', 'users/student-2/portfolio/test')).status, 200);
 });
 
+test('recorded ayah progress is owner-written, scoped, and visible in teacher/admin reports', async () => {
+  const valid = { userId: 'student-1', surahNumber: 2, ayahNumber: 5, status: 'review', source: 'student_recorded', updatedAt: new Date().toISOString() };
+  assert.equal((await firestore('student-1', 'users/student-1/ayah_progress/2_5', valid)).status, 200);
+  assert.equal((await firestore('student-2', 'users/student-1/ayah_progress/2_6', { ...valid, ayahNumber: 6 })).status, 403);
+  assert.equal((await firestore('student-1', 'users/student-1/ayah_progress/2_7', { ...valid, userId: 'student-2', ayahNumber: 7 })).status, 403);
+  assert.equal((await firestore('student-1', 'users/student-1/ayah_progress/2_8', { ...valid, ayahNumber: 8, status: 'certified' })).status, 403);
+  assert.equal((await firestore('teacher-1', 'users/student-1/ayah_progress/2_5')).status, 200);
+  assert.equal((await firestore('teacher-2', 'users/student-1/ayah_progress/2_5')).status, 403);
+  await db.doc('users/student-1').update({ preferences: { unitType: 'surahs', planCreatorMode: 'manual', manualNewTarget: '3 ayahs' } });
+  const teacherView = await api('teacher-1', '/api/teacher/teacher-1/student/student-1', 200);
+  assert.equal(teacherView.student.recordedProgress.total, 1);
+  assert.equal(teacherView.student.recordedProgress.review, 1);
+  assert.equal(teacherView.student.learningPlan.manualNewTarget, '3 ayahs');
+  const report = await api('admin-1', '/api/admin/memorization-performance', 200);
+  assert.equal(report.stats.totalRecordedAyahs, 1);
+  assert.equal(report.stats.learnersWithRecordedProgress, 1);
+  assert.equal(report.stats.verifiedMemorizedPages, 0);
+  assert.equal((await db.doc('users/student-1').get()).data().xp, 100);
+});
+
 test('actual Auth emulator tokens enforce server role and teacher scope', async () => {
   for (const uid of ['student-1', 'teacher-1', 'admin-1', 'multi-1']) {
     const privileged = ['admin-1', 'multi-1'].includes(uid);

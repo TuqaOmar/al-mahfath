@@ -4,14 +4,14 @@ import { X, User, Mail, Save, CheckCircle2, Sparkles, Trophy, Flame, Shield, Cam
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { storage } from '../lib/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
-import { fetchWithAuth } from '../lib/api';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 export const UserProfileModal = ({ isOpen, onClose }) => {
   const { user, updateUserData } = useAuth();
   const { lang, isRTL } = useLanguage();
 
   const [name, setName] = useState('');
   const [photoURL, setPhotoURL] = useState('');
+  const [previewURL, setPreviewURL] = useState('');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -23,11 +23,12 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
     if (user && isOpen) {
       setName(user.name || '');
       setPhotoURL(user.photoURL || '');
+      setPreviewURL('');
       setUploadProgress(0);
       setSuccessMsg('');
       setErrorMsg('');
     }
-  }, [user, isOpen]);
+  }, [user?.uid, isOpen]);
 
   if (!isOpen) return null;
 
@@ -45,45 +46,38 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       return;
     }
 
+    let localPreview = '';
+    let uploadedRef = null;
     try {
       setErrorMsg('');
+      setSuccessMsg('');
+      localPreview = URL.createObjectURL(file);
+      setPreviewURL(localPreview);
       setUploadProgress(1); // Start progress
       
-      const fileExt = file.name.split('.').pop();
-      const fileName = `avatars/${user.uid}_${Date.now()}.${fileExt}`;
+      const fileExt = (file.name.split('.').pop() || 'img').replace(/[^a-z0-9]/gi, '').toLowerCase();
+      const fileName = `avatars/${user.uid}/${Date.now()}.${fileExt}`;
       const storageRef = ref(storage, fileName);
+      uploadedRef = storageRef;
       
-      const uploadTask = uploadBytesResumable(storageRef, file);
-
-      uploadTask.on('state_changed', 
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error('Upload failed:', error);
-          setErrorMsg(isRTL ? 'فشل رفع الصورة، يرجى المحاولة مرة أخرى' : 'Failed to upload image, please try again');
-          setUploadProgress(0);
-        },
-        async () => {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          setPhotoURL(downloadURL);
-          setUploadProgress(0);
-          setSuccessMsg(isRTL ? 'تم رفع الصورة بنجاح!' : 'Image uploaded successfully!');
-          
-          // Automatically update the user profile so they don't have to click Save just for the avatar
-          try {
-            await updateUserData({ photoURL: downloadURL });
-          } catch (e) {
-            console.error('Error auto-saving avatar:', e);
-          }
-
-          setTimeout(() => setSuccessMsg(''), 3000);
-        }
-      );
+      setUploadProgress(25);
+      const uploaded = await uploadBytes(storageRef, file, { contentType: file.type });
+      setUploadProgress(90);
+      const downloadURL = await getDownloadURL(uploaded.ref);
+      const saved = await updateUserData({ photoURL: downloadURL });
+      if (!saved?.success) throw new Error(saved?.message || 'تعذر حفظ رابط الصورة');
+      setPhotoURL(downloadURL);
+      setPreviewURL('');
+      URL.revokeObjectURL(localPreview);
+      setUploadProgress(0);
+      setSuccessMsg(isRTL ? 'تم رفع الصورة وحفظها في الملف الشخصي' : 'Photo uploaded and saved to your profile');
     } catch (err) {
       console.error(err);
-      setErrorMsg(isRTL ? 'حدث خطأ غير متوقع' : 'An unexpected error occurred');
+      if (uploadedRef) await deleteObject(uploadedRef).catch(() => {});
+      if (localPreview) URL.revokeObjectURL(localPreview);
+      setPhotoURL(user?.photoURL || '');
+      setPreviewURL('');
+      setErrorMsg(isRTL ? 'فشل رفع الصورة أو حفظها؛ بقيت الصورة السابقة' : 'Upload or profile save failed; the previous photo was kept');
       setUploadProgress(0);
     }
   };
@@ -104,23 +98,11 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       const updatedPhoto = photoURL || user?.photoURL;
 
       // 1. Update AuthContext & localStorage
-      await updateUserData({
+      const saved = await updateUserData({
         name: updatedName,
         photoURL: updatedPhoto
       });
-
-      // 2. Sync with Backend Database API
-      const targetUid = user?.uid;
-      if (targetUid) {
-        await fetchWithAuth(`/api/user/${targetUid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: updatedName,
-            photoURL: updatedPhoto
-          })
-        });
-      }
+      if (!saved?.success) throw new Error(saved?.message || 'تعذر حفظ الملف الشخصي');
 
       setSuccessMsg(isRTL ? 'تم حفظ وتحديث الاسم والملف الشخصي بنجاح! ✨' : 'Profile updated successfully! ✨');
       setTimeout(() => {
@@ -224,7 +206,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
 
           {/* Feedback messages */}
           {successMsg && (
-            <div style={{
+            <div role="status" data-testid="profile-success" style={{
               padding: '12px 16px',
               borderRadius: '12px',
               background: 'rgba(16, 185, 129, 0.12)',
@@ -243,7 +225,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
           )}
 
           {errorMsg && (
-            <div style={{
+            <div role="alert" data-testid="profile-error" style={{
               padding: '12px 16px',
               borderRadius: '12px',
               background: 'rgba(239, 68, 68, 0.12)',
@@ -272,7 +254,8 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
           }}>
             <div style={{ position: 'relative' }}>
               <img
-                src={photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'}
+                data-testid="profile-photo-preview"
+                src={previewURL || photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'}
                 alt="Avatar"
                 style={{
                   width: '80px',
@@ -308,6 +291,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
               </button>
               <input 
                 type="file" 
+                aria-label={isRTL ? 'اختيار صورة شخصية' : 'Choose profile photo'}
                 ref={fileInputRef} 
                 onChange={handleImageChange} 
                 accept="image/*" 

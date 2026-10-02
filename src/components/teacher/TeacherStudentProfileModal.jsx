@@ -63,6 +63,8 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   };
   const stats = student?.recitationStats || {};
   const recentSessions = Array.isArray(student?.recentSessions) ? student.recentSessions : [];
+  const recordedProgress = student?.recordedProgress || {};
+  const learningPlan = student?.learningPlan || {};
 
   const statusColor = student?.status === 'needs_attention' 
     ? '#F59E0B' 
@@ -169,11 +171,11 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                 gap: '16px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <img
+                  {student.photoURL ? <img
                     src={student.photoURL}
                     alt={student.name}
                     style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `2.5px solid ${statusColor}` }}
-                  />
+                  /> : <span style={{ width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2.5px solid ${statusColor}`, color: statusColor, fontSize: '20px', fontWeight: 800 }} aria-label="صورة رمزية للطالبة">{student.name?.slice(0, 1) || '؟'}</span>}
                   <div>
                     <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {student.name}
@@ -265,6 +267,21 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     <div style={{ marginTop: '10px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
                       الهدف الحالي: <strong style={{ color: 'var(--text-primary)' }}>{student.currentTarget || 'غير محدد'}</strong>
                     </div>
+                  </div>
+
+                  <div data-testid="teacher-student-learning-plan" style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>خطة الطالب المحفوظة</strong>
+                    <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      الوحدة: <span data-testid="teacher-plan-unit">{learningPlan.unitType || '—'}</span> • النمط: <span data-testid="teacher-plan-mode">{learningPlan.planCreatorMode || '—'}</span> • الهدف اليومي: <span data-testid="teacher-plan-target">{learningPlan.planCreatorMode === 'manual' ? (learningPlan.manualNewTarget || '—') : (learningPlan.dailyTarget || '—')}</span>
+                    </div>
+                  </div>
+
+                  <div data-testid="teacher-student-ayah-progress" style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>تقدم الآيات المسجل ذاتيًا</strong>
+                    <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      الإجمالي: <span data-testid="teacher-recorded-ayahs">{numberLabel(recordedProgress.total ?? 0)}</span> • متقنة: {numberLabel(recordedProgress.memorized ?? 0)} • قيد الحفظ: {numberLabel(recordedProgress.learning ?? 0)} • مراجعة: {numberLabel(recordedProgress.review ?? 0)}
+                    </div>
+                    <p style={{ margin: '8px 0 0', fontSize: '11.5px', color: 'var(--text-secondary)' }}>هذا سجل الطالب، وليس اعتمادًا من المعلمة أو نتيجة لمحاولة التدريب.</p>
                   </div>
 
                   {/* 4-Box Metric Highlights */}

@@ -88,10 +88,26 @@ router.get('/teacher/:teacherId/student/:studentId', requireAuth, teacherScope, 
   if (!isAdmin(req.user) && (!member.exists || member.data().teacherId !== req.params.teacherId)) throw new GroupError(403, 'الطالب غير معيّن لهذا المعلم');
   const student = await db.doc(`users/${req.params.studentId}`).get();
   if (!student.exists) throw new GroupError(404, 'حساب الطالب غير موجود');
-  const [recitationStats, recentSessions] = await Promise.all([
-    readPracticeStats(req.params.studentId), readPracticeHistory(req.params.studentId, { limit: 10 })
+  const [recitationStats, recentSessions, ayahProgress] = await Promise.all([
+    readPracticeStats(req.params.studentId), readPracticeHistory(req.params.studentId, { limit: 10 }),
+    db.collection(`users/${req.params.studentId}/ayah_progress`).get()
   ]);
-  success(res, { student: { ...publicUser(student), memorizedJuz: student.data().totalJuz || 0, recitationStats, recentSessions } });
+  const recordedProgress = ayahProgress.docs.reduce((summary, item) => {
+    const status = item.data().status;
+    summary.total += 1;
+    if (status in summary) summary[status] += 1;
+    if (!summary.updatedAt || item.data().updatedAt > summary.updatedAt) summary.updatedAt = item.data().updatedAt;
+    return summary;
+  }, { total: 0, memorized: 0, learning: 0, review: 0, unmemorized: 0, updatedAt: null });
+  const preferences = student.data().preferences || {};
+  const learningPlan = {
+    unitType: preferences.unitType || null, planCreatorMode: preferences.planCreatorMode || null,
+    dailyTarget: preferences.dailyTarget || null, manualNewTarget: preferences.manualNewTarget || null,
+    manualOldReviewTarget: preferences.manualOldReviewTarget || null,
+    oldReviewDailyTarget: preferences.oldReviewDailyTarget || null
+  };
+  success(res, { student: { ...publicUser(student), memorizedJuz: student.data().totalJuz || 0,
+    recitationStats, recentSessions, recordedProgress, learningPlan } });
 }));
 router.get('/teacher/:teacherId/dashboard', requireAuth, teacherScope, route(async (req, res) => {
   const [students, teacher] = await Promise.all([teacherStudents(req.params.teacherId), db.doc(`users/${req.params.teacherId}`).get()]);

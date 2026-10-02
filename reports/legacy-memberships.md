@@ -8,7 +8,7 @@
 |---|---|---|---|
 | `server/db.json` | أساسي محلي | users: 3؛ سجلات مؤشرات عضوية: 0 | d474671ce57395993c6c16f937b35a485d80f87e2254372c11feaf8459dc4a86 |
 | `server/safar_data.json` | أساسي محلي | groups: 3، teachers: 3، students: 25، independentUsers: 3، enrollmentRequests: 3؛ سجلات مؤشرات عضوية: 25 | 30ac0aad7f218fdf46cf3258ce40b48a37374103261279379cb408569a6448e2 |
-| `server/db.backup.json` | نسخة احتياطية؛ خارج الإجماليات | users: 3؛ سجلات مؤشرات عضوية: 0؛ مختلف عن الأصل بايتًا | 71333e9d57f1b996227366b41c79ae6a465fc7be72e6e2486c363cc1e51da4c0 |
+| `server/db.backup.json` | نسخة احتياطية؛ خارج الإجماليات | users: 3؛ سجلات مؤشرات عضوية: 0؛ مختلف عن الأصل بايتًا | 8b17faf14eb42cf7e632a0e2da5531f22889ee2a284314af80d8ff7e29743e90 |
 | `server/safar_data.backup.json` | نسخة احتياطية؛ خارج الإجماليات | JSON غير صالح عند الموضع 45350؛ مختلف عن الأصل بايتًا | 785e2650d2365bd7b7087ef88ae7be5bef48c54526f831b8fe079cf3db8d8ce5 |
 
 ## إجماليات المصادر الأساسية

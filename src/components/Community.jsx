@@ -23,24 +23,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { fetchWithAuth } from '../lib/api';
-import { db } from '../lib/firebase';
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  setDoc, 
-  addDoc, 
-  updateDoc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  serverTimestamp 
-} from 'firebase/firestore';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 
 export const Community = ({ setActiveTab }) => {
   const [activeSubTab, setActiveSubTab] = useState('posts'); // 'posts' | 'leaderboard'
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
 
   const currentPage = (user?.memorizedPagesCount || 0) + 1;
   const currentSurah = getSurahNameForPage(currentPage);
@@ -58,97 +45,29 @@ export const Community = ({ setActiveTab }) => {
   // Comment input state per post
   const [commentInputs, setCommentInputs] = useState({});
 
-  // The ONE Inspiring Single Post (Default Seed)
-  const singleInspiringPost = {
-    id: 1,
-    firestoreId: 'pinned_quran_community_1',
-    author: 'مشرف مجتمع المحفظ القرآني',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=QuranCommunity',
-    isAnonymous: 0,
-    isPinned: true,
-    category: 'تثبيت وتدبر',
-    timeAgo: 'منشور مثبت 📌',
-    content: 'قال رسول الله ﷺ: «تَعَاهَدُوا هَذَا الْقُرْآنَ، فَوَالَّذِي نَفْسُ مُحَمَّدٍ بِيَدِهِ لَهُوَ أَشَدُّ تَفَلُّتًا مِنَ الْإِبِلِ فِي عُقُلِهَا».\n\n🌿 إلى كل صاحب همّة يمر من هنا:\nكم من صفحة حفظتها ثم شعرت بثقل في مراجعتها؟ وكم من آية بكى قلبك عند تدبرها؟\nاعلم أن القرآن عزيز.. لا يُنال بفضول الأوقات، بل يُنال بصدق النيات، وصبر المجاهدة، ولذة المناجاة في صلاة الليل.\n\n💬 شاركونا في هذا المنشور الموحّد:\n1️⃣ ما هو أكبر تحدٍ يواجهك حالياً في تثبيت حفظك؟\n2️⃣ وما هي الآية أو القاعدة التي إذا تذكرتها هان عليك التعب وشحذت همتك؟\n\n🕊️ اكتب تجربتك أو سؤالك، ولنتعاهد كتاب الله معاً وندعو لبعضنا بالثبات 🤍🤲',
-    likes: 128,
-    answers: [
-      { 
-        id: 101, 
-        author: 'د. عبد الرحمن (معلم قرآن)', 
-        text: 'نصيحة من تجربة: أعظم ما يثبت الحفظ في صدرك هو (الحصن الخامس: الصلاة بالمحفوظ في ركعتي الليل). الصفحة التي لا تقرأ بها في صلاتك تفلت سريعاً!' 
-      },
-      { 
-        id: 102, 
-        author: 'أحمد محمد', 
-        text: 'كنت أعاني من تفلت الأوجه الأخيرة حتى طبقت قاعدة التكرار 20 مرة للآية و40 للربط.. نسأل الله أن يجعلنا وإياكم من أهل القرآن الذين هم أهل الله وخاصته.' 
-      }
-    ]
+  const [posts, setPosts] = useState([]);
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editingText, setEditingText] = useState('');
+  const formatPostTime = value => {
+    const date = new Date(value || '');
+    return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('ar-JO');
   };
 
-  // Real Posts State
-  const [posts, setPosts] = useState([singleInspiringPost]);
-
-  // Sync with Firestore & Server API
   useEffect(() => {
-    let unsubscribeFirestore = () => {};
-
-    // 1. Fetch from Express Backend API
     const loadFromApi = async () => {
       try {
-        const res = await fetch('/api/community/posts');
+        const res = await fetchWithAuth('/api/community/posts');
         const data = await res.json();
-        if (data.success && Array.isArray(data.posts) && data.posts.length > 0) {
-          setPosts(data.posts);
-        } else {
-          setPosts([singleInspiringPost]);
-        }
+        if (!res.ok || !data.success) throw new Error(data.message || 'تعذر تحميل المنشورات');
+        setPosts(Array.isArray(data.posts) ? data.posts : []);
+        setPostFeedback(null);
       } catch (err) {
-        console.warn('Could not fetch from Express API, relying on Firestore / default:', err);
+        setPosts([]);
+        setPostFeedback(err.message || 'تعذر تحميل المنشورات');
       }
     };
-
     loadFromApi();
-
-    // 2. Real-time Firestore Listener
-    try {
-      const postsRef = collection(db, 'community_posts');
-      unsubscribeFirestore = onSnapshot(postsRef, (snapshot) => {
-        if (!snapshot.empty) {
-          const loadedPosts = [];
-          snapshot.forEach(docSnap => {
-            const docData = docSnap.data();
-            let parsedAnswers = [];
-            if (Array.isArray(docData.answers)) {
-              parsedAnswers = docData.answers;
-            } else if (typeof docData.answers === 'string') {
-              try { parsedAnswers = JSON.parse(docData.answers); } catch (e) { parsedAnswers = []; }
-            }
-            loadedPosts.push({
-              id: docSnap.id,
-              firestoreId: docSnap.id,
-              ...docData,
-              answers: parsedAnswers
-            });
-          });
-
-          // Merge without losing freshly added local posts
-          setPosts(prev => {
-            const map = new Map();
-            prev.forEach(p => map.set(p.content || p.id, p));
-            loadedPosts.forEach(p => map.set(p.content || p.id, { ...map.get(p.content || p.id), ...p }));
-            const merged = Array.from(map.values());
-            merged.sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0));
-            return merged;
-          });
-        }
-      }, (error) => {
-        console.warn('Firestore live subscription error:', error);
-      });
-    } catch (e) {
-      console.warn('Firestore connection fallback:', e);
-    }
-
-    return () => unsubscribeFirestore();
-  }, []);
+  }, [user?.uid]);
 
   // Handle Post Submission to Database
   const handleCreatePost = async (e) => {
@@ -156,105 +75,66 @@ export const Community = ({ setActiveTab }) => {
     if (!postText.trim()) return;
 
     setDbStatus('syncing');
-    const authorName = isAnonymous ? 'هوية مخفية' : (user?.name || 'أحمد محمد');
-    const authorAvatar = isAnonymous ? null : (user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(authorName));
-
     const postPayload = {
-      authorId: user?.uid,
-      author: authorName,
-      avatar: authorAvatar,
-      isAnonymous: isAnonymous ? 1 : 0,
+      isAnonymous,
       category: selectedCategory,
-      content: postText.trim(),
-      likes: 0,
-      answers: [],
-      timeAgo: 'الآن',
-      createdAt: new Date().toISOString()
+      content: postText.trim()
     };
-
-    // Optimistic UI update: insert immediately at the top
-    const tempId = Date.now();
-    const optimisticPost = { ...postPayload, id: tempId };
-    setPosts(prev => [optimisticPost, ...prev.filter(p => p.id !== tempId)]);
-    setPostText('');
-    setPostFeedback('تم نشر مشاركتك وحفظها بنجاح في قاعدة البيانات! 🌿✨');
-    setTimeout(() => setPostFeedback(null), 5000);
-
-    // 1. Save to Backend SQLite Database
     try {
-      const res = await fetch('/api/community/posts', {
+      const res = await fetchWithAuth('/api/community/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postPayload)
       });
       const data = await res.json();
-      if (data.success && data.posts) {
-        setPosts(data.posts);
-      }
-    } catch (e) {
-      console.error(e);
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر نشر المشاركة');
+      setPosts(prev => [data.post, ...prev]);
+      setPostText('');
+      setIsAnonymous(false);
+      setPostFeedback('تم نشر المشاركة وحفظها في Firestore');
+    } catch (error) {
+      setPostFeedback(error.message || 'تعذر نشر المشاركة');
+    } finally {
+      setDbStatus('connected');
     }
-
-    // 2. Save to Firestore
-    try {
-      const docRef = await addDoc(collection(db, 'community_posts'), {
-        ...postPayload,
-        answers: JSON.stringify([])
-      });
-      if (docRef?.id) {
-        setPosts(prev => prev.map(p => p.id === tempId ? { ...p, firestoreId: docRef.id } : p));
-      }
-    } catch (fsErr) {
-      console.warn('Firestore addDoc note:', fsErr);
-    }
-
-    setIsAnonymous(false);
-    setTimeout(() => setDbStatus('connected'), 600);
   };
 
   const handleDeletePost = async (post) => {
-    const targetId = post.id;
-    const fsId = post.firestoreId;
-    setPosts(prev => prev.filter(p => p.id !== targetId && p.firestoreId !== fsId));
-
-    if (typeof targetId === 'number') {
-      try {
-        const res = await fetchWithAuth(`/api/community/posts/${targetId}`, { method: 'DELETE' });
-        const data = await res.json();
-        if (!data.success) {
-          alert('لم يتم الحذف: ' + (data.message || 'غير مصرح'));
-          // revert UI state if failed
-          setPosts(prev => [...prev, post].sort((a,b) => b.id - a.id));
-        }
-      } catch (e) {
-        console.warn('Delete error:', e);
-        alert('حدث خطأ أثناء محاولة الحذف');
-        setPosts(prev => [...prev, post].sort((a,b) => b.id - a.id));
-      }
+    try {
+      const res = await fetchWithAuth(`/api/community/posts/${post.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر حذف المنشور');
+      setPosts(prev => prev.filter(item => item.id !== post.id));
+      setPostFeedback('تم حذف المنشور');
+    } catch (error) {
+      setPostFeedback(error.message || 'تعذر حذف المنشور');
     }
+  };
+
+  const handleUpdatePost = async (post) => {
+    try {
+      const res = await fetchWithAuth(`/api/community/posts/${post.id}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: editingText, category: post.category })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر تعديل المنشور');
+      setPosts(prev => prev.map(item => item.id === post.id ? data.post : item));
+      setEditingPostId(null);
+      setEditingText('');
+      setPostFeedback('تم تعديل المنشور');
+    } catch (error) { setPostFeedback(error.message || 'تعذر تعديل المنشور'); }
   };
 
   // Toggle Like API & Firestore
   const handleToggleLike = async (post) => {
     const postId = post.id;
-    const currentLikes = (post.likes || 0) + 1;
-
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: currentLikes, isLiked: true } : p));
-
-    // Backend API
     try {
-      await fetch(`/api/community/posts/${postId}/like`, { method: 'POST' });
-    } catch (e) {
-      console.log(e);
-    }
-
-    // Firestore
-    try {
-      if (post.firestoreId) {
-        const postRef = doc(db, 'community_posts', String(post.firestoreId));
-        await updateDoc(postRef, { likes: currentLikes });
-      }
-    } catch (e) {}
+      const res = await fetchWithAuth(`/api/community/posts/${postId}/like`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر تحديث الإعجاب');
+      setPosts(prev => prev.map(p => p.id === postId ? { ...p, likes: data.likes, isLiked: data.liked } : p));
+    } catch (error) { setPostFeedback(error.message || 'تعذر تحديث الإعجاب'); }
   };
 
   // Add Comment/Answer API & Firestore
@@ -264,45 +144,18 @@ export const Community = ({ setActiveTab }) => {
     if (!text || !text.trim()) return;
 
     setDbStatus('syncing');
-    const newAnswer = {
-      id: Date.now(),
-      author: user?.name || 'أحمد محمد',
-      text: text.trim(),
-      createdAt: new Date().toISOString()
-    };
-
-    const currentAnswers = Array.isArray(post.answers) ? [...post.answers, newAnswer] : [newAnswer];
-
-    // Optimistic UI update
-    setPosts(prev => prev.map(p => p.id === postId ? { ...p, answers: currentAnswers } : p));
-    setCommentInputs(prev => ({ ...prev, [postId]: '' }));
-
-    // 1. Backend API
     try {
-      const res = await fetch(`/api/community/posts/${postId}/comment`, {
+      const res = await fetchWithAuth(`/api/community/posts/${postId}/comments`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ author: newAnswer.author, text: newAnswer.text })
+        body: JSON.stringify({ text: text.trim() })
       });
       const data = await res.json();
-      if (data.success && data.post) {
-        setPosts(prev => prev.map(p => p.id === postId ? data.post : p));
-      }
-    } catch (e) {
-      console.log(e);
-    }
-
-    // 2. Firestore Sync
-    try {
-      if (post.firestoreId) {
-        const postRef = doc(db, 'community_posts', String(post.firestoreId));
-        await updateDoc(postRef, {
-          answers: JSON.stringify(currentAnswers)
-        });
-      }
-    } catch (e) {}
-
-    setTimeout(() => setDbStatus('connected'), 600);
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر إضافة التعليق');
+      setPosts(prev => prev.map(p => p.id === postId ? data.post : p));
+      setCommentInputs(prev => ({ ...prev, [postId]: '' }));
+    } catch (error) { setPostFeedback(error.message || 'تعذر إضافة التعليق'); }
+    finally { setDbStatus('connected'); }
   };
 
   const handleShareMilestone = async () => {
@@ -310,40 +163,23 @@ export const Community = ({ setActiveTab }) => {
     const defaultShareText = `🌿 بفضل الله وتوفيقه، وصلت في خطة الحفظ إلى الصفحة ${currentPage} من سورة ${currentSurah} (الجزء ${currentJuz}).\n🏰 أنجزت اليوم ${doneFortressesCount} من أصل 5 حصون في نظام الحصون الخمسة! نسأل الله العظيم الثبات والبركة لجميع الإخوة الحفاظ 🤲✨`;
     
     const postPayload = {
-      authorId: user?.uid,
-      author: user?.name || 'أحمد محمد',
-      avatar: user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad',
-      isAnonymous: 0,
+      isAnonymous: false,
       category: 'إنجاز الحصون',
-      content: defaultShareText,
-      likes: 0,
-      answers: [],
-      timeAgo: 'الآن',
-      createdAt: new Date().toISOString()
+      content: defaultShareText
     };
 
     try {
-      const res = await fetch('/api/community/posts', {
+      const res = await fetchWithAuth('/api/community/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(postPayload)
       });
       const data = await res.json();
-      if (data.success && data.posts) {
-        setPosts(data.posts);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-
-    try {
-      await addDoc(collection(db, 'community_posts'), {
-        ...postPayload,
-        answers: JSON.stringify([])
-      });
-    } catch (e) {}
-
-    setTimeout(() => setDbStatus('connected'), 600);
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر نشر الإنجاز');
+      setPosts(prev => [data.post, ...prev]);
+      setPostFeedback('تم نشر الإنجاز');
+    } catch (error) { setPostFeedback(error.message || 'تعذر نشر الإنجاز'); }
+    finally { setDbStatus('connected'); }
   };
 
   return (
@@ -536,12 +372,12 @@ export const Community = ({ setActiveTab }) => {
             </h3>
 
             {postFeedback && (
-              <div style={{
+              <div role="status" data-testid="community-feedback" style={{
                 padding: '12px 18px',
                 borderRadius: '12px',
-                background: 'rgba(16, 185, 129, 0.15)',
-                border: '1px solid #10B981',
-                color: '#047857',
+                background: postFeedback.startsWith('تعذر') ? 'rgba(239,68,68,0.12)' : 'rgba(16, 185, 129, 0.15)',
+                border: `1px solid ${postFeedback.startsWith('تعذر') ? '#EF4444' : '#10B981'}`,
+                color: postFeedback.startsWith('تعذر') ? '#B91C1C' : '#047857',
                 fontWeight: 'bold',
                 fontSize: '14px',
                 display: 'flex',
@@ -556,6 +392,7 @@ export const Community = ({ setActiveTab }) => {
 
             <form onSubmit={handleCreatePost}>
               <textarea
+                aria-label="نص المنشور الجديد"
                 value={postText}
                 onChange={(e) => setPostText(e.target.value)}
                 placeholder="اكتب تجربتك في الحفظ، سؤالاً عن المتشابهات، أو تدبراً يشد الهمم..."
@@ -654,9 +491,11 @@ export const Community = ({ setActiveTab }) => {
 
           {/* Posts Feed */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {posts.length === 0 && <div data-testid="community-empty" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>لا توجد منشورات حقيقية بعد.</div>}
             {posts.map((post) => (
               <div 
-                key={post.id || post.firestoreId}
+                key={post.id}
+                data-testid={`community-post-${post.id}`}
                 style={{
                   padding: '26px',
                   borderRadius: '20px',
@@ -744,17 +583,25 @@ export const Community = ({ setActiveTab }) => {
                           </span>
                         )}
                       </div>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{post.timeAgo}</span>
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{formatPostTime(post.createdAt)}</span>
                     </div>
                   </div>
 
-                  <span style={{ padding: '4px 12px', borderRadius: '20px', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: '12px', fontWeight: 'bold' }}>
-                    #{post.category}
-                  </span>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                    <span style={{ padding: '4px 12px', borderRadius: '20px', background: 'var(--primary-light)', color: 'var(--primary)', fontSize: '12px', fontWeight: 'bold' }}>#{post.category}</span>
+                    {(post.authorId === user?.uid || (activeRole === 'admin' && post.canEdit)) && <>
+                      <button type="button" aria-label="تعديل المنشور" onClick={() => { setEditingPostId(post.id); setEditingText(post.content); }}>تعديل</button>
+                      <button type="button" aria-label="حذف المنشور" onClick={() => handleDeletePost(post)}>حذف</button>
+                    </>}
+                  </div>
                 </div>
 
                 {/* Content */}
-                <div style={{ 
+                {editingPostId === post.id ? <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                  <input aria-label="نص تعديل المنشور" value={editingText} onChange={event => setEditingText(event.target.value)} style={{ flex: 1, padding: '10px' }} />
+                  <button type="button" onClick={() => handleUpdatePost(post)}>حفظ التعديل</button>
+                  <button type="button" onClick={() => setEditingPostId(null)}>إلغاء</button>
+                </div> : <div style={{
                   fontSize: '15.5px', 
                   color: 'var(--text-primary)', 
                   lineHeight: 1.8, 
@@ -762,11 +609,12 @@ export const Community = ({ setActiveTab }) => {
                   whiteSpace: 'pre-line' 
                 }}>
                   {post.content}
-                </div>
+                </div>}
 
                 {/* Action Buttons (Likes & Answers) */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '24px', paddingTop: '16px', borderTop: '1px solid var(--glass-border)' }}>
                   <button
+                    aria-label={`إعجاب بالمنشور ${post.id}`}
                     onClick={() => handleToggleLike(post)}
                     style={{
                       background: 'transparent',
@@ -829,6 +677,7 @@ export const Community = ({ setActiveTab }) => {
                     }}
                   />
                   <button
+                    aria-label={`إرسال تعليق على المنشور ${post.id}`}
                     onClick={() => handleAddAnswer(post)}
                     style={{
                       padding: '10px 20px',

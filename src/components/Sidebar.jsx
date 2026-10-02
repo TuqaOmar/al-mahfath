@@ -29,10 +29,13 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
   const [localCollapsed, setLocalCollapsed] = useState(false);
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : localCollapsed;
   const setCollapsed = controlledSetCollapsed !== undefined ? controlledSetCollapsed : setLocalCollapsed;
-  const { user, logout } = useAuth();
+  const { user, activeRole, availableRoles, setActiveRole, logout } = useAuth();
   const { lang, isRTL } = useLanguage();
 
-  const userRole = user?.role || 'user';
+  const userRole = activeRole || 'user';
+  const roleLabels = lang === 'ar'
+    ? { user: 'طالب', teacher: 'معلم', admin: 'إداري' }
+    : { user: 'Student', teacher: 'Teacher', admin: 'Admin' };
 
   // Responsive mobile detector
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
@@ -304,6 +307,17 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
           ))}
         </nav>
 
+        {!collapsed && availableRoles?.length > 1 && (
+          <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <label htmlFor="active-role-switcher" style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '6px' }}>
+              {lang === 'ar' ? 'الدور النشط' : 'Active role'}
+            </label>
+            <select id="active-role-switcher" value={userRole} onChange={event => setActiveRole(event.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '9px', background: '#111827', color: '#F8FAFC', border: '1px solid #334155' }}>
+              {availableRoles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}
+            </select>
+          </div>
+        )}
+
         {/* PWA Install Button */}
         <div style={{ padding: collapsed ? '8px' : '10px 14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'center' }}>
           <PWAInstallButton collapsed={collapsed} />
@@ -318,14 +332,16 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
           justifyContent: collapsed ? 'center' : 'space-between',
           background: '#0B1120'
         }}>
-          <div 
+          <div
+            id="sidebar-user-profile-card"
             onClick={() => {
               if (onOpenProfile) onOpenProfile();
               if (isMobile) setCollapsed(true);
             }}
             style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', minWidth: 0 }}
           >
-            <img 
+            <img
+              data-testid="sidebar-profile-photo"
               src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
               alt="Avatar" 
               style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #10B981' }} 
@@ -336,7 +352,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
                   {user?.name || 'مستخدم سَفَر'}
                 </div>
                 <div style={{ fontSize: '11px', color: '#94A3B8' }}>
-                  {userRole === 'admin' ? 'مدير المنصة' : (userRole === 'teacher' ? 'معلمة حلقة' : (user?.isSafarMember ? 'عضوة في حلقة' : 'حافظ مستقل'))}
+                  {roleLabels[userRole]}
                 </div>
               </div>
             )}

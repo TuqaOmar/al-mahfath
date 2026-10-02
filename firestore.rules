@@ -83,21 +83,38 @@ service cloud.firestore {
         (isOwner(userId) && (isSafeProfileUpdate() || isSafeOnboardingUpdate()));
       allow delete: if isAdmin();
 
-      match /{subcollection}/{document=**} {
+      match /notifications/{notificationId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+
+      match /ayah_progress/{ayahId} {
         allow read: if isOwner(userId) || isAdmin() ||
           isAssignedTeacher(get(/databases/$(database)/documents/users/$(userId)).data);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId &&
+          request.resource.data.surahNumber is int && request.resource.data.surahNumber >= 1 && request.resource.data.surahNumber <= 114 &&
+          request.resource.data.ayahNumber is int && request.resource.data.ayahNumber >= 1 && request.resource.data.ayahNumber <= 286 &&
+          request.resource.data.status in ['unmemorized', 'learning', 'review', 'memorized'] &&
+          request.resource.data.keys().hasOnly(['userId', 'surahNumber', 'ayahNumber', 'status', 'source', 'updatedAt',
+            'globalAyahNumber', 'repetitionCount', 'recitationScore', 'lastReviewed', 'notes']);
+        allow delete: if isOwner(userId);
+      }
+
+      match /{subcollection}/{document=**} {
+        allow read: if subcollection != 'notifications' && (isOwner(userId) || isAdmin() ||
+          isAssignedTeacher(get(/databases/$(database)/documents/users/$(userId)).data));
         // Server-computed practice sessions and their atomic aggregates cannot
         // be forged through client writes, including administrative clients.
-        allow write: if !(subcollection in ['recitation_sessions', 'recitation_stats', 'page_progress']) &&
+        allow write: if !(subcollection in ['recitation_sessions', 'recitation_stats', 'page_progress', 'notifications', 'ayah_progress']) &&
           (isOwner(userId) || isAdmin());
       }
     }
 
     match /community_posts/{postId} {
-      allow read: if true;
-      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
-      allow update, delete: if isSignedIn() &&
-        (request.auth.uid == resource.data.authorId || isAdmin());
+      allow read, write: if false;
+      match /{subcollection}/{document=**} {
+        allow read, write: if false;
+      }
     }
 
     match /groups/{groupId} {
