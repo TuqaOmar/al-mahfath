@@ -145,6 +145,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
   const [recitationHistoryList, setRecitationHistoryList] = useState([]);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedWordTooltip, setSelectedWordTooltip] = useState(null);
+  const [reviewSubmitState, setReviewSubmitState] = useState('idle');
 
   const {
     isRecording: isAiRecording,
@@ -158,6 +159,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
     startRecording: startAiRecording,
     stopAndAnalyze: stopAiAndAnalyze,
     evaluateTextRecitation: evaluateAiTextRecitation,
+    submitCurrentResultForReview,
     cancelRecording: cancelAiRecording,
     clearResult: clearAiResult
   } = useRecitationRecorder();
@@ -316,7 +318,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       });
   }, [activeAyahNum]);
 
-  // Load Quran Page from API dynamically with memory caching
+  // Load the exact bundled Uthmani reference used by server-side recitation.
   useEffect(() => {
     if (pageCacheRef.current[pageNumber]) {
       const cachedAyahs = pageCacheRef.current[pageNumber];
@@ -330,15 +332,15 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
     }
 
     setLoading(true);
-    fetch(`https://api.alquran.cloud/v1/page/${pageNumber}/quran-uthmani`)
+    fetch(`/api/quran/reference/page/${pageNumber}`)
       .then(res => res.json())
       .then(data => {
-        if (data.code === 200 && data.data && data.data.ayahs) {
-          pageCacheRef.current[pageNumber] = data.data.ayahs;
-          setAyahs(data.data.ayahs);
-          if (data.data.ayahs.length > 0) {
-            setSurahName(data.data.ayahs[0].surah?.name || 'سورة الشريفة');
-            setActiveAyahNum(data.data.ayahs[0].number);
+        if (data.success && Array.isArray(data.ayahs)) {
+          pageCacheRef.current[pageNumber] = data.ayahs;
+          setAyahs(data.ayahs);
+          if (data.ayahs.length > 0) {
+            setSurahName(data.ayahs[0].surah?.name || 'سورة الشريفة');
+            setActiveAyahNum(data.ayahs[0].number);
           }
         }
         setLoading(false);
@@ -1210,16 +1212,16 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
             ) : (
               <div>
                 {recitationScope === 'page' ? (
-                  <p style={{
+                  <p data-testid="quran-reference-page" dir="rtl" lang="ar" style={{
                     margin: 0,
                     fontSize: '20px',
-                    fontFamily: 'serif',
+                    fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
                     lineHeight: 2.2,
                     color: 'var(--text-primary)',
                     fontWeight: 700
                   }}>
                     {ayahs.map((a) => (
-                      <span key={a.number} style={{ margin: '0 4px' }}>
+                      <span key={a.number} data-testid={`quran-ayah-${a.number}`} data-quran-text={a.text} style={{ margin: '0 4px' }}>
                         {a.text}{' '}
                         <span style={{
                           display: 'inline-flex',
@@ -1240,10 +1242,10 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                     ))}
                   </p>
                 ) : (
-                  <p style={{
+                  <p data-testid="quran-reference-ayah" data-quran-text={activeAyahObj?.text || ''} dir="rtl" lang="ar" style={{
                     margin: 0,
                     fontSize: '23px',
-                    fontFamily: 'serif',
+                    fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
                     lineHeight: 1.9,
                     color: 'var(--text-primary)',
                     fontWeight: 700
@@ -1567,6 +1569,18 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     نتيجة تدريب لمقارنة النص؛ اعتماد الحفظ يحتاج تقييمًا موثقًا.
                   </span>
+                  {aiSaveSuccess && (
+                    <button data-testid="submit-session-review" disabled={reviewSubmitState === 'submitting' || aiAnalysisResult?.savedSession?.reviewStatus === 'pending'}
+                      onClick={async () => {
+                        setReviewSubmitState('submitting');
+                        try { await submitCurrentResultForReview(); setReviewSubmitState('submitted'); }
+                        catch { setReviewSubmitState('error'); }
+                      }}
+                      style={{ border: 0, borderRadius: '8px', padding: '8px 12px', background: 'var(--primary)', color: '#fff', fontWeight: 700, cursor: 'pointer' }}>
+                      {reviewSubmitState === 'submitted' || aiAnalysisResult?.savedSession?.reviewStatus === 'pending' ? 'أُرسلت الجلسة للمعلم' : 'إرسال الجلسة للمعلم'}
+                    </button>
+                  )}
+                  {reviewSubmitState === 'error' && <span data-testid="submit-session-error" style={{ color: '#DC2626', fontSize: '12px' }}>تعذر إرسال الجلسة. تحقق من عضويتك ثم أعد المحاولة.</span>}
                 </div>
               </div>
 
@@ -1604,7 +1618,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                     {(aiAnalysisResult.mistakes && aiAnalysisResult.mistakes.length > 0)
                       ? 'مقارنة دقيقة: ما تم نطقه مقابل الصواب في كتاب الله'
-                      : 'إتقان تام للكلمات وحركات الإعراب والتصريف'}
+                      : 'مطابقة تدريب نصية؛ ليست اعتمادًا للحفظ أو تقييمًا للتجويد'}
                   </span>
                 </div>
 
@@ -2191,10 +2205,15 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                       {ayah.numberInSurah}
                     </span>
 
-                    <p style={{
+                    <p
+                      data-testid={`quran-display-${ayah.number}`}
+                      data-quran-text={ayah.text}
+                      dir="rtl"
+                      lang="ar"
+                      style={{
                       margin: 0,
                       fontSize: '22px',
-                      fontFamily: 'serif',
+                      fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
                       lineHeight: 1.8,
                       color: isActive ? 'var(--primary)' : 'var(--text-primary)',
                       fontWeight: isActive ? 'bold' : 'normal',
@@ -2437,7 +2456,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
 
           {/* Audio Recitation Play/Pause */}
           <button
-            onClick={handleTogglePlay}
+            onClick={togglePlay}
             style={{
               padding: '8px 12px',
               borderRadius: '12px',

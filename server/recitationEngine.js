@@ -56,7 +56,7 @@ export function normalizeMuqattaatInText(text) {
  */
 export function getRatingColor(score) {
   if (score >= 95) {
-    return { rating: 'ممتاز ومتقن تماماً (ما شاء الله)', color: '#059669', icon: '🌟' };
+    return { rating: 'مطابقة تدريب ممتازة؛ ليست اعتمادًا للحفظ', color: '#059669', icon: '🌟' };
   } else if (score >= 85) {
     return { rating: 'جيد جداً (حفظ متين)', color: '#10B981', icon: '🌿' };
   } else if (score >= 70) {
@@ -481,7 +481,7 @@ export function compareRecitation(expectedText, spokenText) {
   let ratingColor = '#DC2626';
   let ratingIcon = '⚠️';
   if (accuracy >= 95) {
-    rating = 'ممتاز ومتقن تماماً (ما شاء الله)';
+    rating = 'مطابقة تدريب ممتازة؛ ليست اعتمادًا للحفظ';
     ratingColor = '#059669';
     ratingIcon = '🌟';
   } else if (accuracy >= 85) {
@@ -708,7 +708,7 @@ export function comparePageRecitation(ayahs, spokenText) {
   let ratingColor = '#DC2626';
   let ratingIcon = '⚠️';
   if (pageAccuracy >= 95) {
-    rating = 'ممتاز ومتقن تماماً (ما شاء الله)';
+    rating = 'مطابقة تدريب ممتازة؛ ليست اعتمادًا للحفظ';
     ratingColor = '#059669';
     ratingIcon = '🌟';
   } else if (pageAccuracy >= 85) {

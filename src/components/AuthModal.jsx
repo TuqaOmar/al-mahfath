@@ -41,8 +41,6 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
       u.hasCompletedWizard === 1 ||
       u.hasCompletedWizard === 'true' ||
       hasPrefs ||
-      Number(u.memorizedPagesCount) > 0 ||
-      Number(u.totalJuz) > 0 ||
       isAdmin ||
       isTeacher
     );

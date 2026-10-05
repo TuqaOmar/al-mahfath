@@ -24,7 +24,7 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
       borderBottom: '1px solid var(--glass-border)',
       transition: 'all 0.3s ease'
     }}>
-      <div className="container" style={{
+      <div className="container landing-navbar__inner" style={{
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -36,7 +36,7 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}
         >
-          <Logo size={34} />
+          <Logo size={34} showText={false} />
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'flex', gap: '4px' }}>
@@ -84,10 +84,11 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
         </div>
 
         {/* Right Actions */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+        <div className="landing-navbar__actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
 
           {/* Language Switch */}
           <button
+            id="landing-language-toggle"
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
             style={{
               display: 'flex',
@@ -104,6 +105,7 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
               transition: 'all 0.2s ease'
             }}
             title={isRTL ? 'Switch to English' : 'التبديل إلى العربية'}
+            aria-label={isRTL ? 'التبديل إلى اللغة الإنجليزية' : 'Switch to Arabic'}
           >
             <Globe size={14} color="var(--primary)" />
             <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
@@ -180,6 +182,13 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
               </button>
             </div>
           )}
+        </div>
+
+        <div className="nav-links-mobile" aria-label={isRTL ? 'أقسام الصفحة' : 'Page sections'}>
+          <a href="#showcase">{isRTL ? 'استعراض المنصة' : 'Showcase'}</a>
+          <a href="#methodology">{isRTL ? 'خطة الحصون الخمسة' : '5 Fortresses'}</a>
+          <a href="#features">{isRTL ? 'المميزات الذكية' : 'Features'}</a>
+          <a href="#faq">{isRTL ? 'الأسئلة الشائعة' : 'FAQ'}</a>
         </div>
       </div>
     </nav>

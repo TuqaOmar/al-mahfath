@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Users, 
   Key, 
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTeacherRefresh } from '../../hooks/useTeacherRefresh';
 import { fetchWithAuth } from '../../lib/api';
 
 export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
@@ -24,26 +25,28 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
   const [loading, setLoading] = useState(true);
   const [copiedCode, setCopiedCode] = useState('');
 
-  useEffect(() => {
-    fetchGroups();
-  }, [user]);
-
-  const fetchGroups = async () => {
-    setLoading(true);
+  const requestVersion = useRef(0);
+  const [error, setError] = useState('');
+  const fetchGroups = useCallback(async () => {
+    const version = ++requestVersion.current;
+    setLoading(true); setGroups([]); setError('');
     try {
       if (!user?.uid) return;
       const teacherId = user.uid;
       const res = await fetchWithAuth(`/api/groups?teacherId=${encodeURIComponent(teacherId)}`);
       const data = await res.json();
       if (res.ok && data.success) {
-        setGroups(data.groups);
+        if (version === requestVersion.current) setGroups(data.groups);
+      } else { throw new Error('Group request failed');
       }
     } catch (e) {
-      console.error('Failed to load groups:', e);
+      if (version === requestVersion.current) { setGroups([]); setError('تعذر تحميل الحلقات أو انتهت صلاحية الوصول.'); }
     } finally {
-      setLoading(false);
+      if (version === requestVersion.current) setLoading(false);
     }
-  };
+  }, [user?.uid]);
+  useTeacherRefresh(fetchGroups);
+  useEffect(() => () => { requestVersion.current += 1; }, []);
 
   const handleCopy = (code) => {
     navigator.clipboard?.writeText(code);
@@ -65,6 +68,8 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
         </div>
       </div>
 
+      <button data-testid="teacher-groups-refresh" onClick={fetchGroups}>تحديث الحلقات</button>
+      {error && <p role="alert">{error}</p>}
       {loading ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
           جاري تحميل الحلقات...
@@ -166,19 +171,20 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', padding: '12px', borderRadius: '12px', background: 'var(--bg-color)' }}>
                 <div style={{ textAlign: 'center' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الطالبات</span>
-                  <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{group.studentsCount ?? 0}</strong>
+                  <strong data-testid={`teacher-group-count-${group.id}`} style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{group.studentsCount ?? 0}</strong>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>المقرر</span>
-                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{group.targetJuz || '1 - 3'}</strong>
+                  <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{group.targetJuz || 'غير محدد'}</strong>
                 </div>
                 <div style={{ textAlign: 'center' }}>
                   <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الموعد</span>
-                  <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{group.schedule?.days || 'يومياً'}</strong>
+                  <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{group.schedule?.days || 'غير محدد'}</strong>
                 </div>
               </div>
 
               <button
+                data-testid={`group-roster-${group.id}`}
                 onClick={() => onViewStudentsInGroup && onViewStudentsInGroup(group.id)}
                 style={{
                   padding: '12px',

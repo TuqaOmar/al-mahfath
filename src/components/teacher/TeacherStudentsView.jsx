@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { declaredPages, nextDeclaredPage } from '../../lib/memorization';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Search, 
   Filter, 
@@ -21,12 +22,15 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useTeacherRefresh } from '../../hooks/useTeacherRefresh';
 import { fetchWithAuth } from '../../lib/api';
 
-export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfile }) => {
+export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onShowAll, onOpenStudentProfile }) => {
   const { user } = useAuth();
   const { lang, isRTL } = useLanguage();
 
+  const requestVersion = useRef(0);
+  const [loadError, setLoadError] = useState('');
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -50,49 +54,29 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
     setActiveFilter(initialFilter);
   }, [initialFilter]);
 
-  useEffect(() => {
-    fetchStudents();
-    fetchGroupInfo();
-  }, [user, activeFilter, sortBy, searchQuery]);
-
-  const fetchGroupInfo = async () => {
+  const fetchStudents = useCallback(async () => {
+    const version = ++requestVersion.current;
+    setLoading(true); setStudents([]); setLoadError(''); setGroupCode('');
     try {
       if (!user?.uid) return;
-      const teacherId = user.uid;
-      const res = await fetchWithAuth(`/api/groups?teacherId=${encodeURIComponent(teacherId)}`);
-      const data = await res.json();
-      if (data.success && data.groups?.length > 0) {
-        setGroupCode(data.groups[0].code || '');
-      }
-    } catch (e) {
-      console.log('Error fetching teacher group info:', e);
-    }
-  };
-
-  const fetchStudents = async () => {
-    setLoading(true);
-    try {
-      if (!user?.uid) {
-        setStudents([]);
-        return;
-      }
-      const teacherId = user.uid;
-      const params = new URLSearchParams();
-      if (searchQuery) params.append('search', searchQuery);
-      if (activeFilter && activeFilter !== 'all') params.append('filter', activeFilter);
-      if (sortBy) params.append('sort', sortBy);
-
-      const res = await fetchWithAuth(`/api/teacher/${encodeURIComponent(teacherId)}/students?${params.toString()}`);
-      const data = await res.json();
-      if (res.ok && data.success) {
-        setStudents(data.students);
-      }
-    } catch (e) {
-      console.error('Failed to load students:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const params = new URLSearchParams({ filter: activeFilter, sort: sortBy });
+      if (searchQuery) params.set('search', searchQuery);
+      if (groupId) params.set('groupId', groupId);
+      const [response, groupResponse] = await Promise.all([
+        fetchWithAuth('/api/teacher/' + encodeURIComponent(user.uid) + '/students?' + params),
+        fetchWithAuth('/api/groups?teacherId=' + encodeURIComponent(user.uid))
+      ]);
+      const data = await response.json(), info = await groupResponse.json();
+      if (!response.ok || !data.success || !groupResponse.ok || !info.success) throw new Error('Roster unavailable');
+      if (version !== requestVersion.current) return;
+      setStudents(data.students || []);
+      setGroupCode((groupId ? info.groups?.find(group => group.id === groupId) : info.groups?.[0])?.code || '');
+    } catch {
+      if (version === requestVersion.current) { setStudents([]); setLoadError('تعذر تحميل الطلاب أو انتهت صلاحية الوصول.'); }
+    } finally { if (version === requestVersion.current) setLoading(false); }
+  }, [user?.uid, activeFilter, sortBy, searchQuery, groupId]);
+  useTeacherRefresh(fetchStudents);
+  useEffect(() => () => { requestVersion.current += 1; }, []);
 
   const handleCopyCode = () => {
     navigator.clipboard?.writeText(groupCode);
@@ -112,10 +96,10 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
       const res = await fetchWithAuth(`/api/teacher/${encodeURIComponent(teacherId)}/add-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newStudentForm)
+        body: JSON.stringify({ ...newStudentForm, ...(groupId ? { groupId } : {}) })
       });
       const data = await res.json();
-      if (data.success) {
+      if (res.ok && data.success) {
         setAddFeedback({ type: 'success', text: data.message });
         setNewStudentForm({
           name: '',
@@ -187,7 +171,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
             }}
           >
             <UserPlus size={16} />
-            <span>إضافة طالبة جديدة</span>
+            <span>نقل طالبة من حلقاتي</span>
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -210,7 +194,6 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
               <option value="name">الاسم أبجدياً</option>
               <option value="consistency">نسبة الالتزام</option>
               <option value="last_recitation">آخر موعد تسميع</option>
-              <option value="memorization">مقدار الحفظ</option>
             </select>
           </div>
         </div>
@@ -344,6 +327,9 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
       </div>
 
       {/* Students Cards Grid */}
+      <button data-testid="teacher-roster-refresh" onClick={fetchStudents}>تحديث قائمة الطلاب</button>
+      {groupId && <p data-testid="teacher-roster-group">القائمة مقيدة بالحلقة المحددة. <button data-testid="teacher-roster-all" onClick={onShowAll}>جميع طلاب حلقاتي</button></p>}
+      {loadError && <p role="alert" data-testid="teacher-roster-error">{loadError}</p>}
       {loading ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
           جاري تحميل بيانات الطالبات...
@@ -411,7 +397,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
                         {student.name}
                       </h4>
                       <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {student.currentSurah || 'سورة آل عمران'}
+                        {student.currentSurah || 'غير متاح'}
                       </span>
                     </div>
                   </div>
@@ -439,16 +425,16 @@ export const TeacherStudentsView = ({ initialFilter = 'all', onOpenStudentProfil
                   background: 'var(--bg-color)'
                 }}>
                   <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>الحفظ</span>
-                    <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{student.memorizedJuz} ج</strong>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>صفحات مصرّح بها ذاتيًا</span>
+                    <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{declaredPages(student).length} صفحة</strong>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>هذا الأسبوع</span>
-                    <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{student.sessionsThisWeek} ج</strong>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>آخر 7 أيام</span>
+                    <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{student.thisWeekSessions ?? 0} جلسة</strong>
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>الالتزام</span>
-                    <strong style={{ fontSize: '12.5px', color: student.consistencyRate < 75 ? '#EF4444' : '#10B981' }}>{student.consistencyRate}%</strong>
+                    <strong style={{ fontSize: '12.5px', color: (student.consistencyRate == null) ? 'var(--text-secondary)' : (student.consistencyRate < 75 ? '#EF4444' : '#10B981') }}>{student.consistencyRate == null ? 'غير متاح' : `${student.consistencyRate}%`}</strong>
                   </div>
                   <div style={{ textAlign: 'center' }}>
                     <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>آخر تسميع</span>

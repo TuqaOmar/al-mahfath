@@ -22,7 +22,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
     activeReminderAlert, 
     dismissReminderAlert, 
     snoozeReminder, 
-    notifyAndCelebrate,
+    showToast,
     reminderSettings
   } = useNotifications();
   const { isRTL, lang } = useLanguage();
@@ -38,13 +38,10 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
 
   const handleMarkAsDone = () => {
     dismissReminderAlert();
-    notifyAndCelebrate({
-      title: 'إنجاز جلسة المراجعة اليومية 🌟',
-      message: 'بارك الله في همتك! تم تسجيل إنجاز جلسة المراجعة اليومية بنجاح ورفع مستوى إتقانك.',
-      type: 'wird',
-      icon: '🛡️',
-      xpBonus: 60,
-      badgeTitle: 'حارس المحفوظ'
+    showToast({
+      title: isRTL ? 'تم إغلاق التذكير' : 'Reminder dismissed',
+      message: isRTL ? 'أُغلق التذكير فقط؛ لم تُحفظ جلسة أو يُعدّل تقدمك.' : 'Only the reminder was dismissed; no session or progress was saved.',
+      icon: '🔔'
     });
   };
 
@@ -237,6 +234,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
             </button>
 
             <button
+              data-testid="reminder-dismiss-only"
               onClick={handleMarkAsDone}
               style={{
                 padding: '12px 16px',
@@ -256,7 +254,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
               onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(52, 211, 153, 0.15)'}
             >
               <CheckCircle size={15} />
-              أتممت الورد ✅
+              {isRTL ? 'إغلاق التذكير فقط' : 'Dismiss reminder only'}
             </button>
           </div>
 

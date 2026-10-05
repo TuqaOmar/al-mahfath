@@ -42,6 +42,8 @@ test('public recitation analysis cannot auto-save without authentication', async
       expectedText: 'قل هو الله أحد',
       spokenText: 'قل هو الله أحد',
       pageNumber: 604,
+      surahNumber: 112,
+      ayahNumber: 6222,
       autoSave: true
     };
     const response = await fetch(baseUrl + '/api/ai/recitation-check', {
@@ -62,6 +64,7 @@ test('public recitation analysis remains available when no save is requested', a
         expectedText: 'قل هو الله أحد',
         spokenText: 'قل هو الله أحد',
         autoSave: false
+        , pageNumber: 604, surahNumber: 112, ayahNumber: 6222
       })
     });
     const data = await response.json();
@@ -69,5 +72,19 @@ test('public recitation analysis remains available when no save is requested', a
     assert.equal(data.success, true);
     assert.equal(data.accuracy, 100);
     assert.equal(data.savedSession, null);
+  });
+});
+
+test('legacy JSON authentication is retired in normal runtime, regardless of asserted identity', async () => {
+  await withServer(async baseUrl => {
+    for (const route of ['signup', 'login', 'google', 'demo', 'admin']) {
+      const response = await fetch(`${baseUrl}/api/auth/${route}`, { method: 'POST',
+        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ uid: 'admin_123', email: 'admin@ma7fath.ai', role: 'admin' }) });
+      assert.equal(response.status, 410);
+      const data = await response.json();
+      assert.equal(data.success, false);
+      assert.equal(data.user, undefined);
+      assert.equal(data.token, undefined);
+    }
   });
 });

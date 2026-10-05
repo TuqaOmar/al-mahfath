@@ -4,12 +4,10 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
-import { 
+import {
   runQuery, 
   getRow, 
   allRows, 
-  hashPassword, 
-  verifyPassword,
   getUserPortfolio,
   saveAyahToPortfolio,
   bulkSaveSurahToPortfolio
@@ -18,11 +16,14 @@ import { analyzeRecitation, compareRecitation, comparePageRecitation } from './r
 import {
   RecitationError, preparePracticeRequest, findPracticeAttempt, savePracticeAttempt,
   confirmPracticeAttempt, readPracticeHistory, readPracticeStats, readPracticePageStats,
-  practicePerformanceReport
+  practicePerformanceReport, submitPracticeForReview
 } from './firestoreRecitation.js';
+import { quranPageReference, quranSurahReference, trustedQuranReference, quranReferenceMetadata } from './quranReference.js';
 import { requireAuth, optionalAuth, requireAdmin, db as adminDb } from './middleware/auth.js';
 import groupsRouter from './routes/groups.js';
 import communityRouter from './routes/community.js';
+import { ownsRequestedIdentity, chatRef, planRef, appendChat } from './privateUserData.js';
+import { persistProfilePatch, persistFortressPlan } from './fortressPlanPersistence.js';
 
 dotenv.config();
 
@@ -46,6 +47,23 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'خادم محفظ AI يعمل بنجاح 🚀', timestamp: new Date() });
 });
 
+// Display and recitation intentionally use the same immutable Uthmani corpus.
+app.get('/api/quran/reference/page/:pageNumber', (req, res) => {
+  try {
+    res.json({ success: true, source: quranReferenceMetadata, ...quranPageReference(req.params.pageNumber) });
+  } catch (error) {
+    res.status(Number(error.status) || 500).json({ success: false, message: error.message });
+  }
+});
+
+app.get('/api/quran/reference/surah/:surahNumber', (req, res) => {
+  try {
+    res.json({ success: true, source: quranReferenceMetadata, surah: quranSurahReference(req.params.surahNumber) });
+  } catch (error) {
+    res.status(Number(error.status) || 500).json({ success: false, message: error.message });
+  }
+});
+
 // Helper to safely parse user preferences whether stored as string or object
 function safeParsePreferences(prefs) {
   if (!prefs) return {};
@@ -59,183 +77,13 @@ function safeParsePreferences(prefs) {
 
 // --- AUTHENTICATION & USER ENDPOINTS ---
 
-// Signup Endpoint
-app.post('/api/auth/signup', async (req, res) => {
-  const { name, email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ success: false, message: 'البريد الإلكتروني وكلمة المرور مطلوبة' });
-  }
-
-  try {
-    const userExists = await getRow('SELECT * FROM users WHERE email = ?', [email]);
-    if (userExists) {
-      return res.status(400).json({ success: false, message: 'البريد الإلكتروني مسجل بالفعل' });
-    }
-
-    const { salt, hash } = hashPassword(password);
-    const uid = 'user_' + Math.random().toString(36).substr(2, 9);
-    const role = email === 'admin@ma7fath.ai' ? 'admin' : 'user';
-
-    await runQuery(`
-      INSERT INTO users (uid, name, email, photoURL, hasCompletedWizard, role, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, salt, passwordHash, preferences)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      uid,
-      name || 'حافظ جديد',
-      email,
-      'https://api.dicebear.com/7.x/avataaars/svg?seed=' + encodeURIComponent(name || 'User'),
-      0,
-      role,
-      1,
-      100,
-      1,
-      1,
-      90,
-      0.05,
-      salt,
-      hash,
-      '{}'
-    ]);
-
-    const newUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
-    if (newUser) delete newUser.passwordHash && delete newUser.salt;
-
-    res.json({ success: true, user: newUser });
-  } catch (error) {
-    console.error('Error during signup:', error);
-    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء التسجيل' });
-  }
-});
-
-// Login Endpoint
-app.post('/api/auth/login', async (req, res) => {
-  const { email, password } = req.body;
-
-  try {
-    const user = await getRow('SELECT * FROM users WHERE email = ?', [email]);
-    if (!user) {
-      return res.status(400).json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
-    }
-
-    // If password is not provided (e.g. legacy or test account quick login handles this)
-    if (password) {
-      const isValid = verifyPassword(password, user.salt, user.passwordHash);
-      if (!isValid) {
-        return res.status(400).json({ success: false, message: 'البريد الإلكتروني أو كلمة المرور غير صحيحة' });
-      }
-    }
-
-    // Remove sensitive fields
-    delete user.passwordHash;
-    delete user.salt;
-    user.preferences = safeParsePreferences(user.preferences);
-    user.hasCompletedWizard = Boolean(user.hasCompletedWizard);
-
-    res.json({ success: true, user });
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء تسجيل الدخول' });
-  }
-});
-
-// Dedicated Google SSO Auth Endpoint
-app.post('/api/auth/google', async (req, res) => {
-  const { email, name, photoURL, uid: clientUid } = req.body;
-  if (!email) {
-    return res.status(400).json({ success: false, message: 'البريد الإلكتروني لحساب جوجل مطلوب' });
-  }
-
-  const normalizedEmail = email.trim().toLowerCase();
-  const userName = name || normalizedEmail.split('@')[0] || 'مستخدم Google';
-  const userPhoto = photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(userName)}`;
-
-  try {
-    let user = await getRow('SELECT * FROM users WHERE email = ?', [normalizedEmail]);
-
-    if (user) {
-      if (name && name.trim() && user.name !== name.trim()) {
-        user.name = name.trim();
-        await runQuery('UPDATE users SET name = ? WHERE uid = ?', [user.name, user.uid]);
-      }
-      delete user.passwordHash;
-      delete user.salt;
-      user.preferences = safeParsePreferences(user.preferences);
-      user.hasCompletedWizard = Boolean(user.hasCompletedWizard);
-      return res.json({ success: true, user });
-    }
-
-    // Create new Google user
-    const uid = clientUid || ('google_' + Math.random().toString(36).substr(2, 9));
-    const role = normalizedEmail === 'admin@ma7fath.ai' ? 'admin' : 'user';
-
-    await runQuery(`
-      INSERT INTO users (uid, name, email, photoURL, hasCompletedWizard, role, streak, xp, level, memorizedPagesCount, memoryScore, totalJuz, salt, passwordHash, preferences)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `, [
-      uid,
-      userName,
-      normalizedEmail,
-      userPhoto,
-      0,
-      role,
-      1,
-      100,
-      1,
-      1,
-      90,
-      0.05,
-      'google_sso_salt',
-      'google_sso_hash',
-      '{}'
-    ]);
-
-    const newUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
-    if (newUser) {
-      delete newUser.passwordHash;
-      delete newUser.salt;
-      try {
-        newUser.preferences = JSON.parse(newUser.preferences);
-      } catch (e) {
-        newUser.preferences = {};
-      }
-    }
-
-    res.json({ success: true, user: newUser });
-  } catch (error) {
-    console.error('Error during Google authentication:', error);
-    res.status(500).json({ success: false, message: 'حدث خطأ في الخادم أثناء تسجيل الدخول بحساب جوجل' });
-  }
-});
-app.post('/api/auth/demo', async (req, res) => {
-  try {
-    const user = await getRow("SELECT * FROM users WHERE uid = 'demo_user_123'");
-    if (user) {
-      delete user.passwordHash;
-      delete user.salt;
-      user.preferences = safeParsePreferences(user.preferences);
-    }
-    res.json({ success: true, user });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
-
-// Admin Test Account Login
-app.post('/api/auth/admin', async (req, res) => {
-  try {
-    const user = await getRow("SELECT * FROM users WHERE uid = 'admin_123'");
-    if (user) {
-      delete user.passwordHash;
-      delete user.salt;
-      user.preferences = safeParsePreferences(user.preferences);
-    }
-    res.json({ success: true, user });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
+// The UI uses Firebase Auth directly. Legacy JSON authentication is retired in
+// every environment; no seeded account or client-asserted identity is accepted.
+for (const endpoint of ['signup', 'login', 'google', 'demo', 'admin']) {
+  app.post('/api/auth/' + endpoint, (_req, res) => {
+    res.status(410).json({ success: false, message: 'Use Firebase Authentication' });
+  });
+}
 
 // Get User Profile & Stats (requires auth - self or admin)
 app.get('/api/user/:uid', requireAuth, async (req, res) => {
@@ -249,7 +97,9 @@ app.get('/api/user/:uid', requireAuth, async (req, res) => {
   try {
     const userDoc = await adminDb.collection('users').doc(uid).get();
     if (userDoc.exists) {
-      const user = { ...userDoc.data(), uid };
+      const user = { ...userDoc.data(), uid, memorizedPages: null, memorizedPagesCount: null,
+        totalJuz: null, memoryScore: null, verifiedMemorizedPages: null,
+        verifiedMemorizationSource: 'unavailable_no_page_approval_workflow' };
       delete user.passwordHash;
       delete user.salt;
       user.preferences = safeParsePreferences(user.preferences);
@@ -274,12 +124,6 @@ app.put('/api/user/:uid', requireAuth, async (req, res) => {
   }
 
   try {
-    const userRef = adminDb.collection('users').doc(uid);
-    const userDoc = await userRef.get();
-    if (!userDoc.exists) {
-      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
-    }
-
     const allowed = ['name', 'photoURL', 'preferences', 'hasCompletedWizard'];
     if (Object.keys(updates).some(key => !allowed.includes(key))) {
       return res.status(400).json({ success: false, message: 'تحديث يتضمن حقولًا غير مسموحة' });
@@ -287,67 +131,40 @@ app.put('/api/user/:uid', requireAuth, async (req, res) => {
     if ('hasCompletedWizard' in updates && updates.hasCompletedWizard !== true) {
       return res.status(400).json({ success: false, message: 'حالة الإعداد غير صالحة' });
     }
+    if ('preferences' in updates && (!updates.preferences || typeof updates.preferences !== 'object' || Array.isArray(updates.preferences))) {
+      return res.status(400).json({ success: false, message: 'التفضيلات غير صالحة' });
+    }
     if (!Object.keys(updates).length) return res.status(400).json({ success: false });
-    await userRef.update(updates);
-    const updatedUser = { ...(await userRef.get()).data(), uid };
-    delete updatedUser.passwordHash;
-    delete updatedUser.salt;
-    updatedUser.preferences = safeParsePreferences(updatedUser.preferences);
-    updatedUser.hasCompletedWizard = Boolean(updatedUser.hasCompletedWizard);
-
-    res.json({ success: true, user: updatedUser });
+    const updatedUser = await persistProfilePatch(uid, updates);
+    res.json({ success: true, persisted: true, user: updatedUser });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ success: false, message: 'حدث خطأ في تحديث البيانات' });
+    res.status(error.status || 503).json({ success: false, message: 'حدث خطأ في تحديث البيانات' });
   }
 });
 
-// Save / Update User Fortress Plan
-// requireAuth: only the user themselves can save their own plan
+// Same Firestore document used by the fortress client service; never JSON.
 app.post('/api/user/fortress-plan', requireAuth, async (req, res) => {
-  const { userId, plan } = req.body;
-  if (!userId || !plan) {
-    return res.status(400).json({ success: false, message: 'معرف المستخدم والخطة مطلوبان' });
-  }
-  // Authorization: only the authenticated user can modify their own plan
-  if (req.user.uid !== userId) {
-    return res.status(403).json({ success: false, message: 'Forbidden: Cannot modify another user\'s plan' });
+  if (!ownsRequestedIdentity(req, res)) return;
+  const plan = req.body?.plan;
+  if (!plan || typeof plan !== 'object' || Array.isArray(plan)) {
+    return res.status(400).json({ success: false, message: 'A plan object is required' });
   }
   try {
-    const user = await getRow('SELECT * FROM users WHERE uid = ?', [userId]);
-    if (user) {
-      let prefs = {};
-      try {
-        prefs = JSON.parse(user.preferences || '{}');
-      } catch (e) {}
-      prefs.fortressPlan = plan;
-      prefs.fortressesToday = plan.completionStatus || prefs.fortressesToday;
-      await runQuery('UPDATE users SET preferences = ? WHERE uid = ?', [JSON.stringify(prefs), userId]);
-    }
-    res.json({ success: true, plan });
+    const saved = await persistFortressPlan(req.user.uid, plan);
+    res.json({ success: true, persisted: true, ...saved });
   } catch (error) {
-    console.error('Error saving fortress plan:', error);
-    res.status(500).json({ success: false, message: 'حدث خطأ في حفظ الخطة' });
+    res.status(error.status || 503).json({ success: false, message: 'Could not persist the plan' });
   }
 });
-
-// Get User Fortress Plan
-app.get('/api/user/fortress-plan/:uid', async (req, res) => {
-  const { uid } = req.params;
+app.get('/api/user/fortress-plan/:uid', requireAuth, async (req, res) => {
+  if (!ownsRequestedIdentity(req, res)) return;
   try {
-    const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
-    if (user && user.preferences) {
-      try {
-        const prefs = JSON.parse(user.preferences);
-        if (prefs.fortressPlan) {
-          return res.json({ success: true, plan: prefs.fortressPlan });
-        }
-      } catch (e) {}
-    }
-    res.json({ success: false, message: 'لا توجد خطة محفوظة' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
+    const snapshot = await planRef(req.user.uid).get();
+    if (!snapshot.exists) return res.status(404).json({ success: false, message: 'No saved plan' });
+    res.json({ success: true, persisted: true, plan: snapshot.data() });
+  } catch {
+    res.status(503).json({ success: false, message: 'Could not read the plan' });
   }
 });
 
@@ -411,6 +228,9 @@ app.use('/api/admin', requireAuth, requireAdmin);
 app.put('/api/admin/user/:uid', async (req, res) => {
   const { uid } = req.params;
   const updates = req.body;
+  if (['memorizedPages', 'memorizedPagesCount', 'totalJuz', 'memoryScore'].some(key => Object.hasOwn(updates || {}, key))) {
+    return res.status(400).json({ success: false, message: 'Legacy profile edits cannot approve memorization' });
+  }
 
   try {
     const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
@@ -474,30 +294,28 @@ app.post('/api/quran/pages/:pageNumber/review', requireAuth, (req, res) => {
 
 // --- AI CHATBOT ENDPOINT ---
 
-app.get('/api/ai/chat', async (req, res) => {
-  const userId = req.query.userId || 'default';
+app.get('/api/ai/chat', requireAuth, async (req, res) => {
+  if (!ownsRequestedIdentity(req, res)) return;
   try {
-    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100', [userId]);
-    res.json({ success: true, history });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
+    const snapshot = await chatRef(req.user.uid).get();
+    res.json({ success: true, history: snapshot.data()?.history || [] });
+  } catch {
+    res.status(503).json({ success: false, message: 'Could not read chat history' });
   }
 });
-
-app.delete('/api/ai/chat', async (req, res) => {
-  const userId = req.query.userId || req.body?.userId;
+app.delete('/api/ai/chat', requireAuth, async (req, res) => {
+  if (!ownsRequestedIdentity(req, res)) return;
   try {
-    await runQuery('DELETE FROM ai_chat_history', [userId]);
+    await chatRef(req.user.uid).delete();
     res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ success: false });
+  } catch {
+    res.status(503).json({ success: false, message: 'Could not delete chat history' });
   }
 });
 
 function getSmartFallbackResponse(message, userContext = {}) {
   const msg = message.toLowerCase();
-  const page = userContext.currentPage || ((userContext.memorizedPagesCount || 0) + 1);
+  const page = userContext.currentPage || ((userContext.declaredPagesCount || 0) + 1);
   const surah = userContext.currentSurah || 'البقرة';
   const juz = userContext.currentJuz || Math.min(30, Math.max(1, Math.ceil(page / 20)));
   const nearReviewStart = Math.max(1, page - 20);
@@ -505,11 +323,11 @@ function getSmartFallbackResponse(message, userContext = {}) {
   const nextNightPrepPage = page + 1;
 
   if (/سلام|مرحب|أهل|اهل|هلا|صباح|مساء/.test(msg)) {
-    return `وعليكم السلام ورحمة الله وبركاته ومغفرته! 🌿✨\n\nأهلاً بك يا حافظ كتاب الله (${userContext.name || 'أخي الكريم'}). أنت الآن عند **الصفحة ${page} (سورة ${surah} - الجزء ${juz})**، وقد أتممت بفضل الله ${userContext.memorizedPagesCount || 0} صفحة.\n\nكيف يمكنني إعانتك اليوم؟ يمكنك سؤالي عن خطة الحصون الخمسة، تثبيت المتشابهات، جدول التكرار، أو كيفية مراجعة الأجزاء السابقة.`;
+    return `وعليكم السلام ورحمة الله وبركاته ومغفرته! 🌿✨\n\nأهلاً بك يا حافظ كتاب الله (${userContext.name || 'أخي الكريم'}). أنت الآن عند **الصفحة ${page} (سورة ${surah} - الجزء ${juz})**، وقد أتممت بفضل الله ${userContext.declaredPagesCount || 0} صفحة وفق تصريحك الذاتي، وليس اعتمادًا للحفظ.\n\nكيف يمكنني إعانتك اليوم؟ يمكنك سؤالي عن خطة الحصون الخمسة، تثبيت المتشابهات، جدول التكرار، أو كيفية مراجعة الأجزاء السابقة.`;
   } else if (/خطة|جدول|حصون|خمسة|ورد اليوم|ايش اراجع|شو اراجع|وين وصلت|اين وصلت|متى اراجع|الحصون الخمسة/.test(msg)) {
     return `🏰 **خطتك اليومية الدقيقة بنظام الحصون الخمسة (بناءً على موقعك الحالي):**\n\n` +
       `📍 **موقعك الحالي:** الصفحة **${page}** من سورة **${surah}** (الجزء ${juz}).\n` +
-      `📊 **الصفحات المحفوظة:** ${userContext.memorizedPagesCount || 0} صفحة.\n\n` +
+      `📊 **الصفحات المصرّح بها ذاتيًا (ليست معتمدة):** ${userContext.declaredPagesCount || 0} صفحة.\n\n` +
       `---\n\n` +
       `1️⃣ **الحصن الأول (قراءة الاستماع والورد نظراً):**\n` +
       `• **المطلوب اليوم:** قراءة **الجزء ${juz}** كاملاً (الصفحات ${(juz - 1) * 20 + 1} إلى ${juz * 20}) نظراً بالحدر السريع المتقن في 20 دقيقة.\n` +
@@ -543,17 +361,19 @@ function getSmartFallbackResponse(message, userContext = {}) {
   }
 }
 
-app.post('/api/ai/chat', async (req, res) => {
-  const { message, userId, userContext, history: clientHistory } = req.body;
-  const targetUser = userId || 'default';
+app.post('/api/ai/chat', requireAuth, async (req, res) => {
+  if (!ownsRequestedIdentity(req, res)) return;
+  const { message, userContext } = req.body || {};
+  const targetUser = req.user.uid;
   const uCtx = userContext || {};
-  if (!message || !message.trim()) {
+  if (typeof message !== 'string' || !message.trim() || message.length > 12000) {
     return res.status(400).json({ success: false, message: 'الرسالة فارغة' });
   }
 
   try {
     let responseText = '';
-    const apiKey = (req.body.apiKey && req.body.apiKey.trim()) || process.env.GEMINI_API_KEY;
+    const apiKey = process.env.MA7FATH_EMULATOR_TEST === '1' ? null :
+      (typeof req.body.apiKey === 'string' && req.body.apiKey.trim()) || process.env.GEMINI_API_KEY;
 
     const userStatePrompt = `
 [بيانات الحافظ الحالية]:
@@ -562,7 +382,7 @@ app.post('/api/ai/chat', async (req, res) => {
 - السورة الحالية: ${uCtx.currentSurah || 'الفاتحة'}
 - الجزء الحالي: ${uCtx.currentJuz || 1}
 - نمط الحفظ: ${uCtx.learningStyle || 'سمعي بصري'}
-- عدد الصفحات المحفوظة: ${uCtx.memorizedPagesCount || 0}
+- عدد الصفحات المصرّح بها ذاتيًا (ليست معتمدة): ${uCtx.declaredPagesCount || 0}
 - الحصون المنجزة اليوم: ${JSON.stringify(uCtx.fortressesToday || {})}
 - الهدف اليومي المختار: ${uCtx.dailyTarget || 'صفحة واحدة'}
 `;
@@ -602,22 +422,11 @@ app.post('/api/ai/chat', async (req, res) => {
       responseText = getSmartFallbackResponse(message, uCtx);
     }
 
-    await runQuery('INSERT INTO ai_chat_history (sender, text, userId) VALUES (?, ?, ?)', ['user', message, targetUser]);
-    await runQuery('INSERT INTO ai_chat_history (sender, text, userId) VALUES (?, ?, ?)', ['ai', responseText, targetUser]);
-
-    const history = await allRows('SELECT * FROM ai_chat_history ORDER BY id ASC LIMIT 100', [targetUser]);
+    const history = await appendChat(targetUser, message, responseText);
     res.json({ success: true, reply: responseText, history });
-  } catch (e) {
-    console.error('AI Chat error:', e);
-    const fallbackText = getSmartFallbackResponse(message, uCtx);
-    res.json({
-      success: true,
-      reply: fallbackText,
-      history: [
-        { id: Date.now(), sender: 'user', text: message, userId: targetUser },
-        { id: Date.now() + 1, sender: 'ai', text: fallbackText, userId: targetUser }
-      ]
-    });
+  } catch (error) {
+    console.error('Chat persistence failed:', error.message);
+    res.status(503).json({ success: false, message: 'Could not persist chat history' });
   }
 });
 
@@ -639,10 +448,6 @@ app.post('/api/ai/recitation-check', optionalAuth, async (req, res) => {
     return res.status(401).json({ success: false, message: 'Authentication is required to save a recitation session' });
   }
 
-  if (!expectedText && (!ayahs || ayahs.length === 0)) {
-    return res.status(400).json({ success: false, message: 'نص الآية أو قائمة آيات الصفحة مطلوبة للمقارنة' });
-  }
-
   try {
     let result = null;
     const prepared = autoSave ? preparePracticeRequest(req.body) : null;
@@ -653,7 +458,9 @@ app.post('/api/ai/recitation-check', optionalAuth, async (req, res) => {
         recitationStats: await readPracticeStats(req.user.uid)
       });
     }
-    const fullExpected = expectedText || (Array.isArray(ayahs) ? ayahs.map(a => a.text).join(' ') : '');
+    const trusted = prepared || trustedQuranReference(req.body);
+    const fullExpected = trusted.expectedText;
+    const trustedAyahs = trusted.ayahs;
 
     // 1. If audio is provided, process through Whisper ASR with Gemini fallback
     if (audioBase64) {
@@ -663,7 +470,7 @@ app.post('/api/ai/recitation-check', optionalAuth, async (req, res) => {
       const analysis = await analyzeRecitation({
         audioBuffer,
         expectedText: fullExpected,
-        ayahs: ayahs || [],
+        ayahs: trustedAyahs,
         isFullPage: Boolean(isFullPage),
         token
       });
@@ -672,8 +479,8 @@ app.post('/api/ai/recitation-check', optionalAuth, async (req, res) => {
     } 
     // 2. If spokenText is already provided (e.g. from Web Speech Recognition or typing)
     else if (spokenText && spokenText.trim()) {
-      if (isFullPage && Array.isArray(ayahs) && ayahs.length > 0) {
-        const comparison = comparePageRecitation(ayahs, spokenText);
+      if (isFullPage && trustedAyahs.length > 0) {
+        const comparison = comparePageRecitation(trustedAyahs, spokenText);
         result = {
           transcribedText: spokenText.trim(),
           ...comparison
@@ -703,12 +510,13 @@ app.post('/api/ai/recitation-check', optionalAuth, async (req, res) => {
     return res.json({
       success: true,
       ...result,
-      classification: 'practice', referenceVerified: false, rewardedXp: 0,
+      classification: 'practice', referenceVerified: true, referenceSource: 'quran-uthmani', rewardedXp: 0,
+      referenceText: fullExpected,
       savedSession, recitationStats
     });
   } catch (err) {
     console.error('Recitation check error:', err);
-    return res.status(err instanceof RecitationError ? err.status : autoSave ? 503 : 500).json({
+    return res.status(err instanceof RecitationError ? err.status : Number(err.status) || (autoSave ? 503 : 500)).json({
       success: false,
       message: err.message || 'حدث خطأ أثناء فحص وتصحيح التلاوة'
     });
@@ -728,6 +536,15 @@ app.post('/api/recitation/save', requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error saving recitation session:', error);
     res.status(error instanceof RecitationError ? error.status : 503).json({ success: false, message: error instanceof RecitationError ? error.message : 'تعذر تأكيد حفظ محاولة التدريب' });
+  }
+});
+
+app.post('/api/recitation/sessions/:sessionId/submit', requireAuth, async (req, res) => {
+  try {
+    const session = await submitPracticeForReview(req.user.uid, req.params.sessionId);
+    res.json({ success: true, session });
+  } catch (error) {
+    res.status(error instanceof RecitationError ? error.status : 503).json({ success: false, message: error.message });
   }
 });
 

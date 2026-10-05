@@ -8,7 +8,7 @@ import {
   updateProfile,
   signInAnonymously
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, getDocFromServer, setDoc, updateDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }) => {
               hasCompletedWizard: false,
               role: 'user',
               roles: { user: true },
-              streak: 1,
+              streak: 0,
               xp: 100,
               level: 1,
               memorizedPagesCount: 0,
@@ -113,7 +113,7 @@ export const AuthProvider = ({ children }) => {
         role: 'user',
         // Multi-role support: roles map allows a single account to be student+teacher+admin
         roles: { user: true },
-        streak: 1,
+        streak: 0,
         xp: 100,
         level: 1,
         memorizedPagesCount: 0,
@@ -172,7 +172,7 @@ export const AuthProvider = ({ children }) => {
           role: 'user',
           // Multi-role support
           roles: { user: true },
-          streak: 1,
+          streak: 0,
           xp: 100,
           level: 1,
           memorizedPagesCount: 0,
@@ -212,10 +212,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const applyConfirmedUser = (result) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid || result?.success !== true || result?.persisted !== true || result.user?.uid !== uid) {
+      return { success: false, message: 'Profile persistence was not confirmed for the authenticated user' };
+    }
+    const freshUser = { ...result.user, uid };
+    setUser(freshUser);
+    if (!grantedRoles(freshUser).includes(activeRole)) {
+      setActiveRoleState(initialActiveRole(freshUser));
+    }
+    let cacheWarning;
+    try {
+      localStorage.setItem('ma7fath_user', JSON.stringify(freshUser));
+    } catch (error) {
+      cacheWarning = 'Profile was saved, but the local cache could not be updated';
+      console.warn(cacheWarning, error);
+    }
+    return { success: true, persisted: true, user: freshUser, ...(cacheWarning ? { cacheWarning } : {}) };
+  };
+
   const updateUserData = async (updates) => {
+    if (['memorizedPages', 'memorizedPagesCount', 'totalJuz', 'memoryScore'].some(key =>
+      Object.hasOwn(updates || {}, key))) {
+      return { success: false, message: 'Approved memorization fields cannot be changed by the client' };
+    }
     const editableFields = new Set([
       'name', 'photoURL', 'preferences', 'favorites', 'fortressPlan',
-      'hasCompletedWizard', 'memorizedPages', 'memorizedPagesCount', 'totalJuz'
+      'hasCompletedWizard'
     ]);
     const safeUpdates = Object.fromEntries(
       Object.entries(updates || {}).filter(([key]) => editableFields.has(key))
@@ -230,9 +254,7 @@ export const AuthProvider = ({ children }) => {
         const userRef = doc(db, 'users', user.uid);
         await updateDoc(userRef, safeUpdates);
         const updatedUser = { ...user, ...safeUpdates };
-        setUser(updatedUser);
-        localStorage.setItem('ma7fath_user', JSON.stringify(updatedUser));
-        return { success: true, user: updatedUser };
+        return applyConfirmedUser({ success: true, persisted: true, user: updatedUser });
       } catch (e) {
         console.error('Failed DB sync:', e);
         return { success: false, message: e.message };
@@ -267,28 +289,42 @@ export const AuthProvider = ({ children }) => {
   };
 
   const refreshUserData = async () => {
-    if (auth.currentUser) {
-      try {
-        const userDocRef = doc(db, 'users', auth.currentUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-        if (userDocSnap.exists()) {
-          const freshData = { uid: auth.currentUser.uid, ...userDocSnap.data() };
-          setUser(freshData);
-          if (!grantedRoles(freshData).includes(activeRole)) {
-            setActiveRoleState(initialActiveRole(freshData));
-          }
-          localStorage.setItem('ma7fath_user', JSON.stringify(freshData));
-          return { success: true, user: freshData };
-        }
-      } catch (e) {
-        console.error("Refresh error:", e);
+    const uid = auth.currentUser?.uid;
+    if (!uid) return { success: false, message: 'Not authenticated' };
+    try {
+      // A cached snapshot cannot confirm that a refresh reached Firestore.
+      const userDocSnap = await getDocFromServer(doc(db, 'users', uid));
+      if (auth.currentUser?.uid !== uid) {
+        return { success: false, message: 'Authentication changed during refresh' };
       }
+      if (!userDocSnap.exists()) {
+        return { success: false, message: 'User profile was not found' };
+      }
+      if (userDocSnap.metadata.hasPendingWrites) {
+        return { success: false, message: 'Profile changes have not been confirmed by Firestore' };
+      }
+      const freshData = { ...userDocSnap.data(), uid };
+      setUser(freshData);
+      if (!grantedRoles(freshData).includes(activeRole)) {
+        setActiveRoleState(initialActiveRole(freshData));
+      }
+      let cacheWarning;
+      try {
+        localStorage.setItem('ma7fath_user', JSON.stringify(freshData));
+      } catch (error) {
+        cacheWarning = 'The fresh profile was read, but the local cache could not be updated';
+        console.warn(cacheWarning, error);
+      }
+      return { success: true, user: freshData, source: 'firestore-server-profile', ...(cacheWarning ? { cacheWarning } : {}) };
+    } catch (e) {
+      console.error('Refresh error:', e);
+      // Leave the last confirmed profile and cache unchanged on failure.
+      return { success: false, message: e.message || 'Profile refresh failed' };
     }
-    return { success: true, user };
   };
 
   return (
-    <AuthContext.Provider value={{ user, activeRole, availableRoles: grantedRoles(user), setActiveRole, loading, login, signup, loginWithGoogle, logout, deleteAccount, updateUserData, refreshUserData, hasRole }}>
+    <AuthContext.Provider value={{ user, activeRole, availableRoles: grantedRoles(user), setActiveRole, loading, login, signup, loginWithGoogle, logout, deleteAccount, updateUserData, applyConfirmedUser, refreshUserData, hasRole }}>
       {!loading && children}
     </AuthContext.Provider>
   );

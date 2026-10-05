@@ -5,6 +5,7 @@ import path from 'node:path';
 
 const root = process.cwd();
 const browserTest = process.argv.includes('--browser');
+const mobileOnly = process.argv.includes('--mobile-only');
 const runDir = mkdtempSync(path.join(tmpdir(), 'ma7fath-emulator-run-'));
 const emulatorCache = path.join(tmpdir(), 'ma7fath-emulator-cache');
 mkdirSync(emulatorCache, { recursive: true });
@@ -28,9 +29,12 @@ const env = {
   GCE_METADATA_HOST: '127.0.0.1:9',
   FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
   FIREBASE_EMULATORS_PATH: emulatorCache,
+  // Do not read or reuse a developer's Firebase CLI login/configuration.
+  XDG_CONFIG_HOME: path.join(runDir, 'cli-config'),
   MA7FATH_EMULATOR_RESULT: path.join(runDir, 'completed')
 };
 if (browserTest) env.VITE_MA7FATH_EMULATOR = '1';
+if (mobileOnly) env.MA7FATH_MOBILE_LAYOUT_ONLY = '1';
 delete env.FIREBASE_SERVICE_ACCOUNT_JSON;
 delete env.GOOGLE_APPLICATION_CREDENTIALS;
 delete env.FIREBASE_TOKEN;
@@ -50,10 +54,13 @@ const localCli = path.join(root, 'node_modules', 'firebase-tools', 'lib', 'bin',
 const cachedCli = path.join(process.env.USERPROFILE || '', '.cache', 'firebase', 'tools', 'lib', 'node_modules', 'firebase-tools', 'lib', 'bin', 'firebase.js');
 const cliJs = existsSync(localCli) ? localCli : cachedCli;
 const command = existsSync(cliJs) ? process.execPath : standalone;
+const testNamePattern = mobileOnly
+  ? '--test-name-pattern "emulator configuration fails closed|production server initialization rejects emulator hosts|frontend emulator switch requires local emulator mode|Chrome mobile navigation, theme persistence, and viewport fit"'
+  : '';
 const args = [
   ...(existsSync(cliJs) ? [cliJs] : []),
   'emulators:exec', '--project', env.GCLOUD_PROJECT, '--config', configPath,
-  '--only', browserTest ? 'auth,firestore,storage' : 'auth,firestore', `"${process.execPath}" --test "${path.join(root, 'tests', 'emulator-safety.test.js')}" "${path.join(root, 'tests', browserTest ? 'firebase-browser.test.js' : 'firebase-emulator.test.js')}"`
+  '--only', browserTest ? 'auth,firestore,storage' : 'auth,firestore', `"${process.execPath}" --test ${testNamePattern} "${path.join(root, 'tests', 'emulator-safety.test.js')}" "${path.join(root, 'tests', browserTest ? 'firebase-browser.test.js' : 'firebase-emulator.test.js')}"`
 ];
 if (!existsSync(command)) throw new Error('Install firebase-tools locally or download .tools/firebase.exe');
 const result = spawnSync(command, args, { env, stdio: 'inherit' });

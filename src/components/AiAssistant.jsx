@@ -1,3 +1,5 @@
+import { declaredPages, nextDeclaredPage } from '../lib/memorization';
+import { fetchWithAuth } from '../lib/api';
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, 
@@ -21,7 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
-import { generateQuranAiResponse } from '../utils/quranAiEngine';
+
 
 // Markdown renderer for bold, code, and line breaks
 const renderText = (text) => {
@@ -47,6 +49,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
   const userId = user?.uid || 'guest';
   const [messages, setMessages] = useState([WELCOME_MSG]);
   const [input, setInput] = useState('');
+  const [chatError, setChatError] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   const messagesEndRef = useRef(null);
@@ -66,7 +69,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
   const [showKeySecret, setShowKeySecret] = useState(false);
   const [keySaveMessage, setKeySaveMessage] = useState('');
 
-  const currentPage = (user?.memorizedPagesCount || 0) + 1;
+  const currentPage = nextDeclaredPage(user);
   const currentSurah = getSurahNameForPage(currentPage);
   const currentJuz = getJuzForPage(currentPage);
   const learningStyle = user?.preferences?.learningStyle || 'سمعي بصري (مختلط)';
@@ -76,45 +79,27 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
     currentPage,
     currentSurah,
     currentJuz,
-    memorizedPagesCount: user?.memorizedPagesCount || 0,
+    declaredPagesCount: declaredPages(user).length,
     learningStyle,
     fortressesToday: user?.preferences?.fortressesToday || {},
     dailyTarget: user?.preferences?.dailyTarget || 'صفحة واحدة يومياً',
     apiKey
   };
 
-  // Load chat history from backend or localStorage
+  // The authenticated server is authoritative; never show another account's cache.
   useEffect(() => {
-    const localKey = `ma7fath_chat_history_${userId}`;
-    const localSaved = localStorage.getItem(localKey);
-    let initialLoaded = false;
-
-    if (localSaved) {
-      try {
-        const parsed = JSON.parse(localSaved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setMessages(parsed);
-          initialLoaded = true;
-        }
-      } catch (e) {}
-    }
-
-    fetch(`/api/ai/chat?userId=${encodeURIComponent(userId)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && data.history && data.history.length > 0) {
-          setMessages(data.history);
-          localStorage.setItem(localKey, JSON.stringify(data.history));
-        } else if (!initialLoaded) {
-          setMessages([WELCOME_MSG]);
-        }
-      })
-      .catch(e => {
-        console.log('Backend sync offline, loaded from local storage.');
-        if (!initialLoaded) {
-          setMessages([WELCOME_MSG]);
-        }
-      });
+    let alive = true;
+    setMessages([WELCOME_MSG]);
+    setChatError('');
+    fetchWithAuth('/api/ai/chat').then(async response => {
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل المحادثة');
+      if (alive) {
+        setMessages(data.history.length ? data.history : [WELCOME_MSG]);
+        localStorage.setItem('ma7fath_chat_history_' + userId, JSON.stringify(data.history));
+      }
+    }).catch(error => alive && setChatError(error.message));
+    return () => { alive = false; };
   }, [userId]);
 
   const scrollToBottom = () => {
@@ -150,9 +135,10 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
     setMessages(updatedMessages);
     setInput('');
     setIsTyping(true);
+    setChatError('');
 
     const localKey = `ma7fath_chat_history_${userId}`;
-    localStorage.setItem(localKey, JSON.stringify(updatedMessages));
+
 
     let aiReplyText = '';
 
@@ -161,12 +147,11 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
     const timeoutId = setTimeout(() => controller.abort(), 12000);
 
     try {
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetchWithAuth('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           message: userText, 
-          userId, 
           userContext,
           apiKey: apiKey || undefined
         }),
@@ -175,22 +160,17 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
       clearTimeout(timeoutId);
 
       const data = await res.json();
-      if (data.success && data.reply && data.reply.trim()) {
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر حفظ المحادثة');
+      if (data.reply && data.reply.trim()) {
         aiReplyText = data.reply.trim();
       }
     } catch (fetchErr) {
       clearTimeout(timeoutId);
-      console.log('Server unreachable or timeout, generating dynamic response locally:', fetchErr.message);
-    }
-
-    // Attempt 2: If server didn't respond or returned empty, use Advanced Quran AI Engine
-    if (!aiReplyText) {
-      try {
-        aiReplyText = await generateQuranAiResponse(userText, userContext);
-      } catch (engineErr) {
-        console.error('Local Quran AI Engine error:', engineErr);
-        aiReplyText = `🌿 بارك الله فيك يا ${userContext.name}! بالنسبة لسؤالك، وأنت في الصفحة ${currentPage} من سورة ${currentSurah}، استمر في ورد الحصون الخمسة مع التكرار المتقن، وستجد ثمرة التثبيت سريعاً بإذن الله.`;
-      }
+      setChatError(fetchErr.message);
+      setMessages(messages);
+      setInput(userText);
+      setIsTyping(false);
+      return;
     }
 
     const aiMsg = { id: Date.now() + 1, text: aiReplyText, sender: 'ai', userId };
@@ -201,12 +181,14 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
   };
 
   const handleClearChat = async () => {
-    const localKey = `ma7fath_chat_history_${userId}`;
-    localStorage.removeItem(localKey);
     try {
-      await fetch(`/api/ai/chat?userId=${encodeURIComponent(userId)}`, { method: 'DELETE' });
-    } catch (e) {}
-    setMessages([WELCOME_MSG]);
+      const response = await fetchWithAuth('/api/ai/chat', { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر حذف المحادثة');
+      localStorage.removeItem('ma7fath_chat_history_' + userId);
+      setMessages([WELCOME_MSG]);
+      setChatError('');
+    } catch (error) { setChatError(error.message); }
   };
 
   const quickPrompts = [
@@ -247,6 +229,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
       paddingBottom: isFloating ? '14px' : (isMobile ? '82px' : '16px')
     }}>
       
+      {chatError && <div role="alert" data-testid="chat-error">{chatError}</div>}
       {/* Top Header Controls Bar */}
       <div style={{
         padding: '14px 18px',
@@ -314,6 +297,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
           <button
             type="button"
             onClick={handleClearChat}
+            data-testid="clear-chat"
             title="مسح المحادثة بالكامل"
             style={{
               padding: '7px',
@@ -468,6 +452,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
       <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
         <input
           type="text"
+          data-testid="chat-input"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => {

@@ -14,6 +14,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
   const [previewURL, setPreviewURL] = useState('');
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -36,7 +37,8 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
+    const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+    if (!allowedTypes.has(file.type)) {
       setErrorMsg(isRTL ? 'يرجى اختيار ملف صورة صحيح' : 'Please select a valid image file');
       return;
     }
@@ -49,6 +51,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
     let localPreview = '';
     let uploadedRef = null;
     try {
+      setIsUploading(true);
       setErrorMsg('');
       setSuccessMsg('');
       localPreview = URL.createObjectURL(file);
@@ -79,6 +82,9 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       setPreviewURL('');
       setErrorMsg(isRTL ? 'فشل رفع الصورة أو حفظها؛ بقيت الصورة السابقة' : 'Upload or profile save failed; the previous photo was kept');
       setUploadProgress(0);
+    } finally {
+      setIsUploading(false);
+      e.target.value = '';
     }
   };
 
@@ -269,6 +275,8 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
               />
               <button
                 type="button"
+                disabled={isUploading || isSaving}
+                aria-busy={isUploading}
                 onClick={() => fileInputRef.current?.click()}
                 style={{
                   position: 'absolute',
@@ -283,7 +291,8 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  cursor: 'pointer'
+                  cursor: isUploading ? 'wait' : 'pointer',
+                  opacity: isUploading ? 0.65 : 1
                 }}
                 title={isRTL ? 'تغيير الصورة الشخصية' : 'Change Avatar'}
               >
@@ -294,12 +303,12 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                 aria-label={isRTL ? 'اختيار صورة شخصية' : 'Choose profile photo'}
                 ref={fileInputRef} 
                 onChange={handleImageChange} 
-                accept="image/*" 
+                accept="image/png,image/jpeg,image/webp,image/gif"
                 style={{ display: 'none' }} 
               />
             </div>
 
-            {uploadProgress > 0 && uploadProgress < 100 && (
+            {isUploading && (
               <div style={{ width: '100%', marginTop: '8px' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)', textAlign: 'center', marginBottom: '4px' }}>
                   {isRTL ? `جاري الرفع... ${Math.round(uploadProgress)}%` : `Uploading... ${Math.round(uploadProgress)}%`}
@@ -408,7 +417,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{isRTL ? 'صحبة القرآن' : 'Quran Companion'}</div>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#F59E0B' }}>🔥 {user?.streak || 1} {isRTL ? 'يوم' : 'd'}</div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#F59E0B' }}>🔥 {user?.streak ?? 0} {isRTL ? 'يوم' : 'd'}</div>
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{isRTL ? 'الحصون' : 'Fortresses'}</div>
@@ -420,7 +429,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
             <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
               <button
                 type="submit"
-                disabled={isSaving}
+                disabled={isSaving || isUploading}
                 style={{
                   flex: 1,
                   padding: '14px',
@@ -430,7 +439,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                   border: 'none',
                   fontSize: '15px',
                   fontWeight: 'bold',
-                  cursor: isSaving ? 'wait' : 'pointer',
+                  cursor: (isSaving || isUploading) ? 'wait' : 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -439,7 +448,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                 }}
               >
                 <Save size={18} />
-                {isSaving ? (isRTL ? 'جاري الحفظ...' : 'Saving...') : (isRTL ? 'حفظ التعديلات' : 'Save Changes')}
+                {isUploading ? (isRTL ? 'جاري رفع الصورة...' : 'Uploading photo...') : isSaving ? (isRTL ? 'جاري الحفظ...' : 'Saving...') : (isRTL ? 'حفظ التعديلات' : 'Save Changes')}
               </button>
 
               <button

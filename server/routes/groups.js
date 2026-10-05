@@ -2,18 +2,21 @@ import { Router } from 'express';
 import { getAuth } from 'firebase-admin/auth';
 import { db, requireAuth, requireAdmin } from '../middleware/auth.js';
 import { canActAsTeacher, isAdmin, hasRole } from '../accessControl.js';
-import { readPracticeStats, readPracticeHistory } from '../firestoreRecitation.js';
+import { readPracticeStats, readPracticeHistory, reviewPracticeSession } from '../firestoreRecitation.js';
+import { activityNow, ammanDateKey } from '../quranActivityStreak.js';
 import {
   GroupError, listUsers, listGroups, findGroup, createFirestoreGroup, setMembership,
-  submitRequest, listRequests, changeTeacherRole, teacherStudents, publicUser
+  submitRequest, listRequests, changeTeacherRole, teacherStudents, publicUser, docData
 } from '../firestoreGroups.js';
+
+import { activeTeacherMembers, requireTeacherStudent } from '../teacherScope.js';
 
 const router = Router();
 const route = fn => async (req, res) => {
   try { await fn(req, res); }
   catch (error) {
     if (!(error instanceof GroupError)) console.error('Firestore group operation failed:', error.message);
-    const expected = error instanceof GroupError;
+    const expected = error instanceof GroupError || Number.isInteger(error.status);
     res.status(expected ? error.status : 503).json({ success: false, message: expected ? error.message : 'تعذر حفظ أو قراءة بيانات الحلقات؛ أعد المحاولة' });
   }
 };
@@ -58,11 +61,42 @@ router.get('/admin/safar-users', requireAuth, requireAdmin, route(async (req, re
   success(res, { users, count: users.length });
 }));
 router.get('/admin/overview', requireAuth, requireAdmin, route(async (req, res) => {
-  const [users, groups] = await Promise.all([listUsers(), listGroups()]);
+  const [users, groups, membershipsSnapshot, sessionsSnapshot] = await Promise.all([
+    listUsers(), listGroups(), db.collection('memberships').get(), db.collectionGroup('recitation_sessions').get()
+  ]);
+  const now = activityNow();
+  const dayNumber = value => {
+    const key = /^\d{4}-\d{2}-\d{2}$/.test(String(value || '')) ? String(value) : ammanDateKey(value);
+    const [year, month, day] = key.split('-').map(Number);
+    return Math.floor(Date.UTC(year, month - 1, day) / 86400000);
+  };
+  const today = dayNumber(ammanDateKey(now));
+  const withinDays = (value, days) => {
+    if (!value) return false;
+    try { const difference = today - dayNumber(value); return difference >= 0 && difference < days; }
+    catch { return false; }
+  };
+  const activeMemberships = membershipsSnapshot.docs.map(docData).filter(item => item.status === 'active' && item.groupId);
+  const sessions = sessionsSnapshot.docs.map(docData);
+  const activeUsersWeek = new Set(users.filter(user => withinDays(user.lastQuranActivityDate, 7)).map(user => user.uid));
+  const activeGroupIds = new Set(activeMemberships.filter(member => activeUsersWeek.has(member.uid)).map(member => member.groupId));
+  const reviewedTeachers = new Set(sessions.filter(session => session.reviewedBy && withinDays(session.reviewedAt, 7)).map(session => session.reviewedBy));
   const stats = { totalUsers: users.length, totalRegisteredUsers: users.length, safarMembers: users.filter(u => u.isSafarMember).length,
     teachersCount: users.filter(u => hasRole(u, 'teacher')).length, groupsCount: groups.length,
     independentUsers: users.filter(u => !u.isSafarMember).length };
-  success(res, { ...stats, stats });
+  const realTimeActivity = {
+    activeToday: users.filter(user => withinDays(user.lastQuranActivityDate, 1)).length,
+    activeThisWeek: activeUsersWeek.size,
+    newRegistrationsWeek: users.filter(user => withinDays(user.createdAt, 7)).length,
+    newGroupJoinsWeek: activeMemberships.filter(member => withinDays(member.updatedAt, 7)).length,
+    activeTeachers: reviewedTeachers.size,
+    activeGroups: activeGroupIds.size,
+    weeklyActivities: sessions.filter(session => withinDays(session.createdAt, 7)).length,
+    monthlyActivities: sessions.filter(session => withinDays(session.createdAt, 30)).length,
+    generatedAt: now.toISOString(),
+    timeZone: 'Asia/Amman'
+  };
+  success(res, { ...stats, stats, realTimeActivity });
 }));
 for (const [endpoint, enabled] of [['assign-teacher', true], ['remove-teacher', false]]) {
   router.post(`/admin/${endpoint}`, requireAuth, requireAdmin, route(async (req, res) => {
@@ -84,8 +118,7 @@ router.get('/teacher/:teacherId/students', requireAuth, teacherScope, route(asyn
   success(res, { students, count: students.length });
 }));
 router.get('/teacher/:teacherId/student/:studentId', requireAuth, teacherScope, route(async (req, res) => {
-  const member = await db.doc(`memberships/${req.params.studentId}`).get();
-  if (!isAdmin(req.user) && (!member.exists || member.data().teacherId !== req.params.teacherId)) throw new GroupError(403, 'الطالب غير معيّن لهذا المعلم');
+  if (!isAdmin(req.user)) await requireTeacherStudent(req.params.teacherId, req.params.studentId);
   const student = await db.doc(`users/${req.params.studentId}`).get();
   if (!student.exists) throw new GroupError(404, 'حساب الطالب غير موجود');
   const [recitationStats, recentSessions, ayahProgress] = await Promise.all([
@@ -106,21 +139,124 @@ router.get('/teacher/:teacherId/student/:studentId', requireAuth, teacherScope, 
     manualOldReviewTarget: preferences.manualOldReviewTarget || null,
     oldReviewDailyTarget: preferences.oldReviewDailyTarget || null
   };
-  success(res, { student: { ...publicUser(student), memorizedJuz: student.data().totalJuz || 0,
+  success(res, { student: { ...publicUser(student), memorizedJuz: null,
     recitationStats, recentSessions, recordedProgress, learningPlan } });
 }));
+router.patch('/teacher/:teacherId/student/:studentId/sessions/:sessionId/review', requireAuth, teacherScope, route(async (req, res) => {
+  if (req.user.uid !== req.params.teacherId || !hasRole(req.user, 'teacher')) throw new GroupError(403, 'مراجعة الجلسة تتطلب المعلم المعيّن نفسه');
+  const session = await reviewPracticeSession(req.params.teacherId, req.params.studentId, req.params.sessionId,
+    req.body?.decision, req.body?.feedback);
+  success(res, { session });
+}));
+router.post('/teacher/:teacherId/student/:studentId/notes', requireAuth, teacherScope, route(async (req, res) => {
+  if (req.user.uid !== req.params.teacherId || !hasRole(req.user, 'teacher')) throw new GroupError(403, 'إرسال الملاحظة يتطلب المعلم المعيّن نفسه');
+  const text = String(req.body?.text || '').trim();
+  if (!text || text.length > 1000) throw new GroupError(400, 'نص الملاحظة مطلوب وبحد أقصى 1000 حرف');
+  const now = new Date().toISOString();
+  const noteRef = db.collection(`users/${req.params.studentId}/teacher_notes`).doc();
+  const notificationRef = db.collection(`users/${req.params.studentId}/notifications`).doc(`teacher_note_${noteRef.id}`);
+  const note = { id: noteRef.id, studentId: req.params.studentId, teacherId: req.params.teacherId, text, createdAt: now };
+  await db.runTransaction(async tx => {
+  await requireTeacherStudent(req.params.teacherId, req.params.studentId, tx);
+  tx.create(noteRef, note);
+  tx.create(notificationRef, { id: notificationRef.id, userId: req.params.studentId, type: 'teacher_note',
+    title: 'ملاحظة جديدة من المعلم', message: text, teacherId: req.params.teacherId, noteId: noteRef.id, read: false, createdAt: now });
+  });
+  success(res, { note });
+}));
+router.get('/teacher/:teacherId/reports', requireAuth, teacherScope, route(async (req, res) => {
+  const members = await activeTeacherMembers(req.params.teacherId, { groupId: req.query.groupId });
+  const rows = await Promise.all(members.map(async member => {
+    const [profile, sessions, notes] = await Promise.all([
+      db.doc(`users/${member.id}`).get(), db.collection(`users/${member.id}/recitation_sessions`).get(),
+      db.collection(`users/${member.id}/teacher_notes`).get()
+    ]);
+    const list = sessions.docs.map(item => item.data());
+    return { uid: member.id, name: profile.data()?.name || '', attempts: list.length,
+      pending: list.filter(item => item.reviewStatus === 'pending').length,
+      approved: list.filter(item => item.reviewStatus === 'approved').length,
+      rejected: list.filter(item => item.reviewStatus === 'rejected').length,
+      averageAccuracy: list.length ? Math.round(list.reduce((sum, item) => sum + Number(item.accuracy || 0), 0) / list.length) : 0,
+      notes: notes.size };
+  }));
+  success(res, { report: { students: rows, totals: rows.reduce((total, row) => ({ students: total.students + 1,
+    attempts: total.attempts + row.attempts, pending: total.pending + row.pending, approved: total.approved + row.approved,
+    rejected: total.rejected + row.rejected, notes: total.notes + row.notes }),
+  { students: 0, attempts: 0, pending: 0, approved: 0, rejected: 0, notes: 0 }) } });
+}));
 router.get('/teacher/:teacherId/dashboard', requireAuth, teacherScope, route(async (req, res) => {
-  const [students, teacher] = await Promise.all([teacherStudents(req.params.teacherId), db.doc(`users/${req.params.teacherId}`).get()]);
+  const [students, teacher, groups] = await Promise.all([
+    teacherStudents(req.params.teacherId), db.doc(`users/${req.params.teacherId}`).get(), listGroups(req.params.teacherId)
+  ]);
+  const since = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  const rows = await Promise.all(students.map(async student => {
+    const sessions = (await db.collection(`users/${student.uid}/recitation_sessions`).get()).docs.map(docData);
+    const weekly = sessions.filter(item => Date.parse(item.createdAt) >= since);
+    const latest = sessions.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))[0] || null;
+    return { ...student, weeklySessions: weekly.length, lastPracticeAt: latest?.createdAt || null,
+      pendingReviews: sessions.filter(item => item.reviewStatus === 'pending' && item.submittedTeacherId === req.params.teacherId).length,
+      recentSessions: weekly };
+  }));
+  const weeklySessions = rows.flatMap(row => row.recentSessions.map(session => ({ ...session, studentName: row.name, studentId: row.uid })));
+  const activeThisWeek = rows.filter(row => row.weeklySessions > 0).length;
+  const studentsWhoNeedAttention = rows.filter(row => row.lastPracticeAt && Date.parse(row.lastPracticeAt) < since)
+    .map(row => ({ ...row, attentionReason: 'لا توجد محاولة تدريب مسجلة خلال آخر 7 أيام' }));
   success(res, { teacher: teacher.exists ? publicUser(teacher) : { uid: req.params.teacherId },
-    stats: { studentsCount: students.length, activeThisWeek: students.filter(s => s.thisWeekSessions > 0).length,
-      weeklyCommitment: students.length ? Math.round(students.reduce((sum, s) => sum + s.consistencyRate, 0) / students.length) : 0,
-      needsAttentionCount: students.filter(s => s.status === 'needs_attention').length },
-    studentsWhoNeedAttention: students.filter(s => s.status === 'needs_attention'), smartInsights: [], recentActivities: [] });
+    groups, stats: { studentsCount: rows.length, groupsCount: groups.length, activeThisWeek,
+      weeklyCommitment: rows.length ? Math.round(activeThisWeek * 100 / rows.length) : null,
+      weeklyPracticeSessions: weeklySessions.length,
+      pendingReviews: rows.reduce((sum, row) => sum + row.pendingReviews, 0),
+      needsAttentionCount: studentsWhoNeedAttention.length },
+    studentsWhoNeedAttention, smartInsights: [], recentActivities: weeklySessions
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 8)
+      .map(item => ({ id: `${item.studentId}-${item.id}`, studentName: item.studentName,
+        action: `محاولة تدريب${Number.isFinite(Number(item.accuracy)) ? ` بدقة ${Number(item.accuracy)}%` : ''}`,
+        time: item.createdAt, icon: 'mic' })) });
+}));
+
+router.get('/student/analytics', requireAuth, route(async (req, res) => {
+  const uid = req.user.uid;
+  const [profile, progressSnapshot, sessionsSnapshot] = await Promise.all([
+    db.doc(`users/${uid}`).get(), db.collection(`users/${uid}/ayah_progress`).get(),
+    db.collection(`users/${uid}/recitation_sessions`).get()
+  ]);
+  if (!profile.exists) throw new GroupError(404, 'حساب الطالب غير موجود');
+  const progress = progressSnapshot.docs.map(docData);
+  const sessions = sessionsSnapshot.docs.map(docData);
+  const now = activityNow();
+  const dayMs = 24 * 60 * 60 * 1000;
+  const start = now.getTime() - 6 * dayMs;
+  const dailyPractice = Array.from({ length: 7 }, (_, offset) => {
+    const date = new Date(start + offset * dayMs);
+    const key = ammanDateKey(date);
+    const daySessions = sessions.filter(item => item.createdAt && ammanDateKey(item.createdAt) === key);
+    const scored = daySessions.map(item => Number(item.accuracy)).filter(Number.isFinite);
+    return { date: key, attempts: daySessions.length,
+      averageAccuracy: scored.length ? Math.round(scored.reduce((sum, value) => sum + value, 0) / scored.length) : null };
+  });
+  const accuracies = sessions.map(item => Number(item.accuracy)).filter(Number.isFinite);
+  const statusCounts = { memorized: 0, learning: 0, review: 0, unmemorized: 0 };
+  progress.forEach(item => { if (item.status in statusCounts) statusCounts[item.status] += 1; });
+  success(res, { analytics: {
+    source: 'firestore', timeZone: 'Asia/Amman', generatedAt: now.toISOString(),
+    declaredProgress: { classification: 'student_declared', totalAyahs: progress.length, ...statusCounts },
+    practice: { classification: 'practice', totalAttempts: sessions.length,
+      attemptsLast7Days: dailyPractice.reduce((sum, day) => sum + day.attempts, 0),
+      averageAccuracy: accuracies.length ? Math.round(accuracies.reduce((sum, value) => sum + value, 0) / accuracies.length) : null,
+      dailyPractice },
+    teacherReviews: { classification: 'teacher_review_of_practice',
+      pending: sessions.filter(item => item.reviewStatus === 'pending').length,
+      approved: sessions.filter(item => item.reviewStatus === 'approved').length,
+      rejected: sessions.filter(item => item.reviewStatus === 'rejected').length },
+    profile: { streak: Number(profile.data().streak || 0), xp: Number(profile.data().xp || 0),
+      level: Number(profile.data().level || 0), verifiedMemorizedPages: null,
+      verifiedMemorizationSource: 'unavailable_no_page_approval_workflow', memoryScore: null }
+  } });
 }));
 router.get('/teacher/:teacherId/available-students', requireAuth, teacherScope, route(async (req, res) => {
   const search = String(req.query.search || '').toLowerCase();
-  const students = (await listUsers()).filter(u => !u.groupId && !hasRole(u, 'teacher') && !hasRole(u, 'admin') &&
-    `${u.name || ''} ${u.email || ''}`.toLowerCase().includes(search));
+  // A teacher has no global student directory or historical access entitlement.
+  const students = await teacherStudents(req.params.teacherId, { search, groupId: req.query.groupId });
   success(res, { students, count: students.length });
 }));
 for (const endpoint of ['enroll-student', 'add-student']) {

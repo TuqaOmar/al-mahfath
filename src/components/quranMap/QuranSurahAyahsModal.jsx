@@ -64,16 +64,16 @@ export const QuranSurahAyahsModal = ({
     clearResult: clearAiResult
   } = useRecitationRecorder();
 
-  // Load Ayahs of this Surah from Al-Quran Cloud
+  // Load the server corpus shared with recitation checks.
   useEffect(() => {
     let isMounted = true;
     setLoadingAyahs(true);
 
-    fetch(`https://api.alquran.cloud/v1/surah/${surah.number}/quran-uthmani`)
+    fetch(`/api/quran/reference/surah/${surah.number}`)
       .then(res => res.json())
       .then(data => {
-        if (isMounted && data.code === 200 && data.data?.ayahs) {
-          setAyahsList(data.data.ayahs);
+        if (isMounted && data.success && data.surah?.ayahs) {
+          setAyahsList(data.surah.ayahs);
         }
       })
       .catch(err => {
@@ -362,7 +362,7 @@ export const QuranSurahAyahsModal = ({
                   </span>
                 </div>
                 <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                  إجمالي الآيات: {surah.numberOfAyahs} آية • المحفظة الشخصية: {memorizedAyahsCount} آية متقنة ({completionPercent}%)
+                  إجمالي الآيات: {surah.numberOfAyahs} آية • المحفظة الشخصية: {memorizedAyahsCount} آية مصرّح بحفظها ذاتيًا ({completionPercent}%)
                 </p>
               </div>
             </div>
@@ -431,7 +431,7 @@ export const QuranSurahAyahsModal = ({
           <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
             {[
               { id: 'all', label: `الكل (${surah.numberOfAyahs})` },
-              { id: 'memorized', label: `🟢 متقنة (${memorizedAyahsCount})` },
+              { id: 'memorized', label: `🟢 مصرّح بحفظها ذاتيًا (${memorizedAyahsCount})` },
               { id: 'learning', label: `🟡 قيد الحفظ (${learningAyahsCount})` },
               { id: 'review', label: `🔴 مراجعة (${reviewAyahsCount})` },
               { id: 'unmemorized', label: `⚪ غير محفوظة (${surah.numberOfAyahs - memorizedAyahsCount - learningAyahsCount - reviewAyahsCount})` }
@@ -699,7 +699,7 @@ export const QuranSurahAyahsModal = ({
                 if (status === 'memorized') {
                   statusBadgeBg = 'rgba(16, 185, 129, 0.15)';
                   statusBadgeColor = '#10B981';
-                  statusBadgeLabel = '🟢 متقنة (100%)';
+                  statusBadgeLabel = '🟢 مصرّح بحفظها ذاتيًا';
                 } else if (status === 'learning') {
                   statusBadgeBg = 'rgba(245, 158, 11, 0.15)';
                   statusBadgeColor = '#F59E0B';
@@ -758,7 +758,7 @@ export const QuranSurahAyahsModal = ({
 
                         {score > 0 && (
                           <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                            إتقان التسميع: <strong style={{ color: statusBadgeColor }}>{score}%</strong>
+                            درجة مسجلة ذاتيًا (ليست اعتمادًا): <strong style={{ color: statusBadgeColor }}>{score}%</strong>
                           </span>
                         )}
                       </div>
@@ -829,10 +829,10 @@ export const QuranSurahAyahsModal = ({
                     </div>
 
                     {/* Ayah Text in Uthmani Calligraphy */}
-                    <div style={{
+                    <div data-testid={`surah-ayah-${ayah.number}`} data-quran-text={ayah.text} dir="rtl" lang="ar" style={{
                       fontSize: '20px',
                       lineHeight: '2.2',
-                      fontFamily: 'serif',
+                      fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
                       color: 'var(--text-primary)',
                       textAlign: 'justify',
                       padding: '4px 0'
@@ -941,7 +941,7 @@ export const QuranSurahAyahsModal = ({
                             cursor: 'pointer'
                           }}
                         >
-                          🟢 متقنة
+                          🟢 مصرّح بحفظها ذاتيًا
                         </button>
 
                         <button

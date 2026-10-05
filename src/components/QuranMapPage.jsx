@@ -1,3 +1,4 @@
+import { declaredPages } from '../lib/memorization';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, 
@@ -26,38 +27,12 @@ import { fetchUserPortfolio, saveAyahToPortfolio, makeAyahKey } from '../lib/por
 
 // Helper to construct initial 604 pages accurately based on user's portfolio
 const buildQuranPagesData = (user) => {
-  const userPages = Array.isArray(user?.memorizedPages) ? user.memorizedPages : [];
-  const userJuzs = Array.isArray(user?.preferences?.selectedJuzList) ? user.preferences.selectedJuzList : [];
-  const count = Number(user?.memorizedPagesCount) || 0;
-
-  const memorizedSet = new Set(userPages);
-
-  // If specific pages list is empty but selectedJuzList is present, populate from Juzs
-  if (userPages.length === 0 && userJuzs.length > 0) {
-    userJuzs.forEach(juzNum => {
-      const range = getPageRangeForJuz(juzNum);
-      for (let p = range.startPage; p <= range.endPage; p++) {
-        memorizedSet.add(p);
-      }
-    });
-  } else if (userPages.length === 0 && userJuzs.length === 0 && count > 0) {
-    // Fallback for legacy account with only count
-    for (let p = 1; p <= Math.min(604, count); p++) {
-      memorizedSet.add(p);
-    }
-  }
-
-  // Load custom local reviews if stored for this user
-  const savedReviewsKey = `ma7fath_${user?.uid || 'guest'}_quran_page_reviews`;
-  let savedReviews = {};
-  try {
-    savedReviews = JSON.parse(localStorage.getItem(savedReviewsKey) || '{}');
-  } catch (e) {}
-
+  const memorizedSet = new Set(declaredPages(user));
+  const savedReviews = user?.preferences?.studentDeclaredPageStatuses || {};
   const pages = [];
   for (let i = 1; i <= 604; i++) {
     const isMemorized = memorizedSet.has(i);
-    const custom = savedReviews[i];
+    const custom = memorizedSet.has(i) && savedReviews[i];
 
     let status = 'unmemorized';
     let score = 0;
@@ -66,12 +41,12 @@ const buildQuranPagesData = (user) => {
 
     if (custom) {
       status = custom.status;
-      score = custom.score;
+      score = 0;
       lastReviewed = custom.lastReviewed || 'اليوم';
-      errorsCount = custom.errorsCount || 0;
+      errorsCount = 0;
     } else if (isMemorized) {
       status = 'excellent';
-      score = 100;
+      score = 0;
       lastReviewed = 'اليوم';
       errorsCount = 0;
     }
@@ -154,8 +129,8 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
   useEffect(() => {
     const initialPages = buildQuranPagesData(user);
     setPages(initialPages);
-    setQuickPagesInput((user?.memorizedPagesCount || initialPages.filter(p => p.status !== 'unmemorized').length).toString());
-  }, [user?.uid, user?.memorizedPagesCount, user?.memorizedPages, user?.preferences?.selectedJuzList]);
+    setQuickPagesInput(declaredPages(user).length.toString());
+  }, [user?.uid, user?.preferences?.studentDeclaredPages, user?.preferences?.studentDeclaredPageStatuses]);
 
   const activeMemorizedPages = pages.filter(p => p.status !== 'unmemorized');
   const activeMemorizedCount = activeMemorizedPages.length;
@@ -172,233 +147,38 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
     if (isCompleted) completedJuzs.push(j);
   }
 
-  // Update a single page status
-  const handleUpdatePageStatus = async (pageNumber, newStatus, newScore) => {
-    const updatedPages = pages.map(p => {
-      if (p.pageNumber === pageNumber) {
-        return {
-          ...p,
-          status: newStatus,
-          score: newScore,
-          lastReviewed: newStatus !== 'unmemorized' ? 'اليوم' : 'لم يراجع بعد'
-        };
-      }
-      return p;
-    });
-
-    setPages(updatedPages);
-
-    const updatedSelected = updatedPages.find(p => p.pageNumber === pageNumber);
-    if (updatedSelected) {
-      setSelectedPage(updatedSelected);
+  // Commit self-reported planning data before changing counters or claiming success.
+  const persistDeclaredPages = async nextPages => {
+    const list = nextPages.filter(page => page.status !== 'unmemorized').map(page => page.pageNumber);
+    const statuses = Object.fromEntries(nextPages.filter(page => page.status !== 'unmemorized')
+      .map(page => [page.pageNumber, { status: page.status, lastReviewed: page.lastReviewed }]));
+    setStatusMessage('');
+    const result = await updateUserData({ preferences: { ...(user?.preferences || {}),
+      studentDeclaredPages: list, studentDeclaredPageStatuses: statuses } });
+    if (!result?.success) {
+      setStatusMessage('تعذر حفظ التصريح الذاتي؛ بقي السجل السابق.');
+      return false;
     }
-
-    // Persist to local storage reviews for current user
-    const savedReviewsKey = `ma7fath_${user?.uid || 'guest'}_quran_page_reviews`;
-    let savedReviews = {};
-    try {
-      savedReviews = JSON.parse(localStorage.getItem(savedReviewsKey) || '{}');
-    } catch (e) {}
-    savedReviews[pageNumber] = {
-      status: newStatus,
-      score: newScore,
-      lastReviewed: 'اليوم',
-      errorsCount: newStatus === 'critical' ? 3 : (newStatus === 'review' ? 1 : 0)
-    };
-    localStorage.setItem(savedReviewsKey, JSON.stringify(savedReviews));
-
-    // Update user's memorized pages array
-    const newMemorizedPages = updatedPages
-      .filter(p => p.status !== 'unmemorized')
-      .map(p => p.pageNumber)
-      .sort((a, b) => a - b);
-
-    const newCount = newMemorizedPages.length;
-    const calcJuz = Number((newCount / 20).toFixed(1));
-
-    await updateUserData({
-      memorizedPages: newMemorizedPages,
-      memorizedPagesCount: newCount,
-      totalJuz: calcJuz
-    });
-
-    if (user?.uid) {
-      try {
-        await fetchWithAuth(`/api/user/${user.uid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            memorizedPages: newMemorizedPages,
-            memorizedPagesCount: newCount,
-            totalJuz: calcJuz
-          })
-        });
-      } catch (e) {
-        console.error('Error syncing user level:', e);
-      }
-    }
-
-    if (newStatus === 'excellent') {
-      notifyAndCelebrate({
-        title: `إتقان ممتاز للصفحة ${pageNumber}! 🟢`,
-        message: `أحسنت! أثبتت حفظ الصفحة ${pageNumber} (${updatedSelected?.surahName || ''}) بتقدير ممتاز!`,
-        type: 'achievement',
-        xpBonus: 60,
-        badgeTitle: 'حافظ متقن'
-      });
-    }
-
-    setStatusMessage(`تم تحديث حالة الصفحة ${pageNumber} في محفظتك بنجاح ✨`);
-    setTimeout(() => setStatusMessage(''), 3000);
+    setPages(nextPages);
+    setStatusMessage('تم حفظ الصفحات المصرّح بها ذاتيًا؛ ليست حفظًا معتمدًا.');
+    return true;
   };
-
-  // Bulk set entire Juz as Memorized or Unmemorized
+  const handleUpdatePageStatus = async (pageNumber, newStatus) => {
+    const next = pages.map(page => page.pageNumber === pageNumber
+      ? { ...page, status: newStatus, score: 0, errorsCount: 0, lastReviewed: 'اليوم' } : page);
+    if (await persistDeclaredPages(next)) setSelectedPage(next.find(page => page.pageNumber === pageNumber));
+  };
   const handleBulkSetJuzStatus = async (juzNum, shouldMemorize) => {
     const range = getPageRangeForJuz(juzNum);
-    const updatedPages = pages.map(p => {
-      if (p.pageNumber >= range.startPage && p.pageNumber <= range.endPage) {
-        return {
-          ...p,
-          status: shouldMemorize ? 'excellent' : 'unmemorized',
-          score: shouldMemorize ? 95 : 0,
-          lastReviewed: shouldMemorize ? 'اليوم' : 'لم يراجع بعد'
-        };
-      }
-      return p;
-    });
-
-    setPages(updatedPages);
-
-    // Save reviews
-    const savedReviewsKey = `ma7fath_${user?.uid || 'guest'}_quran_page_reviews`;
-    let savedReviews = {};
-    try {
-      savedReviews = JSON.parse(localStorage.getItem(savedReviewsKey) || '{}');
-    } catch (e) {}
-
-    for (let p = range.startPage; p <= range.endPage; p++) {
-      savedReviews[p] = {
-        status: shouldMemorize ? 'excellent' : 'unmemorized',
-        score: shouldMemorize ? 95 : 0,
-        lastReviewed: shouldMemorize ? 'اليوم' : 'لم يراجع بعد',
-        errorsCount: 0
-      };
-    }
-    localStorage.setItem(savedReviewsKey, JSON.stringify(savedReviews));
-
-    const newMemorizedPages = updatedPages
-      .filter(p => p.status !== 'unmemorized')
-      .map(p => p.pageNumber)
-      .sort((a, b) => a - b);
-
-    const newCount = newMemorizedPages.length;
-    const calcJuz = Number((newCount / 20).toFixed(1));
-
-    // Update selectedJuzList
-    let currentJuzList = Array.isArray(user?.preferences?.selectedJuzList) ? [...user.preferences.selectedJuzList] : [];
-    if (shouldMemorize && !currentJuzList.includes(juzNum)) {
-      currentJuzList.push(juzNum);
-      currentJuzList.sort((a, b) => a - b);
-    } else if (!shouldMemorize) {
-      currentJuzList = currentJuzList.filter(j => j !== juzNum);
-    }
-
-    const updatedPreferences = {
-      ...(user?.preferences || {}),
-      selectedJuzList: currentJuzList
-    };
-
-    await updateUserData({
-      memorizedPages: newMemorizedPages,
-      memorizedPagesCount: newCount,
-      totalJuz: calcJuz,
-      preferences: updatedPreferences
-    });
-
-    if (user?.uid) {
-      try {
-        await fetchWithAuth(`/api/user/${user.uid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            memorizedPages: newMemorizedPages,
-            memorizedPagesCount: newCount,
-            totalJuz: calcJuz,
-            preferences: updatedPreferences
-          })
-        });
-      } catch (e) {
-        console.error('Error syncing bulk juz:', e);
-      }
-    }
-
-    notifyAndCelebrate({
-      title: shouldMemorize ? `تم اعتماد الجزء ${juzNum} كاملاً! 📗` : `تم إلغاء تحديد الجزء ${juzNum}`,
-      message: shouldMemorize ? `مبارك! أضيفت جميع صفحات الجزء ${juzNum} لمحفظتك بنجاح.` : `تم تحديث صفحات الجزء ${juzNum} كغير محفوظة.`,
-      type: 'achievement',
-      xpBonus: shouldMemorize ? 100 : 0
-    });
-
-    setStatusMessage(shouldMemorize ? `تم تعليم الجزء ${juzNum} كاملاً كمحفوظ! 🎉` : `تم إلغاء تحديد الجزء ${juzNum}`);
-    setTimeout(() => setStatusMessage(''), 3500);
+    const next = pages.map(page => page.pageNumber >= range.startPage && page.pageNumber <= range.endPage
+      ? { ...page, status: shouldMemorize ? 'excellent' : 'unmemorized', score: 0, errorsCount: 0, lastReviewed: 'اليوم' } : page);
+    await persistDeclaredPages(next);
   };
-
-  // Quick update memorized count modal
-  const handleQuickUpdateLevel = async (newCountNum) => {
-    const newCount = Math.min(604, Math.max(0, Number(newCountNum) || 0));
-    const newPages = [];
-    const newMemorizedArr = [];
-
-    for (let i = 1; i <= 604; i++) {
-      const isMem = i <= newCount;
-      if (isMem) newMemorizedArr.push(i);
-      newPages.push({
-        pageNumber: i,
-        juz: getJuzForPage(i),
-        status: isMem ? 'excellent' : 'unmemorized',
-        score: isMem ? 95 : 0,
-        lastReviewed: isMem ? 'اليوم' : 'لم يراجع بعد',
-        errorsCount: 0,
-        surahName: getSurahNameForPage(i)
-      });
-    }
-
-    setPages(newPages);
-    setShowLevelModal(false);
-
-    const calcJuz = Number((newCount / 20).toFixed(1));
-    await updateUserData({
-      memorizedPages: newMemorizedArr,
-      memorizedPagesCount: newCount,
-      totalJuz: calcJuz
-    });
-
-    notifyAndCelebrate({
-      title: '🗺️ تحديث مستوى الخريطة القرآنية!',
-      message: `تم تحديث مستوى حفظك إلى ${newCount} صفحة (${calcJuz} جزءاً) بنجاح!`,
-      type: 'achievement',
-      xpBonus: 80,
-      badgeTitle: 'فارس الخريطة'
-    });
-
-    if (user?.uid) {
-      try {
-        await fetchWithAuth(`/api/user/${user.uid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            memorizedPages: newMemorizedArr,
-            memorizedPagesCount: newCount,
-            totalJuz: calcJuz
-          })
-        });
-      } catch (e) {
-        console.error('Error updating user memorized count:', e);
-      }
-    }
-
-    setStatusMessage(`تم تحديث مستوى الحفظ إلى ${newCount} صفحة بنجاح! 🎉`);
-    setTimeout(() => setStatusMessage(''), 3500);
+  const handleQuickUpdateLevel = async count => {
+    const limit = Math.min(604, Math.max(0, Math.floor(Number(count) || 0)));
+    const next = pages.map(page => ({ ...page, status: page.pageNumber <= limit ? 'excellent' : 'unmemorized',
+      score: 0, errorsCount: 0, lastReviewed: 'اليوم' }));
+    if (await persistDeclaredPages(next)) setShowLevelModal(false);
   };
 
   // Filtered pages for grid view
@@ -445,27 +225,15 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
           </h4>
         </div>
 
-        {/* Memory Score Meter */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', fontSize: '13px' }}>
-            <span style={{ color: 'var(--text-secondary)' }}>استقرار الذاكرة في الصدر:</span>
-            <span style={{ fontWeight: 'bold', color: getStatusColor(selectedPage.status) }}>
-              {selectedPage.score}%
-            </span>
-          </div>
-          <div style={{ width: '100%', height: '8px', background: 'var(--glass-border)', borderRadius: '4px', overflow: 'hidden' }}>
-            <div style={{ width: `${selectedPage.score}%`, height: '100%', background: getStatusColor(selectedPage.status), borderRadius: '4px' }} />
-          </div>
-        </div>
-
+        <p>تقييم الحفظ المعتمد: غير متاح</p>
         {/* Interactive Page Status Controls */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <span style={{ fontSize: '12.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-            تعديل حالة هذه الصفحة المباشر:
+            تعديل تصريحك الذاتي عن هذه الصفحة:
           </span>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
             <button
-              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'excellent', 95)}
+              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'excellent', 0)}
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
@@ -477,11 +245,11 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 cursor: 'pointer'
               }}
             >
-              🟢 ممتاز (95%)
+              🟢 مصرّح بحفظها ذاتيًا
             </button>
 
             <button
-              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'review', 75)}
+              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'review', 0)}
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
@@ -493,11 +261,11 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 cursor: 'pointer'
               }}
             >
-              🟡 مراجعة (75%)
+              🟡 أحتاج مراجعة (تصريح ذاتي)
             </button>
 
             <button
-              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'critical', 50)}
+              onClick={() => handleUpdatePageStatus(selectedPage.pageNumber, 'critical', 0)}
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
@@ -509,7 +277,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 cursor: 'pointer'
               }}
             >
-              🔴 حرج (50%)
+              🔴 أحتاج مساعدة (تصريح ذاتي)
             </button>
 
             <button
@@ -533,7 +301,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
           <div style={{ padding: '10px', borderRadius: '10px', background: 'var(--bg-color)', textAlign: 'center' }}>
             <Clock size={16} color="var(--primary)" style={{ margin: '0 auto 4px' }} />
-            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>آخر مراجعة</span>
+            <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>آخر تصريح ذاتي</span>
             <strong style={{ fontSize: '12px', color: 'var(--text-primary)' }}>{selectedPage.lastReviewed}</strong>
           </div>
 
@@ -548,14 +316,14 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
         <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--primary-light)', border: '1px solid var(--primary)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
             <Sparkles size={16} color="var(--primary)" />
-            <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>توجيه الذكاء الاصطناعي:</strong>
+            <strong style={{ fontSize: '13px', color: 'var(--primary)' }}>توجيه عام للخطة (ليس تقييمًا):</strong>
           </div>
           <p style={{ margin: 0, fontSize: '12.5px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
             {selectedPage.status === 'unmemorized'
               ? 'الصفحة غير مدرجة في محفوظك حالياً. يمكنك إضافتها لخطتك في الحصن الثالث (الحفظ الجديد).'
               : (selectedPage.status === 'critical' 
                 ? 'ينصح بمراجعة هذه الصفحة اليوم في حصن الغد والتكرار 5 مرات صوتاً.' 
-                : 'حالة الحفظ ممتازة. جدول المراجعة القادم بعد 5 أيام.')}
+                : 'هذا تصريحك الذاتي؛ راجع خطتك وحدد موعد المراجعة المناسب.')}
           </p>
         </div>
 
@@ -634,12 +402,12 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
       
       {/* Toast Notification */}
       {statusMessage && (
-        <div style={{
+        <div data-testid="declared-pages-feedback" role={statusMessage.startsWith('تعذر') ? 'alert' : 'status'} style={{
           position: 'fixed',
           bottom: '24px',
           right: '24px',
           zIndex: 9999,
-          background: '#10B981',
+          background: statusMessage.startsWith('تعذر') ? '#DC2626' : '#10B981',
           color: 'white',
           padding: '12px 20px',
           borderRadius: '12px',
@@ -681,10 +449,10 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
             boxShadow: 'var(--shadow-xl)'
           }}>
             <h3 style={{ margin: '0 0 12px 0', fontSize: '20px', color: 'var(--text-primary)' }}>
-              🎯 تحديث إجمالي عدد الصفحات المحفوظة
+              🎯 تحديث الصفحات المصرّح بها ذاتيًا
             </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '20px', lineHeight: 1.5 }}>
-              أدخل إجمالي عدد الصفحات التي حفظتها في صدرك حتى الآن (من 0 إلى 604)، وسيتم تحديث الخريطة الذهنية ومحفظتك فوراً:
+              أدخل عدد الصفحات المصرّح بها ذاتيًا (0 إلى 604). يتحدث العرض بعد نجاح الحفظ؛ لا يمثل اعتماد المعلم.
             </p>
 
             <div style={{ display: 'flex', gap: '10px', marginBottom: '24px' }}>
@@ -692,6 +460,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 type="number"
                 min="0"
                 max="604"
+                data-testid="declared-pages-input"
                 value={quickPagesInput}
                 onChange={(e) => setQuickPagesInput(e.target.value)}
                 style={{
@@ -719,6 +488,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 إلغاء
               </button>
               <button
+                data-testid="save-declared-pages"
                 onClick={() => handleQuickUpdateLevel(quickPagesInput)}
                 style={{ padding: '10px 22px', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: 'white', fontWeight: 'bold', cursor: 'pointer' }}
               >
@@ -729,6 +499,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
         </div>
       )}
 
+      <p data-testid="self-reported-page-disclaimer">حالات الصفحات تصريحات ذاتية؛ ليست حفظًا معتمدًا أو درجات تسميع.</p>
       {/* Main Grid View */}
       <div style={{ flex: 1, minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div data-testid="ayah-progress-editor" style={{ padding: '18px', borderRadius: '18px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
@@ -737,7 +508,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'end' }}>
             <label>رقم السورة<input aria-label="رقم السورة للتقدم" type="number" min="1" max="114" value={ayahSurah} onChange={event => setAyahSurah(event.target.value)} style={{ display: 'block', padding: '8px', width: '110px' }} /></label>
             <label>رقم الآية<input aria-label="رقم الآية للتقدم" type="number" min="1" max="286" value={ayahNumber} onChange={event => setAyahNumber(event.target.value)} style={{ display: 'block', padding: '8px', width: '110px' }} /></label>
-            <label>الحالة<select aria-label="حالة تقدم الآية" value={ayahStatus} onChange={event => setAyahStatus(event.target.value)} style={{ display: 'block', padding: '8px' }}><option value="learning">قيد الحفظ</option><option value="review">مراجعة</option><option value="memorized">مسجل كمتقن</option><option value="unmemorized">غير محفوظ</option></select></label>
+            <label>الحالة<select aria-label="حالة تقدم الآية" value={ayahStatus} onChange={event => setAyahStatus(event.target.value)} style={{ display: 'block', padding: '8px' }}><option value="learning">قيد الحفظ</option><option value="review">مراجعة</option><option value="memorized">مصرّح بحفظها ذاتيًا</option><option value="unmemorized">غير محفوظ</option></select></label>
             <button type="button" data-testid="save-ayah-progress" disabled={ayahSaving} onClick={saveRecordedAyahProgress} style={{ padding: '9px 16px' }}>{ayahSaving ? 'جاري الحفظ...' : 'حفظ تقدم الآية'}</button>
           </div>
           <div data-testid="ayah-progress-count" style={{ marginTop: '12px', color: 'var(--text-secondary)' }}>الآيات ذات السجل: {Object.keys(ayahPortfolio).length}</div>
@@ -773,6 +544,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
             </div>
 
             <button
+              data-testid="open-declared-pages"
               onClick={() => setShowLevelModal(true)}
               style={{
                 padding: '10px 16px',
@@ -792,7 +564,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 textAlign: 'center'
               }}
             >
-              🎯 تعديل رصيد المحفظة: {activeMemorizedCount} صفحة ({(activeMemorizedCount / 20).toFixed(1)} جزء) ✏️
+              🎯 تعديل التصريح الذاتي: {activeMemorizedCount} صفحة ✏️
             </button>
           </div>
 
@@ -805,17 +577,17 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
             boxSizing: 'border-box'
           }}>
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📗 محفوظ في الصدر</span>
-              <strong style={{ fontSize: '18px', color: 'var(--primary)' }}>{activeMemorizedCount} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>صفحة</span></strong>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📗 صفحات مصرّح بها ذاتيًا</span>
+              <strong data-testid="declared-pages-count" style={{ fontSize: '18px', color: 'var(--primary)' }}>{activeMemorizedCount} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>صفحة</span></strong>
             </div>
 
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📚 أجزاء مكتملة</span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📚 أجزاء مصرّح بها كاملة</span>
               <strong style={{ fontSize: '18px', color: '#10B981' }}>{completedJuzs.length} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>من 30</span></strong>
             </div>
 
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>🟢 حفظ ممتاز</span>
+              <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>🟢 مصرّح بحفظها ذاتيًا</span>
               <strong style={{ fontSize: '18px', color: '#10B981' }}>{excellentCount}</strong>
             </div>
 
@@ -846,8 +618,8 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
             <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', maxWidth: '100%' }}>
               {[
                 { id: 'all', label: `الكل (604)` },
-                { id: 'memorized', label: `📗 المحفوظ (${activeMemorizedCount})` },
-                { id: 'excellent', label: `🟢 ممتاز (${excellentCount})` },
+                { id: 'memorized', label: `📗 المصرّح بها ذاتيًا (${activeMemorizedCount})` },
+                { id: 'excellent', label: `🟢 مصرّح بها ذاتيًا (${excellentCount})` },
                 { id: 'review', label: `🟡 مراجعة (${reviewCount})` },
                 { id: 'critical', label: `🔴 حرج (${criticalCount})` }
               ].map(f => (
@@ -960,7 +732,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                     color: badgeColor,
                     fontWeight: 'bold'
                   }}>
-                    {isFull ? 'مكتمل ✅' : (isPartial ? `${memInJuz} ص` : 'لم يحفظ')}
+                    {isFull ? 'مصرّح به كاملًا ✅' : (isPartial ? `${memInJuz} ص` : 'لم يصرّح')}
                   </span>
                 </button>
               );
@@ -986,7 +758,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                   📖 الجزء {activeJuzTab} (الصفحات {getPageRangeForJuz(Number(activeJuzTab)).startPage} - {getPageRangeForJuz(Number(activeJuzTab)).endPage})
                 </strong>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>
-                  يمكنك تعليم الجزء كاملاً كمحفوظ أو إلغاؤه بضغطة زر واحدة لتحديث محفظتك فوراً:
+                  يمكنك التصريح ذاتيًا بصفحات الجزء أو إزالة التصريح؛ يتحدث العرض بعد نجاح الحفظ فقط:
                 </span>
               </div>
 

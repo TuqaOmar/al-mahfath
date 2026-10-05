@@ -1,3 +1,4 @@
+import { declaredPages, nextDeclaredPage } from '../lib/memorization';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, 
@@ -45,19 +46,21 @@ import {
 import { 
   generateFiveFortressesPlan, 
   saveFortressPlanToFirestore, 
-  getFortressPlanFromFirestore 
+  getFortressPlanFromFirestore,
+  currentFortressCompletion,
+  numericFortressCompletion
 } from '../lib/fortressService';
 
-export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigateToQuran }) => {
-  const { user, updateUserData } = useAuth();
+export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigateToQuran, onPlanSaved }) => {
+  const { user, applyConfirmedUser } = useAuth();
   const { isRTL, lang } = useLanguage();
-  const { notifyAndCelebrate, soundEnabled, toggleSound } = useNotifications();
-  const userId = user?.uid || 'guest';
+  const { soundEnabled, toggleSound } = useNotifications();
+  const userId = user?.uid;
 
   // Current user's progress
-  const userMemorizedPages = Array.isArray(user?.memorizedPages) ? user.memorizedPages : [];
+  const userMemorizedPages = declaredPages(user);
   const userSelectedJuzs = Array.isArray(user?.preferences?.selectedJuzList) ? user.preferences.selectedJuzList : [];
-  const userMemorizedCount = Math.max(0, Number(user?.memorizedPagesCount) || userMemorizedPages.length);
+  const userMemorizedCount = userMemorizedPages.length;
   
   let initialPage = 1;
   if (userMemorizedPages.length > 0) {
@@ -75,7 +78,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
   const [currentPage, setCurrentPage] = useState(initialPage);
   const [currentJuz, setCurrentJuz] = useState(initialJuz);
   const [activeFortressTab, setActiveFortressTab] = useState(1); // 1 to 5
-  const [completion, setCompletion] = useState(user?.preferences?.fortressesToday || {
+  const [completion, setCompletion] = useState({
     1: false,
     2: false,
     3: false,
@@ -94,7 +97,16 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
   const audioRef = useRef(null);
 
   // Sync state
-  const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'saving' | 'saved'
+  const [syncStatus, setSyncStatus] = useState('loading');
+  const [savedPlan, setSavedPlan] = useState(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const saveInFlight = useRef(false);
+  const [saveError, setSaveError] = useState(''); // 'synced' | 'saving' | 'saved'
+  useEffect(() => {
+    setSavedPlan(null);
+    setCompletion(numericFortressCompletion({}));
+    setSaveError('');
+  }, [userId]);
 
   // Calculate dynamic 5-fortresses boundaries
   const currentSurah = getSurahNameForPage(currentPage);
@@ -142,113 +154,74 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
     }
   };
 
-  // Load from Firestore or local storage
+  // A failed server read never turns a local plan into a confirmed save.
   useEffect(() => {
+    let active = true;
     async function loadData() {
-      if (userId && userId !== 'guest') {
+      setSyncStatus('loading');
+      try {
         const remotePlan = await getFortressPlanFromFirestore(userId, currentJuz, currentPage);
-        if (remotePlan?.completionStatus) {
-          setCompletion(remotePlan.completionStatus);
-        }
+        if (!active) return;
+        setSavedPlan(remotePlan);
+        setCurrentPage(remotePlan.currentPage || initialPage);
+        setCurrentJuz(remotePlan.lastJuzReached || initialJuz);
+        setCompletion(numericFortressCompletion(currentFortressCompletion(remotePlan)));
+        setSyncStatus(remotePlan.persistenceStatus === 'draft' ? 'draft' : 'synced');
+        setSaveError('');
+      } catch (error) {
+        if (active) { setSaveError(error.message); setSyncStatus('failed'); }
       }
     }
     loadData();
-  }, [userId]);
+    return () => { active = false; };
+  }, [userId, loadAttempt]);
+
+  const persistPlan = async (page, juz, nextCompletion) => {
+    if (saveInFlight.current || !savedPlan) return;
+    saveInFlight.current = true;
+    setSyncStatus('saving');
+    setSaveError('');
+    try {
+      const nextPlan = { ...savedPlan, ...generateFiveFortressesPlan(juz, page, savedPlan.dailyTarget), completionStatus: nextCompletion };
+      const result = await saveFortressPlanToFirestore(userId, nextPlan);
+      if (result.user && applyConfirmedUser(result).success !== true) throw new Error('Authentication changed while applying the saved plan');
+      setSavedPlan(result.plan);
+      onPlanSaved?.(result.plan);
+      setCurrentPage(result.plan.currentPage);
+      setCurrentJuz(result.plan.lastJuzReached);
+      setCompletion(numericFortressCompletion(currentFortressCompletion(result.plan)));
+      setSyncStatus('saved');
+      setRepCounter(0);
+    } catch (error) {
+      setSaveError(error.message);
+      setSyncStatus('failed');
+    } finally {
+      saveInFlight.current = false;
+    }
+  };
 
   // Handle page change
-  const handlePageChange = (newPageNum) => {
+  const handlePageChange = async (newPageNum) => {
     const safeP = Math.min(604, Math.max(1, Number(newPageNum) || 1));
-    setCurrentPage(safeP);
-    const safeJ = getJuzForPage(safeP);
-    setCurrentJuz(safeJ);
-    setRepCounter(0);
+    await persistPlan(safeP, getJuzForPage(safeP), completion);
   };
 
   // Handle Juz change
-  const handleJuzChange = (newJuzNum) => {
+  const handleJuzChange = async (newJuzNum) => {
     const safeJ = Math.min(30, Math.max(1, Number(newJuzNum) || 1));
-    setCurrentJuz(safeJ);
     const startP = getJuzStartPage(safeJ);
-    setCurrentPage(startP);
-    setRepCounter(0);
+    await persistPlan(startP, safeJ, completion);
   };
 
-  // Toggle completion of a fortress
+  // Self-reported completion is applied only after the canonical plan commits.
   const handleToggleFortress = async (fortId) => {
-    const newStatus = !completion[fortId];
-    const updated = {
-      ...completion,
-      [fortId]: newStatus
-    };
-    setCompletion(updated);
-
-    // Calculate XP
-    const deltaXp = newStatus ? 60 : -60;
-    const newXp = Math.max(0, (user?.xp || 100) + deltaXp);
-    const newLevel = Math.floor(newXp / 500) + 1;
-
-    updateUserData({
-      xp: newXp,
-      level: newLevel,
-      preferences: {
-        ...(user?.preferences || {}),
-        fortressesToday: updated
-      }
-    });
-
-    // Save to Firestore
-    setSyncStatus('saving');
-    const planObj = generateFiveFortressesPlan(currentJuz, currentPage);
-    planObj.completionStatus = updated;
-    await saveFortressPlanToFirestore(userId, planObj);
-    setSyncStatus('saved');
-    setTimeout(() => setSyncStatus('synced'), 2000);
-
-    if (newStatus) {
-      playDing();
-      const doneCount = Object.values(updated).filter(Boolean).length;
-      if (doneCount === 5) {
-        notifyAndCelebrate({
-          title: isRTL ? '🏆 تاج الحصون الخمسة! أنجزت كافة الحصون اليومية!' : '🏆 5-Fortresses Crown! All 5 Completed!',
-          message: isRTL 
-            ? 'ما شاء الله تبارك الله! أتممت القراءة والتحضير والحفظ والمراجعة القريبة والبعيدة!'
-            : 'MashaAllah! You completed Continuous Reading, Triple Prep, New Memorization, Near Review, and Distant Review!',
-          type: 'wird',
-          xpBonus: 250,
-          badgeTitle: isRTL ? 'فارس الحصون الخمسة' : 'Knight of Five Fortresses'
-        });
-      } else {
-        const fortNames = {
-          1: isRTL ? 'قراءة الختمة والحدر' : 'Continuous Reading (Hadr)',
-          2: isRTL ? 'التحضير الثلاثي' : 'Triple Preparation',
-          3: isRTL ? 'الحفظ الجديد بالتكرار' : 'New Memorization',
-          4: isRTL ? 'المراجعة القريبة' : 'Near Past Review',
-          5: isRTL ? 'المراجعة البعيدة' : 'Distant Past Review'
-        };
-        notifyAndCelebrate({
-          title: isRTL ? `تم إنجاز: ${fortNames[fortId]}! 🎯` : `Completed: ${fortNames[fortId]}! 🎯`,
-          message: isRTL ? 'أكملت الحصن بنجاح (+60 XP). بارك الله في همتك!' : 'Fortress marked complete (+60 XP)!',
-          type: 'wird',
-          xpBonus: 60
-        });
-      }
-    }
+    await persistPlan(currentPage, currentJuz, { ...completion, [fortId]: !completion[fortId] });
   };
 
-  // Repetition Increment
+  // Repetition clicks are an unsaved local practice counter, not a reward event.
   const handleIncrementRep = () => {
-    const next = repCounter + 1;
-    setRepCounter(next);
+    setRepCounter(count => count + 1);
     playDing();
-
-    if (next >= repTarget) {
-      notifyAndCelebrate({
-        title: isRTL ? '🎉 اكتمل نصاب التكرار بنجاح!' : '🎉 Repetition Target Reached!',
-        message: isRTL ? `أتممت ${repTarget} تكراراً متقناً لرسوخ الآيات في الذاكرة الدائمة!` : `You achieved ${repTarget} repetitions!`,
-        type: 'wird',
-        xpBonus: 40
-      });
-    }
   };
 
   // Audio Playback Handler
@@ -284,6 +257,10 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%' }}>
       
+      {saveError && <div role="alert" data-testid="fortress-save-error">{saveError}</div>}
+      {!savedPlan && syncStatus === 'failed' && <button data-testid="visual-fortress-reload" onClick={() => setLoadAttempt(n => n + 1)}>إعادة تحميل الخطة المحفوظة</button>}
+      <p>عداد التكرار تدريب محلي غير محفوظ؛ لا يمنح نقاطًا أو حفظًا معتمدًا.</p>
+      <p>موقع البداية مبني على تصريحات الطالب وخيارات الخطة، وليس حفظًا معتمدًا.</p>
       {/* 🌟 Top Hero: 5-Fortresses Shield Panorama */}
       <div style={{
         padding: '24px 28px',
@@ -364,7 +341,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               color: '#D1FAE5'
             }}>
               <Cloud size={14} color="#34D399" />
-              <span>{syncStatus === 'saving' ? (isRTL ? 'جاري الحفظ...' : 'Saving...') : (isRTL ? 'مربوط بسحابة Firestore' : 'Firestore Synced')}</span>
+              <span data-testid="visual-fortress-status">{syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ بقي آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم حفظ الخطة في Firestore ✓' : 'خطة محفوظة في Firestore'}</span>
             </div>
 
             <div style={{
@@ -380,7 +357,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               fontWeight: 'bold'
             }}>
               <Flame size={14} />
-              <span>{completedCount} / 5 {isRTL ? 'حصون منجزة' : 'Fortresses'} ({progressPercent}%)</span>
+              <span data-testid="visual-fortress-count">{completedCount} / 5 {isRTL ? 'حصون منجزة' : 'Fortresses'} ({progressPercent}%)</span>
             </div>
           </div>
         </div>
@@ -421,6 +398,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               <span>{isRTL ? 'الجزء:' : 'Juz:'}</span>
               <select
                 value={currentJuz}
+                data-testid="visual-fortress-juz"
+                disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
                 onChange={(e) => handleJuzChange(e.target.value)}
                 style={{
                   padding: '6px 12px',
@@ -449,6 +428,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 min="1"
                 max="604"
                 value={currentPage}
+                data-testid="visual-fortress-page"
+                disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
                 onChange={(e) => handlePageChange(e.target.value)}
                 style={{
                   width: '65px',
@@ -508,6 +489,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               return (
                 <div
                   key={j}
+                  disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
                   onClick={() => handleJuzChange(j)}
                   title={isRTL ? `الجزء ${j} (ص ${range.startPage} - ${range.endPage})` : `Juz ${j} (Pages ${range.startPage}-${range.endPage})`}
                   style={{
@@ -698,7 +680,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 <div 
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleToggleFortress(tab.id);
+                    if (savedPlan && syncStatus !== 'saving' && syncStatus !== 'loading') handleToggleFortress(tab.id);
                   }}
                   title={isDone ? (isRTL ? 'تم الإنجاز (اضغط للإلغاء)' : 'Completed') : (isRTL ? 'اضغط لتوثيق الإنجاز' : 'Mark Complete')}
                   style={{
@@ -766,6 +748,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             </div>
 
             <button
+              data-testid="visual-fortress-complete-1"
+              disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
               onClick={() => handleToggleFortress(1)}
               style={{
                 padding: '10px 20px',
@@ -783,7 +767,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               }}
             >
               {completion[1] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-              <span>{completion[1] ? (isRTL ? 'تم إنجاز الحصن الأول ✓ (+60 XP)' : 'Fortress 1 Completed ✓') : (isRTL ? 'توثيق قراءة الورد (+60 XP)' : 'Mark Fortress 1 Done')}</span>
+              <span>{completion[1] ? (isRTL ? 'تم إنجاز الحصن الأول ✓' : 'Fortress 1 Completed ✓') : (isRTL ? 'توثيق قراءة الورد' : 'Mark Fortress 1 Done')}</span>
             </button>
           </div>
 
@@ -914,6 +898,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             </div>
 
             <button
+              data-testid="visual-fortress-complete-2"
+              disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
               onClick={() => handleToggleFortress(2)}
               style={{
                 padding: '10px 20px',
@@ -931,7 +917,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               }}
             >
               {completion[2] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-              <span>{completion[2] ? (isRTL ? 'تم إنجاز التحضير ✓ (+60 XP)' : 'Preparation Done ✓') : (isRTL ? 'توثيق التحضير (+60 XP)' : 'Mark Prep Done')}</span>
+              <span>{completion[2] ? (isRTL ? 'تم إنجاز التحضير ✓' : 'Preparation Done ✓') : (isRTL ? 'توثيق التحضير' : 'Mark Prep Done')}</span>
             </button>
           </div>
 
@@ -1067,7 +1053,9 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               )}
 
               <button
-                onClick={() => handleToggleFortress(3)}
+                data-testid="visual-fortress-complete-3"
+              disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
+              onClick={() => handleToggleFortress(3)}
                 style={{
                   padding: '10px 18px',
                   borderRadius: '12px',
@@ -1083,7 +1071,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 }}
               >
                 {completion[3] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-                <span>{completion[3] ? (isRTL ? 'تم الحفظ ✓' : 'Done ✓') : (isRTL ? 'توثيق الحفظ (+60 XP)' : 'Mark Done')}</span>
+                <span>{completion[3] ? (isRTL ? 'تم تسجيل الإنجاز الذاتي ✓' : 'Done ✓') : (isRTL ? 'تسجيل إنجاز ذاتي؛ ليس اعتمادًا للحفظ' : 'Mark Done')}</span>
               </button>
             </div>
           </div>
@@ -1260,6 +1248,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             </div>
 
             <button
+              data-testid="visual-fortress-complete-4"
+              disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
               onClick={() => handleToggleFortress(4)}
               style={{
                 padding: '10px 20px',
@@ -1277,7 +1267,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               }}
             >
               {completion[4] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-              <span>{completion[4] ? (isRTL ? 'تمت المراجعة القريبة ✓' : 'Near Review Done ✓') : (isRTL ? 'توثيق المراجعة (+60 XP)' : 'Mark Near Done')}</span>
+              <span>{completion[4] ? (isRTL ? 'تمت المراجعة القريبة ✓' : 'Near Review Done ✓') : (isRTL ? 'توثيق المراجعة' : 'Mark Near Done')}</span>
             </button>
           </div>
 
@@ -1353,6 +1343,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             </div>
 
             <button
+              data-testid="visual-fortress-complete-5"
+              disabled={!savedPlan || syncStatus === 'saving' || syncStatus === 'loading'}
               onClick={() => handleToggleFortress(5)}
               style={{
                 padding: '10px 20px',
@@ -1370,7 +1362,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               }}
             >
               {completion[5] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-              <span>{completion[5] ? (isRTL ? 'تمت المراجعة البعيدة ✓' : 'Distant Review Done ✓') : (isRTL ? 'توثيق المراجعة (+60 XP)' : 'Mark Far Done')}</span>
+              <span>{completion[5] ? (isRTL ? 'تمت المراجعة البعيدة ✓' : 'Distant Review Done ✓') : (isRTL ? 'توثيق المراجعة' : 'Mark Far Done')}</span>
             </button>
           </div>
 

@@ -715,17 +715,17 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                       <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#10B981', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
-                      <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>/api/auth/signup</code>
+                      <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>Firebase Auth: createUserWithEmailAndPassword</code>
                     </div>
-                    <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>إنشاء حساب مستخدم جديد مع تشفير كلمة المرور بـ Salt & Hash.</span>
+                    <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>إنشاء الحساب عبر Firebase Authentication. مسار JSON القديم معطّل.</span>
                   </div>
 
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                       <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#3B82F6', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
-                      <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>/api/auth/login</code>
+                      <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>Firebase Auth: signInWithEmailAndPassword</code>
                     </div>
-                    <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>تسجيل دخول المستخدم والتحقق من صحة البيانات.</span>
+                    <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>تسجيل الدخول عبر Firebase Authentication؛ طلبات API الخاصة تتطلب ID token.</span>
                   </div>
 
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { 
-  BrainCircuit, 
-  Eye, 
-  Volume2, 
-  Fingerprint, 
-  BookOpen, 
-  Sparkles, 
-  CheckCircle2, 
+import {
+  BrainCircuit,
+  Eye,
+  Volume2,
+  Fingerprint,
+  BookOpen,
+  Sparkles,
+  CheckCircle2,
   RotateCcw,
   Sliders,
   ChevronRight,
@@ -16,27 +16,24 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { learningQuizQuestions, calculateLearningProfile } from '../utils/learningQuizData';
-import { fetchWithAuth } from '../lib/api';
+import { saveLearningProfile } from '../lib/learningProfileService';
 
 export const LearningStyleProfiler = () => {
-  const { user, updateUserData } = useAuth();
+  const { user, applyConfirmedUser } = useAuth();
   const { lang, isRTL } = useLanguage();
 
   const [showQuizModal, setShowQuizModal] = useState(false);
   const [quizAnswers, setQuizAnswers] = useState({});
   const [currentQuestionIdx, setCurrentQuestionIdx] = useState(0);
   const [successToast, setSuccessToast] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
-  // Current profile from user preferences or calculated fallback
+  // Only a persisted quiz result supplies percentages; no synthetic fallback.
   const userProfile = user?.preferences?.learningProfile;
-  const userStyle = user?.preferences?.learningStyle || (lang === 'ar' ? 'سمعي بصري (مختلط)' : 'Audio-Visual (Mixed)');
-
-  const percentages = userProfile?.percentages || {
-    auditory: userStyle.includes('سمعي') || userStyle.includes('صوتي') ? 70 : 30,
-    visual: userStyle.includes('بصري') || userStyle.includes('مرئي') ? 75 : 35,
-    kinesthetic: userStyle.includes('حركي') || userStyle.includes('كتابي') ? 60 : 20,
-    analytical: userStyle.includes('تحليلي') ? 65 : 25
-  };
+  const userStyle = user?.preferences?.learningStyle || (isRTL ? 'لا توجد نتيجة محفوظة' : 'No saved result');
+  const percentages = userProfile?.percentages || {};
+  const percentageLabel = value => Number.isFinite(value) ? value + '%' : (isRTL ? 'غير متاح' : 'Unavailable');
 
   const getDominantIcon = () => {
     if (userStyle.includes('صوتي') || userStyle.includes('سمعي')) return Volume2;
@@ -51,49 +48,40 @@ export const LearningStyleProfiler = () => {
   const handleStartQuiz = () => {
     setQuizAnswers({});
     setCurrentQuestionIdx(0);
+    setSaveError('');
+    setSuccessToast('');
     setShowQuizModal(true);
   };
 
+  const persistAnswers = async (answers) => {
+    if (saving) return;
+    setSaving(true);
+    setSaveError('');
+    setSuccessToast('');
+    try {
+      const profile = calculateLearningProfile(answers);
+      const newStyle = lang === 'ar' ? profile.styleLabelAr : profile.styleLabelEn;
+      const saved = await saveLearningProfile(user?.uid, profile, newStyle);
+      const applied = applyConfirmedUser(saved);
+      if (applied.success !== true) throw new Error(applied.message);
+      setShowQuizModal(false);
+      setSuccessToast(isRTL ? 'تم حفظ نتيجة الاختبار: ' + newStyle : 'Quiz result saved: ' + newStyle);
+      setTimeout(() => setSuccessToast(''), 4000);
+    } catch (error) {
+      setSaveError(isRTL ? 'تعذر حفظ نتيجة الاختبار. بقيت النتيجة السابقة. ' + error.message : 'Could not save the quiz. The previous result was retained. ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleAnswerQuestion = async (qId, optionId) => {
+    if (saving) return;
     const updated = { ...quizAnswers, [qId]: optionId };
     setQuizAnswers(updated);
-
     if (currentQuestionIdx < learningQuizQuestions.length - 1) {
       setCurrentQuestionIdx(currentQuestionIdx + 1);
     } else {
-      // Completed
-      const profile = calculateLearningProfile(updated);
-      const newStyle = lang === 'ar' ? profile.styleLabelAr : profile.styleLabelEn;
-
-      await updateUserData({
-        preferences: {
-          ...(user?.preferences || {}),
-          learningStyle: newStyle,
-          learningProfile: profile
-        }
-      });
-
-      if (user?.uid) {
-        try {
-          await fetchWithAuth(`/api/user/${user.uid}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              preferences: {
-                ...(user?.preferences || {}),
-                learningStyle: newStyle,
-                learningProfile: profile
-              }
-            })
-          });
-        } catch (e) {
-          console.error('Failed to sync updated learning style:', e);
-        }
-      }
-
-      setShowQuizModal(false);
-      setSuccessToast(isRTL ? `تم تحديث نمطك بنجاح إلى: ${newStyle} ✨` : `Learning style updated to ${newStyle}! ✨`);
-      setTimeout(() => setSuccessToast(''), 4000);
+      await persistAnswers(updated);
     }
   };
 
@@ -110,10 +98,10 @@ export const LearningStyleProfiler = () => {
       margin: '0 auto',
       position: 'relative'
     }}>
-      
+
       {/* Toast */}
       {successToast && (
-        <div style={{
+        <div data-testid="learning-quiz-success" role="status" style={{
           position: 'absolute',
           top: '-16px',
           left: '50%',
@@ -152,7 +140,9 @@ export const LearningStyleProfiler = () => {
         </div>
 
         <button
+          data-testid="learning-quiz-start"
           onClick={handleStartQuiz}
+          disabled={saving}
           style={{
             padding: '8px 14px',
             borderRadius: '10px',
@@ -188,13 +178,13 @@ export const LearningStyleProfiler = () => {
         </div>
         <div>
           <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '2px' }}>
-            🎯 النمط المعتمد حالياً في محفظتك:
+            {isRTL ? '🎯 نتيجة الاختبار المحفوظة في ملفك:' : '🎯 Saved quiz result:'}
           </span>
-          <h4 style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--text-primary)' }}>{userStyle}</h4>
+          <h4 data-testid="learning-saved-style" style={{ margin: '0 0 4px 0', fontSize: '18px', color: 'var(--text-primary)' }}>{userStyle}</h4>
           <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-            {userProfile?.recommendationAr || (isRTL 
-              ? 'تتكامل أدوات المنصة معك لتقديم أفضل تجربة مخصصة تجمع بين الاستماع الصوتي والتتبع البصري.' 
-              : 'Platform tools adapt dynamically to your cognitive memorization profile.')}
+            {(isRTL ? userProfile?.recommendationAr : userProfile?.recommendationEn) || (isRTL
+              ? 'أكمل الاختبار لحفظ نتيجة تعتمد على إجاباتك. ليست هذه النتيجة تقييمًا من المعلم أو قياسًا لجودة الحفظ.'
+              : 'Complete the quiz to save a result based on your answers. This is not a teacher assessment or a memorization score.')}
           </p>
         </div>
       </div>
@@ -204,40 +194,40 @@ export const LearningStyleProfiler = () => {
         <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>🎧 سمعي (صوتي):</span>
-            <strong style={{ color: 'var(--primary)' }}>{percentages.auditory}%</strong>
+            <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.auditory)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.auditory}%`, height: '100%', background: '#10B981' }} />
+            <div style={{ width: `${percentages.auditory ?? 0}%`, height: '100%', background: '#10B981' }} />
           </div>
         </div>
 
         <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>👁️ بصري (مرئي):</span>
-            <strong style={{ color: 'var(--primary)' }}>{percentages.visual}%</strong>
+            <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.visual)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.visual}%`, height: '100%', background: '#3B82F6' }} />
+            <div style={{ width: `${percentages.visual ?? 0}%`, height: '100%', background: '#3B82F6' }} />
           </div>
         </div>
 
         <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>✍️ حركي وكتابي:</span>
-            <strong style={{ color: 'var(--primary)' }}>{percentages.kinesthetic}%</strong>
+            <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.kinesthetic)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.kinesthetic}%`, height: '100%', background: '#8B5CF6' }} />
+            <div style={{ width: `${percentages.kinesthetic ?? 0}%`, height: '100%', background: '#8B5CF6' }} />
           </div>
         </div>
 
         <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>📖 تحليلي وتدبري:</span>
-            <strong style={{ color: 'var(--primary)' }}>{percentages.analytical}%</strong>
+            <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.analytical)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.analytical}%`, height: '100%', background: '#F59E0B' }} />
+            <div style={{ width: `${percentages.analytical ?? 0}%`, height: '100%', background: '#F59E0B' }} />
           </div>
         </div>
       </div>
@@ -246,7 +236,7 @@ export const LearningStyleProfiler = () => {
       <h4 style={{ fontSize: '15px', color: 'var(--text-primary)', marginBottom: '12px' }}>
         ⚙️ كيف تكيّف المنصة تجربتك بناءً على نمطك؟
       </h4>
-      
+
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
         <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
           <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#10B981', display: 'block', marginBottom: '4px' }}>🎧 للنمط الصوتي (السمعي):</span>
@@ -310,7 +300,8 @@ export const LearningStyleProfiler = () => {
                   {isRTL ? 'إعادة تشخيص نمط الحفظ 🧠' : 'Retake Learning Diagnostic'}
                 </h3>
               </div>
-              <button 
+              <button
+                data-testid="learning-quiz-close" disabled={saving}
                 onClick={() => setShowQuizModal(false)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}
               >
@@ -320,15 +311,26 @@ export const LearningStyleProfiler = () => {
 
             {/* Question Progress Bar */}
             <div style={{ height: '4px', width: '100%', background: 'var(--glass-border)', borderRadius: '2px', marginBottom: '20px', overflow: 'hidden' }}>
-              <div 
-                style={{ 
-                  height: '100%', 
-                  width: `${((currentQuestionIdx + 1) / learningQuizQuestions.length) * 100}%`, 
-                  background: 'var(--primary)', 
-                  transition: 'width 0.3s ease' 
-                }} 
+              <div
+                style={{
+                  height: '100%',
+                  width: `${((currentQuestionIdx + 1) / learningQuizQuestions.length) * 100}%`,
+                  background: 'var(--primary)',
+                  transition: 'width 0.3s ease'
+                }}
               />
             </div>
+
+            <p data-testid="learning-quiz-draft" style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
+              {isRTL ? 'إجابات غير محفوظة حتى يكتمل الاختبار ويؤكد الخادم الحفظ.' : 'Answers remain unsaved until the quiz finishes and the server confirms persistence.'}
+            </p>
+            {saving && <p data-testid="learning-quiz-saving" role="status">{isRTL ? 'جارٍ حفظ النتيجة…' : 'Saving result…'}</p>}
+            {saveError && <div role="alert" data-testid="learning-quiz-error" style={{ color: '#DC2626', marginBottom: '12px' }}>
+              {saveError}
+              <button data-testid="learning-quiz-retry" disabled={saving} onClick={() => persistAnswers(quizAnswers)}>
+                {isRTL ? 'إعادة محاولة الحفظ' : 'Retry save'}
+              </button>
+            </div>}
 
             {/* Question Title */}
             <h4 style={{ fontSize: '15.5px', color: 'var(--text-primary)', marginBottom: '16px', lineHeight: 1.5, textAlign: isRTL ? 'right' : 'left' }}>
@@ -338,8 +340,10 @@ export const LearningStyleProfiler = () => {
             {/* Options */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {currentQ.options.map((opt) => (
-                <div
+                <button
                   key={opt.id}
+                  data-testid={`learning-quiz-option-${currentQ.id}-${opt.id}`}
+                  disabled={saving}
                   onClick={() => handleAnswerQuestion(currentQ.id, opt.id)}
                   style={{
                     padding: '14px 16px',
@@ -351,6 +355,8 @@ export const LearningStyleProfiler = () => {
                     alignItems: 'center',
                     gap: '12px',
                     transition: 'all 0.2s ease',
+                    fontFamily: 'inherit',
+                    width: '100%',
                     textAlign: isRTL ? 'right' : 'left'
                   }}
                   onMouseEnter={(e) => {
@@ -365,7 +371,7 @@ export const LearningStyleProfiler = () => {
                   <span style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.5 }}>
                     {isRTL ? opt.textAr : opt.textEn}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </div>

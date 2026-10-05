@@ -1,3 +1,4 @@
+import { declaredPages, nextDeclaredPage } from '../lib/memorization';
 import React, { useState, useEffect } from 'react';
 import { 
   Trophy, 
@@ -29,7 +30,7 @@ export const Community = ({ setActiveTab }) => {
   const [activeSubTab, setActiveSubTab] = useState('posts'); // 'posts' | 'leaderboard'
   const { user, activeRole } = useAuth();
 
-  const currentPage = (user?.memorizedPagesCount || 0) + 1;
+  const currentPage = nextDeclaredPage(user);
   const currentSurah = getSurahNameForPage(currentPage);
   const currentJuz = getJuzForPage(currentPage);
   const fortressesToday = user?.preferences?.fortressesToday || {};
@@ -213,7 +214,7 @@ export const Community = ({ setActiveTab }) => {
                 </span>
               </div>
               <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#94A3B8' }}>
-                أنت الآن عند: <strong style={{ color: '#34D399' }}>الصفحة {currentPage}</strong> من <strong style={{ color: '#34D399' }}>سورة {currentSurah}</strong> (الجزء {currentJuz}) — أتممت {user?.memorizedPagesCount || 0} صفحة حفظاً متقناً.
+                أنت الآن عند: <strong style={{ color: '#34D399' }}>الصفحة {currentPage}</strong> من <strong style={{ color: '#34D399' }}>سورة {currentSurah}</strong> (الجزء {currentJuz}) — أتممت {declaredPages(user).length} صفحة مصرّح بها ذاتيًا، وليست حفظًا معتمدًا.
               </p>
             </div>
           </div>

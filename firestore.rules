@@ -30,10 +30,20 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isAssignedTeacher(studentData) {
-      return isTeacher() &&
-        'teacherId' in studentData &&
-        studentData.teacherId == request.auth.uid;
+    function isAssignedTeacher(studentId) {
+      let memberPath = /databases/$(database)/documents/memberships/$(studentId);
+      return isTeacher() && exists(memberPath) && validTeacherMembership(get(memberPath).data, studentId);
+    }
+
+    function validTeacherMembership(member, studentId) {
+      return member.keys().hasAll(['uid', 'status', 'groupId', 'teacherId']) &&
+        member.uid == studentId && member.status == 'active' &&
+        member.teacherId == request.auth.uid && member.groupId is string &&
+        member.groupId.size() > 0 && member.groupId.matches('^[^/]+$') &&
+        exists(/databases/$(database)/documents/groups/$(member.groupId)) &&
+        get(/databases/$(database)/documents/groups/$(member.groupId)).data.teacherId == request.auth.uid &&
+        (!('active' in get(/databases/$(database)/documents/groups/$(member.groupId)).data) ||
+          get(/databases/$(database)/documents/groups/$(member.groupId)).data.active != false);
     }
 
     function isSafeInitialUser(userId) {
@@ -48,7 +58,7 @@ service cloud.firestore {
         request.resource.data.email == request.auth.token.email &&
         request.resource.data.role == 'user' &&
         request.resource.data.roles == {'user': true} &&
-        request.resource.data.streak == 1 &&
+        request.resource.data.streak == 0 &&
         request.resource.data.xp == 100 &&
         request.resource.data.level == 1 &&
         request.resource.data.memorizedPagesCount == 0 &&
@@ -59,8 +69,7 @@ service cloud.firestore {
 
     function isSafeProfileUpdate() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-        'name', 'photoURL', 'preferences', 'favorites', 'fortressPlan',
-        'memorizedPages', 'memorizedPagesCount', 'totalJuz'
+        'name', 'photoURL', 'preferences', 'favorites', 'fortressPlan'
       ]);
     }
 
@@ -69,16 +78,17 @@ service cloud.firestore {
         request.resource.data.hasCompletedWizard == true &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
           'name', 'photoURL', 'preferences', 'favorites', 'fortressPlan',
-          'hasCompletedWizard', 'memorizedPages', 'memorizedPagesCount', 'totalJuz'
+          'hasCompletedWizard'
         ]);
     }
 
     match /users/{userId} {
       allow create: if isSafeInitialUser(userId) || isAdmin();
-      allow read: if isOwner(userId) || isAdmin() || isAssignedTeacher(resource.data);
+      allow read: if isOwner(userId) || isAdmin() || isAssignedTeacher(userId);
       allow update: if (isAdmin() &&
           !request.resource.data.diff(resource.data).affectedKeys().hasAny([
-            'groupId', 'groupName', 'teacherId', 'teacherName', 'isSafarMember'
+            'groupId', 'groupName', 'teacherId', 'teacherName', 'isSafarMember',
+            'memorizedPages', 'memorizedPagesCount', 'totalJuz', 'memoryScore'
           ])) ||
         (isOwner(userId) && (isSafeProfileUpdate() || isSafeOnboardingUpdate()));
       allow delete: if isAdmin();
@@ -88,9 +98,15 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      match /teacher_notes/{noteId} {
+        allow read: if isOwner(userId) || isAdmin() ||
+          isAssignedTeacher(userId);
+        allow write: if false;
+      }
+
       match /ayah_progress/{ayahId} {
         allow read: if isOwner(userId) || isAdmin() ||
-          isAssignedTeacher(get(/databases/$(database)/documents/users/$(userId)).data);
+          isAssignedTeacher(userId);
         allow create, update: if isOwner(userId) && request.resource.data.userId == userId &&
           request.resource.data.surahNumber is int && request.resource.data.surahNumber >= 1 && request.resource.data.surahNumber <= 114 &&
           request.resource.data.ayahNumber is int && request.resource.data.ayahNumber >= 1 && request.resource.data.ayahNumber <= 286 &&
@@ -100,12 +116,21 @@ service cloud.firestore {
         allow delete: if isOwner(userId);
       }
 
+      match /private_ai_chat/{chatId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+      match /five_fortresses_plans/{planId} {
+        allow read: if isOwner(userId);
+        // Plan and profile completion projection must commit together via API.
+        allow write: if false;
+      }
       match /{subcollection}/{document=**} {
-        allow read: if subcollection != 'notifications' && (isOwner(userId) || isAdmin() ||
-          isAssignedTeacher(get(/databases/$(database)/documents/users/$(userId)).data));
+        allow read: if !(subcollection in ['notifications', 'private_ai_chat', 'five_fortresses_plans']) && (isOwner(userId) || isAdmin() ||
+          isAssignedTeacher(userId));
         // Server-computed practice sessions and their atomic aggregates cannot
         // be forged through client writes, including administrative clients.
-        allow write: if !(subcollection in ['recitation_sessions', 'recitation_stats', 'page_progress', 'notifications', 'ayah_progress']) &&
+        allow write: if !(subcollection in ['recitation_sessions', 'recitation_stats', 'page_progress', 'notifications', 'teacher_notes', 'ayah_progress', 'private_ai_chat', 'five_fortresses_plans']) &&
           (isOwner(userId) || isAdmin());
       }
     }
@@ -117,6 +142,11 @@ service cloud.firestore {
       }
     }
 
+    match /app_config/{configId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
     match /groups/{groupId} {
       allow read: if isSignedIn();
       // Group writes go through the API to keep memberships and counters atomic.
@@ -125,7 +155,7 @@ service cloud.firestore {
 
     match /memberships/{userId} {
       allow read: if isOwner(userId) || isAdmin() ||
-        (isTeacher() && resource.data.teacherId == request.auth.uid);
+        isAssignedTeacher(userId);
       allow write: if false;
     }
 

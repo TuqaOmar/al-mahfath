@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { RefreshCw, Check, Sparkles, Cloud } from 'lucide-react';
+import { RefreshCw, Check, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 /**
@@ -19,15 +19,15 @@ export const PullToRefresh = ({
   const [isPulling, setIsPulling] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [justCompleted, setJustCompleted] = useState(false);
+  const [refreshError, setRefreshError] = useState('');
   
   const startYRef = useRef(0);
   const startXRef = useRef(0);
   const hasVibratedThreshold = useRef(false);
   const containerRef = useRef(null);
-
-  if (disabled) {
-    return <div id={id}>{children}</div>;
-  }
+  const refreshLockRef = useRef(false);
+  const completionTimerRef = useRef(null);
+  useEffect(() => () => clearTimeout(completionTimerRef.current), []);
 
   // Check if page or container is scrolled to the very top
   const isAtTop = useCallback(() => {
@@ -104,21 +104,31 @@ export const PullToRefresh = ({
   };
 
   const executeRefresh = async () => {
+    if (refreshLockRef.current || disabled) return;
+    refreshLockRef.current = true;
+    clearTimeout(completionTimerRef.current);
+    setJustCompleted(false);
+    setRefreshError('');
     setIsRefreshing(true);
     triggerHaptic([15, 40, 20]);
 
     try {
-      if (typeof onRefresh === 'function') {
-        await onRefresh();
-      }
+      if (typeof onRefresh !== 'function') throw new Error('Refresh is unavailable');
+      const result = await onRefresh();
+      if (result?.success !== true) throw new Error(result?.message || 'Refresh was not confirmed');
       setJustCompleted(true);
       triggerHaptic(25);
-      setTimeout(() => {
+      completionTimerRef.current = setTimeout(() => {
         setJustCompleted(false);
       }, 1200);
     } catch (err) {
       console.error('Error during pull to refresh:', err);
+      setJustCompleted(false);
+      setRefreshError(lang === 'ar'
+        ? 'تعذر تحديث ملف الحساب. بقيت آخر بيانات مؤكدة.'
+        : 'Account profile refresh failed. The last confirmed data was kept.');
     } finally {
+      refreshLockRef.current = false;
       setIsRefreshing(false);
       setPullDistance(0);
       hasVibratedThreshold.current = false;
@@ -139,8 +149,10 @@ export const PullToRefresh = ({
 
   // Compute visual offset & rotation
   const isPastThreshold = pullDistance >= threshold;
-  const currentHeight = isRefreshing || justCompleted ? 54 : pullDistance;
+  const currentHeight = isRefreshing || justCompleted || refreshError ? 54 : pullDistance;
   const rotationAngle = Math.min((pullDistance / threshold) * 360, 360);
+
+  if (disabled) return <div id={id}>{children}</div>;
 
   return (
     <div
@@ -169,11 +181,11 @@ export const PullToRefresh = ({
           alignItems: 'center',
           justifyContent: 'center',
           width: '100%',
-          pointerEvents: 'none',
+          pointerEvents: refreshError ? 'auto' : 'none',
           boxSizing: 'border-box'
         }}
       >
-        {(pullDistance > 12 || isRefreshing || justCompleted) && (
+        {(pullDistance > 12 || isRefreshing || justCompleted || refreshError) && (
           <div
             style={{
               padding: '6px 16px',
@@ -193,7 +205,15 @@ export const PullToRefresh = ({
               WebkitBackdropFilter: 'blur(10px)'
             }}
           >
-            {justCompleted ? (
+            {refreshError ? (
+              <>
+                <AlertCircle size={16} color="#EF4444" />
+                <span role="alert" data-testid="pull-refresh-error">{refreshError}</span>
+                <button type="button" data-testid="pull-refresh-retry" onClick={executeRefresh}>
+                  {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+                </button>
+              </>
+            ) : justCompleted ? (
               <>
                 <div
                   style={{
@@ -209,7 +229,7 @@ export const PullToRefresh = ({
                 >
                   <Check size={13} strokeWidth={3} />
                 </div>
-                <span>{lang === 'ar' ? 'تمت مزامنة بيانات الحفظ بنجاح 🌿' : 'Progress Synced Successfully ✨'}</span>
+                <span data-testid="pull-refresh-success">{lang === 'ar' ? 'تم تحديث ملف الحساب من Firestore' : 'Account profile refreshed from Firestore'}</span>
               </>
             ) : isRefreshing ? (
               <>
@@ -220,7 +240,7 @@ export const PullToRefresh = ({
                     animation: 'spin 0.75s linear infinite'
                   }}
                 />
-                <span>{lang === 'ar' ? 'جاري مزامنة وتحديث بيانات الحفظ...' : 'Syncing recitation progress...'}</span>
+                <span>{lang === 'ar' ? 'جاري قراءة ملف الحساب من Firestore...' : 'Reading the account profile from Firestore...'}</span>
               </>
             ) : (
               <>
@@ -247,8 +267,8 @@ export const PullToRefresh = ({
                 </div>
                 <span>
                   {isPastThreshold
-                    ? (lang === 'ar' ? 'أفلت الآن لتحديث ومزامنة الحفظ 🌿' : 'Release to sync progress 🌿')
-                    : (lang === 'ar' ? 'اسحب للأسفل لتحديث الحفظ...' : 'Pull down to refresh...')}
+                    ? (lang === 'ar' ? 'أفلت لتحديث ملف الحساب' : 'Release to refresh account profile')
+                    : (lang === 'ar' ? 'اسحب للأسفل لتحديث ملف الحساب...' : 'Pull down to refresh account profile...')}
                 </span>
               </>
             )}

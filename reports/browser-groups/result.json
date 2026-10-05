@@ -1,0 +1,11 @@
+{
+  "project": "demo-ma7fath-test",
+  "date": "2026-10-05",
+  "steps": [],
+  "externalRequestsBlocked": 13,
+  "pendingRequestSource": "synthetic fixture; submission UI is not tested",
+  "practiceReferenceSource": "bundled quran-uthmani server corpus shared by browser display and recitation",
+  "browserVersion": "154.0.8037.93",
+  "passed": false,
+  "sourceHashesUnchanged": true
+}

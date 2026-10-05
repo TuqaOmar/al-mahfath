@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { declaredPages, nextDeclaredPage } from '../lib/memorization';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, 
   ShieldCheck,
@@ -28,10 +29,11 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useNotifications } from '../context/NotificationContext';
 import { fetchWithAuth } from '../lib/api';
+import { auth } from '../lib/firebase';
 import { SimplifiedFortressPlan } from './SimplifiedFortressPlan';
 import { FiveFortressesVisualMap } from './FiveFortressesVisualMap';
+import { getFortressPlanFromFirestore, saveFortressPlanToFirestore, currentFortressCompletion, numericFortressCompletion } from '../lib/fortressService';
 
 // Helper to determine Surah and Juz based on page number
 const getSurahNameForPage = (page) => {
@@ -62,22 +64,27 @@ const getJuzForPage = (page) => {
 };
 
 export const FiveFortressesPlan = ({ setActiveTab }) => {
-  const { user, updateUserData } = useAuth();
+  const { user, applyConfirmedUser } = useAuth();
   const { isRTL, lang } = useLanguage();
-  const { notifyAndCelebrate } = useNotifications();
 
   const [activeSubTab, setActiveSubTab] = useState('visual-map'); // 'visual-map' | 'simplified-plan' | 'daily-plan' | 'methodology' | 'repetition-studio' | 'plan-customizer'
   const [expandedFortress, setExpandedFortress] = useState(null);
 
   // User state
-  const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
-  const userPage = (user?.memorizedPagesCount || 0) + 1;
+  const [confirmedPlan, setConfirmedPlan] = useState(null);
+  const [planStatus, setPlanStatus] = useState('loading');
+  const [actionError, setActionError] = useState('');
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const actionInFlight = useRef(false);
+  const fortressesToday = numericFortressCompletion(currentFortressCompletion(confirmedPlan));
+  const userPage = nextDeclaredPage(user);
   const currentSurah = getSurahNameForPage(userPage);
   const currentJuz = getJuzForPage(userPage);
 
   // AI Plan Generator State
   const [aiPlanLoading, setAiPlanLoading] = useState(false);
   const [aiPlanResult, setAiPlanResult] = useState(null);
+  const [aiPlanDraft, setAiPlanDraft] = useState(false);
 
   // Customizer preferences
   const [customDailyTarget, setCustomDailyTarget] = useState(user?.preferences?.dailyTarget || 'صفحة واحدة يومياً');
@@ -86,6 +93,31 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
   const [customOldReview, setCustomOldReview] = useState(user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً (10 صفحات)');
   const [customRestDay, setCustomRestDay] = useState(user?.preferences?.restDay || 'يوم الجمعة (مراجعة وتثبيت + سورة الكهف)');
   const [isPlanSaved, setIsPlanSaved] = useState(false);
+  const [isCustomSaving, setIsCustomSaving] = useState(false);
+  const [customDraft, setCustomDraft] = useState(false);
+  useEffect(() => {
+    setConfirmedPlan(null);
+    setAiPlanResult(null);
+    setAiPlanDraft(false);
+    setActionError('');
+    setIsPlanSaved(false);
+    setCustomDraft(false);
+  }, [user?.uid]);
+
+  useEffect(() => {
+    let active = true;
+    setPlanStatus('loading');
+    getFortressPlanFromFirestore(user?.uid, currentJuz, userPage).then(plan => {
+      if (!active) return;
+      setConfirmedPlan(plan);
+      setPlanStatus(plan.persistenceStatus === 'draft' ? 'draft' : 'confirmed');
+      setActionError('');
+      if (!aiPlanDraft) setAiPlanResult(plan.aiPlanText || null);
+    }).catch(error => {
+      if (active) { setActionError(error.message); setPlanStatus('failed'); }
+    });
+    return () => { active = false; };
+  }, [user?.uid, activeSubTab, loadAttempt]);
 
   // Repetition Studio State
   const [repMode, setRepMode] = useState('verse'); // 'verse' (20x), 'passage' (20x), 'page' (40x), 'near-prep' (15x)
@@ -97,31 +129,53 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
   // Handle AI Plan Generation
   const handleGenerateAiPlan = async () => {
     setAiPlanLoading(true);
+    setActionError('');
     try {
       const userContext = {
         name: user?.name || 'حافظ القرآن',
         currentPage: userPage,
         currentSurah,
         currentJuz,
-        memorizedPagesCount: user?.memorizedPagesCount || 0,
+        declaredPagesCount: declaredPages(user).length,
         fortressesToday,
         dailyTarget: customDailyTarget
       };
       const prompt = `أرجو إعداد خطة يومية دقيقة ومحكمة بنظام الحصون الخمسة (طريقة د. سعيد أبو العلا حمزة) بناءً على موقعي الحالي: الصفحة ${userPage} من سورة ${currentSurah} (الجزء ${currentJuz}). فصّل لي ورد الختمة والاستماع بالحدر، والتحضير الثلاثي (الأسبوعي والليلي والقريب)، وخطوات الحفظ الجديد مع التكرار، ومراجعة القريب لآخر 20 صفحة، ومراجعة البعيد والصلاة به.`;
 
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetchWithAuth('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: prompt, userId: user?.uid || 'guest', userContext })
+        body: JSON.stringify({ message: prompt, userContext })
       });
       const data = await res.json();
-      if (data.reply) {
-        setAiPlanResult(data.reply);
-      }
+      if (auth.currentUser?.uid !== user?.uid) throw new Error('Authentication changed while generating the draft');
+      if (!res.ok || data.success !== true) throw new Error(data.message || 'تعذر حفظ طلب المساعد');
+      if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('لم يُرجع المساعد خطة');
+      setAiPlanResult(data.reply);
+      setAiPlanDraft(true);
     } catch (e) {
-      console.error('AI Plan Error:', e);
+      setActionError(e.message || 'تعذر توليد الخطة');
     } finally {
       setAiPlanLoading(false);
+    }
+  };
+
+  const handleSaveAiPlan = async () => {
+    if (actionInFlight.current || !confirmedPlan || !aiPlanResult) return;
+    actionInFlight.current = true;
+    setActionError('');
+    setPlanStatus('saving');
+    try {
+      const result = await saveFortressPlanToFirestore(user.uid, { ...confirmedPlan, aiPlanText: aiPlanResult, completionStatus: currentFortressCompletion(confirmedPlan) });
+      if (result.user && applyConfirmedUser(result).success !== true) throw new Error('Authentication changed while applying the saved plan');
+      setConfirmedPlan(result.plan);
+      setAiPlanDraft(false);
+      setPlanStatus('saved');
+    } catch (error) {
+      setActionError(error.message);
+      setPlanStatus('failed');
+    } finally {
+      actionInFlight.current = false;
     }
   };
 
@@ -147,19 +201,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
     else if (mode === 'near-prep') setTargetReps(15);
   };
 
-  const handleIncrementRep = () => {
-    const next = currentReps + 1;
-    setCurrentReps(next);
-    if (next === targetReps) {
-      notifyAndCelebrate({
-        title: '🎉 أحسنت! اكتملت جولة التكرار بنجاح!',
-        message: `أتممت ${targetReps} تكراراً متقناً لرسوخ الآيات في الذاكرة الدائمة!`,
-        type: 'wird',
-        xpBonus: 40,
-        badgeTitle: 'حارس التكرار الذهبي'
-      });
-    }
-  };
+  const handleIncrementRep = () => setCurrentReps(count => count + 1);
 
   const handleResetRep = () => {
     setCurrentReps(0);
@@ -169,7 +211,6 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
 
   const handleSaveCustomPlan = async () => {
     const updatedPreferences = {
-      ...(user?.preferences || {}),
       dailyTarget: customDailyTarget,
       readingWirdTarget: customReadingWird,
       nearReviewTarget: customNearReview,
@@ -177,71 +218,53 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
       restDay: customRestDay
     };
 
-    updateUserData({ preferences: updatedPreferences });
-
-    if (user?.uid) {
-      try {
-        await fetchWithAuth(`/api/user/${user.uid}`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ preferences: updatedPreferences })
-        });
-      } catch (e) {
-        console.error('Save custom plan error:', e);
-      }
+    if (actionInFlight.current) return;
+    actionInFlight.current = true;
+    setIsCustomSaving(true);
+    setIsPlanSaved(false);
+    setActionError('');
+    try {
+      const response = await fetchWithAuth(`/api/user/${encodeURIComponent(user.uid)}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preferences: updatedPreferences })
+      });
+      const result = await response.json();
+      if (!response.ok || result.success !== true || result.persisted !== true || result.user?.uid !== user.uid) throw new Error(result.message || 'تعذر تأكيد حفظ تفضيلات الخطة');
+      const confirmed = applyConfirmedUser(result);
+      if (!confirmed.success) throw new Error(confirmed.message || 'تعذر تحديث ملف الحساب');
+      setIsPlanSaved(true);
+      setCustomDraft(false);
+    } catch (error) {
+      setActionError(error.message);
+      setCustomDailyTarget(user?.preferences?.dailyTarget || 'صفحة واحدة يومياً');
+      setCustomReadingWird(user?.preferences?.readingWirdTarget || 'جزء كامل يومياً (20 صفحة)');
+      setCustomNearReview(user?.preferences?.nearReviewTarget || 'آخر 20 صفحة تم حفظها');
+      setCustomOldReview(user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً (10 صفحات)');
+      setCustomRestDay(user?.preferences?.restDay || 'يوم الجمعة (مراجعة وتثبيت + سورة الكهف)');
+      setCustomDraft(false);
+    } finally {
+      actionInFlight.current = false;
+      setIsCustomSaving(false);
     }
-
-    setIsPlanSaved(true);
-    setTimeout(() => setIsPlanSaved(false), 3000);
-
-    notifyAndCelebrate({
-      title: '✅ تم حفظ خطة الحصون الخمسة المخصصة!',
-      message: 'تم تحديث خطتك وتوزيع أورادك اليومية بنجاح.',
-      type: 'wird',
-      xpBonus: 30
-    });
   };
 
-  // Toggle fortress status
+  // All fortress controls persist to the same plan and server-side profile projection.
   const handleToggleFort = async (id) => {
-    const currentStatus = !!fortressesToday[id];
-    const newStatus = !currentStatus;
-    const newFortressesToday = { ...fortressesToday, [id]: newStatus };
-
-    const xpDelta = newStatus ? 60 : -60;
-    const newXp = Math.max(0, (user?.xp || 100) + xpDelta);
-    const newLevel = Math.floor(newXp / 500) + 1;
-
-    updateUserData({
-      xp: newXp,
-      level: newLevel,
-      preferences: {
-        ...(user?.preferences || {}),
-        fortressesToday: newFortressesToday
-      }
-    });
-
-    if (newStatus) {
-      const fort = detailedFortresses.find(f => f.id === id);
-      const doneCount = Object.values(newFortressesToday).filter(Boolean).length;
-
-      if (doneCount === 5) {
-        notifyAndCelebrate({
-          title: '🏆 تاج الحصون الخمسة! أنجزت كافة الحصون اليومية!',
-          message: 'ما شاء الله تبارك الله! أتممت القراءة والتحضير والحفظ والمراجعة القريبة والبعيدة!',
-          type: 'wird',
-          xpBonus: 250,
-          badgeTitle: 'فارس الحصون الخمسة'
-        });
-      } else {
-        notifyAndCelebrate({
-          title: `تم إنجاز: ${fort?.name || 'الحصن اليومي'}! 🎯`,
-          message: `أكملت الحصن بنجاح (+60 XP). بارك الله في همتك!`,
-          type: 'wird',
-          xpBonus: 60,
-          badgeTitle: 'حارس القرآن'
-        });
-      }
+    if (actionInFlight.current || !confirmedPlan || planStatus === 'loading') return;
+    actionInFlight.current = true;
+    setActionError('');
+    setPlanStatus('saving');
+    try {
+      const status = { ...fortressesToday, [id]: !fortressesToday[id] };
+      const result = await saveFortressPlanToFirestore(user.uid, { ...confirmedPlan, completionStatus: status });
+      if (result.user && applyConfirmedUser(result).success !== true) throw new Error('Authentication changed while applying the saved plan');
+      setConfirmedPlan(result.plan);
+      setPlanStatus('saved');
+    } catch (error) {
+      setActionError(error.message);
+      setPlanStatus('failed');
+    } finally {
+      actionInFlight.current = false;
     }
   };
 
@@ -337,10 +360,19 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
 
   const completedCount = Object.values(fortressesToday).filter(Boolean).length;
   const progressPercent = Math.round((completedCount / 5) * 100);
+  const handleChildPlanSaved = plan => {
+    setConfirmedPlan(plan);
+    setPlanStatus('saved');
+    setActionError('');
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
+      <div role="status" data-testid="fortress-plan-status">{planStatus === 'loading' ? 'جاري تحميل الخطة...' : planStatus === 'saving' ? 'جاري حفظ الخطة...' : planStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : planStatus === 'draft' ? 'مسودة خطة غير محفوظة' : planStatus === 'saved' ? 'تم حفظ الخطة في Firestore' : 'خطة محفوظة في Firestore'}</div>
+      {actionError && <div role="alert" data-testid="fortress-action-error">{actionError}</div>}
+      {planStatus === 'failed' && <button data-testid="fortress-plan-reload" onClick={() => setLoadAttempt(n => n + 1)}>إعادة تحميل الخطة</button>}
+      <p>موقع البداية مبني على تصريحات الطالب وخيارات الخطة، وليس حفظًا معتمدًا.</p>
       {/* 1. Header Banner */}
       <div style={{
         padding: '28px',
@@ -370,7 +402,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
 
           <div style={{ textAlign: isRTL ? 'left' : 'right' }}>
             <span style={{ fontSize: '12px', color: '#94A3B8', display: 'block' }}>إنجاز حصون اليوم:</span>
-            <div style={{ fontSize: '20px', fontWeight: 'bold', color: '#34D399' }}>
+            <div data-testid="fortress-header-count" style={{ fontSize: '20px', fontWeight: 'bold', color: '#34D399' }}>
               {completedCount} من 5 حصون ({progressPercent}%)
             </div>
           </div>
@@ -405,6 +437,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
           return (
             <button
               key={tab.id}
+              data-testid={`fortress-tab-${tab.id}`}
               onClick={() => setActiveSubTab(tab.id)}
               style={{
                 flex: 1,
@@ -435,6 +468,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
       {/* 2.4 SUB-VIEW: Interactive 5-Fortresses Visual Map */}
       {activeSubTab === 'visual-map' && (
         <FiveFortressesVisualMap 
+          onPlanSaved={handleChildPlanSaved}
           onNavigateToVoiceRecitation={(p) => setActiveTab && setActiveTab('daily-session')} 
           onNavigateToQuran={(p) => setActiveTab && setActiveTab('quran-interactive')} 
         />
@@ -443,6 +477,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
       {/* 2.5 SUB-VIEW: Simplified Fortress Plan */}
       {activeSubTab === 'simplified-plan' && (
         <SimplifiedFortressPlan 
+          onPlanSaved={handleChildPlanSaved}
           onNavigateToQuran={(p) => setActiveTab && setActiveTab('quran-interactive')} 
           onAskAi={(prompt) => setActiveTab && setActiveTab('ai-assistant')} 
         />
@@ -480,6 +515,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
               <button
                 type="button"
+                data-testid="fortress-ai-generate"
                 onClick={handleGenerateAiPlan}
                 disabled={aiPlanLoading}
                 style={{
@@ -540,7 +576,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h4 style={{ margin: 0, fontSize: '17px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <Sparkles size={18} color="var(--primary)" />
-                  الخطة المولّدة خصيصاً لك بواسطة المعلم الذكي (Gemini AI)
+                  {aiPlanDraft ? 'مسودة مقترحة من المساعد؛ لم تُحفظ كخطة بعد' : 'اقتراح مساعد محفوظ ضمن خطتك'}
                 </h4>
                 <button
                   type="button"
@@ -563,6 +599,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
               }}>
                 {aiPlanResult}
               </div>
+              {aiPlanDraft && <button data-testid="fortress-ai-save" disabled={planStatus === 'saving' || planStatus === 'loading' || !confirmedPlan} onClick={handleSaveAiPlan}>حفظ اقتراح المساعد ضمن الخطة</button>}
             </div>
           )}
 
@@ -660,6 +697,8 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
 
                       <button
                         type="button"
+                        data-testid={`daily-fortress-complete-${fort.id}`}
+                        disabled={!confirmedPlan || planStatus === 'saving' || planStatus === 'loading'}
                         onClick={() => handleToggleFort(fort.id)}
                         style={{
                           padding: '10px 18px',
@@ -679,7 +718,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                         {isDone ? (
                           <>
                             <CheckCircle2 size={16} color="var(--primary)" />
-                            تم الإنجاز (+60 XP)
+                            تم الإنجاز
                           </>
                         ) : (
                           'تحديد كـ منجز ✓'
@@ -895,7 +934,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
               🔢 معمل التكرار الذكي (عداد الحصن الثالث)
             </h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '0 auto 20px', maxWidth: '600px' }}>
-              وفق منهجية الحصون الخمسة، التكرار الصوتي المسموع هو سر انتقال الآية للذاكرة الدائمة. اختر الوضع واضغط على العداد مع كل تكرار!
+              عداد تدريب محلي غير محفوظ؛ لا يمنح نقاطًا أو حفظًا معتمدًا. وفق منهجية الحصون الخمسة، التكرار الصوتي المسموع هو سر انتقال الآية للذاكرة الدائمة. اختر الوضع واضغط على العداد مع كل تكرار!
             </p>
 
             {/* Mode Selector */}
@@ -979,7 +1018,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
               {/* Status Note */}
               {currentReps >= targetReps ? (
                 <div style={{ color: '#10B981', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <CheckCircle2 size={18} /> تم إنجاز جولة التكرار بنجاح! انتقل للمقطع التالي 🌿
+                  <CheckCircle2 size={18} /> اكتملت جولة العداد المحلي؛ لم تُحفظ جلسة أو مكافأة. انتقل للمقطع التالي 🌿
                 </div>
               ) : (
                 <div style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>
@@ -1060,8 +1099,10 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                   1️⃣ مقدار الحفظ الجديد اليومي (الحصن 3):
                 </label>
                 <select
+                  data-testid="fortress-custom-target"
                   value={customDailyTarget}
-                  onChange={e => setCustomDailyTarget(e.target.value)}
+                  onChange={e => { setCustomDailyTarget(e.target.value); setIsPlanSaved(false); setCustomDraft(true); }}
+                  disabled={isCustomSaving}
                   style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '13px', outline: 'none' }}
                 >
                   <option value="نصف صفحة يومياً">نصف صفحة يومياً (للمبتدئين والمشغولين)</option>
@@ -1078,7 +1119,8 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                 </label>
                 <select
                   value={customReadingWird}
-                  onChange={e => setCustomReadingWird(e.target.value)}
+                  onChange={e => { setCustomReadingWird(e.target.value); setIsPlanSaved(false); setCustomDraft(true); }}
+                  disabled={isCustomSaving}
                   style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '13px', outline: 'none' }}
                 >
                   <option value="نصف جزء يومياً (10 صفحات)">نصف جزء يومياً (10 صفحات)</option>
@@ -1094,7 +1136,8 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                 </label>
                 <select
                   value={customNearReview}
-                  onChange={e => setCustomNearReview(e.target.value)}
+                  onChange={e => { setCustomNearReview(e.target.value); setIsPlanSaved(false); setCustomDraft(true); }}
+                  disabled={isCustomSaving}
                   style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '13px', outline: 'none' }}
                 >
                   <option value="آخر 10 صفحات تم حفظها">آخر 10 صفحات تم حفظها</option>
@@ -1110,7 +1153,8 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                 </label>
                 <select
                   value={customOldReview}
-                  onChange={e => setCustomOldReview(e.target.value)}
+                  onChange={e => { setCustomOldReview(e.target.value); setIsPlanSaved(false); setCustomDraft(true); }}
+                  disabled={isCustomSaving}
                   style={{ width: '100%', padding: '10px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontWeight: 'bold', fontSize: '13px', outline: 'none' }}
                 >
                   <option value="ربع جزء يومياً (5 صفحات)">ربع جزء يومياً (5 صفحات)</option>
@@ -1120,10 +1164,13 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
               </div>
             </div>
 
+            {customDraft && <p data-testid="fortress-custom-draft">تعديلات غير محفوظة</p>}
             {/* Save Button */}
             <div style={{ marginTop: '24px', display: 'flex', justifyContent: 'flex-end' }}>
               <button
                 type="button"
+                data-testid="fortress-custom-save"
+                disabled={isCustomSaving}
                 onClick={handleSaveCustomPlan}
                 style={{
                   padding: '12px 24px',
@@ -1141,7 +1188,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
                 }}
               >
                 {isPlanSaved ? <CheckCircle2 size={18} /> : <Check size={18} />}
-                {isPlanSaved ? 'تم حفظ الخطة بنجاح!' : 'اعتماد وحفظ خطة الحصون الخمسة'}
+                {isCustomSaving ? 'جاري حفظ التفضيلات...' : isPlanSaved ? 'تم حفظ تفضيلات الخطة بنجاح!' : 'حفظ تفضيلات خطة الحصون الخمسة'}
               </button>
             </div>
           </div>

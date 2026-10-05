@@ -4,21 +4,24 @@ import { Sun, Moon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
 
-export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' }) => {
+export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '', touchTarget = false }) => {
   const { isDark, toggleTheme } = useTheme();
   const { t, isRTL } = useLanguage();
+  const pillHeight = size === 'small' ? (touchTarget ? 44 : 28) : 32;
+  const knobOffset = (pillHeight - (size === 'small' ? 22 : 26)) / 2;
 
   if (variant === 'pill') {
     return (
       <button
         onClick={toggleTheme}
         aria-label={isDark ? t('theme_light') || 'تفعيل الوضع النهار' : t('theme_dark') || 'تفعيل الوضع الليلة'}
+        aria-pressed={isDark}
         title={isDark ? t('theme_light') || 'الوضع النهاري' : t('theme_dark') || 'الوضع الليلة'}
         className={className}
         style={{
           position: 'relative',
           width: size === 'small' ? '54px' : '64px',
-          height: size === 'small' ? '28px' : '32px',
+          height: `${pillHeight}px`,
           borderRadius: '20px',
           border: '1px solid var(--glass-border, #e5e7eb)',
           background: isDark 
@@ -73,8 +76,8 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' 
           }}
           style={{
             position: 'absolute',
-            top: '3px',
-            bottom: '3px',
+            top: `${knobOffset}px`,
+            bottom: `${knobOffset}px`,
             left: isDark ? (size === 'small' ? '29px' : '35px') : '3px',
             width: size === 'small' ? '22px' : '26px',
             height: size === 'small' ? '22px' : '26px',
@@ -119,6 +122,7 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '' 
       whileTap={{ scale: 0.92 }}
       onClick={toggleTheme}
       aria-label={isDark ? t('theme_light') || 'الوضع النهاري' : t('theme_dark') || 'الوضع الليلة'}
+      aria-pressed={isDark}
       title={isDark ? t('theme_light') || 'الوضع النهاري' : t('theme_dark') || 'الوضع الليلة'}
       className={`flex-center ${className}`}
       style={{

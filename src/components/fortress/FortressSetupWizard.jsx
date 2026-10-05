@@ -17,7 +17,7 @@ const STEPS = [
 ];
 
 export const FortressSetupWizard = ({ onComplete }) => {
-  const { user, updateUserData } = useAuth();
+  const { user, applyConfirmedUser } = useAuth();
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   
@@ -30,6 +30,7 @@ export const FortressSetupWizard = ({ onComplete }) => {
   });
 
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
 
   const handleNext = async () => {
     if (currentStep === STEPS.length - 1) {
@@ -47,8 +48,8 @@ export const FortressSetupWizard = ({ onComplete }) => {
     const granted = await notificationManager.requestPermission(user?.uid);
     if (granted) {
       setFormData(prev => ({ ...prev, notifications: { ...prev.notifications, enabled: true } }));
-      notificationManager.sendLocalNotification('تم تفعيل الإشعارات بنجاح!', {
-        body: 'سنقوم بتذكيرك بأوراد الحصون الخمسة يومياً 🌿'
+      notificationManager.sendLocalNotification('مُنح إذن إشعارات المتصفح', {
+        body: 'إعدادات الخطة والتذكير لم تُحفظ بعد.'
       });
     } else {
       alert('لم نتمكن من تفعيل الإشعارات. يرجى التأكد من إعدادات المتصفح.');
@@ -56,7 +57,9 @@ export const FortressSetupWizard = ({ onComplete }) => {
   };
 
   const handleFinish = async () => {
+    if (isSaving) return;
     setIsSaving(true);
+    setSaveError('');
     try {
       const fortressPlan = {
         ...formData,
@@ -64,19 +67,12 @@ export const FortressSetupWizard = ({ onComplete }) => {
         isActive: true
       };
 
-      // تحديث بيانات المستخدم في السياق وقاعدة البيانات
-      if (user?.uid) {
-        await saveFortressPlanToFirestore(user.uid, fortressPlan);
-      }
-      
-      if (updateUserData) {
-        await updateUserData({ fortressPlan });
-      }
+      const result = await saveFortressPlanToFirestore(user?.uid, fortressPlan);
+      if (result.user) applyConfirmedUser(result);
 
       if (formData.notifications.enabled) {
-        // برمجة إشعار محلي تجريبي بعد 5 ثوانٍ من الحفظ كإثبات عمل
-        notificationManager.scheduleNotification('تذكير الحصون الخمسة 🏰', {
-          body: 'حان وقت الحصن الأول: القراءة المستمرة. هل أنت مستعد؟'
+        notificationManager.scheduleNotification('تجربة محلية لتذكير الحصون الخمسة 🏰', {
+          body: 'هذا اختبار مؤقت على هذا الجهاز، وليس إشعار Push أو جدولة يومية.'
         }, 5000);
       }
 
@@ -85,7 +81,7 @@ export const FortressSetupWizard = ({ onComplete }) => {
       
     } catch (error) {
       console.error('Error saving fortress plan:', error);
-      alert('حدث خطأ أثناء حفظ الخطة.');
+      setSaveError(error.message || 'حدث خطأ أثناء حفظ الخطة؛ لم يتغير السجل السابق.');
     }
     setIsSaving(false);
   };
@@ -101,6 +97,7 @@ export const FortressSetupWizard = ({ onComplete }) => {
   return (
     <div style={{ maxWidth: '600px', margin: '0 auto', padding: '20px', direction: 'rtl' }}>
       <Card style={{ padding: '32px', position: 'relative', overflow: 'hidden' }}>
+        {saveError && <div role="alert" data-testid="fortress-setup-error">{saveError}</div>}
         
         {/* Progress */}
         <div style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>

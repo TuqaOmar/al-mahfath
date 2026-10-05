@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export const Logo = ({ size = 32, className = '' }) => {
+export const Logo = ({ size = 32, className = '', showText = true }) => {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }} className={className}>
       <motion.svg
@@ -83,15 +83,16 @@ export const Logo = ({ size = 32, className = '' }) => {
         />
       </motion.svg>
 
-      {/* Text Mark */}
-      <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
-        <span style={{ fontSize: size * 0.55, fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-0.5px' }}>
-          المحفظ <span className="text-gradient">الذكي</span>
-        </span>
-        <span style={{ fontSize: size * 0.22, color: 'var(--text-secondary)', letterSpacing: '1px', fontWeight: 600, marginTop: '2px' }}>
-          المحفظ الإلكتروني
-        </span>
-      </div>
+      {showText && (
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1 }}>
+          <span style={{ fontSize: size * 0.55, fontWeight: 800, fontFamily: 'var(--font-heading)', letterSpacing: '-0.5px' }}>
+            المحفظ <span className="text-gradient">الذكي</span>
+          </span>
+          <span style={{ fontSize: size * 0.22, color: 'var(--text-secondary)', letterSpacing: '1px', fontWeight: 600, marginTop: '2px' }}>
+            المحفظ الإلكتروني
+          </span>
+        </div>
+      )}
     </div>
   );
 };

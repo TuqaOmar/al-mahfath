@@ -1,3 +1,4 @@
+import { declaredPages, nextDeclaredPage } from '../../lib/memorization';
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -21,14 +22,16 @@ import {
   X,
   ChevronLeft,
   MessageSquare,
-  Award
+  Award,
+  Sliders
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { AdminPerformanceDashboard } from './AdminPerformanceDashboard';
 import { AdminDistributionView } from './AdminDistributionView';
 import { db } from '../../lib/firebase';
 import { fetchWithAuth } from '../../lib/api';
-import { collection, getDocs, doc, updateDoc, getCountFromServer } from 'firebase/firestore';
+import { AdminExperienceSettings } from './AdminExperienceSettings';
+import { doc, updateDoc } from 'firebase/firestore';
 export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) => {
   const { lang, isRTL } = useLanguage();
 
@@ -56,38 +59,22 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const usersRef = collection(db, 'users');
-      const groupsRef = collection(db, 'groups');
-      
-      const allUsersSnap = await getDocs(usersRef);
-      const groupsSnap = await getDocs(groupsRef);
-      const allGroups = groupsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const [usersResponse, groupsResponse, overviewResponse] = await Promise.all([
+        fetchWithAuth('/api/admin/users'),
+        fetchWithAuth('/api/groups'),
+        fetchWithAuth('/api/admin/overview')
+      ]);
+      const [usersPayload, groupsPayload, overviewPayload] = await Promise.all([
+        usersResponse.json(), groupsResponse.json(), overviewResponse.json()
+      ]);
+      if (!usersResponse.ok || !groupsResponse.ok || !overviewResponse.ok ||
+          !usersPayload.success || !groupsPayload.success || !overviewPayload.success) {
+        throw new Error(usersPayload.message || groupsPayload.message || overviewPayload.message || 'Failed to load administration data');
+      }
+      const allGroups = groupsPayload.groups || [];
       setGroups(allGroups);
-      const groupsCount = allGroups.length;
-
-      const allUsers = allUsersSnap.docs.map(d => ({ uid: d.id, ...d.data() }));
-      
-      // Calculate real stats from Firebase
-      const teachersCount = allUsers.filter(u => u.role === 'teacher' || u.roles?.teacher).length;
-      const totalRegisteredUsers = allUsers.length;
-      
-      setOverview({
-        stats: {
-          totalRegisteredUsers,
-          safarMembers: allUsers.filter(u => u.isSafarMember || u.groupId).length,
-          teachersCount,
-          independentUsers: allUsers.filter(u => !u.isSafarMember && !u.groupId && u.role !== 'teacher' && u.role !== 'admin').length,
-          groupsCount
-        },
-        realTimeActivity: {
-          activeToday: Math.floor(totalRegisteredUsers * 0.1) || 0,
-          activeThisWeek: Math.floor(totalRegisteredUsers * 0.4) || 0,
-          newRegistrationsWeek: 0,
-          newGroupJoinsWeek: 0,
-          activeTeachers: teachersCount,
-          activeGroups: groupsCount
-        }
-      });
+      const allUsers = usersPayload.users || [];
+      setOverview({ stats: overviewPayload.stats, realTimeActivity: overviewPayload.realTimeActivity });
 
       // Filter
       let filtered = allUsers;
@@ -111,6 +98,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
     } catch (e) {
       console.error('Error loading admin data:', e);
+      setOverview(null);
+      setUsers([]);
+      setGroups([]);
     } finally {
       setLoading(false);
     }
@@ -180,12 +170,14 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
   };
 
   const realTime = overview?.realTimeActivity || {
-    activeToday: 1420,
-    activeThisWeek: 6890,
-    newRegistrationsWeek: 342,
-    newGroupJoinsWeek: 94,
-    activeTeachers: 174,
-    activeGroups: 138
+    activeToday: 0,
+    activeThisWeek: 0,
+    newRegistrationsWeek: 0,
+    newGroupJoinsWeek: 0,
+    activeTeachers: 0,
+    activeGroups: 0,
+    weeklyActivities: 0,
+    monthlyActivities: 0
   };
 
   return (
@@ -231,7 +223,8 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             { id: 'groups', label: 'المجموعات القرآنية', icon: Layers },
             { id: 'analytics', label: 'التحليلات والنمو', icon: TrendingUp },
             { id: 'community', label: 'إدارة المنتدى', icon: MessageSquare },
-            { id: 'badges', label: 'الأوسمة والمكافآت', icon: Award }
+            { id: 'badges', label: 'الأوسمة والمكافآت', icon: Award },
+            { id: 'experience', label: 'ظهور المجتمع والأوسمة', icon: Sliders }
           ].map((tab) => {
             const isActive = currentTab === tab.id;
             const Icon = tab.icon;
@@ -387,14 +380,14 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>النشطون اليوم</span>
-                <strong style={{ fontSize: '20px', color: '#10B981' }}>{realTime.activeToday.toLocaleString()}</strong>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>سجلوا دخولاً أو تسميعاً</span>
+                <strong data-testid="admin-active-today" style={{ fontSize: '20px', color: '#10B981' }}>{realTime.activeToday.toLocaleString()}</strong>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>لديهم نشاط قرآني محفوظ اليوم بتوقيت عمّان</span>
               </div>
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>النشطون هذا الأسبوع</span>
-                <strong style={{ fontSize: '20px', color: '#3B82F6' }}>{realTime.activeThisWeek.toLocaleString()}</strong>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>تفاعلوا مع المصحف والحلقات</span>
+                <strong data-testid="admin-active-week" style={{ fontSize: '20px', color: '#3B82F6' }}>{realTime.activeThisWeek.toLocaleString()}</strong>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>لديهم نشاط قرآني محفوظ خلال 7 أيام</span>
               </div>
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
@@ -406,19 +399,19 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>انضمام لحلقة (7 أيام)</span>
                 <strong style={{ fontSize: '20px', color: 'var(--primary)' }}>+{realTime.newGroupJoinsWeek}</strong>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>عبر رموز الدعوة</span>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>عضويات نشطة أُنشئت أو نُقلت خلال 7 أيام</span>
               </div>
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>معلمات نشطات</span>
                 <strong style={{ fontSize: '20px', color: '#10B981' }}>{realTime.activeTeachers} / {stats.teachersCount}</strong>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>قيّمن طالباتهن هذا الأسبوع</span>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>راجعن جلسة واحدة على الأقل خلال 7 أيام</span>
               </div>
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>حلقات نشطة</span>
                 <strong style={{ fontSize: '20px', color: '#06B6D4' }}>{realTime.activeGroups} / {stats.groupsCount}</strong>
-                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>تجري جلساتها بانتظام</span>
+                <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>لها طالبة ذات نشاط قرآني خلال 7 أيام</span>
               </div>
             </div>
           </div>
@@ -603,7 +596,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                     {/* Progress / Activity */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
                       <div>
-                        الحفظ: <strong style={{ color: 'var(--text-primary)' }}>{u.memorizedJuz || 0} أجزاء</strong>
+                        تصريح ذاتي: <strong style={{ color: 'var(--text-primary)' }}>{declaredPages(u).length} صفحة</strong>
                       </div>
                       <div>
                         الحالة: <span style={{ color: u.status === 'active' ? '#10B981' : '#F59E0B', fontWeight: 600 }}>{u.status === 'active' ? 'نشط 🟢' : 'خامل 🟡'}</span>
@@ -775,7 +768,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    <span>عدد الطالبات: {grp.studentsCount ?? 0}</span>
+                    <span data-testid={`admin-group-count-${grp.id}`}>عدد الطالبات: {grp.studentsCount ?? 0}</span>
                     <span>المقرر: {grp.targetJuz || 'غير محدد'}</span>
                   </div>
                 </div>
@@ -799,13 +792,13 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
               <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>معدل إكمال الأوراد الأسبوعية</span>
-                <strong style={{ fontSize: '24px', color: '#10B981', display: 'block', margin: '4px 0' }}>84.5%</strong>
-                <span style={{ fontSize: '11px', color: '#10B981' }}>↑ تحسن بنسبة 6% هذا الشهر</span>
+                <strong style={{ fontSize: '24px', color: '#10B981', display: 'block', margin: '4px 0' }}>غير متاح</strong>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>لا يوجد سجل موحد للأوراد المكتملة حاليًا</span>
               </div>
               <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>جلسات التسميع الصوتي شهرياً</span>
-                <strong style={{ fontSize: '24px', color: '#3B82F6', display: 'block', margin: '4px 0' }}>42,800+</strong>
-                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>جلسة مراجعة وحفظ وتثبيت</span>
+                <strong data-testid="admin-monthly-activities" style={{ fontSize: '24px', color: '#3B82F6', display: 'block', margin: '4px 0' }}>{realTime.monthlyActivities.toLocaleString()}</strong>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>محاولة تسميع محفوظة خلال آخر 30 يومًا</span>
               </div>
             </div>
           </div>
@@ -854,58 +847,8 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
         </div>
       )}
 
-      {/* VIEW 6: BADGES SYSTEM */}
-      {currentTab === 'badges' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <div style={{ padding: '24px', borderRadius: '22px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-              <div>
-                <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  إدارة الأوسمة والمكافآت التقديرية 🏆
-                </h3>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                  تحكم بأنواع الأوسمة وشروط الحصول عليها أو امنح الأوسمة يدوياً للمتميزين.
-                </p>
-              </div>
-              <button style={{ padding: '8px 16px', borderRadius: '10px', background: 'var(--primary)', color: 'white', border: 'none', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                + إنشاء وسام جديد
-              </button>
-            </div>
-            
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
-              {[
-                { name: 'بطل البقرة', desc: 'يُمنح عند إتمام حفظ سورة البقرة بمعدل إتقان 90%+', type: 'تلقائي', color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)' },
-                { name: 'مواظب الأسبوع', desc: 'يُمنح عند الحضور والتسميع لمدة 7 أيام متتالية', type: 'تلقائي', color: '#3B82F6', bg: 'rgba(59, 130, 246, 0.1)' },
-                { name: 'نجم الحلقة', desc: 'يُمنح يدوياً من قِبل المعلمة للطالب المتميز', type: 'يدوي', color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)' }
-              ].map((badge, idx) => (
-                <div key={idx} style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: badge.bg, color: badge.color, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <Award size={20} />
-                      </div>
-                      <strong style={{ fontSize: '14.5px', color: 'var(--text-primary)' }}>{badge.name}</strong>
-                    </div>
-                    <span style={{ fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderRadius: '6px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)' }}>
-                      نظام: {badge.type}
-                    </span>
-                  </div>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-                    {badge.desc}
-                  </p>
-                  <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                    <button style={{ flex: 1, padding: '6px', borderRadius: '8px', background: 'transparent', color: 'var(--primary)', border: '1px solid var(--primary)', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>تعديل الشروط</button>
-                    {badge.type === 'يدوي' && (
-                      <button style={{ flex: 1, padding: '6px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--primary)', border: 'none', fontSize: '12px', fontWeight: 'bold', cursor: 'pointer' }}>منح لطالب</button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
+      {/* Badge display and section settings share the persisted administration screen. */}
+      {(currentTab === 'badges' || currentTab === 'experience') && <AdminExperienceSettings />}
 
       {/* MODAL: ASSIGN / REMOVE TEACHER ROLE CONFIRMATION */}
       {confirmTeacherModal && (

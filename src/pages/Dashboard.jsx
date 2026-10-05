@@ -1,3 +1,4 @@
+import { declaredPages, nextDeclaredPage } from '../lib/memorization';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -82,6 +83,8 @@ import { TeacherStudentProfileModal } from '../components/teacher/TeacherStudent
 import { TeacherGroupsView } from '../components/teacher/TeacherGroupsView';
 import { TeacherReportsView } from '../components/teacher/TeacherReportsView';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
+import { useUiConfiguration } from '../lib/uiConfiguration';
+import { getFortressPlanFromFirestore, saveFortressPlanToFirestore, currentFortressCompletion, numericFortressCompletion, fortressKeys } from '../lib/fortressService';
 
 
 // Hadiths on the virtues of the Quran
@@ -94,7 +97,7 @@ const quranHadiths = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, activeRole, logout, deleteAccount, updateUserData, refreshUserData } = useAuth();
+  const { user, activeRole, logout, deleteAccount, updateUserData, applyConfirmedUser, refreshUserData } = useAuth();
   const { lang, setLang, t, isRTL } = useLanguage();
   const getUserDefaultTab = (role) => {
     if (role === 'admin') return 'admin-dashboard';
@@ -107,27 +110,49 @@ const Dashboard = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showJoinGroupModal, setShowJoinGroupModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [studentGroupId, setStudentGroupId] = useState(null);
   const [studentFilter, setStudentFilter] = useState('all');
   const [showPresentationModal, setShowPresentationModal] = useState(false);
   const [showDocsModal, setShowDocsModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncToast, setSyncToast] = useState('');
+  const [syncFailed, setSyncFailed] = useState(false);
+  const refreshLockRef = useRef(false);
+  const syncTimerRef = useRef(null);
+  const [homeFortressPlan, setHomeFortressPlan] = useState(null);
+  const [homeFortressLoading, setHomeFortressLoading] = useState(false);
+  const [savingHomeFortress, setSavingHomeFortress] = useState(null);
+  const [homeFortressFeedback, setHomeFortressFeedback] = useState(null);
+  const homeFortressLockRef = useRef(false);
   const { soundEnabled, toggleSound } = useNotifications();
+  const { configuration: uiConfiguration } = useUiConfiguration();
 
   const handleRefreshDashboard = async () => {
+    if (refreshLockRef.current) throw new Error('A profile refresh is already in progress');
+    refreshLockRef.current = true;
+    clearTimeout(syncTimerRef.current);
+    setSyncToast('');
+    setSyncFailed(false);
     setIsSyncing(true);
     try {
-      if (typeof refreshUserData === 'function') {
-        await refreshUserData();
-      }
-      setSyncToast(isRTL ? 'تمت مزامنة وتحديث بيانات الحفظ بنجاح 🌿' : 'Progress & recitation synced successfully 🌿');
-      setTimeout(() => setSyncToast(''), 2500);
+      if (typeof refreshUserData !== 'function') throw new Error('Profile refresh is unavailable');
+      const result = await refreshUserData();
+      if (result?.success !== true) throw new Error(result?.message || 'Profile refresh was not confirmed');
+      setSyncToast(isRTL ? 'تم تحديث ملف الحساب من Firestore؛ لا يشمل إعادة تحميل بقية الصفحات.' : 'Account profile refreshed from Firestore; other screens were not reloaded.');
+      syncTimerRef.current = setTimeout(() => setSyncToast(''), 3500);
+      return result;
     } catch (err) {
       console.error('Refresh error:', err);
+      setSyncFailed(true);
+      setSyncToast(isRTL ? 'تعذر تحديث ملف الحساب. بقيت آخر بيانات مؤكدة؛ أعد المحاولة.' : 'Account profile refresh failed. The last confirmed data was kept; please retry.');
+      throw err;
     } finally {
+      refreshLockRef.current = false;
       setIsSyncing(false);
     }
   };
+
+  useEffect(() => () => clearTimeout(syncTimerRef.current), []);
 
   useEffect(() => {
     if (activeTab === 'presentation') {
@@ -139,31 +164,56 @@ const Dashboard = () => {
     }
   }, [activeTab]);
 
-  const fortressesToday = user?.preferences?.fortressesToday || { 1: false, 2: false, 3: false, 4: false, 5: false };
+  const fortressesToday = numericFortressCompletion(currentFortressCompletion(homeFortressPlan));
+  const projectedFortressState = JSON.stringify(user?.preferences?.fortressesToday || {});
+
+  useEffect(() => {
+    setHomeFortressPlan(null);
+    setHomeFortressFeedback(null);
+  }, [user?.uid]);
+
+  useEffect(() => {
+    if (!user?.uid || activeTab !== 'home') return;
+    let current = true;
+    setHomeFortressLoading(true);
+    getFortressPlanFromFirestore(user.uid, getJuzForPage(nextDeclaredPage(user)), nextDeclaredPage(user))
+      .then(plan => { if (current) setHomeFortressPlan(plan); })
+      .catch(error => {
+        if (current) setHomeFortressFeedback({ status: 'error', text: isRTL
+          ? 'تعذر قراءة علامات الحصون المحفوظة؛ بقيت آخر بيانات مؤكدة.'
+          : 'Saved fortress marks could not be read; the last confirmed data was kept.' });
+      })
+      .finally(() => { if (current) setHomeFortressLoading(false); });
+    return () => { current = false; };
+  }, [user?.uid, activeTab, projectedFortressState]);
 
   const handleToggleFortress = async (fortId) => {
-    const currentStatus = !!fortressesToday[fortId];
-    const newStatus = !currentStatus;
-    
-    const newFortressesToday = { ...fortressesToday, [fortId]: newStatus };
-    
-    // Calculate XP change
-    let xpChange = newStatus ? 50 : -50;
-    let newXp = Math.max(0, (user?.xp || 100) + xpChange);
-    let newLevel = Math.floor(newXp / 500) + 1;
-    
-    // Update preferences object
-    const newPreferences = {
-      ...(user?.preferences || {}),
-      fortressesToday: newFortressesToday
-    };
-    
-    // Call the AuthContext updateUserData
-    updateUserData({
-      xp: newXp,
-      level: newLevel,
-      preferences: newPreferences
-    });
+    if (homeFortressLockRef.current || homeFortressLoading || !user?.uid) return;
+    homeFortressLockRef.current = true;
+    setSavingHomeFortress(fortId);
+    setHomeFortressFeedback(null);
+    try {
+      // Read the saved plan before changing its completion flags; retain its contents.
+      const plan = await getFortressPlanFromFirestore(user.uid, getJuzForPage(nextDeclaredPage(user)), nextDeclaredPage(user));
+      const completion = currentFortressCompletion(plan);
+      const key = fortressKeys[fortId - 1];
+      const result = await saveFortressPlanToFirestore(user.uid, {
+        ...plan, completionStatus: { ...completion, [key]: !completion[key] }
+      });
+      const profileResult = applyConfirmedUser(result);
+      if (profileResult?.success !== true) throw new Error(profileResult?.message || 'Authentication changed while saving');
+      setHomeFortressPlan(result.plan);
+      setHomeFortressFeedback(profileResult?.success === true
+        ? { status: 'success', text: isRTL ? 'تم حفظ علامة الإنجاز الذاتي؛ لا تمنح XP أو اعتماد حفظ.' : 'Self-reported completion saved; it grants no XP or memorization approval.' }
+        : { status: 'warning', text: isRTL ? 'تم حفظ علامة الإنجاز، لكن تعذر تحديث ملف الحساب.' : 'Completion was saved, but the account profile could not be refreshed.' });
+    } catch (error) {
+      setHomeFortressFeedback({ status: 'error', text: isRTL
+        ? 'تعذر حفظ علامة الإنجاز. بقيت آخر علامات مؤكدة؛ أعد المحاولة.'
+        : 'Completion could not be saved. The last confirmed marks were kept; please retry.' });
+    } finally {
+      homeFortressLockRef.current = false;
+      setSavingHomeFortress(null);
+    }
   };
   const { isDark, toggleTheme } = useTheme();
   const [isRecording, setIsRecording] = useState(false);
@@ -185,6 +235,8 @@ const Dashboard = () => {
     const isRoleChanged = activeRole !== lastUserRoleRef.current;
 
     if (isNewUser || isRoleChanged) {
+      setSelectedStudentId(null);
+      setStudentGroupId(null);
       lastUserIdRef.current = user?.uid;
       lastUserRoleRef.current = activeRole;
       setActiveTab(getUserDefaultTab(activeRole));
@@ -223,6 +275,7 @@ const Dashboard = () => {
           <TeacherDashboard
             onOpenStudentProfile={(sId) => setSelectedStudentId(sId)}
             onViewAllStudents={(filter) => {
+              setStudentGroupId(null);
               setStudentFilter(filter || 'all');
               setActiveTab('teacher-students');
             }}
@@ -234,6 +287,8 @@ const Dashboard = () => {
         return (
           <TeacherStudentsView
             initialFilter={studentFilter}
+            groupId={studentGroupId}
+            onShowAll={() => setStudentGroupId(null)}
             onOpenStudentProfile={(sId) => setSelectedStudentId(sId)}
           />
         );
@@ -241,7 +296,8 @@ const Dashboard = () => {
       case 'teacher-groups':
         return (
           <TeacherGroupsView
-            onViewStudentsInGroup={() => {
+            onViewStudentsInGroup={(groupId) => {
+              setStudentGroupId(groupId);
               setStudentFilter('all');
               setActiveTab('teacher-students');
             }}
@@ -273,6 +329,9 @@ const Dashboard = () => {
       case 'admin-analytics':
         return <AdminDashboard activeAdminTab="analytics" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
 
+      case 'admin-experience':
+        return <AdminDashboard activeAdminTab="experience" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
       case 'home':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', maxWidth: '1040px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px' }}>
@@ -297,10 +356,10 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <strong style={{ fontSize: '13.5px', color: 'var(--text-primary)', display: 'block' }}>
-                      عضوة مسجلة في {user?.groupName || 'حلقة النور والهدى'} 🌸
+                      عضوة مسجلة في {user?.groupName || 'اسم الحلقة غير متاح'} 🌸
                     </strong>
                     <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                      المعلمة المشرفة: {user?.teacherName || 'أ. عائشة العتيبي'} • متابعة دورية للأوراد والتسميع
+                      المعلمة المشرفة: {user?.teacherName || 'اسم المعلم غير متاح'} • متابعة دورية للأوراد والتسميع
                     </span>
                   </div>
                 </div>
@@ -504,16 +563,16 @@ const Dashboard = () => {
               {/* Memorized Pages */}
               <Card style={{ padding: isMobile ? '12px 10px' : '20px', textAlign: isMobile ? 'center' : 'right' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '8px' }}>
-                  {!isMobile && <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>المحفوظ</span>}
+                  {!isMobile && <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>الصفحات المصرّح بها ذاتيًا</span>}
                   <div style={{ width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '8px', background: 'var(--primary-light)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <BookOpen size={isMobile ? 15 : 18} />
                   </div>
                 </div>
                 <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                  {user?.memorizedPagesCount || 0} {!isMobile && <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>صفحة</span>}
+                  <span data-testid="home-declared-pages">{declaredPages(user).length}</span> {!isMobile && <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>صفحة</span>}
                 </div>
                 <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: 'var(--primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {isMobile ? 'صفحة محفوظة' : 'من أصل 604 صفحة'}
+                  {'تصريح الطالب؛ ليس اعتمادًا'}
                 </span>
               </Card>
 
@@ -526,12 +585,10 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                  {user?.memorizedPagesCount > 0 ? `${user?.memoryScore || 100}%` : '--%'}
+                  <span data-testid="home-memory-score">غير متاح</span>
                 </div>
-                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: user?.memorizedPagesCount > 0 ? 'var(--success)' : 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {user?.memorizedPagesCount > 0 
-                    ? (isMobile ? 'ثبات ممتاز' : 'معدل استقرار ممتاز') 
-                    : (isMobile ? 'في انتظار جلستك' : 'في انتظار الجلسة الأولى')}
+                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {'لا يوجد تقييم حفظ معتمد'}
                 </span>
               </Card>
 
@@ -543,8 +600,8 @@ const Dashboard = () => {
                     <Flame size={isMobile ? 15 : 18} />
                   </div>
                 </div>
-                <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                  {user?.streak || 1} {!isMobile && <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>يوم</span>}
+                <div data-testid="quran-companion-streak" style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
+                  {user?.streak ?? 0} {!isMobile && <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>يوم</span>}
                 </div>
                 <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: '#F59E0B', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   {isMobile ? 'أيام صحبة القرآن' : 'أيام صحبة القرآن'}
@@ -579,9 +636,19 @@ const Dashboard = () => {
                   fontSize: '11.5px',
                   fontWeight: 800
                 }}>
-                  {Object.values(fortressesToday).filter(Boolean).length} / 5 منجزة
+                  <span data-testid="home-fortress-count">{homeFortressPlan ? `${Object.values(fortressesToday).filter(Boolean).length} / 5 منجزة` : 'غير متاح'}</span>
                 </div>
               </div>
+
+              <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
+                {isRTL ? 'علامات إنجاز يصرّح بها الطالب، ولا تمنح XP أو اعتماد حفظ.' : 'Student-reported completion marks; they grant no XP or memorization approval.'}
+              </p>
+              {homeFortressFeedback && (
+                <p data-testid="home-fortress-feedback" role={homeFortressFeedback.status === 'success' ? 'status' : 'alert'}
+                  data-status={homeFortressFeedback.status} style={{ margin: 0, color: homeFortressFeedback.status === 'success' ? 'var(--primary)' : '#EF4444', fontSize: '12px' }}>
+                  {homeFortressFeedback.text}
+                </p>
+              )}
 
               {/* Progress bar */}
               <div style={{ width: '100%', height: '6px', borderRadius: '4px', background: 'var(--bg-color)', overflow: 'hidden' }}>
@@ -611,6 +678,9 @@ const Dashboard = () => {
                   return (
                     <button
                       key={fort.id}
+                      data-testid={`home-fortress-${fort.id}`}
+                      aria-pressed={isDone}
+                      disabled={homeFortressLoading || savingHomeFortress !== null}
                       onClick={() => {
                         if (navigator?.vibrate) {
                           try { navigator.vibrate(10); } catch (e) {}
@@ -625,7 +695,7 @@ const Dashboard = () => {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
-                        cursor: 'pointer',
+                        cursor: homeFortressLoading || savingHomeFortress !== null ? 'wait' : 'pointer',
                         textAlign: 'right',
                         transition: 'all 0.15s ease',
                         touchAction: 'manipulation'
@@ -640,7 +710,7 @@ const Dashboard = () => {
                           {fort.name}
                         </span>
                         <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>
-                          {fort.sub}
+                          {savingHomeFortress === fort.id ? (isRTL ? 'جاري الحفظ...' : 'Saving...') : fort.sub}
                         </span>
                       </div>
                       <div style={{
@@ -852,34 +922,40 @@ const Dashboard = () => {
         );
 
       case 'community':
+        if (!uiConfiguration.sections.community.visible) return null;
         return <Community setActiveTab={setActiveTab} />;
 
-      case 'achievements':
+      case 'achievements': {
+        if (!uiConfiguration.sections.achievements.visible) return null;
+        const badgeState = {
+          streak_7: { unlocked: user?.streak >= 7, icon: Flame },
+          baqarah: { unlocked: user?.earnedBadges?.includes('baqarah') === true, icon: Award },
+          xp_500: { unlocked: user?.xp >= 500, icon: Sparkles },
+          fortresses_3: { unlocked: Object.values(fortressesToday).filter(Boolean).length >= 3, icon: Shield },
+          stability_95: { unlocked: user?.earnedBadges?.includes('stability_95') === true, icon: Brain },
+          level_5: { unlocked: user?.level >= 5, icon: Trophy }
+        };
         return (
           <Card style={{ padding: isMobile ? '20px 16px' : '32px' }}>
             <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', marginBottom: '8px' }}>🏆 أوسمة وثمار صحبة القرآن</h2>
             <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>محطات إيمانية وتشجيعية في رحلتك مع كتاب الله.</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-              {[
-                { title: 'رباط الاستمرار', desc: 'صحبة متتالية لكتاب الله لـ 7 أيام أو أكثر', unlocked: (user?.streak >= 7), icon: Flame },
-                { title: 'حافظ البقرة', desc: 'حفظ سورة البقرة بالكامل (أكثر من 48 صفحة)', unlocked: (user?.memorizedPagesCount >= 49), icon: Award },
-                { title: 'المستمع الحاضر', desc: 'الحصول على خبرة تراكمية تزيد عن 500 XP', unlocked: (user?.xp >= 500), icon: Sparkles },
-                { title: 'فارس الحصون', desc: 'التزام بإنجاز 3 حصون يومية أو أكثر اليوم', unlocked: (Object.values(fortressesToday).filter(Boolean).length >= 3), icon: Shield },
-                { title: 'المتدبر الخاشع', desc: 'حفظ أكثر من 10 صفحات بدرجة استقرار تزيد عن 95%', unlocked: (user?.memorizedPagesCount >= 10 && user?.memoryScore >= 95), icon: Brain },
-                { title: 'أهل القرآن', desc: 'بلوغ المستوى الخامس في رحلة تدبر القرآن', unlocked: (user?.level >= 5), icon: Trophy },
-              ].map((badge, i) => (
-                <div key={i} style={{ padding: '28px 20px', borderRadius: '20px', background: badge.unlocked ? 'var(--primary-light)' : 'var(--bg-color)', border: `1px solid ${badge.unlocked ? 'var(--primary)' : 'var(--glass-border)'}`, textAlign: 'center' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: badge.unlocked ? 'var(--primary)' : 'var(--glass-border)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                    <badge.icon size={28} />
+              {[...uiConfiguration.badges].filter(badge => badge.visible).sort((a, b) => a.order - b.order).map((badge) => {
+                const state = badgeState[badge.id];
+                const Icon = state.icon;
+                return <div key={badge.id} data-testid={`achievement-${badge.id}`} style={{ padding: '28px 20px', borderRadius: '20px', background: state.unlocked ? 'var(--primary-light)' : 'var(--bg-color)', border: `1px solid ${state.unlocked ? 'var(--primary)' : 'var(--glass-border)'}`, textAlign: 'center' }}>
+                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: state.unlocked ? 'var(--primary)' : 'var(--glass-border)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <Icon size={28} />
                   </div>
                   <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: 'var(--text-primary)' }}>{badge.title}</h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{badge.desc}</p>
+                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{badge.description}</p>
                 </div>
-              ))}
+              })}
             </div>
           </Card>
         );
+      }
 
       case 'analytics':
         return <AnalyticsView />;
@@ -962,7 +1038,7 @@ const Dashboard = () => {
           background: 'var(--bg-surface)', 
           position: 'sticky', 
           top: 0, 
-          zIndex: 30,
+          zIndex: isMobile ? 100 : 30,
           flexWrap: 'nowrap',
           gap: '8px'
         }}>
@@ -970,7 +1046,7 @@ const Dashboard = () => {
             /* Mobile View: Drawer toggle + Compact profile card + Quick Settings */
             <>
               {/* Left / Start: Drawer Toggle & Compact Profile Card */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: '1 1 auto' }}>
                 <button
                   id="mobile-drawer-toggle-btn"
                   onClick={() => {
@@ -993,7 +1069,9 @@ const Dashboard = () => {
                     flexShrink: 0
                   }}
                   title={isRTL ? 'فتح القائمة الجانبية (الدروار)' : 'Open Drawer Menu'}
-                  aria-label="Navigation Drawer"
+                  aria-label={isRTL ? 'فتح قائمة الأقسام' : 'Open section navigation'}
+                  aria-controls="app-main-sidebar"
+                  aria-expanded={!sidebarCollapsed}
                 >
                   <Menu size={19} />
                 </button>
@@ -1014,7 +1092,9 @@ const Dashboard = () => {
                   padding: '4px 6px',
                   borderRadius: '16px',
                   userSelect: 'none',
-                  minWidth: 0
+                  minWidth: 0,
+                  flex: '1 1 auto',
+                  overflow: 'hidden'
                 }}
                 title={isRTL ? 'عرض وتعديل الملف الشخصي' : 'View & edit profile'}
               >
@@ -1045,8 +1125,8 @@ const Dashboard = () => {
                   }} />
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div className="mobile-profile-details" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: '1 1 auto' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
                     <span style={{ 
                       fontSize: '14px', 
                       fontWeight: 800, 
@@ -1054,11 +1134,13 @@ const Dashboard = () => {
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
-                      maxWidth: '120px'
+                      maxWidth: '120px',
+                      minWidth: 0
                     }}>
                       {user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')}
                     </span>
-                    <span 
+                    <span
+                      className="mobile-profile-streak"
                       style={{ 
                         padding: '2px 7px', 
                         borderRadius: '12px', 
@@ -1073,7 +1155,7 @@ const Dashboard = () => {
                       }}
                       title={isRTL ? 'أيام صحبة القرآن' : 'Quran Companion Days'}
                     >
-                      🔥 {user?.streak || 1} {isRTL ? 'صحبة القرآن' : 'd'}
+                      🔥 {user?.streak ?? 0} {isRTL ? 'صحبة القرآن' : 'd'}
                     </span>
                   </div>
                 </div>
@@ -1081,9 +1163,9 @@ const Dashboard = () => {
             </div>
 
               {/* Right / End: RoleSwitcher, Notification, Theme & Quick Settings */}
-              <div className="flex-center" style={{ gap: '6px', flexWrap: 'nowrap' }}>
+              <div id="mobile-header-controls" className="flex-center" style={{ gap: '6px', flexWrap: 'nowrap', flexShrink: 0 }}>
                 <NotificationCenter />
-                <ThemeToggle variant="pill" size="small" />
+                <ThemeToggle variant="pill" size="small" className="mobile-theme-toggle" touchTarget />
                 <QuickSettingsMenu
                   soundEnabled={soundEnabled}
                   toggleSound={toggleSound}
@@ -1150,7 +1232,7 @@ const Dashboard = () => {
                   gap: '4px',
                   whiteSpace: 'nowrap'
                 }}>
-                  🔥 {user?.streak || 1} {isRTL ? 'أيام صحبة القرآن' : 'd'}
+                  🔥 {user?.streak ?? 0} {isRTL ? 'أيام صحبة القرآن' : 'd'}
                 </span>
               </div>
 
@@ -1161,7 +1243,8 @@ const Dashboard = () => {
                     {/* Sync & Refresh Button */}
                     <button
                       id="header-sync-refresh-btn"
-                      onClick={handleRefreshDashboard}
+                      data-testid="dashboard-refresh"
+                      onClick={() => { handleRefreshDashboard().catch(() => {}); }}
                       disabled={isSyncing}
                       style={{
                         height: '36px',
@@ -1180,7 +1263,7 @@ const Dashboard = () => {
                         transition: 'all 0.2s ease',
                         flexShrink: 0
                       }}
-                      title={isRTL ? 'مزامنة وتحديث تقدم الحفظ والبيانات' : 'Sync & Refresh Progress'}
+                      title={isRTL ? 'تحديث ملف الحساب من Firestore' : 'Refresh account profile from Firestore'}
                     >
                       <RefreshCw
                         size={14}
@@ -1188,7 +1271,7 @@ const Dashboard = () => {
                           animation: isSyncing ? 'spin 0.75s linear infinite' : 'none'
                         }}
                       />
-                      <span>{isSyncing ? (isRTL ? 'جاري المزامنة...' : 'Syncing...') : (isRTL ? 'مزامنة' : 'Sync')}</span>
+                      <span>{isSyncing ? (isRTL ? 'جاري التحديث...' : 'Refreshing...') : (isRTL ? 'تحديث الحساب' : 'Refresh account')}</span>
                     </button>
 
                     {/* Language Switcher */}
@@ -1476,6 +1559,9 @@ const Dashboard = () => {
           {syncToast && (
             <div
               id="dashboard-sync-toast"
+              data-testid="dashboard-refresh-feedback"
+              data-status={syncFailed ? 'error' : 'success'}
+              role={syncFailed ? 'alert' : 'status'}
               style={{
                 position: 'fixed',
                 top: 'calc(68px + env(safe-area-inset-top, 0px))',
@@ -1483,7 +1569,7 @@ const Dashboard = () => {
                 transform: 'translateX(-50%)',
                 zIndex: 9999,
                 background: 'rgba(15, 23, 42, 0.94)',
-                color: '#34D399',
+                color: syncFailed ? '#FCA5A5' : '#34D399',
                 padding: '10px 20px',
                 borderRadius: '24px',
                 border: '1px solid rgba(16, 185, 129, 0.35)',
@@ -1498,7 +1584,7 @@ const Dashboard = () => {
                 pointerEvents: 'none'
               }}
             >
-              <Check size={16} strokeWidth={3} />
+              {syncFailed ? <HelpCircle size={16} /> : <Check size={16} strokeWidth={3} />}
               <span>{syncToast}</span>
             </div>
           )}

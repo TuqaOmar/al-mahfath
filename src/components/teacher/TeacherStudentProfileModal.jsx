@@ -1,3 +1,4 @@
+import { declaredPages, nextDeclaredPage } from '../../lib/memorization';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTeacherRefresh } from '../../hooks/useTeacherRefresh';
 import { fetchWithAuth } from '../../lib/api';
 
 export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
@@ -20,6 +22,8 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [activeTab, setActiveTab] = useState('overview'); // 'overview' | 'recitation' | 'revision' | 'consistency'
+  const [noteText, setNoteText] = useState('');
+  const [actionMessage, setActionMessage] = useState('');
   const requestVersion = useRef(0);
   const text = (ar, en) => lang === 'en' ? en : ar;
 
@@ -38,7 +42,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
       if (version === requestVersion.current) setStudent(data.student);
     } catch (e) {
       console.error('Failed to load student profile:', e);
-      if (version === requestVersion.current) setLoadError('failed');
+      if (version === requestVersion.current) { setStudent(null); setNoteText(''); setLoadError('failed'); }
     } finally {
       if (version === requestVersion.current) setLoading(false);
     }
@@ -47,10 +51,13 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   useEffect(() => {
     if (studentId && isOpen) {
       setActiveTab('overview');
-      fetchStudentProfile();
+      setNoteText('');
+      setActionMessage('');
     }
     return () => { requestVersion.current += 1; };
   }, [studentId, isOpen, fetchStudentProfile]);
+
+  useTeacherRefresh(fetchStudentProfile, Boolean(isOpen && studentId));
 
   if (!isOpen) return null;
 
@@ -65,6 +72,36 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   const recentSessions = Array.isArray(student?.recentSessions) ? student.recentSessions : [];
   const recordedProgress = student?.recordedProgress || {};
   const learningPlan = student?.learningPlan || {};
+
+  const reviewSession = async (sessionId, decision) => {
+    const version = requestVersion.current;
+    setActionMessage('');
+    try {
+    const response = await fetchWithAuth(`/api/teacher/${encodeURIComponent(user.uid)}/student/${encodeURIComponent(studentId)}/sessions/${encodeURIComponent(sessionId)}/review`, {
+      method: 'PATCH', body: { decision }
+    });
+    const data = await response.json();
+    if (version !== requestVersion.current) return;
+    if (!response.ok || !data.success) throw new Error(data.message || 'Review failed');
+    setActionMessage(decision === 'approved' ? 'تم قبول مراجعة التدريب؛ لا تعتمد صفحات الحفظ ولا تمنح XP.' : 'تم رفض الجلسة.');
+    await fetchStudentProfile();
+    } catch (error) { if (version === requestVersion.current) { setStudent(null); setLoadError('failed'); setNoteText(''); setActionMessage(`تعذر حفظ مراجعة التدريب: ${error.message}`); } }
+  };
+
+  const sendNote = async () => {
+    const version = requestVersion.current;
+    setActionMessage('');
+    try {
+    const response = await fetchWithAuth(`/api/teacher/${encodeURIComponent(user.uid)}/student/${encodeURIComponent(studentId)}/notes`, {
+      method: 'POST', body: { text: noteText }
+    });
+    const data = await response.json();
+    if (version !== requestVersion.current) return;
+    if (!response.ok || !data.success) throw new Error(data.message || 'Note failed');
+    setNoteText('');
+    setActionMessage('تم حفظ الملاحظة وإرسال إشعار للطالب.');
+    } catch (error) { if (version === requestVersion.current) { setStudent(null); setLoadError('failed'); setNoteText(''); setActionMessage(`تعذر حفظ الملاحظة: ${error.message}`); } }
+  };
 
   const statusColor = student?.status === 'needs_attention' 
     ? '#F59E0B' 
@@ -104,6 +141,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
           maxHeight: '92vh'
         }}
       >
+        <button data-testid="teacher-profile-refresh" onClick={fetchStudentProfile}>تحديث صلاحية ملف الطالب</button>
         {/* Modal Header */}
         <div style={{
           padding: '20px 24px',
@@ -121,6 +159,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
           </div>
 
           <button
+            data-testid="teacher-profile-close"
             onClick={onClose}
             style={{
               background: 'none',
@@ -146,7 +185,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
               جاري تحميل ملف الطالبة...
             </div>
           ) : loadError ? (
-            <div role="alert" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <div role="alert" data-testid="teacher-profile-error" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
               <p>{text('تعذر تحميل ملف الطالبة. تحققي من الاتصال وصلاحية الوصول ثم أعيدي المحاولة.', 'Could not load this learner. Check your connection and access, then retry.')}</p>
               <button onClick={fetchStudentProfile} style={{ padding: '10px 16px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', cursor: 'pointer' }}>
                 {text('إعادة المحاولة', 'Retry')}
@@ -177,7 +216,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover', border: `2.5px solid ${statusColor}` }}
                   /> : <span style={{ width: '56px', height: '56px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2.5px solid ${statusColor}`, color: statusColor, fontSize: '20px', fontWeight: 800 }} aria-label="صورة رمزية للطالبة">{student.name?.slice(0, 1) || '؟'}</span>}
                   <div>
-                    <h3 style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    <h3 data-testid="teacher-profile-student-name" style={{ margin: '0 0 4px 0', fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
                       {student.name}
                     </h3>
                     <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
@@ -279,7 +318,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                   <div data-testid="teacher-student-ayah-progress" style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <strong style={{ color: 'var(--text-primary)' }}>تقدم الآيات المسجل ذاتيًا</strong>
                     <div style={{ marginTop: '8px', fontSize: '13px', color: 'var(--text-secondary)' }}>
-                      الإجمالي: <span data-testid="teacher-recorded-ayahs">{numberLabel(recordedProgress.total ?? 0)}</span> • متقنة: {numberLabel(recordedProgress.memorized ?? 0)} • قيد الحفظ: {numberLabel(recordedProgress.learning ?? 0)} • مراجعة: {numberLabel(recordedProgress.review ?? 0)}
+                      الإجمالي: <span data-testid="teacher-recorded-ayahs">{numberLabel(recordedProgress.total ?? 0)}</span> • مصرّح بحفظها: {numberLabel(recordedProgress.memorized ?? 0)} • قيد الحفظ: {numberLabel(recordedProgress.learning ?? 0)} • مراجعة: {numberLabel(recordedProgress.review ?? 0)}
                     </div>
                     <p style={{ margin: '8px 0 0', fontSize: '11.5px', color: 'var(--text-secondary)' }}>هذا سجل الطالب، وليس اعتمادًا من المعلمة أو نتيجة لمحاولة التدريب.</p>
                   </div>
@@ -287,9 +326,9 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                   {/* 4-Box Metric Highlights */}
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
-                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>إجمالي الحفظ</span>
-                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{numberLabel(student.memorizedJuz)} أجزاء</strong>
-                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>({numberLabel(student.memorizedPagesCount)} صفحة)</span>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>الحفظ المعتمد</span>
+                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}><span data-testid="teacher-approved-pages">غير متاح</span></strong>
+                      <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>({declaredPages(student).length} صفحة مصرّح بها ذاتيًا)</span>
                     </div>
 
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
@@ -305,7 +344,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
 
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>مؤشر الذاكرة المسجل</span>
-                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{numberLabel(student.memoryScore, '%')}</strong>
+                      <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>غير متاح</strong>
                     </div>
                   </div>
                 </div>
@@ -315,7 +354,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
               {activeTab === 'recitation' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.7 }}>
-                    {text('هذه محاولات تدريب بالمقارنة النصية. النص المرجعي غير متحقق منه؛ النتيجة لا تعتمد الحفظ أو التجويد ولا تمنح نقاط خبرة.', 'These are text comparison practice attempts. The reference text is unverified; results do not certify memorization or tajweed and award no XP.')}
+                    {text('هذه محاولات تدريب بالمقارنة النصية مع مرجع عثماني موثق داخل الخادم؛ النتيجة لا تعتمد الحفظ أو التجويد ولا تمنح نقاط خبرة.', 'These are text-comparison practice attempts against the server Uthmani reference; results do not certify memorization or tajweed and award no XP.')}
                   </p>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     <div style={{ padding: '12px', borderRadius: '12px', background: 'var(--bg-color)', textAlign: 'center' }}>
@@ -350,11 +389,18 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                       <div key={sess.id} data-testid={`student-practice-${sess.id}`} style={{ padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                         <div>
                           <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{sess.surahName || text('مقارنة نصية', 'Text comparison')} • {text('الصفحة', 'Page')} {numberLabel(sess.pageNumber)}</strong>
-                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{dateLabel(sess.createdAt)} • {text('تدريب؛ مرجع غير متحقق', 'Practice; unverified reference')}</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{dateLabel(sess.createdAt)} • {text('تدريب؛ مرجع عثماني من الخادم', 'Practice; server Uthmani reference')}</span>
                         </div>
                         <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', background: 'var(--bg-surface)', padding: '4px 10px', borderRadius: '8px', whiteSpace: 'nowrap' }}>
                           {numberLabel(sess.accuracy, '%')} {text('تطابق النص', 'text match')}
                         </span>
+                        {sess.reviewStatus === 'pending' && (
+                          <div style={{ display: 'flex', gap: '6px' }}>
+                            <button data-testid={`approve-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'approved')}>قبول مراجعة التدريب</button>
+                            <button data-testid={`reject-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'rejected')}>رفض الجلسة</button>
+                          </div>
+                        )}
+                        {sess.reviewStatus && sess.reviewStatus !== 'pending' && <span data-testid={`session-review-${sess.id}`}>{sess.reviewStatus === 'approved' ? 'مراجعة تدريب مقبولة من المعلم' : 'مرفوضة'}</span>}
                       </div>
                     ))}
                   </div>
@@ -408,15 +454,15 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                   <span>إرسال توجيه أو تشجيع للطالبة</span>
                 </h4>
 
-                <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
-                  {text('إرسال الملاحظات غير متاح بعد؛ لا تُحفظ أو تُرسل ملاحظة من هذه الشاشة.', 'Teacher notes are not available yet; this view does not save or send a note.')}
-                </p>
+                <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>{text('تُحفظ الملاحظة في Firestore ويصل إشعار داخل التطبيق للطالب.', 'The note is stored in Firestore and creates an in-app notification.')}</p>
 
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
-                    placeholder={text('إرسال الملاحظات غير متاح', 'Sending notes is unavailable')}
-                    disabled
+                    data-testid="teacher-note-input"
+                    placeholder={text('اكتب ملاحظة للطالب', 'Write a note to the student')}
+                    value={noteText}
+                    onChange={event => setNoteText(event.target.value)}
                     style={{
                       flex: 1,
                       padding: '10px 14px',
@@ -429,7 +475,9 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     }}
                   />
                   <button
-                    disabled
+                    data-testid="send-teacher-note"
+                    disabled={!noteText.trim()}
+                    onClick={() => sendNote().catch(() => setActionMessage('تعذر إرسال الملاحظة.'))}
                     style={{
                       padding: '10px 16px',
                       borderRadius: '10px',
@@ -438,8 +486,8 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                       border: 'none',
                       fontSize: '13px',
                       fontWeight: 700,
-                      cursor: 'not-allowed',
-                      opacity: 0.6,
+                      cursor: noteText.trim() ? 'pointer' : 'not-allowed',
+                      opacity: noteText.trim() ? 1 : 0.6,
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px'
@@ -449,12 +497,14 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     <span>إرسال</span>
                   </button>
                 </div>
+
               </div>
             </>
           )}
 
         </div>
 
+        {actionMessage && <p data-testid="teacher-action-message" style={{ padding: '0 24px', color: 'var(--text-primary)' }}>{actionMessage}</p>}
         {/* Modal Footer */}
         <div style={{ padding: '16px 24px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end', background: 'var(--bg-surface)' }}>
           <button

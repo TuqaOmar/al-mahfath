@@ -1,3 +1,4 @@
+import { fetchWithAuth } from '../lib/api';
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Search, 
@@ -187,16 +188,17 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
   }
 ]`;
 
-      const res = await fetch('/api/ai/chat', {
+      const res = await fetchWithAuth('/api/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           message: prompt,
-          userId: 'mutashabihat_ai'
+
         })
       });
 
       const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر حفظ طلب المساعد');
       const reply = data?.reply || data?.message || '';
 
       const jsonMatch = reply.match(/\[[\s\S]*\]/);

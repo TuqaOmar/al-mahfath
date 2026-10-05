@@ -381,6 +381,16 @@ export function useRecitationRecorder() {
     }
   }, [analysisResult, refreshUserData]);
 
+  const submitCurrentResultForReview = useCallback(async () => {
+    const sessionId = analysisResult?.savedSession?.id;
+    if (!sessionId) throw new Error('لا توجد جلسة محفوظة لإرسالها.');
+    const response = await fetchWithAuth(`/api/recitation/sessions/${encodeURIComponent(sessionId)}/submit`, { method: 'POST' });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || 'تعذر إرسال الجلسة للمعلم.');
+    setAnalysisResult(current => ({ ...current, savedSession: data.session }));
+    return data.session;
+  }, [analysisResult]);
+
   const cancelRecording = useCallback(() => {
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -427,6 +437,7 @@ export function useRecitationRecorder() {
     stopAndAnalyze,
     evaluateTextRecitation,
     saveCurrentResult,
+    submitCurrentResultForReview,
     cancelRecording,
     clearResult,
     setAnalysisResult

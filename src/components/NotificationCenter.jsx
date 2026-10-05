@@ -521,6 +521,7 @@ export const NotificationCenter = () => {
 
                 {/* Instant Test Button */}
                 <button
+                  data-testid="reminder-test"
                   onClick={testReminderNow}
                   style={{
                     padding: '11px',

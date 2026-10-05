@@ -218,8 +218,9 @@ const OnboardingWizard = () => {
       memorizedPagesCount = count;
       memorizedPages = Array.from({ length: count }, (_, i) => i + 1);
     } else if (formData.unitType === 'surahs') {
-      memorizedPages = Array.from({ length: 21 }, (_, i) => i + 1);
-      memorizedPagesCount = 21;
+      // Selecting a surah is a plan preference, not a declaration of arbitrary pages.
+      memorizedPages = [];
+      memorizedPagesCount = 0;
     } else {
       memorizedPages = [];
       memorizedPagesCount = 0;
@@ -230,11 +231,8 @@ const OnboardingWizard = () => {
     const wizardUpdate = {
       name: formData.displayName?.trim() || user?.name || 'حافظ جديد',
       hasCompletedWizard: true,
-      preferences: formData,
+      preferences: { ...formData, studentDeclaredPages: memorizedPages },
       photoURL: formData.photoURL || user?.photoURL || '',
-      memorizedPages,
-      memorizedPagesCount,
-      totalJuz
     };
 
     if (auth.currentUser && formData.photoURL) {

@@ -69,7 +69,7 @@ export const generateQuranAiResponse = async (userMessage = '', userContext = {}
   const page = userContext.currentPage || 1;
   const surah = userContext.currentSurah || 'الفاتحة';
   const juz = userContext.currentJuz || 1;
-  const memorizedPagesCount = userContext.memorizedPagesCount || 0;
+  const memorizedPagesCount = userContext.declaredPagesCount || 0;
   const learningStyle = userContext.learningStyle || 'سمعي بصري (مختلط)';
   const isAuditory = learningStyle.includes('سمعي') || learningStyle.includes('صوتي');
   const isVisual = learningStyle.includes('بصري') || learningStyle.includes('مرئي');
@@ -88,7 +88,7 @@ export const generateQuranAiResponse = async (userMessage = '', userContext = {}
 - الصفحة الحالية: ${page}
 - السورة الحالية: ${surah}
 - الجزء الحالي: ${juz}
-- الصفحات المحفوظة: ${memorizedPagesCount} صفحة
+- الصفحات المصرّح بها ذاتيًا (ليست معتمدة): ${memorizedPagesCount} صفحة
 - نمط الحفظ لدماغه: ${learningStyle}
 
 أجب على سؤال المستخدم مباشرة وبشكل عملي ومختصر.

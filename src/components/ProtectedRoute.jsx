@@ -39,8 +39,6 @@ const ProtectedRoute = ({ children, requireWizard = true }) => {
     currentUser.hasCompletedWizard === 1 ||
     currentUser.hasCompletedWizard === 'true' ||
     hasValidPreferences ||
-    Number(currentUser.memorizedPagesCount) > 0 ||
-    Number(currentUser.totalJuz) > 0 ||
     isAdmin ||
     isTeacher
   );

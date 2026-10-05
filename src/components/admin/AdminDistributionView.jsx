@@ -1,3 +1,4 @@
+import { declaredPages, nextDeclaredPage } from '../../lib/memorization';
 import React, { useState, useEffect } from 'react';
 import { 
   Users, 
@@ -368,7 +369,7 @@ export const AdminDistributionView = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
                     <div style={{ padding: '6px 8px', borderRadius: '8px', background: 'var(--bg-surface)' }}>
                       <span style={{ color: 'var(--text-secondary)', display: 'block' }}>المحفوظ:</span>
-                      <strong style={{ color: 'var(--text-primary)' }}>{req.memorizedJuz} أجزاء</strong>
+                      <strong style={{ color: 'var(--text-primary)' }}>{req.memorizedJuz} أجزاء مصرّح بها في الطلب</strong>
                     </div>
                     <div style={{ padding: '6px 8px', borderRadius: '8px', background: 'var(--bg-surface)' }}>
                       <span style={{ color: 'var(--text-secondary)', display: 'block' }}>الورد المطلوب:</span>
@@ -480,7 +481,7 @@ export const AdminDistributionView = () => {
                     {st.name}
                   </div>
                   <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    {st.email} • {st.memorizedJuz || 1} أجزاء ({st.memorizedPagesCount || 20} صفحة)
+                    {st.email} • {declaredPages(st).length} صفحة مصرّح بها ذاتيًا
                   </div>
                 </div>
               </div>

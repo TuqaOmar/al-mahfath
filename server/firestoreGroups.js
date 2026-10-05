@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { db } from './middleware/auth.js';
-import { hasRole, isAdmin } from './accessControl.js';
+import { activeTeacherMembers, requireTeacherStudent } from './teacherScope.js';
+import { hasRole, isAdmin, isActiveTeacherMembership } from './accessControl.js';
 
 export class GroupError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -9,7 +10,9 @@ const fail = (status, message) => { throw new GroupError(status, message); };
 export const docData = snapshot => ({ ...snapshot.data(), id: snapshot.id });
 export function publicUser(snapshot) {
   const { passwordHash, salt, ...user } = snapshot.data();
-  return { ...user, uid: snapshot.id };
+  return { ...user, uid: snapshot.id, memorizedPages: null, memorizedPagesCount: null,
+    totalJuz: null, memoryScore: null,
+    verifiedMemorizedPages: null, verifiedMemorizationSource: 'unavailable_no_page_approval_workflow' };
 }
 
 export async function listUsers() {
@@ -20,7 +23,22 @@ export async function listUsers() {
 export async function listGroups(teacherId) {
   let query = db.collection('groups');
   if (teacherId) query = query.where('teacherId', '==', teacherId);
-  return (await query.get()).docs.map(docData);
+  const [groupsSnapshot, membershipsSnapshot] = await Promise.all([
+    query.get(), db.collection('memberships').get()
+  ]);
+  const activeCounts = new Map();
+  const groupMap = new Map(groupsSnapshot.docs.map(group => [group.id, { ...group.data(), id: group.id }]));
+  for (const membership of membershipsSnapshot.docs) {
+    const data = membership.data();
+    if (!isActiveTeacherMembership(groupMap.get(data.groupId), data, membership.id, data.teacherId)) continue;
+    activeCounts.set(data.groupId, (activeCounts.get(data.groupId) || 0) + 1);
+  }
+  return groupsSnapshot.docs.map(snapshot => ({
+    ...docData(snapshot),
+    // Membership documents are authoritative. The stored counter is only an
+    // atomic capacity hint and may be stale in imported/legacy group records.
+    studentsCount: activeCounts.get(snapshot.id) || 0
+  }));
 }
 
 export async function findGroup(code) {
@@ -85,7 +103,8 @@ export async function setMembership(uid, groupId, { actor, requestId, teacherId 
     if (teacherId && group?.teacherId !== teacherId) fail(400, 'المعلم المحدد لا يطابق معلم الحلقة');
     if (actor && !isAdmin(actor) && actor.uid !== uid) {
       if (!hasRole(actor, 'teacher') || group?.teacherId !== actor.uid ||
-          (user.data().teacherId && user.data().teacherId !== actor.uid)) fail(403, 'لا تملك صلاحية نقل هذا الطالب');
+          !member.exists) fail(403, 'لا تملك صلاحية نقل هذا الطالب');
+      await requireTeacherStudent(actor.uid, uid, tx);
     }
     const sameGroup = oldId === groupId;
     if (group && !sameGroup && group.maxStudents && (group.studentsCount || 0) >= group.maxStudents) fail(409, 'الحلقة مكتملة');
@@ -142,20 +161,31 @@ export async function changeTeacherRole(uid, enabled) {
   });
 }
 
-export async function teacherStudents(teacherId, { search = '', filter = 'all', sort = 'name' } = {}) {
-  const members = await db.collection('memberships').where('teacherId', '==', teacherId).get();
-  if (members.empty) return [];
-  const docs = await db.getAll(...members.docs.map(member => db.doc(`users/${member.id}`)));
-  let students = docs.filter(doc => doc.exists).map(doc => ({
-    ...publicUser(doc), memorizedJuz: doc.data().totalJuz || 0,
-    consistencyRate: doc.data().consistencyRate || 0, status: doc.data().status || 'active',
-    lastRecitationDate: doc.data().lastRecitationDate || '', thisWeekSessions: doc.data().thisWeekSessions || 0
-  }));
+export async function teacherStudents(teacherId, { search = '', filter = 'all', sort = 'name', groupId } = {}) {
+  const activeMembers = await activeTeacherMembers(teacherId, { groupId });
+  if (!activeMembers.length) return [];
+  const docs = await db.getAll(...activeMembers.map(member => db.doc(`users/${member.id}`)));
+  let students = docs.filter(doc => doc.exists).map(doc => {
+    const data = doc.data();
+    // consistencyRate and thisWeekSessions are denormalized cache fields that may be absent.
+    // Return null when missing so callers can distinguish "not computed" from zero.
+    const consistencyRate = data.consistencyRate != null ? Number(data.consistencyRate) : null;
+    const thisWeekSessions = data.thisWeekSessions != null ? Number(data.thisWeekSessions) : null;
+    return {
+      ...publicUser(doc),
+      memorizedJuz: null,
+      consistencyRate,
+      thisWeekSessions,
+      currentSurah: data.currentSurah || null,
+      status: data.status || 'active',
+      lastRecitationDate: data.lastRecitationDate || ''
+    };
+  });
   const term = String(search).trim().toLowerCase();
   if (term) students = students.filter(s => `${s.name || ''} ${s.email || ''}`.toLowerCase().includes(term));
   if (filter !== 'all') students = students.filter(s => s.status === filter);
-  students.sort((a, b) => sort === 'memorization' ? b.memorizedJuz - a.memorizedJuz :
-    sort === 'consistency' ? b.consistencyRate - a.consistencyRate :
+  students.sort((a, b) => sort === 'memorization' ? String(a.name || '').localeCompare(String(b.name || ''), 'ar') :
+    sort === 'consistency' ? (b.consistencyRate ?? -1) - (a.consistencyRate ?? -1) :
     sort === 'last_recitation' ? b.lastRecitationDate.localeCompare(a.lastRecitationDate) :
     String(a.name || '').localeCompare(String(b.name || ''), 'ar'));
   return students;

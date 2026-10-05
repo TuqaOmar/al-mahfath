@@ -99,8 +99,12 @@ export const QuickSettingsMenu = ({
           style={{
             position: 'absolute',
             top: isMobile ? '46px' : '48px',
-            [isRTL ? 'left' : 'right']: 0,
-            width: isMobile ? '280px' : '310px',
+            insetInlineEnd: 0,
+            width: isMobile ? 'min(280px, calc(100vw - 24px))' : '310px',
+            maxHeight: isMobile
+              ? 'calc(100dvh - 72px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px))'
+              : undefined,
+            overflowY: isMobile ? 'auto' : undefined,
             backgroundColor: 'var(--bg-surface)',
             border: '1.5px solid var(--glass-border)',
             borderRadius: '20px',
@@ -134,10 +138,14 @@ export const QuickSettingsMenu = ({
           {/* 1. Cloud Sync Option */}
           <button
             id="menu-sync-btn"
-            onClick={() => {
+            onClick={async () => {
               triggerHaptic(15);
-              if (handleRefresh) handleRefresh();
               setIsOpen(false);
+              // Dashboard displays the failure and rethrows for pull-to-refresh.
+              // Consume it here to avoid an unhandled event-handler rejection.
+              try {
+                if (handleRefresh) await handleRefresh();
+              } catch (error) {}
             }}
             disabled={isSyncing}
             style={{
@@ -170,15 +178,15 @@ export const QuickSettingsMenu = ({
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
                 <span style={{ fontSize: '12.5px', fontWeight: 700 }}>
-                  {isRTL ? 'مزامنة الحفظ السحابي' : 'Cloud Sync Progress'}
+                  {isRTL ? 'تحديث ملف الحساب' : 'Refresh account profile'}
                 </span>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
-                  {isSyncing ? (isRTL ? 'جاري المزامنة...' : 'Syncing...') : (isRTL ? 'تحديث فوري لبيانات التلاوة' : 'Instant progress sync')}
+                  {isSyncing ? (isRTL ? 'جاري القراءة من Firestore...' : 'Reading from Firestore...') : (isRTL ? 'لا يعيد تحميل بيانات بقية الصفحات' : 'Other screen data is not reloaded')}
                 </span>
               </div>
             </div>
             <span style={{ fontSize: '11px', color: 'var(--primary)', fontWeight: 700 }}>
-              {isSyncing ? '...' : (isRTL ? 'مزامنة' : 'Sync')}
+              {isSyncing ? '...' : (isRTL ? 'تحديث' : 'Refresh')}
             </span>
           </button>
 

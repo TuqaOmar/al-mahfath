@@ -1587,26 +1587,25 @@ export function getStudentProfile(studentId) {
 export function getAdminOverview() {
   loadEcosystem();
 
-  const totalRegisteredInDb = ecosystemState.students.length + ecosystemState.teachers.length + ecosystemState.independentUsers.length;
-  
-  // High-level Platform metrics
-  const totalUsers = 12842 + totalRegisteredInDb;
-  const safarMembers = 4281 + ecosystemState.students.length;
-  const teachersCount = 186 + ecosystemState.teachers.length;
-  const independentUsersCount = 8561 + ecosystemState.independentUsers.length;
-  const groupsCount = 142 + ecosystemState.groups.length;
+  // Legacy JSON callers receive only counts present in that source. The live
+  // administration dashboard uses Firestore through /api/admin/overview.
+  const totalUsers = ecosystemState.students.length + ecosystemState.teachers.length + ecosystemState.independentUsers.length;
+  const safarMembers = ecosystemState.students.length;
+  const teachersCount = ecosystemState.teachers.length;
+  const independentUsersCount = ecosystemState.independentUsers.length;
+  const groupsCount = ecosystemState.groups.length;
 
   const activityStats = {
-    activeToday: 1420,
-    activeThisWeek: 6890,
-    newRegistrationsWeek: 342,
-    newSafarMembersWeek: 118,
-    newGroupJoinsWeek: 94,
-    activeTeachers: 174,
-    activeGroups: 138,
-    averageStudentActivityRate: 88.4,
-    overallMemorizationRate: 92.1,
-    recitationSessionsToday: 3240
+    activeToday: 0,
+    activeThisWeek: 0,
+    newRegistrationsWeek: 0,
+    newSafarMembersWeek: 0,
+    newGroupJoinsWeek: 0,
+    activeTeachers: 0,
+    activeGroups: 0,
+    averageStudentActivityRate: null,
+    overallMemorizationRate: null,
+    recitationSessionsToday: 0
   };
 
   const platformAnalytics = {
@@ -1615,23 +1614,8 @@ export function getAdminOverview() {
     teachers: teachersCount,
     independentUsers: independentUsersCount,
     groups: groupsCount,
-    userGrowthData: [
-      { month: 'أكتوبر', users: 8400, members: 2100 },
-      { month: 'نوفمبر', users: 9500, members: 2700 },
-      { month: 'ديسمبر', users: 10600, members: 3300 },
-      { month: 'يناير', users: 11400, members: 3800 },
-      { month: 'فبراير', users: 12100, members: 4100 },
-      { month: 'مارس', users: totalUsers, members: safarMembers }
-    ],
-    recitationEngagementData: [
-      { day: 'السبت', sessions: 2800 },
-      { day: 'الأحد', sessions: 3100 },
-      { day: 'الإثنين', sessions: 3350 },
-      { day: 'الثلاثاء', sessions: 3420 },
-      { day: 'الأربعاء', sessions: 3600 },
-      { day: 'الخميس', sessions: 3800 },
-      { day: 'الجمعة', sessions: 4100 }
-    ]
+    userGrowthData: [],
+    recitationEngagementData: []
   };
 
   return {
@@ -2268,9 +2252,9 @@ export function getMemorizationPerformanceStats() {
   let needsHelpCount = 0;
 
   allStudents.forEach(s => {
-    const pages = s.memorizedPagesCount || (s.memorizedJuz ? s.memorizedJuz * 20 : 20);
+    const pages = Number(s.memorizedPagesCount ?? (s.memorizedJuz ? s.memorizedJuz * 20 : 0));
     totalPages += pages;
-    totalJuzSum += (s.memorizedJuz || 1);
+    totalJuzSum += (s.memorizedJuz || 0);
     totalWeeklySessions += (s.thisWeekSessions || 0);
 
     if (s.consistencyRate >= 85 || s.status === 'excellent') {
@@ -2283,19 +2267,13 @@ export function getMemorizationPerformanceStats() {
   });
 
   indepUsers.forEach(u => {
-    const pages = u.memorizedPagesCount || (u.memorizedJuz ? u.memorizedJuz * 20 : 15);
+    const pages = Number(u.memorizedPagesCount ?? (u.memorizedJuz ? u.memorizedJuz * 20 : 0));
     totalPages += pages;
-    totalJuzSum += (u.memorizedJuz || 1);
+    totalJuzSum += (u.memorizedJuz || 0);
   });
 
-  // Base platform numbers for scale
-  const totalSystemPages = 248500 + totalPages;
-  const averagePagesPerStudent = allStudents.length > 0 ? (totalPages / allStudents.length).toFixed(1) : 48;
-  const averageDailyTargetPages = 1.6; // Average 1.6 pages / day
-
-  // Completion forecast for 2026
-  // A student memorizing 1.5 pages/day memorizes ~45 pages/month = 2.25 Juz/month -> completes 30 Juz in 13 months
-  const estimatedHafizThisYear = Math.round(180 + (highAchieversCount * 0.4));
+  const totalSystemPages = totalPages;
+  const averagePagesPerStudent = totalLearners > 0 ? (totalPages / totalLearners).toFixed(1) : 0;
 
   return {
     success: true,
@@ -2306,33 +2284,26 @@ export function getMemorizationPerformanceStats() {
       totalPagesMemorized: totalSystemPages,
       studentSpecificPages: totalPages,
       averagePagesPerStudent: Number(averagePagesPerStudent),
-      averageDailyTargetPages,
-      totalWeeklySessions: 3420 + totalWeeklySessions,
-      averageAccuracy: 95.8,
-      estimatedGraduatesThisYear: estimatedHafizThisYear,
+      averageDailyTargetPages: null,
+      totalWeeklySessions,
+      averageAccuracy: null,
+      estimatedGraduatesThisYear: null,
       groupsCount: ecosystemState.groups.length,
       teachersCount: ecosystemState.teachers.length
     },
     distribution: {
-      highAchieversCount: highAchieversCount + 32,
-      onTrackCount: onTrackCount + 14,
-      needsHelpCount: needsHelpCount + 4
+      highAchieversCount,
+      onTrackCount,
+      needsHelpCount
     },
     topPerformingGroups: ecosystemState.groups.map(g => ({
       id: g.id,
       name: g.name,
       teacherName: g.teacherName,
       membersCount: g.membersCount,
-      completionRate: 91
+      completionRate: null
     })),
-    monthlyProgressTrend: [
-      { month: 'أكتوبر', pages: 198000, students: 240 },
-      { month: 'نوفمبر', pages: 212000, students: 285 },
-      { month: 'ديسمبر', pages: 226000, students: 310 },
-      { month: 'يناير', pages: 235000, students: 340 },
-      { month: 'فبراير', pages: 242000, students: 380 },
-      { month: 'مارس (الحالي)', pages: totalSystemPages, students: allStudents.length }
-    ]
+    monthlyProgressTrend: []
   };
 }
 

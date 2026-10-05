@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { db, auth } from './firebase';
 import { fetchWithAuth } from './api';
 import { getSurahNameForPage, getJuzForPage, getPageRangeForJuz, getJuzStartPage } from '../utils/quranData';
@@ -125,119 +125,71 @@ export function generateFiveFortressesPlan(lastJuzReached = 1, currentPage = 1, 
 /**
  * Save or update the user's Five Fortresses Plan in Firestore
  */
+export const fortressKeys = ['khatmah', 'preparation', 'newMemorization', 'nearRevision', 'farRevision'];
+export const fortressDay = value => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Amman', year: 'numeric', month: '2-digit', day: '2-digit' }).format(value ? new Date(value) : new Date());
+export function normalizeFortressCompletion(status = {}) {
+  return Object.fromEntries(fortressKeys.map((key, index) => [key, status[key] === true || status[index + 1] === true]));
+}
+export function numericFortressCompletion(status = {}) {
+  const normalized = normalizeFortressCompletion(status);
+  return Object.fromEntries(fortressKeys.map((key, index) => [index + 1, normalized[key]]));
+}
+export function currentFortressCompletion(plan) {
+  const storedDay = plan?.completionDate || (plan?.updatedAt ? fortressDay(plan.updatedAt) : null);
+  return normalizeFortressCompletion(storedDay === fortressDay() ? plan?.completionStatus : {});
+}
+
 export async function saveFortressPlanToFirestore(userId, planData) {
-  if (!userId) return { success: false, error: 'User ID is required' };
-
-  const payload = {
-    ...planData,
-    userId,
-    updatedAt: new Date().toISOString()
-  };
-
-  try {
-    const planRef = doc(db, 'users', userId, 'five_fortresses_plans', 'current');
-    await setDoc(planRef, payload, { merge: true });
-    
-    // Save to local cache as backup
-    localStorage.setItem(`ma7fath_fortress_plan_${userId}`, JSON.stringify(payload));
-
-    // Optional server sync (uses authenticated request since route requires auth)
-    try {
-      await fetchWithAuth('/api/user/fortress-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, plan: payload })
-      });
-    } catch (apiErr) {
-      // Non-blocking - Firestore is primary storage
-    }
-
-    return { success: true, plan: payload };
-  } catch (error) {
-    console.warn('Firestore save error, saving locally:', error);
-    localStorage.setItem(`ma7fath_fortress_plan_${userId}`, JSON.stringify(payload));
-    return { success: true, plan: payload, fallback: true };
+  if (!userId) throw new Error('User ID is required');
+  if (auth.currentUser?.uid !== userId) throw new Error('Authentication/plan ownership required');
+  const { persistenceStatus, ...plan } = planData;
+  const response = await fetchWithAuth('/api/user/fortress-plan', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plan: { ...plan, userId, completionStatus: normalizeFortressCompletion(plan.completionStatus), completionDate: fortressDay() } })
+  });
+  const result = await response.json();
+  if (auth.currentUser?.uid !== userId) throw new Error('Authentication changed while saving the plan');
+  if (!response.ok || result.success !== true || result.persisted !== true || result.plan?.userId !== userId || !result.plan?.updatedAt) {
+    throw new Error(result.message || 'Could not confirm fortress plan persistence');
   }
+  return { ...result, plan: { ...result.plan, persistenceStatus: 'saved' } };
 }
 
 /**
  * Fetch the user's Five Fortresses Plan from Firestore
  */
 export async function getFortressPlanFromFirestore(userId, lastJuz = 1, currentPage = 1) {
-  if (!userId) {
-    return generateFiveFortressesPlan(lastJuz, currentPage);
+  if (!userId || auth.currentUser?.uid !== userId) throw new Error('Authentication/plan ownership required');
+  const response = await fetchWithAuth(`/api/user/fortress-plan/${encodeURIComponent(userId)}`);
+  const result = await response.json();
+  if (auth.currentUser?.uid !== userId) throw new Error('Authentication changed while loading the plan');
+  if (response.status === 404 && result.success === false) {
+    return { ...generateFiveFortressesPlan(lastJuz, currentPage), userId, persistenceStatus: 'draft' };
   }
-
-  try {
-    const planRef = doc(db, 'users', userId, 'five_fortresses_plans', 'current');
-    const snapshot = await getDoc(planRef);
-
-    if (snapshot.exists()) {
-      let data = snapshot.data();
-      
-      // Daily reset check: If the plan was last updated before today, reset completion status
-      const today = new Date().toISOString().split('T')[0];
-      const planDate = data.updatedAt ? new Date(data.updatedAt).toISOString().split('T')[0] : '';
-      
-      if (planDate !== today && data.completionStatus) {
-        data.completionStatus = {
-          khatmah: false,
-          preparation: false,
-          newMemorization: false,
-          nearRevision: false,
-          farRevision: false
-        };
-        data.updatedAt = new Date().toISOString();
-        // Save the reset state silently in the background
-        saveFortressPlanToFirestore(userId, data).catch(() => {});
-      }
-
-      localStorage.setItem(`ma7fath_fortress_plan_${userId}`, JSON.stringify(data));
-      return data;
-    }
-  } catch (error) {
-    console.warn('Error fetching Firestore fortress plan, checking local cache:', error);
+  if (!response.ok || result.success !== true || result.plan?.userId !== userId) {
+    throw new Error(result.message || 'Could not load the saved fortress plan');
   }
-
-  // Check local cache
-  const cached = localStorage.getItem(`ma7fath_fortress_plan_${userId}`);
-  if (cached) {
-    try {
-      let data = JSON.parse(cached);
-      const today = new Date().toISOString().split('T')[0];
-      const planDate = data.updatedAt ? new Date(data.updatedAt).toISOString().split('T')[0] : '';
-      if (planDate !== today && data.completionStatus) {
-        data.completionStatus = { khatmah: false, preparation: false, newMemorization: false, nearRevision: false, farRevision: false };
-        data.updatedAt = new Date().toISOString();
-      }
-      return data;
-    } catch (e) {}
-  }
-
-  // If no plan exists, generate a fresh one and save it
-  const freshPlan = generateFiveFortressesPlan(lastJuz, currentPage);
-  saveFortressPlanToFirestore(userId, freshPlan).catch(() => {});
-  return freshPlan;
+  return { ...result.plan, persistenceStatus: 'saved' };
 }
 
 /**
  * Listen to real-time updates for the Five Fortresses Plan
  */
-export function subscribeToFortressPlan(userId, onUpdate) {
+export function subscribeToFortressPlan(userId, onUpdate, onError = () => {}) {
   if (!userId) return () => {};
 
   try {
     const planRef = doc(db, 'users', userId, 'five_fortresses_plans', 'current');
     return onSnapshot(planRef, (snapshot) => {
-      if (snapshot.exists()) {
+      if (snapshot.exists() && !snapshot.metadata.fromCache && !snapshot.metadata.hasPendingWrites) {
         const data = snapshot.data();
-        onUpdate(data);
+        onUpdate({ ...data, persistenceStatus: 'saved' });
       }
     }, (error) => {
-      console.warn('Firestore snapshot error for fortress plan:', error);
+      onError(error);
     });
   } catch (e) {
-    console.warn('Could not attach Firestore listener:', e);
+    onError(e);
     return () => {};
   }
 }

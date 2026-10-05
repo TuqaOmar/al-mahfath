@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { PWAInstallButton } from './PWAInstallButton';
+import { useUiConfiguration } from '../lib/uiConfiguration';
 
 export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapsed, setCollapsed: controlledSetCollapsed, onOpenProfile }) => {
   const [localCollapsed, setLocalCollapsed] = useState(false);
@@ -31,6 +32,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
   const setCollapsed = controlledSetCollapsed !== undefined ? controlledSetCollapsed : setLocalCollapsed;
   const { user, activeRole, availableRoles, setActiveRole, logout } = useAuth();
   const { lang, isRTL } = useLanguage();
+  const { configuration } = useUiConfiguration();
 
   const userRole = activeRole || 'user';
   const roleLabels = lang === 'ar'
@@ -112,7 +114,8 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
           { id: 'home', label: lang === 'ar' ? 'الرئيسية' : 'Home', icon: Home },
           { id: 'quran-map', label: lang === 'ar' ? 'مصحفي وخريطة الختمة' : 'My Quran', icon: Compass },
           { id: 'daily-session', label: lang === 'ar' ? 'التسميع الصوتي الذكي' : 'Smart Recitation', icon: PlayCircle },
-          { id: 'five-fortresses', label: lang === 'ar' ? 'الحصون وإنجازاتي' : 'Five Fortresses', icon: ShieldCheck }
+          { id: 'five-fortresses', label: lang === 'ar' ? 'الحصون وإنجازاتي' : 'Five Fortresses', icon: ShieldCheck },
+          { id: 'analytics', label: lang === 'ar' ? 'تحليلاتي الفعلية' : 'My Analytics', icon: BarChart3 },
         ]
       },
       {
@@ -121,12 +124,18 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
           { id: 'similarities', label: lang === 'ar' ? 'المتشابهات' : 'Similarities', icon: BookOpen },
           { id: 'mind-maps', label: lang === 'ar' ? 'الخرائط الذهنية' : 'Mind Maps', icon: Map },
           { id: 'ai-assistant', label: lang === 'ar' ? 'المعلم الإيماني' : 'AI Guide', icon: Sparkles },
-          { id: 'community', label: lang === 'ar' ? 'المجتمع والهمة' : 'Community', icon: Users },
-          { id: 'achievements', label: lang === 'ar' ? 'الأوسمة والثمار' : 'Achievements', icon: Trophy }
-        ]
+          { id: 'community', label: lang === 'ar' ? 'المجتمع والهمة' : 'Community', icon: Users, ...configuration.sections.community },
+          { id: 'achievements', label: lang === 'ar' ? 'الأوسمة والثمار' : 'Achievements', icon: Trophy, ...configuration.sections.achievements }
+        ].filter(item => item.visible !== false).sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
       }
     ];
   }
+
+  useEffect(() => {
+    if (userRole === 'user' && ['community', 'achievements'].includes(activeTab) && configuration.sections[activeTab]?.visible === false) {
+      setActiveTab?.('home');
+    }
+  }, [activeTab, configuration, setActiveTab, userRole]);
 
   return (
     <>
@@ -151,9 +160,10 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
 
       <aside 
         id="app-main-sidebar"
+        className="app-main-sidebar"
         style={{
           width: sidebarWidth,
-          height: '100vh',
+          height: isMobile ? '100dvh' : '100vh',
           backgroundColor: '#0F172A',
           color: '#F8FAFC',
           display: 'flex',
@@ -167,6 +177,9 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
           userSelect: 'none',
           WebkitUserSelect: 'none',
           overflow: 'hidden',
+          boxSizing: 'border-box',
+          paddingTop: isMobile ? 'env(safe-area-inset-top, 0px)' : 0,
+          paddingBottom: isMobile ? 'env(safe-area-inset-bottom, 0px)' : 0,
           transform: isMobile 
             ? (collapsed ? (isRTL ? 'translateX(105%)' : 'translateX(-105%)') : 'translateX(0)')
             : 'none',
@@ -227,6 +240,11 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
               borderRadius: '8px',
               transition: 'all 0.2s ease'
             }}
+            aria-label={isMobile
+              ? (lang === 'ar' ? 'إغلاق قائمة الأقسام' : 'Close section navigation')
+              : (collapsed
+                ? (lang === 'ar' ? 'توسيع القائمة الجانبية' : 'Expand sidebar')
+                : (lang === 'ar' ? 'طي القائمة الجانبية' : 'Collapse sidebar'))}
           >
             {isMobile ? (
               <X size={20} />
@@ -272,12 +290,14 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
                   <button
                     key={item.id}
                     id={`sidebar-nav-${item.id}`}
+                    aria-current={isActive ? 'page' : undefined}
                     onClick={() => {
                       setActiveTab && setActiveTab(item.id);
                       if (isMobile) setCollapsed(true);
                     }}
                     style={{
                       width: '100%',
+                      minHeight: '44px',
                       display: 'flex',
                       alignItems: 'center',
                       gap: '12px',

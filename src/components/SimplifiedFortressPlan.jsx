@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { declaredPages, nextDeclaredPage } from '../lib/memorization';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Shield, 
   BookOpen, 
@@ -27,21 +28,22 @@ import {
   generateFiveFortressesPlan, 
   saveFortressPlanToFirestore, 
   getFortressPlanFromFirestore, 
-  subscribeToFortressPlan 
+  subscribeToFortressPlan,
+  currentFortressCompletion
 } from '../lib/fortressService';
 import { getSurahNameForPage, getJuzForPage, getPageRangeForJuz, getJuzStartPage } from '../utils/quranData';
 
-export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
-  const { user, updateUserData } = useAuth();
+export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved }) => {
+  const { user, applyConfirmedUser } = useAuth();
   const { 
     reminderSettings, 
     updateReminderSettings, 
     testReminderNow 
   } = useNotifications();
-  const userId = user?.uid || 'guest';
+  const userId = user?.uid;
 
   // Current user's progress
-  const userMemorizedCount = user?.memorizedPagesCount || 0;
+  const userMemorizedCount = declaredPages(user).length;
   const initialPage = Math.min(604, Math.max(1, userMemorizedCount + 1));
   const initialJuz = getJuzForPage(initialPage);
 
@@ -55,88 +57,117 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
     nearRevision: false,
     farRevision: false
   });
-  const [syncStatus, setSyncStatus] = useState('synced'); // 'synced' | 'saving' | 'saved'
+  const [syncStatus, setSyncStatus] = useState('loading');
+  const [hasLoaded, setHasLoaded] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const saveInFlight = useRef(false);
+  const [saveError, setSaveError] = useState(''); // 'synced' | 'saving' | 'saved'
   const [activeRepModal, setActiveRepModal] = useState(null); // 'ayah' | 'page' | null
   const [repCount, setRepCount] = useState(0);
+  useEffect(() => {
+    setPlan(generateFiveFortressesPlan(initialJuz, initialPage));
+    setCompletion(currentFortressCompletion(null));
+    setHasLoaded(false);
+    setSaveError('');
+  }, [userId]);
 
   // Load user plan from Firestore on mount
   useEffect(() => {
     let unsubscribe = () => {};
+    let active = true;
 
     async function loadInitialPlan() {
-      setSyncStatus('saving');
-      const loaded = await getFortressPlanFromFirestore(userId, selectedJuz, selectedPage);
-      if (loaded) {
+      setSyncStatus('loading');
+      setHasLoaded(false);
+      try {
+        const loaded = await getFortressPlanFromFirestore(userId, initialJuz, initialPage);
+        if (!active) return;
         setPlan(loaded);
         if (loaded.lastJuzReached) setSelectedJuz(loaded.lastJuzReached);
         if (loaded.currentPage) setSelectedPage(loaded.currentPage);
-        if (loaded.completionStatus) setCompletion(loaded.completionStatus);
+        setCompletion(currentFortressCompletion(loaded));
+        setHasLoaded(true);
+        setSaveError('');
+        setSyncStatus(loaded.persistenceStatus === 'draft' ? 'draft' : 'synced');
+      } catch (error) {
+        if (active) { setSaveError(error.message); setSyncStatus('failed'); }
       }
-      setSyncStatus('synced');
     }
 
     loadInitialPlan();
 
     if (userId && userId !== 'guest') {
       unsubscribe = subscribeToFortressPlan(userId, (updatedPlan) => {
-        if (updatedPlan) {
+        if (active && updatedPlan && !saveInFlight.current) {
           setPlan(updatedPlan);
-          if (updatedPlan.completionStatus) setCompletion(updatedPlan.completionStatus);
+          setSelectedJuz(updatedPlan.lastJuzReached || initialJuz);
+          setSelectedPage(updatedPlan.currentPage || initialPage);
+          setCompletion(currentFortressCompletion(updatedPlan));
         }
+      }, (error) => {
+        if (active) { setSaveError(error.message); setSyncStatus('failed'); }
       });
     }
 
-    return () => unsubscribe();
-  }, [userId]);
+    return () => { active = false; unsubscribe(); };
+  }, [userId, loadAttempt]);
 
   // Recalculate and persist whenever selected Juz or Page changes
   const handleJuzChange = async (newJuz) => {
+    if (saveInFlight.current || !hasLoaded) return;
     const juzNum = Number(newJuz);
-    setSelectedJuz(juzNum);
     const startPage = getJuzStartPage(juzNum);
-    setSelectedPage(startPage);
 
     const newPlan = generateFiveFortressesPlan(juzNum, startPage, plan?.dailyTarget);
     newPlan.completionStatus = completion;
-    setPlan(newPlan);
-
-    // Save to Firestore
+    saveInFlight.current = true;
     setSyncStatus('saving');
-    await saveFortressPlanToFirestore(userId, newPlan);
-    setTimeout(() => setSyncStatus('saved'), 500);
-    setTimeout(() => setSyncStatus('synced'), 2500);
+    try {
+      setSaveError('');
+      const result = await saveFortressPlanToFirestore(userId, newPlan);
+      if (result.user && applyConfirmedUser(result).success !== true) throw new Error('Authentication changed while applying the saved plan');
+      setPlan(result.plan);
+      onPlanSaved?.(result.plan);
+      setSelectedJuz(result.plan.lastJuzReached);
+      setSelectedPage(result.plan.currentPage);
+      setCompletion(currentFortressCompletion(result.plan));
+      setSyncStatus('saved');
+    } catch (error) {
+      setSaveError(error.message);
+      setSyncStatus('failed');
+    } finally {
+      saveInFlight.current = false;
+    }
   };
 
   // Toggle completion of a fortress
   const handleToggleCompletion = async (key) => {
+    if (saveInFlight.current || !hasLoaded) return;
     const updated = {
       ...completion,
       [key]: !completion[key]
     };
-    setCompletion(updated);
 
     const updatedPlan = {
       ...plan,
       completionStatus: updated
     };
-    setPlan(updatedPlan);
-
-    // Persist to Firestore
+    saveInFlight.current = true;
     setSyncStatus('saving');
-    await saveFortressPlanToFirestore(userId, updatedPlan);
-    
-    // Also sync to user preferences in context
-    if (updateUserData) {
-      updateUserData({
-        preferences: {
-          ...(user?.preferences || {}),
-          fortressesToday: updated
-        }
-      });
+    try {
+      setSaveError('');
+      const result = await saveFortressPlanToFirestore(userId, updatedPlan);
+      if (result.user && applyConfirmedUser(result).success !== true) throw new Error('Authentication changed while applying the saved plan');
+      setPlan(result.plan);
+      onPlanSaved?.(result.plan);
+      setCompletion(currentFortressCompletion(result.plan));
+      setSyncStatus('saved');
+    } catch (error) {
+      setSaveError(error.message);
+      setSyncStatus('failed');
+    } finally {
+      saveInFlight.current = false;
     }
-
-    setTimeout(() => setSyncStatus('saved'), 400);
-    setTimeout(() => setSyncStatus('synced'), 2000);
   };
 
   // Completed count
@@ -149,6 +180,9 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
       
+      {saveError && <div role="alert" data-testid="fortress-save-error">{saveError}</div>}
+      {!hasLoaded && syncStatus === 'failed' && <button data-testid="simplified-fortress-reload" onClick={() => setLoadAttempt(n => n + 1)}>إعادة تحميل الخطة المحفوظة</button>}
+      <p>موقع البداية مبني على تصريحات الطالب وخيارات الخطة، وليس حفظًا معتمدًا.</p>
       {/* 🌟 Header Card with Juz Selector & Sync Indicator */}
       <div style={{
         padding: '24px',
@@ -179,8 +213,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
           {/* Firestore Sync Badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0, 0, 0, 0.2)', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
             <Cloud size={15} color="#34D399" />
-            <span style={{ fontSize: '12px', color: '#E2E8F0', fontWeight: 'bold' }}>
-              {syncStatus === 'saving' ? 'جاري الحفظ في Firestore...' : syncStatus === 'saved' ? 'تم الحفظ في Firestore ✓' : 'مربوط بسحابة Firestore'}
+            <span data-testid="simplified-fortress-status" style={{ fontSize: '12px', color: '#E2E8F0', fontWeight: 'bold' }}>
+              {syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ في Firestore...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم الحفظ في Firestore ✓' : 'خطة محفوظة في Firestore'}
             </span>
           </div>
         </div>
@@ -210,6 +244,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <label style={{ fontSize: '13px', color: '#E2E8F0' }}>تغيير الجزء:</label>
             <select
+              data-testid="simplified-fortress-juz"
+              disabled={!hasLoaded || syncStatus === 'saving'}
               value={selectedJuz}
               onChange={(e) => handleJuzChange(e.target.value)}
               style={{
@@ -238,7 +274,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px' }}>
             <span style={{ color: '#D1FAE5', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Flame size={16} color="#FBBF24" />
-              إنجاز الحصون لليوم: <strong>{completedCount} من أصل 5 حصون</strong>
+              إنجاز الحصون المصرّح به لليوم: <strong data-testid="simplified-fortress-count">{completedCount} من أصل 5 حصون</strong>
             </span>
             <span style={{ color: '#6EE7B7', fontWeight: 'bold' }}>{progressPercent}% مكتمل</span>
           </div>
@@ -392,7 +428,9 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
 
           <button
             type="button"
+            data-testid="fortress-toggle-khatmah"
             onClick={() => handleToggleCompletion('khatmah')}
+            disabled={!hasLoaded || syncStatus === 'saving'}
             style={{
               padding: '10px 18px',
               borderRadius: '12px',
@@ -462,6 +500,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
           <button
             type="button"
             onClick={() => handleToggleCompletion('preparation')}
+            data-testid="simplified-fortress-complete-preparation"
+            disabled={!hasLoaded || syncStatus === 'saving'}
             style={{
               padding: '10px 18px',
               borderRadius: '12px',
@@ -553,6 +593,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
             <button
               type="button"
               onClick={() => handleToggleCompletion('newMemorization')}
+              data-testid="simplified-fortress-complete-newMemorization"
+              disabled={!hasLoaded || syncStatus === 'saving'}
               style={{
                 padding: '10px 18px',
                 borderRadius: '12px',
@@ -621,6 +663,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
           <button
             type="button"
             onClick={() => handleToggleCompletion('nearRevision')}
+            data-testid="simplified-fortress-complete-nearRevision"
+            disabled={!hasLoaded || syncStatus === 'saving'}
             style={{
               padding: '10px 18px',
               borderRadius: '12px',
@@ -691,6 +735,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi }) => {
           <button
             type="button"
             onClick={() => handleToggleCompletion('farRevision')}
+            data-testid="simplified-fortress-complete-farRevision"
+            disabled={!hasLoaded || syncStatus === 'saving'}
             style={{
               padding: '10px 18px',
               borderRadius: '12px',

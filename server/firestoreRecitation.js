@@ -1,7 +1,10 @@
+import { requireTeacherStudent } from './teacherScope.js';
 import { createHash } from 'node:crypto';
 import { db } from './middleware/auth.js';
 import { hasRole } from './accessControl.js';
 import { calculatePageRecitationStats } from './recitationStats.js';
+import { trustedQuranReference } from './quranReference.js';
+import { activityNow, nextQuranActivityStreak } from './quranActivityStreak.js';
 
 export class RecitationError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -17,12 +20,9 @@ function integer(value, fallback, max, field) {
   return number;
 }
 
-// Client-supplied Quran references are deliberately unverified. A comparison
-// attempt cannot award XP, establish memorization, or update the portfolio.
 export function preparePracticeRequest(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) fail(400, 'بيانات المحاولة غير صالحة');
   if (!sessionIdPattern.test(input.sessionId || '')) fail(400, 'معرف محاولة ثابت sessionId مطلوب');
-  const expectedText = String(input.expectedText || '').trim();
   const spokenText = String(input.spokenText || '').trim();
   const audioBase64 = String(input.audioBase64 || '');
   if (!spokenText && !audioBase64) fail(400, 'نص التسميع أو التسجيل مطلوب');
@@ -30,27 +30,19 @@ export function preparePracticeRequest(input) {
   if (input.ayahs != null && (!Array.isArray(input.ayahs) || input.ayahs.some(ayah => !ayah || typeof ayah !== 'object'))) {
     fail(400, 'بيانات آيات المقارنة غير صالحة');
   }
-  const ayahs = Array.isArray(input.ayahs) ? input.ayahs.map(ayah => ({
-    text: String(ayah.text || ''), number: ayah.number ?? null,
-    numberInSurah: ayah.numberInSurah ?? null,
-    surah: { number: ayah.surah?.number ?? null, name: String(ayah.surah?.name || '') }
-  })) : [];
-  const reference = expectedText || ayahs.map(ayah => ayah.text).join(' ');
-  if (!reference) fail(400, 'نص المقارنة مطلوب');
+  let reference;
+  try { reference = trustedQuranReference(input); }
+  catch (error) { fail(error.status || 400, error.message); }
   // Bound the LCS calculation and the size of the resulting Firestore document.
-  const ayahReference = ayahs.map(ayah => ayah.text).join(' ');
-  if (reference.length > 20000 || ayahReference.length > 20000 || spokenText.length > 20000 || ayahs.length > 300 ||
-      reference.split(/\s+/).length > 1500 || spokenText.split(/\s+/).length > 1500 ||
-      ayahReference.split(/\s+/).length > 1500 ||
+  const ayahReference = reference.ayahs.map(ayah => ayah.text).join(' ');
+  if (reference.expectedText.length > 20000 || ayahReference.length > 20000 || spokenText.length > 20000 || reference.ayahs.length > 300 ||
+      reference.expectedText.split(/\s+/).length > 1500 || spokenText.split(/\s+/).length > 1500 ||
       audioBase64.length > 20 * 1024 * 1024 || String(input.surahName || '').length > 256) fail(400, 'المحاولة أطول من الحد المسموح');
   const normalized = {
-    expectedText, spokenText, audioBase64, ayahs, isFullPage,
-    pageNumber: integer(input.pageNumber, 1, 604, 'رقم الصفحة'),
-    surahNumber: integer(input.surahNumber, 1, 114, 'رقم السورة'),
-    // Existing UI uses the global Quran verse ID; keep it distinct from the
-    // within-surah number and never use it as a portfolio key.
-    ayahNumber: isFullPage ? null : integer(input.ayahNumber, 1, 6236, 'معرف الآية'),
-    surahName: String(input.surahName || ''), type: audioBase64 ? 'voice' : 'text'
+    expectedText: reference.expectedText, spokenText, audioBase64, ayahs: reference.ayahs, isFullPage,
+    pageNumber: reference.pageNumber, surahNumber: reference.surahNumber,
+    ayahNumber: reference.ayahNumber, numberInSurah: reference.numberInSurah ?? null,
+    surahName: reference.surahName, type: audioBase64 ? 'voice' : 'text'
   };
   return { ...normalized, sessionId: input.sessionId,
     fingerprint: createHash('sha256').update(JSON.stringify(normalized)).digest('hex') };
@@ -80,11 +72,46 @@ export async function confirmPracticeAttempt(uid, body = {}) {
   return publicSession(snapshot);
 }
 
+export async function submitPracticeForReview(uid, sessionId) {
+  if (!sessionIdPattern.test(sessionId || '')) fail(400, 'معرف الجلسة غير صالح');
+  const sessionRef = db.doc(`users/${uid}/recitation_sessions/${sessionId}`);
+  const membershipRef = db.doc(`memberships/${uid}`);
+  return db.runTransaction(async tx => {
+    const [session, membership] = await tx.getAll(sessionRef, membershipRef);
+    if (!session.exists) fail(404, 'الجلسة غير موجودة');
+    if (!membership.exists || membership.data().status !== 'active' || !membership.data().groupId || !membership.data().teacherId) fail(409, 'لا توجد عضوية نشطة ومعلم معيّن لمراجعة الجلسة');
+    await requireTeacherStudent(membership.data().teacherId, uid, tx);
+    if (session.data().reviewStatus === 'pending' && session.data().submittedTeacherId === membership.data().teacherId) return publicSession(session);
+    const update = { reviewStatus: 'pending', submittedAt: new Date().toISOString(),
+      submittedTeacherId: membership.data().teacherId, reviewedAt: null, reviewedBy: null, teacherFeedback: null };
+    tx.update(sessionRef, update);
+    return { ...publicSession(session), ...update };
+  });
+}
+
+export async function reviewPracticeSession(teacherId, studentId, sessionId, decision, feedback = '') {
+  if (!['approved', 'rejected'].includes(decision)) fail(400, 'قرار المراجعة غير صالح');
+  if (!sessionIdPattern.test(sessionId || '')) fail(400, 'معرف الجلسة غير صالح');
+  const sessionRef = db.doc(`users/${studentId}/recitation_sessions/${sessionId}`);
+  const memberRef = db.doc(`memberships/${studentId}`);
+  return db.runTransaction(async tx => {
+    const [session, member] = await tx.getAll(sessionRef, memberRef);
+    if (!session.exists) fail(404, 'الجلسة غير موجودة');
+    if (!member.exists || member.data().status !== 'active' || !member.data().groupId || member.data().teacherId !== teacherId) fail(403, 'الطالب غير معيّن بعضوية نشطة لهذا المعلم');
+    await requireTeacherStudent(teacherId, studentId, tx);
+    if (session.data().reviewStatus !== 'pending' || session.data().submittedTeacherId !== teacherId) fail(409, 'الجلسة ليست معلقة لهذا المعلم');
+    const update = { reviewStatus: decision, reviewedAt: new Date().toISOString(), reviewedBy: teacherId,
+      teacherFeedback: String(feedback || '').trim().slice(0, 1000), classification: 'practice', rewardedXp: 0 };
+    tx.update(sessionRef, update);
+    return { ...publicSession(session), ...update };
+  });
+}
+
 function addAttempt(previous, accuracy, createdAt) {
   const totalAttempts = Number(previous?.totalAttempts ?? 0) + 1;
   const accuracyTotal = Number(previous?.accuracyTotal ?? 0) + accuracy;
   return {
-    classification: 'practice', referenceVerified: false, rewardedXp: 0,
+    classification: 'practice', referenceVerified: true, referenceSource: 'quran-uthmani', rewardedXp: 0,
     totalAttempts, totalSessions: totalAttempts, accuracyTotal,
     averageAccuracy: Math.round(accuracyTotal / totalAttempts),
     bestAccuracy: Math.max(Number(previous?.bestAccuracy ?? 0), accuracy),
@@ -96,7 +123,7 @@ export async function savePracticeAttempt(uid, prepared, result) {
   const accuracy = Number(result.accuracy ?? result.pageAccuracy);
   if (!Number.isFinite(accuracy) || accuracy < 0 || accuracy > 100) fail(500, 'نتيجة المقارنة غير صالحة');
   const storedResult = clean({ ...result,
-    ayahBreakdown: (result.ayahBreakdown || []).map(ayah => ({ ...ayah, status: 'practice', referenceVerified: false }))
+    ayahBreakdown: (result.ayahBreakdown || []).map(ayah => ({ ...ayah, status: 'practice', referenceVerified: true }))
   });
   if (Buffer.byteLength(JSON.stringify(storedResult), 'utf8') > 350000) fail(400, 'نتيجة المحاولة أطول من الحد المسموح');
   const sessionRef = db.doc(`users/${uid}/recitation_sessions/${prepared.sessionId}`);
@@ -109,25 +136,30 @@ export async function savePracticeAttempt(uid, prepared, result) {
       if (session.data().fingerprint !== prepared.fingerprint) fail(409, 'معرف المحاولة مستخدم لمدخل مختلف');
       return { session: publicSession(session), result: session.data().analysisResult };
     }
-    const createdAt = new Date().toISOString();
+    const now = activityNow();
+    const createdAt = now.toISOString();
+    const activity = nextQuranActivityStreak(profile.data(), now);
     const entry = clean({
       id: prepared.sessionId, sessionId: prepared.sessionId, userId: uid,
       pageNumber: prepared.pageNumber, surahNumber: prepared.surahNumber,
       surahName: prepared.surahName, ayahNumber: prepared.ayahNumber,
       isFullPage: prepared.isFullPage, accuracy,
-      classification: 'practice', referenceVerified: false, rewardedXp: 0,
+      classification: 'practice', referenceVerified: true, referenceSource: 'quran-uthmani', rewardedXp: 0,
       status: 'practice', type: prepared.type, createdAt,
       stats: storedResult.stats || {}, results: storedResult.results || [],
       // Remove the engine's 'memorized' status: this is practice, not approval.
-      ayahBreakdown: (storedResult.ayahBreakdown || []).map(ayah => ({ ...ayah, status: 'practice', referenceVerified: false })),
+      ayahBreakdown: (storedResult.ayahBreakdown || []).map(ayah => ({ ...ayah, status: 'practice', referenceVerified: true })),
       transcribedText: storedResult.transcribedText || storedResult.transcribedSpoken || '',
       expectedText: storedResult.originalExpected || prepared.expectedText,
       fingerprint: prepared.fingerprint,
-      analysisResult: { ...storedResult, classification: 'practice', referenceVerified: false, rewardedXp: 0 }
+      analysisResult: { ...storedResult, classification: 'practice', referenceVerified: true, referenceSource: 'quran-uthmani', rewardedXp: 0 }
     });
     tx.create(sessionRef, entry);
     tx.set(summaryRef, addAttempt(summary.data(), accuracy, createdAt));
     tx.set(pageRef, { ...addAttempt(page.data(), accuracy, createdAt), pageNumber: prepared.pageNumber, userId: uid });
+    if (activity.changed) tx.update(db.doc(`users/${uid}`), {
+      streak: activity.streak, lastQuranActivityDate: activity.lastQuranActivityDate
+    });
     const { fingerprint, analysisResult, ...visible } = entry;
     return { session: visible, result: entry.analysisResult };
   });
@@ -151,7 +183,7 @@ function summarize(sessions) {
   const accuracies = sessions.map(session => Number(session.accuracy ?? 0));
   const totalAttempts = sessions.length;
   return {
-    classification: 'practice', referenceVerified: false, rewardedXp: 0,
+    classification: 'practice', referenceVerified: true, referenceSource: 'quran-uthmani', rewardedXp: 0,
     hasAttempts: totalAttempts > 0, totalAttempts, totalSessions: totalAttempts,
     totalWeeklySessions: sessions.filter(session => Date.parse(session.createdAt) >= weekAgo()).length,
     averageAccuracy: totalAttempts ? Math.round(accuracies.reduce((a, b) => a + b, 0) / totalAttempts) : 0,
@@ -175,7 +207,7 @@ export async function readPracticePageStats(uid, pageNumber) {
     averageAccuracy: snapshot.data().averageAccuracy, bestAccuracy: snapshot.data().bestAccuracy,
     lastRecitedAt: snapshot.data().lastRecitedAt
   });
-  return { ...stats, classification: 'practice', referenceVerified: false, rewardedXp: 0 };
+  return { ...stats, classification: 'practice', referenceVerified: true, referenceSource: 'quran-uthmani', rewardedXp: 0 };
 }
 
 export async function practicePerformanceReport() {
@@ -220,13 +252,14 @@ export async function practicePerformanceReport() {
   const stats = summarize(sessions);
   const grouped = students.filter(student => student.groupId).length;
   return {
-    success: true, classification: 'practice', referenceVerified: false,
+    success: true, classification: 'practice', referenceVerified: true, referenceSource: 'quran-uthmani',
     stats: { totalStudentsCount: grouped, independentUsersCount: students.length - grouped,
       totalLearners: students.length, groupsCount: groups.length,
       teachersCount: userDocs.docs.filter(user => hasRole(user.data(), 'teacher')).length,
       totalRecitationSessions: stats.totalSessions, totalWeeklySessions: stats.totalWeeklySessions,
       averageAccuracy: stats.averageAccuracy, bestAccuracy: stats.bestAccuracy,
-      hasAttempts: stats.hasAttempts, verifiedMemorizedPages: 0,
+      hasAttempts: stats.hasAttempts, verifiedMemorizedPages: null,
+      verifiedMemorizationSource: 'unavailable_no_page_approval_workflow',
       totalRecordedAyahs: ayahDocs.size,
       learnersWithRecordedProgress: students.filter(student => student.recordedAyahsCount > 0).length }, groups, students
   };

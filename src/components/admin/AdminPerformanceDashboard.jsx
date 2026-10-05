@@ -19,7 +19,7 @@ export const AdminPerformanceDashboard = () => {
   const [simulatedActiveStudents, setSimulatedActiveStudents] = useState(0);
   const [simulatedRemainingPages, setSimulatedRemainingPages] = useState(604);
   const text = (ar, en) => lang === 'ar' ? ar : en;
-  const format = value => value === null ? '—' : value.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 2 });
+  const format = value => value === null ? text('غير متاح', 'Unavailable') : value.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { maximumFractionDigits: 2 });
 
   const fetchPerformanceData = useCallback(async () => {
     const currentRequest = ++requestId.current;
@@ -57,6 +57,7 @@ export const AdminPerformanceDashboard = () => {
     ? simulatedRemainingPages / (simulatedDailyPages * 30) : null;
   const monthsPerStudent = hypotheticalMonths !== null && Number.isFinite(hypotheticalMonths) ? hypotheticalMonths : null;
   const cards = [
+    { key: 'verifiedMemorizedPages', label: text('صفحات الحفظ المعتمد — لا يتوفر مسار اعتماد', 'Approved pages — approval workflow unavailable'), icon: Layers },
     { key: 'totalLearners', label: text('عدد المتعلمين المسجلين', 'Registered learners'), icon: Users },
     { key: 'totalStudentsCount', label: text('طلاب المجموعات الحالية', 'Current group learners'), icon: Users },
     { key: 'independentUsersCount', label: text('المتعلمون المستقلون', 'Independent learners'), icon: Users },
@@ -121,7 +122,7 @@ export const AdminPerformanceDashboard = () => {
           </div>
           <p style={{ margin: 0, padding: '14px 18px', borderRadius: '14px', background: 'var(--bg-surface)', color: 'var(--text-secondary)', fontSize: '13px', lineHeight: 1.7 }}>
             {text(
-              'دقة النص تقيس مطابقة النص المرسل بالنص المرجعي. المرجع غير موثق، وهذه النتيجة لا تعتمد الحفظ أو جودة التجويد. العدد الكلي يشمل جميع الجلسات المسجلة، وعدد آخر 7 أيام يستخدم نافذة متحركة. لا تُعرض نسبة دقة قبل وجود محاولة.',
+              'دقة النص تقيس مطابقة النص المرسل بالمرجع العثماني الموثق داخل الخادم. النتيجة تدريبية ولا تعتمد الحفظ أو جودة التجويد. العدد الكلي يشمل جميع الجلسات المسجلة، وعدد آخر 7 أيام يستخدم نافذة متحركة. لا تُعرض نسبة دقة قبل وجود محاولة.',
               'Text accuracy compares submitted text with a reference text. The reference is unverified; this score does not certify memorization or tajweed. The total includes all saved sessions; the last 7 days use a rolling window. Accuracy is unavailable until an attempt is recorded.'
             )}
           </p>

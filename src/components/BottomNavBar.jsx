@@ -19,7 +19,7 @@ import { useAuth } from '../context/AuthContext';
 
 export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfile, isProfileOpen = false }) => {
   const { lang, isRTL } = useLanguage();
-  const { activeRole } = useAuth();
+  const { user, activeRole } = useAuth();
 
   const userRole = activeRole || 'user';
 
@@ -51,23 +51,22 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
     ];
   }
 
-  const isMoreActive = [
-    'mind-maps', 
-    'similarities', 
-    'community', 
-    'achievements', 
-    'analytics', 
-    'my-plan'
-  ].includes(activeTab);
+  const isTabActive = (tab) => activeTab === tab.id ||
+    (tab.id === 'teacher-dashboard' && activeTab === 'home') ||
+    (tab.id === 'admin-dashboard' && activeTab === 'admin-panel');
+  const isMoreActive = !isProfileOpen && !navTabs.some(isTabActive);
 
   return (
     <nav
       id="mobile-bottom-navigation"
+      className="mobile-bottom-navigation"
       style={{
         position: 'fixed',
         bottom: 0,
         left: 0,
         right: 0,
+        width: '100%',
+        maxWidth: '100vw',
         height: 'calc(62px + env(safe-area-inset-bottom, 0px))',
         backgroundColor: 'var(--bg-surface)',
         borderTop: '1px solid var(--glass-border)',
@@ -80,19 +79,21 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         userSelect: 'none',
-        WebkitUserSelect: 'none'
+        WebkitUserSelect: 'none',
+        boxSizing: 'border-box'
       }}
-      aria-label="Mobile Navigation Bar"
+      aria-label={lang === 'ar' ? 'التنقل بين أقسام المنصة' : 'Section navigation'}
     >
       {/* Primary Role Tabs */}
       {navTabs.map((tab) => {
         const Icon = tab.icon;
-        const isActive = activeTab === tab.id && !isProfileOpen;
+        const isActive = isTabActive(tab) && !isProfileOpen;
 
         return (
           <button
             key={tab.id}
             id={`mobile-nav-${tab.id}`}
+            className="mobile-bottom-navigation__item"
             onClick={() => {
               if (navigator?.vibrate) {
                 try { navigator.vibrate(12); } catch (e) { /* ignore */ }
@@ -101,6 +102,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
             }}
             style={{
               flex: 1,
+              minWidth: 0,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
@@ -116,6 +118,9 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
               position: 'relative',
               touchAction: 'manipulation'
             }}
+            aria-current={isActive ? 'page' : undefined}
+            aria-label={tab.label}
+            title={tab.label}
           >
             {isActive && (
               <span 
@@ -143,11 +148,10 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
             }}>
               <Icon size={21} strokeWidth={isActive ? 2.5 : 1.8} />
             </div>
-            <span style={{
+            <span className="mobile-bottom-navigation__label" style={{
               fontSize: '11px',
               fontWeight: isActive ? 800 : 500,
-              lineHeight: 1.1,
-              whiteSpace: 'nowrap'
+              lineHeight: 1.1
             }}>
               {tab.label}
             </span>
@@ -158,6 +162,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
       {/* More Tools Button (Opens tools sheet / drawer) */}
       <button
         id="mobile-nav-more-tools"
+        className="mobile-bottom-navigation__item"
         onClick={() => {
           if (navigator?.vibrate) {
             try { navigator.vibrate(12); } catch (e) { /* ignore */ }
@@ -166,6 +171,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
         }}
         style={{
           flex: 1,
+          minWidth: 0,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -182,6 +188,8 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
           touchAction: 'manipulation'
         }}
         title={lang === 'ar' ? 'المزيد من الأدوات' : 'More Tools'}
+        aria-label={lang === 'ar' ? 'المزيد من الأدوات' : 'More Tools'}
+        aria-current={isMoreActive ? 'page' : undefined}
       >
         {isMoreActive && (
           <span 
@@ -209,11 +217,10 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
         }}>
           <LayoutGrid size={20} strokeWidth={isMoreActive ? 2.5 : 1.8} />
         </div>
-        <span style={{
+        <span className="mobile-bottom-navigation__label" style={{
           fontSize: '11px',
           fontWeight: isMoreActive ? 800 : 500,
-          lineHeight: 1.1,
-          whiteSpace: 'nowrap'
+          lineHeight: 1.1
         }}>
           {lang === 'ar' ? 'المزيد' : 'More'}
         </span>
@@ -223,6 +230,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
       {userRole !== 'admin' && (
         <button
           id="mobile-nav-profile"
+          className="mobile-bottom-navigation__item"
           onClick={() => {
             if (navigator?.vibrate) {
               try { navigator.vibrate(14); } catch (e) { /* ignore */ }
@@ -231,6 +239,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
           }}
           style={{
             flex: 1,
+            minWidth: 0,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -246,6 +255,8 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
             position: 'relative',
             touchAction: 'manipulation'
           }}
+          aria-current={isProfileOpen ? 'page' : undefined}
+          aria-label={lang === 'ar' ? 'حسابي' : 'Profile'}
         >
           {isProfileOpen && (
             <span 
@@ -287,7 +298,7 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, onOpenProfil
               <User size={21} strokeWidth={isProfileOpen ? 2.5 : 1.8} />
             )}
           </div>
-          <span style={{ fontSize: '11px', fontWeight: isProfileOpen ? 800 : 500, lineHeight: 1.1, whiteSpace: 'nowrap' }}>
+          <span className="mobile-bottom-navigation__label" style={{ fontSize: '11px', fontWeight: isProfileOpen ? 800 : 500, lineHeight: 1.1 }}>
             {lang === 'ar' ? 'حسابي' : 'Profile'}
           </span>
         </button>

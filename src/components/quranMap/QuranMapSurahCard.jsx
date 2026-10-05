@@ -23,7 +23,7 @@ export const QuranMapSurahCard = ({ surah, portfolio, onSelectSurah }) => {
   if (stats.percent === 100) {
     statusColor = '#10B981';
     statusBg = 'rgba(16, 185, 129, 0.12)';
-    statusText = 'متقنة بالكامل';
+    statusText = 'مصرّح بحفظها ذاتيًا بالكامل';
     badgeIcon = '🟢';
   } else if (stats.reviewCount > 0) {
     statusColor = '#EF4444';
@@ -33,7 +33,7 @@ export const QuranMapSurahCard = ({ surah, portfolio, onSelectSurah }) => {
   } else if (stats.memorizedCount > 0 || stats.learningCount > 0) {
     statusColor = '#F59E0B';
     statusBg = 'rgba(245, 158, 11, 0.12)';
-    statusText = `قيد الحفظ (${stats.percent}%)`;
+    statusText = `تقدم ذاتي (${stats.percent}%)`;
     badgeIcon = '🟡';
   }
 
@@ -160,7 +160,7 @@ export const QuranMapSurahCard = ({ surah, portfolio, onSelectSurah }) => {
           )}
           {stats.avgScore > 0 && (
             <span style={{ display: 'flex', alignItems: 'center', gap: '3px', color: '#10B981' }}>
-              <Award size={12} /> {stats.avgScore}% إتقان
+              <Award size={12} /> {stats.avgScore}% درجة مسجلة ذاتيًا؛ ليست اعتمادًا
             </span>
           )}
         </div>
