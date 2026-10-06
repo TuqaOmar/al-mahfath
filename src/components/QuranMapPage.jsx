@@ -86,14 +86,14 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
   const [ayahFeedback, setAyahFeedback] = useState('');
 
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
-  const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' && window.innerWidth < 1340);
+  const [isCompact, setIsCompact] = useState(typeof window !== 'undefined' && window.innerWidth < 1180);
   const detailPanelRef = useRef(null);
 
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth;
       setIsMobile(w <= 768);
-      setIsCompact(w < 1340);
+      setIsCompact(w < 1180);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -398,7 +398,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
       minWidth: 0,
       maxWidth: '100%',
       boxSizing: 'border-box'
-    }}>
+    }} data-testid="quran-map-layout">
       
       {/* Toast Notification */}
       {statusMessage && (
@@ -863,6 +863,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
       {selectedPage && !isMobile && !isCompact && (
         <div 
           ref={detailPanelRef}
+          data-testid="quran-map-detail-panel"
           style={{
             width: '320px',
             minWidth: '280px',
@@ -890,6 +891,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
       {/* Mobile & Compact Screens Detail Panel Overlay */}
       {selectedPage && (isMobile || isCompact) && (
         <div 
+          data-testid="quran-map-detail-overlay"
           onClick={() => setSelectedPage(null)}
           style={{
             position: 'fixed',

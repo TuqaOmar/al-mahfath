@@ -55,7 +55,7 @@ const cachedCli = path.join(process.env.USERPROFILE || '', '.cache', 'firebase',
 const cliJs = existsSync(localCli) ? localCli : cachedCli;
 const command = existsSync(cliJs) ? process.execPath : standalone;
 const testNamePattern = mobileOnly
-  ? '--test-name-pattern "emulator configuration fails closed|production server initialization rejects emulator hosts|frontend emulator switch requires local emulator mode|Chrome mobile navigation, theme persistence, and viewport fit"'
+  ? '--test-name-pattern "emulator configuration fails closed|production server initialization rejects emulator hosts|frontend emulator switch requires local emulator mode|Chrome mobile navigation, theme persistence, and viewport fit|multi-role account can open both home pages and Quran map uses a wide laptop layout"'
   : '';
 const args = [
   ...(existsSync(cliJs) ? [cliJs] : []),

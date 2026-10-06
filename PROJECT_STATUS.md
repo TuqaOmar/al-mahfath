@@ -21,6 +21,27 @@ Sixteen dashboard screenshots (all four account types at each width), plus four 
 
 **Checks:** `npm.cmd run build` passed (Vite emitted its existing large-chunk advisory); `npm.cmd run test:security` passed all 16 tests; `npm.cmd run test:emulator:browser -- --mobile-only` passed all four selected tests: three emulator safety checks and the responsive Chrome journey. External browser traffic was blocked in the local emulator; the recitation page loaded its local view, while remote Tafsir fetches reported expected network errors. A separate full browser-suite attempt exposed an unrelated existing failure in `Chrome quiz saves, profile refresh failures and dismiss-only reminders report persistence truthfully`: its synthetic Touch event omits the required `identifier`; this was not changed as part of the responsive fix.
 
+## Mobile sign-in and laptop Quran map — verified locally
+
+Fixed the email sign-in race where navigation could occur before Firebase had loaded the authenticated user's Firestore profile. Auth-state hydration and the login action now share the same pending profile load, and the login result includes that profile before the modal navigates. Email/password fields now advertise the correct autofill purposes to mobile browsers. Google sign-in uses Firebase redirect flow in mobile browsers instead of relying on a popup. The Google provider round-trip itself was not exercised because the browser run blocks external traffic and uses the local Firebase Emulator.
+
+Changed the Quran map's compact-layout breakpoint from 1340 to 1180 CSS px so laptop widths do not unnecessarily stack the map and detail panel vertically.
+
+| Viewport | Flow and checks |
+|---|---|
+| 390 × 844 CSS px, Chrome mobile emulation | Signed in with an emulator student account using email/password; confirmed arrival at the dashboard with its mobile navigation and authenticated sidebar section available. |
+| 1024 × 900 CSS px | Confirmed the Quran map uses the compact stacked layout; selecting a page opens the detail overlay; document width stays within the viewport. |
+| 1179 × 900 CSS px | Confirmed the compact stacked layout and page-detail overlay immediately below the desktop breakpoint. |
+| 1180 × 900 CSS px | Confirmed the wide row layout and persistent side detail panel at the breakpoint. |
+| 1280 × 900 CSS px | Confirmed the wide layout, detail-panel interaction, and no horizontal page overflow. |
+| 1440 × 900 CSS px | Confirmed the wide layout, detail-panel interaction, and no horizontal page overflow. |
+
+Chrome screenshots for these laptop map viewports are saved in [reports/mobile-responsive/](./reports/mobile-responsive/). These browser tests ran against the Firebase Emulator with external browser traffic blocked; no production system was accessed.
+
+The role selector for multi-role accounts is available directly in the top bar on both mobile and desktop, rather than requiring the sidebar to be opened. It remained visible and in-bounds at 320, 360, 390 and 430 CSS px, and at laptop widths 1024, 1179, 1180, 1280 and 1440 CSS px. At 390 × 844, Chrome exercised a multi-role account: opened student Home from the bottom bar, switched to Teacher using the top-bar dropdown, confirmed the teacher dashboard loaded without its error state, then opened Student Home from the teacher sidebar. No browser JavaScript error occurred. Screenshot: [multi-role-teacher-student-home.png](./reports/mobile-responsive/multi-role-teacher-student-home.png). This local journey passed, but the user's reported error was not reproduced with the emulator account.
+
+**Checks:** `npm.cmd run build` passed (existing Vite large-chunk advisory); `npm.cmd run test:emulator:browser -- --mobile-only` passed all 5 selected tests, including the combined-role home and laptop-layout regression. `npm.cmd run test:security` passed all 16 tests. The remote Tafsir fetch warnings during mobile navigation are expected because external traffic is blocked in this local test.
+
 ## P1 teacher access scope — verified 2026-10-05, Asia/Amman
 
 **Tested and working for the scope/revocation scenarios below**, including actual Chrome UI requests and Firestore Rules. The former teacher has no retained historical-access entitlement. No production access, deployment, migration, original JSON modification, new rewards or page-approval workflow. This follow-up supersedes the old inactive/malformed membership and teacher-report scope findings; unrelated audit issues remain open.

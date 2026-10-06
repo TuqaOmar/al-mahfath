@@ -5,8 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider } from '../lib/firebase';
-import { signInWithPopup } from 'firebase/auth';
+import { signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { Logo } from './ui/Logo';
+import { isNativeMobile } from '../utils/platform';
 
 export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
@@ -51,6 +52,15 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     setError('');
     try {
       if (auth && googleProvider) {
+        const isMobileBrowser = !isNativeMobile() && (
+          /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+          window.matchMedia('(pointer: coarse)').matches
+        );
+        if (isMobileBrowser) {
+          await signInWithRedirect(auth, googleProvider);
+          return;
+        }
+
         const result = await signInWithPopup(auth, googleProvider);
         if (result && result.user) {
           const user = result.user;
@@ -275,7 +285,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                     onChange={e => setEmail(e.target.value)}
                     placeholder={t('auth_email_placeholder') || 'name@example.com'}
                     style={inputStyle}
-                    autoComplete="off"
+                    autoComplete="email"
                   />
                 </div>
               </div>
@@ -292,7 +302,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                     onChange={e => setPassword(e.target.value)}
                     placeholder={t('auth_pass_placeholder') || '••••••••'}
                     style={inputStyle}
-                    autoComplete="new-password"
+                    autoComplete={isSignUp ? 'new-password' : 'current-password'}
                   />
                 </div>
               </div>

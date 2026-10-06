@@ -97,8 +97,13 @@ const quranHadiths = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, activeRole, logout, deleteAccount, updateUserData, applyConfirmedUser, refreshUserData } = useAuth();
+  const { user, activeRole, availableRoles, setActiveRole, logout, deleteAccount, updateUserData, applyConfirmedUser, refreshUserData } = useAuth();
   const { lang, setLang, t, isRTL } = useLanguage();
+  const roleLabels = {
+    user: isRTL ? 'طالب' : 'Student',
+    teacher: isRTL ? 'معلم' : 'Teacher',
+    admin: isRTL ? 'إداري' : 'Admin'
+  };
   const getUserDefaultTab = (role) => {
     if (role === 'admin') return 'admin-dashboard';
     if (role === 'teacher') return 'teacher-dashboard';
@@ -225,6 +230,46 @@ const Dashboard = () => {
   const [isLaptop, setIsLaptop] = useState(typeof window !== 'undefined' && window.innerWidth < 1340);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
+  const roleSwitcher = availableRoles.length > 1 ? (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: isMobile ? 'space-between' : 'flex-start',
+      gap: '8px',
+      minHeight: isMobile ? '44px' : '36px',
+      width: isMobile ? '100%' : 'auto',
+      flexShrink: 0,
+      padding: isMobile ? '4px 10px' : '3px 8px',
+      borderRadius: '10px',
+      border: '1px solid var(--glass-border)',
+      background: 'var(--bg-color)',
+      boxSizing: 'border-box'
+    }}>
+      <label htmlFor="active-role-switcher" style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
+        {isRTL ? 'الدور' : 'Role'}
+      </label>
+      <select
+        id="active-role-switcher"
+        aria-label={isRTL ? 'اختيار الدور النشط' : 'Choose active role'}
+        value={activeRole}
+        onChange={event => setActiveRole(event.target.value)}
+        style={{
+          minWidth: isMobile ? '120px' : '104px',
+          maxWidth: isMobile ? '160px' : '140px',
+          height: '36px',
+          padding: '0 8px',
+          borderRadius: '8px',
+          border: '1px solid var(--glass-border)',
+          background: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
+          fontSize: '12px',
+          fontWeight: 700
+        }}
+      >
+        {availableRoles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}
+      </select>
+    </div>
+  ) : null;
 
   // Set default tab only when user logs in or user role changes
   const lastUserRoleRef = useRef(activeRole);
@@ -334,7 +379,7 @@ const Dashboard = () => {
 
       case 'home':
         return (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', maxWidth: '1040px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px' }}>
+          <div data-testid="student-home-view" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', maxWidth: '1040px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px' }}>
             
             {/* Optional Banner: Safar Membership status or gentle invitation */}
             {user?.isSafarMember ? (
@@ -1029,7 +1074,8 @@ const Dashboard = () => {
           minHeight: isMobile ? '56px' : '64px',
           height: 'auto',
           borderBottom: '1px solid var(--glass-border)', 
-          display: 'flex', 
+          display: isMobile && roleSwitcher ? 'grid' : 'flex',
+          gridTemplateColumns: isMobile && roleSwitcher ? 'minmax(0, 1fr) auto' : undefined,
           alignItems: 'center', 
           justifyContent: 'space-between', 
           padding: isMobile 
@@ -1177,6 +1223,7 @@ const Dashboard = () => {
                   isMobile={true}
                 />
               </div>
+              {roleSwitcher && <div style={{ gridColumn: '1 / -1', minWidth: 0 }}>{roleSwitcher}</div>}
             </>
           ) : (
             /* Laptop / Desktop View: Original full desktop bar */
@@ -1238,6 +1285,7 @@ const Dashboard = () => {
 
               {/* Right / End: Desktop Tools & Actions */}
               <div className="flex-center" style={{ gap: isLaptop ? '6px' : '10px', flexWrap: 'nowrap' }}>                {/* On wider screens without drawer constraints, display direct quick buttons */}
+                {roleSwitcher}
                 {!isLaptop && (
                   <>
                     {/* Sync & Refresh Button */}

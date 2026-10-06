@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { auth, db } from '../lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
@@ -30,64 +30,91 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [activeRole, setActiveRoleState] = useState('user');
   const [loading, setLoading] = useState(true);
+  const profileLoadsRef = useRef(new Map());
+
+  const loadAuthenticatedProfile = (firebaseUser) => {
+    const uid = firebaseUser.uid;
+    const pendingLoad = profileLoadsRef.current.get(uid);
+    if (pendingLoad) return pendingLoad;
+
+    const profileLoad = (async () => {
+      try {
+        const userDocRef = doc(db, 'users', uid);
+        const userDocSnap = await getDoc(userDocRef);
+        let userData = {
+          uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+        };
+
+        if (userDocSnap.exists()) {
+          userData = { ...userData, ...userDocSnap.data() };
+        } else if (!firebaseUser.isAnonymous) {
+          userData = {
+            ...userData,
+            hasCompletedWizard: false,
+            role: 'user',
+            roles: { user: true },
+            streak: 0,
+            xp: 100,
+            level: 1,
+            memorizedPagesCount: 0,
+            memoryScore: 100,
+            totalJuz: 0,
+            preferences: {},
+            createdAt: new Date().toISOString()
+          };
+          await setDoc(userDocRef, userData);
+        }
+
+        if (auth.currentUser?.uid === uid) {
+          localStorage.setItem('ma7fath_user', JSON.stringify(userData));
+          setUser(userData);
+          setActiveRoleState(initialActiveRole(userData));
+        }
+        return userData;
+      } catch (error) {
+        console.error('Error fetching user data from Firestore:', error);
+        const basicInfo = {
+          uid,
+          email: firebaseUser.email,
+          name: firebaseUser.displayName,
+        };
+        if (auth.currentUser?.uid === uid) {
+          setUser(basicInfo);
+          setActiveRoleState('user');
+        }
+        return basicInfo;
+      } finally {
+        if (auth.currentUser?.uid === uid) setLoading(false);
+      }
+    })();
+
+    profileLoadsRef.current.set(uid, profileLoad);
+    profileLoad.then(
+      () => {
+        if (profileLoadsRef.current.get(uid) === profileLoad) profileLoadsRef.current.delete(uid);
+      },
+      () => {
+        if (profileLoadsRef.current.get(uid) === profileLoad) profileLoadsRef.current.delete(uid);
+      }
+    );
+    return profileLoad;
+  };
 
   // Sync with Firebase Auth State
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        try {
-          // Fetch additional user data from Firestore
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDocSnap = await getDoc(userDocRef);
-          
-          let userData = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-            photoURL: firebaseUser.photoURL,
-          };
-
-          if (userDocSnap.exists()) {
-            userData = { ...userData, ...userDocSnap.data() };
-            
-          } else if (!firebaseUser.isAnonymous) {
-            // If doc doesn't exist but user logged in (e.g. Google), create it
-            userData = {
-              ...userData,
-              hasCompletedWizard: false,
-              role: 'user',
-              roles: { user: true },
-              streak: 0,
-              xp: 100,
-              level: 1,
-              memorizedPagesCount: 0,
-              memoryScore: 100,
-              totalJuz: 0,
-              preferences: {},
-              createdAt: new Date().toISOString()
-            };
-            await setDoc(userDocRef, userData);
-          }
-
-          localStorage.setItem('ma7fath_user', JSON.stringify(userData));
-          setUser(userData);
-          setActiveRoleState(initialActiveRole(userData));
-        } catch (error) {
-          console.error("Error fetching user data from Firestore:", error);
-          // Fallback to basic info if Firestore fails
-          const basicInfo = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-          };
-          setUser(basicInfo);
-        }
+        await loadAuthenticatedProfile(firebaseUser);
       } else {
+        profileLoadsRef.current.clear();
         localStorage.removeItem('ma7fath_user');
         setUser(null);
         setActiveRoleState('user');
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -142,10 +169,9 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     const email = (rawEmail || '').trim().toLowerCase();
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      // onAuthStateChanged will handle the rest
-      setLoading(false);
-      return { success: true };
+      const credential = await signInWithEmailAndPassword(auth, email, password);
+      const confirmedUser = await loadAuthenticatedProfile(credential.user);
+      return { success: true, user: confirmedUser };
     } catch (error) {
       setLoading(false);
       let message = 'فشل تسجيل الدخول';

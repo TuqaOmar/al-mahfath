@@ -1297,6 +1297,7 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
         documentWidth: document.documentElement.scrollWidth,
         profile: rect('#header-user-profile-card'),
         controls: rect('#mobile-header-controls'),
+        roleSwitcher: rect('#active-role-switcher'),
         theme: rect('.mobile-theme-toggle'),
         bottomNavigation: rect('#mobile-bottom-navigation'),
         bottomItems: [...bottomNavigation.querySelectorAll('button')].map(button => {
@@ -1317,6 +1318,13 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
     if (layout.profile && layout.controls) {
       const overlap = layout.profile.left < layout.controls.right && layout.profile.right > layout.controls.left;
       assert.equal(overlap, false, `header profile overlaps its controls at ${width}px`);
+    }
+    if (layout.roleSwitcher) {
+      assert.ok(layout.roleSwitcher.left >= 0 && layout.roleSwitcher.right <= width,
+        `role selector is clipped at ${width}px`);
+      await expect(page.locator('#active-role-switcher')).toBeVisible();
+      assert.equal(await page.locator('#active-role-switcher').evaluate(element => Boolean(element.closest('header'))), true,
+        'role selector must remain in the top bar');
     }
     await expect(page.locator('.mobile-theme-toggle')).toBeVisible();
     await expect(page.locator('#quick-settings-trigger-btn')).toBeVisible();
@@ -1465,14 +1473,12 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
         if (width === 320) {
           await verifySections(page);
           for (const role of roles.slice(1)) {
-            await page.locator('#mobile-drawer-toggle-btn').click();
+            await expect(page.locator('#active-role-switcher')).toBeVisible();
             await page.locator('#active-role-switcher').selectOption(role);
             await expect(page.locator(`#mobile-nav-${role === 'user' ? 'home' : `${role}-dashboard`}`)).toBeVisible();
-            await page.locator('#sidebar-collapse-toggle').click();
             await verifySections(page);
           }
           if (account === 'multi') {
-            await page.locator('#mobile-drawer-toggle-btn').click();
             await page.locator('#active-role-switcher').selectOption('user');
             await expect(page.locator('#mobile-nav-home')).toBeVisible();
           }
@@ -1488,4 +1494,85 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
     }
   }
   evidence.mobileLayoutPassed = true;
+});
+
+test('multi-role account can open both home pages and Quran map uses a wide laptop layout', { timeout: 120000 }, async () => {
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+    locale: 'ar-JO'
+  });
+  await context.route('**/*', route => {
+    const url = new URL(route.request().url());
+    if (['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) return route.continue();
+    evidence.externalRequestsBlocked++;
+    return route.abort();
+  });
+
+  const page = await context.newPage();
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  try {
+    await mkdir(path.resolve('reports/mobile-responsive'), { recursive: true });
+    await page.goto(baseUrl);
+    await page.getByRole('button', { name: 'ابدأ رحلتك مجاناً 🚀', exact: true }).click();
+    await page.getByRole('button', { name: 'تسجيل الدخول هنا', exact: true }).click();
+    await expect(page.locator('#email-field')).toHaveAttribute('autocomplete', 'email');
+    await expect(page.locator('#password-field')).toHaveAttribute('autocomplete', 'current-password');
+    await page.locator('#email-field').fill(`${uids.multi}@example.test`);
+    await page.locator('#password-field').fill(password);
+    await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click();
+    await expect(page).toHaveURL(/\/dashboard$/);
+    await expect(page.locator('#mobile-bottom-navigation')).toBeVisible();
+    await expect(page.locator('#sidebar-nav-home')).toBeVisible();
+    await page.locator('#mobile-nav-home').click();
+    await expect(page.getByTestId('student-home-view')).toBeVisible();
+    await expect(page.locator('#active-role-switcher')).toBeVisible();
+    await page.locator('#active-role-switcher').selectOption('teacher');
+    await expect(page.locator('#sidebar-nav-teacher-dashboard')).toBeVisible();
+    await expect(page.getByTestId('teacher-dashboard')).toBeVisible();
+    await expect(page.getByTestId('teacher-dashboard-error')).toHaveCount(0);
+    await page.locator('#mobile-drawer-toggle-btn').click();
+    await page.locator('#sidebar-nav-home').click();
+    await expect(page.getByTestId('student-home-view')).toBeVisible();
+    assert.deepEqual(pageErrors, [], `JavaScript errors while opening student home: ${pageErrors.join('; ')}`);
+    await page.screenshot({
+      path: path.join(path.resolve('reports/mobile-responsive'), 'multi-role-teacher-student-home.png'),
+      animations: 'disabled'
+    });
+
+    const mapWidths = [1024, 1179, 1180, 1280, 1440];
+    for (const width of mapWidths) {
+      await page.setViewportSize({ width, height: 900 });
+      const roleSelector = page.locator('#active-role-switcher');
+      await expect(roleSelector).toBeVisible();
+      const roleSelectorBounds = await roleSelector.boundingBox();
+      assert.ok(roleSelectorBounds && roleSelectorBounds.x >= 0 && roleSelectorBounds.x + roleSelectorBounds.width <= width,
+        `top-bar role selector is clipped at ${width}px`);
+      if (width === mapWidths[0]) {
+        await page.locator('#sidebar-nav-quran-map').click();
+        await expect(page.locator('[data-testid="quran-map-layout"]')).toBeVisible();
+      }
+
+      const layout = page.locator('[data-testid="quran-map-layout"]');
+      await expect(layout).toHaveCSS('flex-direction', width < 1180 ? 'column' : 'row');
+      const pageButton = layout.locator('button[title^="صفحة"]').first();
+      await pageButton.click();
+      if (width < 1180) {
+        await expect(page.getByTestId('quran-map-detail-overlay')).toBeVisible();
+        await page.getByTestId('quran-map-detail-overlay').click({ position: { x: 10, y: 10 } });
+      } else {
+        await expect(page.getByTestId('quran-map-detail-panel')).toBeVisible();
+      }
+      const documentWidth = await page.evaluate(() => document.documentElement.scrollWidth);
+      assert.ok(documentWidth <= width, `document overflows at laptop viewport ${width}px`);
+      await page.screenshot({
+        path: path.join(path.resolve('reports/mobile-responsive'), `laptop-map-${width}.png`),
+        animations: 'disabled'
+      });
+    }
+  } finally {
+    await context.close();
+  }
 });

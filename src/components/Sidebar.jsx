@@ -30,7 +30,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
   const [localCollapsed, setLocalCollapsed] = useState(false);
   const collapsed = controlledCollapsed !== undefined ? controlledCollapsed : localCollapsed;
   const setCollapsed = controlledSetCollapsed !== undefined ? controlledSetCollapsed : setLocalCollapsed;
-  const { user, activeRole, availableRoles, setActiveRole, logout } = useAuth();
+  const { user, activeRole, logout } = useAuth();
   const { lang, isRTL } = useLanguage();
   const { configuration } = useUiConfiguration();
 
@@ -326,17 +326,6 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed: controlledCollapse
             </div>
           ))}
         </nav>
-
-        {!collapsed && availableRoles?.length > 1 && (
-          <div style={{ padding: '10px 14px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            <label htmlFor="active-role-switcher" style={{ display: 'block', fontSize: '11px', color: '#94A3B8', marginBottom: '6px' }}>
-              {lang === 'ar' ? 'الدور النشط' : 'Active role'}
-            </label>
-            <select id="active-role-switcher" value={userRole} onChange={event => setActiveRole(event.target.value)} style={{ width: '100%', padding: '8px 10px', borderRadius: '9px', background: '#111827', color: '#F8FAFC', border: '1px solid #334155' }}>
-              {availableRoles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}
-            </select>
-          </div>
-        )}
 
         {/* PWA Install Button */}
         <div style={{ padding: collapsed ? '8px' : '10px 14px', borderTop: '1px solid rgba(255, 255, 255, 0.08)', display: 'flex', justifyContent: 'center' }}>
