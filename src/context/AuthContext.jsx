@@ -183,33 +183,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Google Login helper (Called from AuthModal after signInWithPopup)
-  const loginWithGoogle = async (providedEmail, providedName, providedPhoto) => {
-    // onAuthStateChanged will catch the user automatically, but we can ensure Firestore is synced
+  const loginWithGoogle = async () => {
+    // Wait for the same profile load onAuthStateChanged runs (it creates the user
+    // document when missing), so `user` is in context before the caller navigates.
+    // Navigating earlier sends a device with no cached profile back to '/'.
     if (auth.currentUser) {
-      const userDocRef = doc(db, 'users', auth.currentUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-      if (!userDocSnap.exists()) {
-        const newUser = {
-          uid: auth.currentUser.uid,
-          name: providedName || auth.currentUser.displayName,
-          email: providedEmail || auth.currentUser.email,
-          photoURL: providedPhoto || auth.currentUser.photoURL,
-          hasCompletedWizard: false,
-          role: 'user',
-          // Multi-role support
-          roles: { user: true },
-          streak: 0,
-          xp: 100,
-          level: 1,
-          memorizedPagesCount: 0,
-          memoryScore: 100,
-          totalJuz: 0,
-          preferences: {},
-          createdAt: new Date().toISOString()
-        };
-        await setDoc(userDocRef, newUser);
-      }
-      return { success: true, user: auth.currentUser };
+      const profile = await loadAuthenticatedProfile(auth.currentUser);
+      return { success: true, user: profile };
     }
     return { success: false, message: 'Google Auth Failed' };
   };

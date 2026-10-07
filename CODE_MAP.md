@@ -23,7 +23,7 @@
 ### ⧉ تكرار (3)
 - `server/recitationEngine.js` — في المسار الأول (Gemini مباشر) الدقة يقررها النموذج نفسه لا الخوارزمية — النتيجة قد تختلف عن تلوين الكلمات المحسوب.
 - `src/components/MyPlanManager.jsx` — تغيير الأجزاء المحفوظة هنا يحدّث selectedJuzList فقط ولا يحدّث studentDeclaredPages (التي يحسبها المعالج) — الصفحة الحالية والخريطة لا تتغير.
-- `src/context/AuthContext.jsx` — إنشاء مستند المستخدم الافتراضي مكرر 3 مرات (signup، loadAuthenticatedProfile، loginWithGoogle) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser.
+- `src/context/AuthContext.jsx` — إنشاء مستند المستخدم الافتراضي مكرر مرتين (signup، loadAuthenticatedProfile) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser.
 
 ### ☠ ميت (14)
 - `server/db.js` — صفر مستوردين في كل المشروع (بما فيه الاختبارات والسكربتات).
@@ -111,11 +111,11 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **يستخدمه:** AuthModal.jsx, LandingFooter.jsx, LandingNavbar.jsx, OnboardingWizard.jsx
 
 ### `src/context/AuthContext.jsx` **[⧉ تكرار]**
-- **يفعل:** يستمع لـ onAuthStateChanged ويحمّل users/{uid} من Firestore (أو ينشئ مستندًا افتراضيًا إن لم يوجد)، مع منع تحميلين متزامنين لنفس المستخدم. يوفر: user، activeRole/availableRoles/setActiveRole (الدور النشط محفوظ في localStorage لكل مستخدم)، login/signup (Firebase Auth بريد+كلمة مرور، رسائل خطأ عربية)، loginWithGoogle، logout، deleteAccount، updateUserData (يسمح فقط بـ name/photoURL/preferences/favorites/fortressPlan/hasCompletedWizard ويرفض حقول الحفظ)، applyConfirmedUser (يقبل ملفًا فقط إن كان persisted ولنفس المستخدم)، refreshUserData (من الخادم مباشرة getDocFromServer، يرفض الكاش والكتابات المعلقة)، hasRole.
+- **يفعل:** يستمع لـ onAuthStateChanged ويحمّل users/{uid} من Firestore (أو ينشئ مستندًا افتراضيًا إن لم يوجد)، مع منع تحميلين متزامنين لنفس المستخدم. يوفر: user، activeRole/availableRoles/setActiveRole (الدور النشط محفوظ في localStorage لكل مستخدم)، login/signup (Firebase Auth بريد+كلمة مرور، رسائل خطأ عربية)، loginWithGoogle (ينتظر loadAuthenticatedProfile ويرجع الملف الكامل حتى يكون user في السياق قبل التنقل)، logout، deleteAccount، updateUserData (يسمح فقط بـ name/photoURL/preferences/favorites/fortressPlan/hasCompletedWizard ويرفض حقول الحفظ)، applyConfirmedUser (يقبل ملفًا فقط إن كان persisted ولنفس المستخدم)، refreshUserData (من الخادم مباشرة getDocFromServer، يرفض الكاش والكتابات المعلقة)، hasRole.
 - **لماذا:** قائمة الحقول المسموحة تطابق firestore.rules (isSafeProfileUpdate) حتى لا تُرفض الكتابة. الحماية من السباق (التحقق أن auth.currentUser لم يتغير قبل setUser) تمنع ظهور بيانات مستخدم سابق بعد تبديل الحساب.
 - **متى:** يغلف التطبيق كله؛ لا يعرض أي شيء حتى ينتهي loading الأول. كل شاشة تقرأ user منه.
 - **إن تعطّل:** التطبيق كله — 50+ ملفًا يستخدم useAuth.
-- **انتبه:** إنشاء مستند المستخدم الافتراضي مكرر 3 مرات (signup، loadAuthenticatedProfile، loginWithGoogle) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser. | hasRole('teacher') يرجع true للمشرف، لكن grantedRoles لا يعطيه دور المعلم في مبدّل الأدوار. | deleteAccount يحذف حساب Auth فقط — مستند users/{uid} وبياناته الفرعية تبقى يتيمة؛ وإن تطلب Firebase تسجيل دخول حديث يفشل والواجهة تنتقل للصفحة الرئيسية كأنه نجح. | signup لا يضبط activeRole (يبقى من الحالة السابقة). | login يستدعي loadAuthenticatedProfile بينما onAuthStateChanged يستدعيها أيضًا — منع التكرار عبر profileLoadsRef.
+- **انتبه:** إنشاء مستند المستخدم الافتراضي مكرر مرتين (signup، loadAuthenticatedProfile) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser. | hasRole('teacher') يرجع true للمشرف، لكن grantedRoles لا يعطيه دور المعلم في مبدّل الأدوار. | deleteAccount يحذف حساب Auth فقط — مستند users/{uid} وبياناته الفرعية تبقى يتيمة؛ وإن تطلب Firebase تسجيل دخول حديث يفشل والواجهة تنتقل للصفحة الرئيسية كأنه نجح. | signup لا يضبط activeRole (يبقى من الحالة السابقة). | login يستدعي loadAuthenticatedProfile بينما onAuthStateChanged يستدعيها أيضًا — منع التكرار عبر profileLoadsRef.
 - **يستخدم:** firebase.js
 - **يستخدمه:** AiAssistant.jsx, AuthModal.jsx, BottomNavBar.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, LearningStyleProfiler.jsx, MindMapsView.jsx, MyPlanManager.jsx, ProtectedRoute.jsx, QuickSettingsMenu.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, Sidebar.jsx, SimplifiedFortressPlan.jsx, UserProfileModal.jsx, FortressSetupWizard.jsx, LandingFooter.jsx, LandingHero.jsx, LandingNavbar.jsx, JoinGroupModal.jsx, QuranSurahAyahsModal.jsx, TeacherDashboard.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, NotificationContext.jsx, useRecitationRecorder.js, main.jsx, Dashboard.jsx, LandingPage.jsx, OnboardingWizard.jsx
 
@@ -167,11 +167,11 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **يستخدمه:** AiAssistant.jsx, AnalyticsView.jsx, Community.jsx, FiveFortressesPlan.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, SimilaritiesView.jsx, AdminDashboard.jsx, AdminDistributionView.jsx, AdminPerformanceDashboard.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, NotificationContext.jsx, useRecitationRecorder.js, fortressService.js, learningProfileService.js, OnboardingWizard.jsx
 
 ### `src/lib/firebase.js` **[🐞 خلل]**
-- **يفعل:** تهيئ تطبيق Firebase مرة واحدة وتصدّر auth وdb (Firestore) وstorage وgoogleProvider. تربط المحاكيات المحلية إذا اختار firebaseEmulatorConfig ذلك. توفر requestFcmToken (طلب إذن الإشعارات، أخذ توكن FCM، حفظه في localStorage وفي users/{uid}.fcmToken، وإرساله للخادم) وonForegroundMessage. تجري testConnection عند التحميل.
+- **يفعل:** تهيئ تطبيق Firebase مرة واحدة (على al-mahfath.vercel.app يصبح authDomain هو نفس النطاق، وvercel.json يمرّر /__/auth/* إلى firebaseapp.com) وتصدّر auth وdb (Firestore) وstorage وgoogleProvider. تربط المحاكيات المحلية إذا اختار firebaseEmulatorConfig ذلك. توفر requestFcmToken (طلب إذن الإشعارات، أخذ توكن FCM، حفظه في localStorage وفي users/{uid}.fcmToken، وإرساله للخادم) وonForegroundMessage. تجري testConnection عند التحميل.
 - **لماذا:** نقطة الاتصال الوحيدة بـ Firebase لكل الواجهة؛ الإعدادات تأتي من firebase-applet-config.json في الجذر.
 - **متى:** تُنفَّذ عند تحميل أول ملف يستوردها (AuthContext عبر main.jsx) قبل ظهور أي شاشة.
 - **إن تعطّل:** AuthContext وكل من يقرأ Firestore مباشرة (لوحات المعلم والمشرف، الخدمات) ينكسرون.
-- **انتبه:** requestFcmToken ترسل POST إلى /api/notifications/register-token، لكن هذا المسار غير معرّف في الخادم (routes/community.js فيه فقط GET/PATCH/DELETE للإشعارات) — الخطأ يُبتلع بصمت، فالخادم لا يعرف التوكن أبدًا. | مفتاح VAPID مكتوب داخل الكود.
+- **انتبه:** requestFcmToken ترسل POST إلى /api/notifications/register-token، لكن هذا المسار غير معرّف في الخادم (routes/community.js فيه فقط GET/PATCH/DELETE للإشعارات) — الخطأ يُبتلع بصمت، فالخادم لا يعرف التوكن أبدًا. | مفتاح VAPID مكتوب داخل الكود. | كل نطاق في SAME_SITE_AUTH_HOSTS يجب إضافة https://<host>/__/auth/handler له في Authorized redirect URIs لعميل Google OAuth، وإلا يفشل الدخول بجوجل بخطأ redirect_uri_mismatch.
 - **يستخدم:** firebaseEmulatorConfig.js, community.js
 - **يستخدمه:** AuthModal.jsx, FiveFortressesPlan.jsx, UserProfileModal.jsx, AdminDashboard.jsx, AuthContext.jsx, api.js, fortressService.js, learningProfileService.js, portfolioService.js, uiConfiguration.js, OnboardingWizard.jsx, NotificationManager.js
 
@@ -214,7 +214,7 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **لماذا:** signInWithRedirect لا يعمل على Safari وChrome في الجوال: authDomain هو firebaseapp.com والتطبيق على Vercel، فالمتصفح يحجب التخزين عبر المواقع ويعود المستخدم للصفحة دون دخول. لذلك popup حتى على الجوال.
 - **متى:** عند نقر 'تسجيل الدخول/ابدأ' في الصفحة التعريفية.
 - **إن تعطّل:** لا يمكن الدخول.
-- **انتبه:** لا ترجع إلى redirect للجوال — يكسر الدخول بجوجل هناك. إغلاق النافذة من المستخدم لا يُظهر خطأ. | isAccountReady نسخة من منطق ProtectedRoute.
+- **انتبه:** لا ترجع إلى redirect للجوال — يكسر الدخول بجوجل هناك. رسالة الخطأ تعرض رمز Firebase (مثل auth/popup-closed-by-user) للتشخيص. | isAccountReady نسخة من منطق ProtectedRoute.
 - **يستخدم:** AuthContext.jsx, LanguageContext.jsx, firebase.js, Logo.jsx, platform.js
 - **يستخدمه:** LandingPage.jsx
 

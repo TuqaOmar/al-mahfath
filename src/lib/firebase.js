@@ -8,9 +8,20 @@ import { resolveFirebaseTarget } from './firebaseEmulatorConfig';
 
 const target = resolveFirebaseTarget(import.meta.env, window.location.hostname, firebaseConfig);
 
+// On the deployed sites, sign-in pages are served from our own domain
+// (vercel.json proxies /__/auth/* to firebaseapp.com). Mobile browsers isolate
+// third-party storage, so a firebaseapp.com authDomain loses the Google result
+// and the user lands back on the landing page signed out.
+// Each host here must be listed as an Authorized redirect URI
+// (https://<host>/__/auth/handler) on the Google OAuth web client.
+const SAME_SITE_AUTH_HOSTS = ['al-mahfath.vercel.app'];
+const firebaseAppConfig = !target.emulator && SAME_SITE_AUTH_HOSTS.includes(window.location.hostname)
+  ? { ...target.config, authDomain: window.location.host }
+  : target.config;
+
 let app;
 if (!getApps().length) {
-  app = initializeApp(target.config);
+  app = initializeApp(firebaseAppConfig);
 } else {
   app = getApps()[0];
 }

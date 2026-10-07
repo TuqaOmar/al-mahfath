@@ -65,8 +65,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           throw popupErr;
         }
         if (result && result.user) {
-          const user = result.user;
-          const res = await loginWithGoogle(user.email, user.displayName, user.photoURL);
+          const res = await loginWithGoogle();
           if (res.success && res.user) {
             setIsLoading(false);
             onClose();
@@ -74,13 +73,16 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
             return;
           }
         }
+        setError(isRTL ? 'لم يكتمل تسجيل الدخول بحساب جوجل، حاول مرة أخرى' : 'Google sign-in did not complete, please try again');
       }
     } catch (popupErr) {
       console.error('Firebase popup error:', popupErr.code, popupErr.message);
+      // Keep the code visible: on phones a lost sign-in result also surfaces as popup-closed-by-user.
+      const code = popupErr?.code ? ` (${popupErr.code})` : '';
       const closedByUser = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(popupErr?.code);
-      if (!closedByUser) {
-        setError(isRTL ? 'فشل تسجيل الدخول بحساب جوجل' : 'Failed to login with Google');
-      }
+      setError(closedByUser
+        ? (isRTL ? 'أُغلقت نافذة جوجل قبل إكمال الدخول' : 'The Google window closed before sign-in finished') + code
+        : (isRTL ? 'فشل تسجيل الدخول بحساب جوجل' : 'Failed to login with Google') + code);
     }
     setIsLoading(false);
   };
