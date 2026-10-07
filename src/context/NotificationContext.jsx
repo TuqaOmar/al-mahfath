@@ -5,6 +5,10 @@ import { requestFcmToken } from '../lib/firebase';
 
 const NotificationContext = createContext();
 
+// YYYY-MM-DD in the device's local time, matching the local reminder time (toISOString would use UTC).
+const localDateKey = (date = new Date()) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
 const DEFAULT_REMINDER_SETTINGS = {
   enabled: true,
   time: '20:30', // 8:30 PM default
@@ -232,7 +236,7 @@ export const NotificationProvider = ({ children }) => {
 
   // Trigger the review reminder alert
   const triggerReviewReminder = (customMsg = null, isTest = false) => {
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = localDateKey();
 
     // Focus Area Labels
     const focusLabels = {
@@ -322,7 +326,7 @@ export const NotificationProvider = ({ children }) => {
       const currentHours = String(now.getHours()).padStart(2, '0');
       const currentMinutes = String(now.getMinutes()).padStart(2, '0');
       const currentTimeStr = `${currentHours}:${currentMinutes}`;
-      const todayStr = now.toISOString().split('T')[0];
+      const todayStr = localDateKey(now);
 
       // Check if snoozed
       if (reminderSettings.snoozeUntil) {

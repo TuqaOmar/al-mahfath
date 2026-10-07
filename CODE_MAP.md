@@ -127,7 +127,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **لماذا:** مكان واحد لكل ما 'ينبّه' المستخدم، لأن التذكير والاحتفال والإشعار يتشاركون إعداد الصوت.
 - **متى:** يُحمَّل بعد AuthProvider؛ يجلب إشعارات الخادم عند تغير المستخدم؛ مؤقت التذكير يعمل طالما التطبيق مفتوح.
 - **إن تعطّل:** NotificationCenter وReviewReminderAlert وCelebrationOverlay وDashboard وكل من يستدعي notifyAndCelebrate.
-- **انتبه:** التذكير يعمل فقط والتطبيق مفتوح (setInterval في المتصفح) — لا يوجد جدولة من الخادم. | lastTriggeredDate يُحسب بتاريخ UTC بينما وقت التذكير بالتوقيت المحلي. | markAllAsRead وclearAll يستدعيان الخادم حتى لو كانت كل الإشعارات محلية. | الإشعارات المحلية تضيع عند تحديث الصفحة.
+- **انتبه:** التذكير يعمل فقط والتطبيق مفتوح (setInterval في المتصفح) — لا يوجد جدولة من الخادم. | lastTriggeredDate تاريخ محلي (localDateKey) مثل وقت التذكير — لا تستخدم toISOString (UTC). | markAllAsRead وclearAll يستدعيان الخادم حتى لو كانت كل الإشعارات محلية. | الإشعارات المحلية تضيع عند تحديث الصفحة.
 - **يستخدم:** AuthContext.jsx, api.js, firebase.js, community.js
 - **يستخدمه:** CelebrationOverlay.jsx, FiveFortressesVisualMap.jsx, MindMapsView.jsx, NotificationCenter.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, SimplifiedFortressPlan.jsx, QuranSurahAyahsModal.jsx, main.jsx, Dashboard.jsx, OnboardingWizard.jsx
 
@@ -382,7 +382,7 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **لماذا:** تبديل التبويب الافتراضي حسب الدور النشط عند تغيّر المستخدم أو الدور. تعليم الحصن من الرئيسية يقرأ الخطة المحفوظة أولًا ثم يعدّل علامة واحدة (لا يستبدل الخطة).
 - **متى:** طوال جلسة المستخدم بعد المعالج.
 - **إن تعطّل:** كل شيء بعد تسجيل الدخول.
-- **انتبه:** case 'admin-panel' مكرر في switch؛ الثاني (AdminPanel) لا يُصل إليه أبدًا. | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | selectedQuranPage يبدأ بـ 2 لا بالصفحة الحالية للمستخدم. | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
+- **انتبه:** case 'admin-panel' مكرر في switch؛ الثاني (AdminPanel) لا يُصل إليه أبدًا. | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
 - **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
 - **يستخدمه:** App.jsx
 

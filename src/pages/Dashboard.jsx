@@ -115,7 +115,8 @@ const Dashboard = () => {
       return fallback;
     }
   });
-  const [selectedQuranPage, setSelectedQuranPage] = useState(2);
+  // Open the mushaf on the first page the student has not declared yet.
+  const [selectedQuranPage, setSelectedQuranPage] = useState(() => nextDeclaredPage(user));
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showJoinGroupModal, setShowJoinGroupModal] = useState(false);
