@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useNotifications } from '../context/NotificationContext';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Logo } from '../components/ui/Logo';
@@ -43,6 +44,11 @@ const OnboardingWizard = () => {
   const { t, lang, isRTL } = useLanguage();
   const [step, setStep] = useState(1);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const [finishError, setFinishError] = useState('');
+  // The profile write flips hasCompletedWizard once (Firestore rule); a retry after a later failure must not repeat it.
+  const profileSavedRef = useRef(false);
+  const { showToast } = useNotifications();
 
   // Diagnostic Quiz State
   const [quizMode, setQuizMode] = useState('quiz'); // 'quiz' | 'manual'
@@ -160,7 +166,7 @@ const OnboardingWizard = () => {
       }, 2500);
     } else if (step < 5) {
       setStep(step + 1);
-    } else {
+    } else if (!isFinishing) {
       handleComplete();
     }
   };
@@ -198,6 +204,47 @@ const OnboardingWizard = () => {
   };
 
   const handleComplete = async () => {
+    setIsFinishing(true);
+    setFinishError('');
+    try {
+      if (!profileSavedRef.current) {
+        await saveWizardProfile();
+        profileSavedRef.current = true;
+      }
+    } catch (error) {
+      console.error('Onboarding save failed', error);
+      setFinishError(isRTL
+        ? 'تعذر حفظ بياناتك، تحقق من الاتصال ثم اضغط "إنهاء" مرة أخرى.'
+        : 'Could not save your answers. Check your connection and press Finish again.');
+      setIsFinishing(false);
+      return;
+    }
+
+    // The profile is saved, so the account is ready; a failed circle join must not block entry.
+    if (groupInfo.isSafarMember && groupInfo.verifiedGroup?.code) {
+      try {
+        const joinRes = await fetchWithAuth('/api/groups/join', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: groupInfo.verifiedGroup.code })
+        });
+        const joinData = await joinRes.json();
+        if (!joinRes.ok || !joinData.success) throw new Error(joinData.message || 'Failed to join group');
+        await refreshUserData();
+      } catch (error) {
+        console.error('Onboarding group join failed', error);
+        showToast({
+          title: isRTL ? 'تعذر الانضمام للحلقة' : 'Could not join the circle',
+          message: isRTL ? 'تم حفظ حسابك؛ يمكنك الانضمام لاحقًا من الرئيسية برمز الدعوة.' : 'Your account is saved; join later from home with the invite code.',
+          icon: '⚠️'
+        }, 7000);
+      }
+    }
+
+    navigate('/dashboard', { replace: true });
+  };
+
+  const saveWizardProfile = async () => {
     let memorizedPages = [];
     let memorizedPagesCount = 0;
     let totalJuz = 0;
@@ -248,21 +295,6 @@ const OnboardingWizard = () => {
     if (!profileResult?.success) {
       throw new Error(profileResult?.message || 'Failed to save onboarding profile');
     }
-
-    if (groupInfo.isSafarMember && groupInfo.verifiedGroup?.code) {
-      const joinRes = await fetchWithAuth('/api/groups/join', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: groupInfo.verifiedGroup.code })
-      });
-      const joinData = await joinRes.json();
-      if (!joinRes.ok || !joinData.success) {
-        throw new Error(joinData.message || 'Failed to join group');
-      }
-      await refreshUserData();
-    }
-
-    navigate('/dashboard', { replace: true });
   };
 
   const stepVariants = {
@@ -1127,14 +1159,19 @@ const OnboardingWizard = () => {
           </AnimatePresence>
 
           {/* Bottom Action Controls */}
+          {!isAnalyzing && finishError && (
+            <div role="alert" style={{ padding: '12px 16px', borderRadius: '12px', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', color: '#EF4444', fontSize: '13px', marginBottom: '16px' }}>
+              {finishError}
+            </div>
+          )}
           {!isAnalyzing && (
             <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--glass-border)', paddingTop: '24px' }}>
               <Button variant="outline" onClick={handleBack} disabled={step === 1 || step === 5} style={{ opacity: (step === 1 || step === 5) ? 0 : 1 }}>
                 {isRTL ? <ArrowRight size={18} /> : <ArrowLeft size={18} />} {t('wizard_back')}
               </Button>
-              <Button variant="primary" onClick={handleNext}>
+              <Button variant="primary" onClick={handleNext} disabled={isFinishing}>
                 {step === 5 
-                  ? t('wizard_finish') 
+                  ? (isFinishing ? (isRTL ? 'جارٍ الحفظ...' : 'Saving...') : t('wizard_finish'))
                   : (step === 4 ? (lang === 'ar' ? 'تحليل وإنشاء الخطة' : 'Analyze & Create Plan') : t('wizard_next'))
                 } {isRTL ? <ArrowLeft size={18} /> : <ArrowRight size={18} />}
               </Button>

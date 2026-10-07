@@ -17,7 +17,7 @@
 - `src/components/MyPlanManager.jsx` — تغيير الأجزاء المحفوظة هنا يحدّث selectedJuzList فقط ولا يحدّث studentDeclaredPages (التي يحسبها المعالج) — الصفحة الحالية والخريطة لا تتغير.
 - `src/context/AuthContext.jsx` — إنشاء مستند المستخدم الافتراضي مكرر مرتين (signup، loadAuthenticatedProfile) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser.
 
-### ☠ ميت (14)
+### ☠ ميت (15)
 - `server/database.js` — صفر مستوردين بعد إيقاف مسارات db.json في index.js (scripts/auditLegacyMemberships.mjs يقرؤه كنص فقط).
 - `server/db.js` — صفر مستوردين في كل المشروع (بما فيه الاختبارات والسكربتات).
 - `server/safarEcosystem.js` — صفر مستوردين (يُذكر اسمه نصيًا فقط في DocumentationModal). 83KB يمكن حذفها مع safar_data*.json.
@@ -31,6 +31,7 @@
 - `src/components/quranMap/QuranSurahAyahsModal.jsx` — لو أعيد تفعيلها: تستدعي stopAndAnalyze بلا userId فلا تُحفظ المحاولة في الخادم، و'تحديد السورة كمحفوظة' يضع recitationScore=98 وتكرار 40 وهميين.
 - `src/counter.ts` — 
 - `src/main.ts` — يمكن حذفه مع counter.ts وstyle.css وassets/typescript.svg وvite.svg وhero.png.
+- `src/components/FloatingAiButton.jsx` — صفر مستوردين منذ تبسيط واجهة الجوال؛ المساعد متاح من 'المزيد' والقائمة الجانبية.
 - `src/utils/quranAiEngine.js` — صفر مستوردين؛ حل محله /api/ai/chat في الخادم.
 
 ## خريطة طلبات API (عميل → ملف الخادم)
@@ -128,7 +129,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **إن تعطّل:** NotificationCenter وReviewReminderAlert وCelebrationOverlay وDashboard وكل من يستدعي notifyAndCelebrate.
 - **انتبه:** التذكير يعمل فقط والتطبيق مفتوح (setInterval في المتصفح) — لا يوجد جدولة من الخادم. | lastTriggeredDate يُحسب بتاريخ UTC بينما وقت التذكير بالتوقيت المحلي. | markAllAsRead وclearAll يستدعيان الخادم حتى لو كانت كل الإشعارات محلية. | الإشعارات المحلية تضيع عند تحديث الصفحة.
 - **يستخدم:** AuthContext.jsx, api.js, firebase.js, community.js
-- **يستخدمه:** CelebrationOverlay.jsx, FiveFortressesVisualMap.jsx, MindMapsView.jsx, NotificationCenter.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, SimplifiedFortressPlan.jsx, QuranSurahAyahsModal.jsx, main.jsx, Dashboard.jsx
+- **يستخدمه:** CelebrationOverlay.jsx, FiveFortressesVisualMap.jsx, MindMapsView.jsx, NotificationCenter.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, SimplifiedFortressPlan.jsx, QuranSurahAyahsModal.jsx, main.jsx, Dashboard.jsx, OnboardingWizard.jsx
 
 ### `src/context/ThemeContext.jsx`
 - **يفعل:** isDark من localStorage('theme') أو تفضيل النظام، ويضيف/يزيل class 'dark' على body.
@@ -238,14 +239,13 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدم:** LanguageContext.jsx
 - **يستخدمه:** Dashboard.jsx, LandingPage.jsx
 
-### `src/components/FloatingAiButton.jsx`
+### `src/components/FloatingAiButton.jsx` **[☠ ميت]**
 - **يفعل:** زر 'المعلم الذكي' فوق الشريط السفلي (أعلى في صفحة التسميع)، يفتح AiAssistant في ورقة سفلية ويقفل تمرير الصفحة. يستمع لحدث window 'open-ai-teacher' لفتحه من أي مكان.
 - **لماذا:** الوصول للمساعد من أي تبويب بنقرة.
 - **متى:** على الجوال، ما عدا تبويب ai-assistant.
 - **إن تعطّل:** لا مساعد عائم.
-- **انتبه:** المستمع لحدث 'open-ai-teacher' لا يُطلقه أي ملف في المشروع (كود ميت داخل المكوّن).
+- **انتبه:** لم يعد Dashboard يعرضه (أُزيل لتخفيف الواجهة؛ المساعد في 'المزيد' والقائمة الجانبية) — صفر مستوردين. المستمع لحدث 'open-ai-teacher' لا يُطلقه أي ملف.
 - **يستخدم:** LanguageContext.jsx, AiAssistant.jsx
-- **يستخدمه:** Dashboard.jsx
 
 ### `src/components/MoreToolsModal.jsx`
 - **يفعل:** يعرض أقسام getNavigation للدور النشط بعد حذف التبويبات الأربعة الموجودة في الشريط السفلي؛ النقر يضبط activeTab ويُغلق.
@@ -290,17 +290,17 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/components/QuickSettingsMenu.jsx`
-- **يفعل:** تحديث ملف الحساب (يبتلع الخطأ لأن Dashboard يعرضه)، تبديل الصوت، تبديل اللغة، الملف الشخصي، تسجيل الخروج. يغلق عند النقر خارجه أو بزر الرجوع (useBackHandler).
-- **لماذا:** تجميع أزرار الهيدر على الشاشات الضيقة (لابتوب وجوال).
-- **متى:** على الجوال وعلى الشاشات < 1340px.
-- **إن تعطّل:** لا وصول لهذه الخيارات على الشاشات الصغيرة.
+- **يفعل:** زر ⚙️ واحد في الشريط العلوي (ويب وجوال) يفتح قائمة: الاسم والبريد، الملف الشخصي، الوضع الليلي (.mobile-theme-toggle)، الأصوات، اللغة، تحديث بيانات الحساب (data-testid=dashboard-refresh؛ يبتلع الخطأ لأن Dashboard يعرضه)، دليل المنصة وعن المنصة (إن مُرّرت onOpenDocs/onOpenPresentation)، تسجيل الخروج، حذف الحساب (إن مُرّر onDeleteAccount). يغلق بالنقر خارجه أو Escape أو زر الرجوع (useBackHandler).
+- **لماذا:** كل الخيارات الثانوية في مكان واحد حتى يبقى الشريط العلوي بثلاثة عناصر فقط.
+- **متى:** دائمًا في الشريط العلوي للوحة.
+- **إن تعطّل:** لا وصول للثيم واللغة والخروج وحذف الحساب.
 - **يستخدم:** LanguageContext.jsx, AuthContext.jsx, ThemeContext.jsx, useBackHandler.js
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/components/Sidebar.jsx`
-- **يفعل:** قائمة جانبية تعرض sections من getNavigation للدور النشط (المشرف، المعلم، الطالب — المجتمع والأوسمة حسب uiConfiguration). زر تثبيت PWA وبطاقة المستخدم وتسجيل الخروج. يعيد الطالب للرئيسية إن أخفى المشرف القسم المفتوح.
-- **لماذا:** التنقل الأساسي على سطح المكتب؛ على الجوال يصبح درجًا منزلقًا مع خلفية معتمة.
-- **متى:** دائمًا داخل Dashboard.
+- **يفعل:** قائمة جانبية تعرض sections من getNavigation للدور النشط (المشرف، المعلم، الطالب — المجتمع والأوسمة حسب uiConfiguration). زر تثبيت PWA، وبطاقة المستخدم (#sidebar-user-profile-card، صورة data-testid=sidebar-profile-photo) تفتح الملف الشخصي. قابل للطي (76px/248px).
+- **لماذا:** التنقل الأساسي على سطح المكتب.
+- **متى:** داخل Dashboard على الشاشات > 768px فقط؛ الجوال يستخدم BottomNavBar وMoreToolsModal (لا يوجد درج).
 - **إن تعطّل:** لا تنقل على سطح المكتب.
 - **انتبه:** تبويبات admin-distribution/performance/experience غير موجودة هنا (تُفتح من داخل AdminDashboard).
 - **يستخدم:** AuthContext.jsx, LanguageContext.jsx, PWAInstallButton.jsx, uiConfiguration.js, navigation.js
@@ -378,12 +378,12 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدم:** counter.ts
 
 ### `src/pages/Dashboard.jsx`
-- **يفعل:** الحاوية المركزية بعد الدخول. activeTab (حالة، لا URL) يختار المحتوى: للطالب home (بطاقة الحلقة، ورد اليوم، الصفحات المصرّح بها، الـ streak، الحصون الخمسة بنقرة، روابط سريعة، حديث متغير كل 6 ثوانٍ)، quran-map، daily-session (المصحف التفاعلي + أذكار)، my-plan، five-fortresses، ai-assistant، community، achievements (شارات من uiConfiguration)، analytics، mind-maps، similarities؛ للمعلم teacher-*؛ للمشرف admin-*. يدير الهيدر (اسم، streak، مبدّل الأدوار، تحديث الحساب، لغة، صوت، إشعارات، ثيم، قائمة الحساب، حذف الحساب)، Sidebar وBottomNavBar وكل النوافذ (الملف، العرض، التوثيق، الحلقة، ملف الطالب، التذكير، الاحتفال). التبويب النشط يُحفظ في sessionStorage (ma7fath_active_tab:{uid}:{role}) ويُسترجع إن كان موجودًا في navigation؛ لكل تبويب موضع تمرير محفوظ؛ تلاشٍ قصير بين التبويبات (opacity فقط، يحترم reducedMotion). زر الرجوع (useBackHandler) يغلق النافذة العليا ثم يعيد للتبويب الرئيسي للدور. الشريط السفلي يختفي أثناء الكيبورد (useSoftKeyboard). الأوسمة المخصصة تُفتح حسب criterion.
+- **يفعل:** الحاوية المركزية بعد الدخول. activeTab (حالة، لا URL) يختار المحتوى: للطالب home (بطاقة الحلقة، ورد اليوم، الصفحات المصرّح بها، الـ streak، الحصون الخمسة بنقرة، حديث متغير كل 6 ثوانٍ)، quran-map، daily-session (المصحف التفاعلي + أذكار)، my-plan، five-fortresses، ai-assistant، community، achievements (شارات من uiConfiguration)، analytics، mind-maps، similarities؛ للمعلم teacher-*؛ للمشرف admin-*. يدير الشريط العلوي نفسه للويب والجوال (#header-user-profile-card: الصورة على الجوال + الاسم + streak يفتح الملف؛ ثم مبدّل الأدوار إن تعدّدت، الجرس، وQuickSettingsMenu)، Sidebar على سطح المكتب فقط وBottomNavBar على الجوال وكل النوافذ (الملف، العرض، التوثيق، الحلقة، ملف الطالب، التذكير، الاحتفال). التبويب النشط يُحفظ في sessionStorage (ma7fath_active_tab:{uid}:{role}) ويُسترجع إن كان موجودًا في navigation؛ لكل تبويب موضع تمرير محفوظ؛ تلاشٍ قصير بين التبويبات (opacity فقط، يحترم reducedMotion). زر الرجوع (useBackHandler) يغلق النافذة العليا ثم يعيد للتبويب الرئيسي للدور. الشريط السفلي يختفي أثناء الكيبورد (useSoftKeyboard). الأوسمة المخصصة تُفتح حسب criterion.
 - **لماذا:** تبديل التبويب الافتراضي حسب الدور النشط عند تغيّر المستخدم أو الدور. تعليم الحصن من الرئيسية يقرأ الخطة المحفوظة أولًا ثم يعدّل علامة واحدة (لا يستبدل الخطة).
 - **متى:** طوال جلسة المستخدم بعد المعالج.
 - **إن تعطّل:** كل شيء بعد تسجيل الدخول.
-- **انتبه:** case 'admin-panel' مكرر في switch؛ الثاني (AdminPanel) لا يُصل إليه أبدًا. | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | selectedQuranPage يبدأ بـ 2 لا بالصفحة الحالية للمستخدم. | بطاقة 'ثبات الحفظ' تعرض 'غير متاح' دائمًا (الخادم لا يوفّر memoryScore). | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
-- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, ThemeContext.jsx, ThemeToggle.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, FloatingAiButton.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
+- **انتبه:** case 'admin-panel' مكرر في switch؛ الثاني (AdminPanel) لا يُصل إليه أبدًا. | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | selectedQuranPage يبدأ بـ 2 لا بالصفحة الحالية للمستخدم. | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
+- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
 - **يستخدمه:** App.jsx
 
 ### `src/pages/LandingPage.jsx`
@@ -394,13 +394,13 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدم:** AuthContext.jsx, AuthModal.jsx, LandingNavbar.jsx, LandingHero.jsx, LandingFeatures.jsx, LandingScreens.jsx, LandingFAQ.jsx, LandingFooter.jsx, DocumentationModal.jsx, MobileWelcomeView.jsx, platform.js
 - **يستخدمه:** App.jsx
 
-### `src/pages/OnboardingWizard.jsx` **[🐞 خلل]**
+### `src/pages/OnboardingWizard.jsx`
 - **يفعل:** 5 خطوات: (1) الاسم والصورة واختيار المسار: رمز حلقة (تحقق عبر /api/groups/lookup) أو حافظ مستقل؛ (2) اختبار النمط التعليمي (learningQuizData) أو اختيار يدوي؛ (3) الدافع؛ (4) وحدة التتبع (صفحات/أجزاء/سور)، الأجزاء المحفوظة مسبقًا (JuzMultiSelector)، معدل المراجعة، والخطة آليًا أو يدويًا؛ (5) شاشة 'تحليل' ثم ملخص. عند الإنهاء: يحوّل الأجزاء المختارة إلى قائمة صفحات studentDeclaredPages، ويحفظ name/photoURL/preferences/hasCompletedWizard=true عبر updateUserData، ثم ينضم للحلقة عبر /api/groups/join إن تحقق الرمز، ثم /dashboard.
 - **لماذا:** قاعدة isSafeOnboardingUpdate في Firestore تسمح بقلب hasCompletedWizard من false إلى true مرة واحدة فقط مع حقول الملف — لذلك كل شيء يُحفظ في كتابة واحدة. الانضمام للحلقة لاحقًا عبر الخادم لأن العضويات ممنوعة على العميل.
 - **متى:** مرة واحدة لكل مستخدم جديد، يفرضها ProtectedRoute.
 - **إن تعطّل:** المستخدم الجديد عالق — لا يصل للوحة أبدًا.
-- **انتبه:** رفع الصورة يكتب في avatars/{uid}/{time}.{ext} ويتحقق من النوع والحجم (≤ 2MB) قبل الرفع، مطابقًا لـ storage.rules وUserProfileModal؛ يحتاج تفعيل Firebase Storage (انظر UserProfileModal). | handleComplete يرمي أخطاء بلا try/catch وhandleNext لا ينتظره — إن فشل الحفظ أو الانضمام لا يرى المستخدم أي رسالة ويبقى الزر بلا استجابة. | الأجزاء الافتراضية [1, 30] = 40 صفحة مصرّح بها إن لم يغيّرها المستخدم. | خطوة 'التحليل بالذكاء الاصطناعي' مجرد مؤقت 2.5 ثانية. | منطق lookup/join مكرر مع JoinGroupModal.
-- **يستخدم:** AuthContext.jsx, LanguageContext.jsx, Button.jsx, Card.jsx, Logo.jsx, JuzMultiSelector.jsx, quranData.js, learningQuizData.js, firebase.js, api.js, groups.js
+- **انتبه:** رفع الصورة يكتب في avatars/{uid}/{time}.{ext} ويتحقق من النوع والحجم (≤ 2MB) قبل الرفع، مطابقًا لـ storage.rules وUserProfileModal؛ يحتاج تفعيل Firebase Storage (انظر UserProfileModal). | الإنهاء: فشل حفظ الملف يعرض رسالة داخل المعالج ويسمح بإعادة المحاولة (الزر معطّل أثناء الحفظ)؛ بعد نجاحه لا يُعاد (profileSavedRef، لأن قاعدة isSafeOnboardingUpdate تسمح بقلب hasCompletedWizard مرة واحدة)؛ فشل الانضمام للحلقة لا يمنع الدخول بل يظهر toast (يُرسم في NotificationCenter داخل اللوحة) والطالب ينضم لاحقًا. | الأجزاء الافتراضية [1, 30] = 40 صفحة مصرّح بها إن لم يغيّرها المستخدم. | خطوة 'التحليل بالذكاء الاصطناعي' مجرد مؤقت 2.5 ثانية. | منطق lookup/join مكرر مع JoinGroupModal.
+- **يستخدم:** AuthContext.jsx, LanguageContext.jsx, NotificationContext.jsx, Button.jsx, Card.jsx, Logo.jsx, JuzMultiSelector.jsx, quranData.js, learningQuizData.js, firebase.js, api.js, groups.js
 - **يستخدمه:** App.jsx
 
 ## طبقة: الصفحة التعريفية
@@ -468,7 +468,7 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **إن تعطّل:** لا مساعد.
 - **انتبه:** مفتاح Gemini الشخصي يُرسل للخادم في جسم كل طلب ويبقى في localStorage نصًا صريحًا. | عند فشل الإرسال تُستعاد الرسائل السابقة ويعود النص لمربع الإدخال.
 - **يستخدم:** memorization.js, api.js, AuthContext.jsx, quranData.js, server/index.js
-- **يستخدمه:** FloatingAiButton.jsx, Dashboard.jsx
+- **يستخدمه:** Dashboard.jsx, FloatingAiButton.jsx (ميت)
 
 ### `src/components/AnalyticsView.jsx`
 - **يفعل:** تجلب /api/student/analytics وتعرض 6 مؤشرات (آيات مسجلة ذاتيًا، محاولات آخر 7 أيام، متوسط الدقة، 'صفحات معتمدة: غير متاح'، الـ streak، بانتظار مراجعة المعلم) ثم VisualProgressTracker.
