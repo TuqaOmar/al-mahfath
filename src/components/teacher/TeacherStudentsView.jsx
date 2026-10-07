@@ -37,18 +37,17 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
   const [activeFilter, setActiveFilter] = useState(initialFilter); // 'all' | 'excellent' | 'needs_attention' | 'inactive'
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'consistency' | 'last_recitation' | 'memorization'
   
-  // Teacher Adding Student Modal & Group Code
+  // Move-a-student modal & group code. The server only lets a teacher move her own
+  // students between her own circles; new students join with the invite code.
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [addLoading, setAddLoading] = useState(false);
   const [addFeedback, setAddFeedback] = useState(null);
   const [groupCode, setGroupCode] = useState('');
   const [copiedCode, setCopiedCode] = useState(false);
-  const [newStudentForm, setNewStudentForm] = useState({
-    name: '',
-    email: '',
-    memorizedJuz: 1,
-    currentTarget: 'صفحة واحدة يومياً'
-  });
+  const [teacherGroups, setTeacherGroups] = useState([]);
+  const [movableStudents, setMovableStudents] = useState([]);
+  const [movableLoading, setMovableLoading] = useState(false);
+  const [moveForm, setMoveForm] = useState({ studentUid: '', targetGroupId: '' });
 
   useEffect(() => {
     setActiveFilter(initialFilter);
@@ -88,6 +87,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
       const info = await response.json();
       if (!response.ok || !info.success) throw new Error('Groups unavailable');
       if (version !== groupCodeVersion.current) return;
+      setTeacherGroups(info.groups || []);
       setGroupCode((groupId ? info.groups?.find(group => group.id === groupId) : info.groups?.[0])?.code || '');
     } catch {
       if (version === groupCodeVersion.current) setGroupCode('');
@@ -103,9 +103,32 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
     setTimeout(() => setCopiedCode(false), 2500);
   };
 
+  const openMoveModal = async () => {
+    setIsAddModalOpen(true);
+    setAddFeedback(null);
+    setMoveForm({ studentUid: '', targetGroupId: groupId || teacherGroups[0]?.id || '' });
+    setMovableStudents([]);
+    if (!user?.uid) return;
+    setMovableLoading(true);
+    try {
+      const res = await fetchWithAuth(`/api/teacher/${encodeURIComponent(user.uid)}/available-students`,
+        { signal: AbortSignal.timeout(20000) });
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error('Students unavailable');
+      setMovableStudents(data.students || []);
+    } catch {
+      setAddFeedback({ type: 'error', text: 'تعذر تحميل طالبات حلقاتك' });
+    } finally {
+      setMovableLoading(false);
+    }
+  };
+
+  // Only students in another of this teacher's circles can be moved into the target one.
+  const moveCandidates = movableStudents.filter(student => student.groupId && student.groupId !== moveForm.targetGroupId);
+
   const handleAddStudentSubmit = async (e) => {
     e.preventDefault();
-    if (!newStudentForm.name.trim()) return;
+    if (!moveForm.studentUid || !moveForm.targetGroupId) return;
     setAddLoading(true);
     setAddFeedback(null);
 
@@ -115,24 +138,19 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
       const res = await fetchWithAuth(`/api/teacher/${encodeURIComponent(teacherId)}/add-student`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...newStudentForm, ...(groupId ? { groupId } : {}) })
+        body: JSON.stringify({ studentUid: moveForm.studentUid, groupId: moveForm.targetGroupId })
       });
       const data = await res.json();
       if (res.ok && data.success) {
-        setAddFeedback({ type: 'success', text: data.message });
-        setNewStudentForm({
-          name: '',
-          email: '',
-          memorizedJuz: 1,
-          currentTarget: 'صفحة واحدة يومياً'
-        });
+        setAddFeedback({ type: 'success', text: 'تم نقل الطالبة إلى الحلقة' });
+        setMoveForm(prev => ({ ...prev, studentUid: '' }));
         setTimeout(() => {
           setIsAddModalOpen(false);
           setAddFeedback(null);
         }, 1500);
         fetchStudents();
       } else {
-        setAddFeedback({ type: 'error', text: data.message || 'فشلت إضافة الطالبة' });
+        setAddFeedback({ type: 'error', text: data.message || 'فشل نقل الطالبة' });
       }
     } catch (err) {
       setAddFeedback({ type: 'error', text: 'تعذر الاتصال بالخادم' });
@@ -172,7 +190,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={openMoveModal}
             style={{
               padding: '9px 16px',
               borderRadius: '12px',
@@ -560,10 +578,10 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                 </div>
                 <div>
                   <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                    إضافة طالبة جديدة للمجموعة
+                    نقل طالبة من حلقاتي
                   </h3>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    تسجيل ومتابعة مباشرة للطالبة في مجموعتك
+                    نقل طالبة من حلقة أخرى لكِ إلى هذه الحلقة
                   </span>
                 </div>
               </div>
@@ -597,106 +615,77 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
             )}
 
             <form onSubmit={handleAddStudentSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                  اسم الطالبة الرباعي أو الثلاثي *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="مثال: هند عبد الله الشمري"
-                  value={newStudentForm.name}
-                  onChange={(e) => setNewStudentForm({ ...newStudentForm, name: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-color)',
-                    color: 'var(--text-primary)',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                  البريد الإلكتروني (اختياري)
-                </label>
-                <input
-                  type="email"
-                  placeholder="student@example.com"
-                  value={newStudentForm.email}
-                  onChange={(e) => setNewStudentForm({ ...newStudentForm, email: e.target.value })}
-                  style={{
-                    width: '100%',
-                    padding: '10px 14px',
-                    borderRadius: '12px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-color)',
-                    color: 'var(--text-primary)',
-                    fontSize: '14px',
-                    outline: 'none',
-                    boxSizing: 'border-box'
-                  }}
-                />
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              {teacherGroups.length > 1 && (
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                    عدد الأجزاء المحفوظة
+                  <label htmlFor="move-target-group" style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    إلى الحلقة
                   </label>
                   <select
-                    value={newStudentForm.memorizedJuz}
-                    onChange={(e) => setNewStudentForm({ ...newStudentForm, memorizedJuz: Number(e.target.value) })}
+                    id="move-target-group"
+                    value={moveForm.targetGroupId}
+                    disabled={Boolean(groupId)}
+                    onChange={(e) => setMoveForm({ studentUid: '', targetGroupId: e.target.value })}
                     style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '12px',
-                      border: '1px solid var(--glass-border)',
-                      background: 'var(--bg-color)',
-                      color: 'var(--text-primary)',
-                      fontSize: '14px',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--glass-border)',
+                    background: 'var(--bg-color)',
+                    color: 'var(--text-primary)',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
                   >
-                    {[...Array(31)].map((_, i) => (
-                      <option key={i} value={i}>{i === 0 ? 'مبتدئة (0 جزء)' : `${i} أجزاء`}</option>
+                    {teacherGroups.map(group => (
+                      <option key={group.id} value={group.id}>{group.name}</option>
                     ))}
                   </select>
                 </div>
+              )}
 
+              {movableLoading ? (
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>جاري تحميل طالبات حلقاتك...</p>
+              ) : moveCandidates.length > 0 ? (
                 <div>
-                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
-                    الورد اليومي المطلوب
+                  <label htmlFor="move-student" style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                    الطالبة *
                   </label>
                   <select
-                    value={newStudentForm.currentTarget}
-                    onChange={(e) => setNewStudentForm({ ...newStudentForm, currentTarget: e.target.value })}
+                    id="move-student"
+                    required
+                    value={moveForm.studentUid}
+                    onChange={(e) => setMoveForm({ ...moveForm, studentUid: e.target.value })}
                     style={{
-                      width: '100%',
-                      padding: '10px 14px',
-                      borderRadius: '12px',
-                      border: '1px solid var(--glass-border)',
-                      background: 'var(--bg-color)',
-                      color: 'var(--text-primary)',
-                      fontSize: '14px',
-                      outline: 'none',
-                      boxSizing: 'border-box'
-                    }}
+                    width: '100%',
+                    padding: '10px 14px',
+                    borderRadius: '12px',
+                    border: '1px solid var(--glass-border)',
+                    background: 'var(--bg-color)',
+                    color: 'var(--text-primary)',
+                    fontSize: '14px',
+                    outline: 'none',
+                    boxSizing: 'border-box'
+                  }}
                   >
-                    <option value="نصف صفحة يومياً">نصف صفحة يومياً</option>
-                    <option value="صفحة واحدة يومياً">صفحة واحدة يومياً</option>
-                    <option value="صفحتان يومياً">صفحتان يومياً</option>
-                    <option value="نصف جزء يومياً">نصف جزء يومياً</option>
+                    <option value="">اختاري طالبة من حلقاتك الأخرى</option>
+                    {moveCandidates.map(student => (
+                      <option key={student.uid} value={student.uid}>
+                        {student.name || student.email} {student.groupName ? `(${student.groupName})` : ''}
+                      </option>
+                    ))}
                   </select>
                 </div>
-              </div>
+              ) : (
+                <p data-testid="move-student-empty" style={{ margin: 0, fontSize: '13px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                  لا توجد طالبات في حلقاتك الأخرى لنقلهن إلى هذه الحلقة.
+                </p>
+              )}
 
+              <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: '12.5px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+                لإضافة طالبة جديدة: تسجّل الطالبة حسابها ثم تدخل رمز الدعوة من 'انضمام لحلقة'.
+                {groupCode && <> رمز حلقتك: <strong style={{ color: 'var(--text-primary)', letterSpacing: '1px' }}>{groupCode}</strong></>}
+              </div>
               <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
                 <button
                   type="button"
@@ -716,7 +705,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                 </button>
                 <button
                   type="submit"
-                  disabled={addLoading}
+                  disabled={addLoading || !moveForm.studentUid}
                   style={{
                     flex: 2,
                     padding: '10px',
@@ -726,10 +715,11 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                     color: '#FFFFFF',
                     fontWeight: 800,
                     cursor: addLoading ? 'wait' : 'pointer',
+                    opacity: moveForm.studentUid ? 1 : 0.6,
                     boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
                   }}
                 >
-                  {addLoading ? 'جاري الإضافة...' : 'تأكيد وإضافة الطالبة 🌿'}
+                  {addLoading ? 'جاري النقل...' : 'تأكيد النقل 🌿'}
                 </button>
               </div>
             </form>
