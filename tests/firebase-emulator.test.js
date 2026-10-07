@@ -19,6 +19,8 @@ let db;
 const originalHashes = {};
 const sourceFiles = ['server/db.json', 'server/safar_data.json', 'server/db.backup.json', 'server/safar_data.backup.json'];
 const digest = data => createHash('sha256').update(data).digest('hex');
+// A repository data file may be absent (e.g. local backups removed); it must then stay absent.
+const fileDigest = file => readFile(file).then(digest, error => { if (error.code === 'ENOENT') return 'absent'; throw error; });
 const groups = [
   { id: 'group-1', name: 'Test one', code: 'TESTONE', teacherId: 'teacher-1' },
   { id: 'group-2', name: 'Test two', code: 'TESTTWO', teacherId: 'teacher-2' }
@@ -69,7 +71,7 @@ async function api(uid, route, expected, options = {}) {
 }
 
 test.before(async () => {
-  for (const file of sourceFiles) originalHashes[file] = digest(await readFile(file));
+  for (const file of sourceFiles) originalHashes[file] = await fileDigest(file);
   temp = await mkdtemp(path.join(tmpdir(), 'ma7fath-emulator-'));
   process.env.MA7FATH_TEST_DATA_DIR = temp;
   process.env.VERCEL = '1';
@@ -100,7 +102,7 @@ test.after(async () => {
   if (appServer) await new Promise(resolve => appServer.close(resolve));
   if (db) await db.terminate();
   if (temp) await rm(temp, { recursive: true, force: true });
-  for (const file of sourceFiles) assert.equal(digest(await readFile(file)), originalHashes[file], `${file} remained unchanged`);
+  for (const file of sourceFiles) assert.equal(await fileDigest(file), originalHashes[file], `${file} remained unchanged`);
   if (process.env.MA7FATH_EMULATOR_RESULT) await writeFile(process.env.MA7FATH_EMULATOR_RESULT, 'completed');
 });
 
@@ -352,15 +354,20 @@ test('community leaderboard ranks students by XP from Firestore and exposes no i
   try {
     assert.equal((await api(null, '/api/community/leaderboard', 401)).success, false);
     const { leaders, me } = await api('student-1', '/api/community/leaderboard', 200);
-    const ranked = leaders.map(entry => entry.name);
-    assert.ok(!ranked.includes('teacher-1') && !ranked.includes('admin-1'), 'staff are not ranked');
-    assert.ok(ranked.indexOf('student-2') < ranked.indexOf('student-1'), 'higher XP ranks first');
+    // Earlier tests rename student-1, so the viewer is identified by isMe, not by name.
+    const listing = JSON.stringify(leaders.map(entry => [entry.name, entry.xp, entry.isMe]));
+    assert.ok(leaders.every(entry => entry.xp < 9999), `staff are not ranked: ${listing}`);
+    assert.deepEqual(leaders.map(entry => entry.xp), [...leaders.map(entry => entry.xp)].sort((x, y) => y - x), `sorted by XP: ${listing}`);
+    assert.equal(leaders[0].name, 'student-2', `highest XP first: ${listing}`);
     assert.deepEqual(leaders.map(entry => entry.rank), leaders.map((_, index) => index + 1));
     for (const entry of leaders) {
       assert.deepEqual(Object.keys(entry).sort(), ['isMe', 'name', 'photoURL', 'rank', 'streak', 'xp']);
     }
-    assert.equal(leaders.find(entry => entry.name === 'student-1').isMe, true);
-    assert.equal(me.name, 'student-1');
+    const mine = leaders.filter(entry => entry.isMe);
+    assert.equal(mine.length, 1, `viewer appears once: ${listing}`);
+    assert.equal(mine[0].rank, 2);
+    assert.equal(mine[0].xp, 300);
+    assert.equal(me.isMe, true);
     assert.equal(me.xp, 300);
   } finally {
     for (const [uid, xp] of Object.entries(original)) await db.doc(`users/${uid}`).update({ xp });
