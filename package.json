@@ -42,5 +42,8 @@
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1",
     "recharts": "^3.10.1"
+  },
+  "overrides": {
+    "jwks-rsa": "^3.2.2"
   }
 }
