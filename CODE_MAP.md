@@ -10,13 +10,12 @@
 - **الذكاء**: Gemini (`@google/genai`) + HuggingFace Whisper للتسميع.
 
 ## العيوب المكتشفة
-### 🐞 خلل (6)
+### 🐞 خلل (5)
 - `server/index.js` — PUT/DELETE /api/admin/user/:uid و GET /api/quran/pages و/portfolio تستخدم database.js القديم (ملف db.json)، بينما المستخدمون الحقيقيون في Firestore — تعديل/حذف مستخدم من هنا لا يؤثر على حسابه الحقيقي.
 - `src/components/Community.jsx` — لوحة 'التنافس' بيانات وهمية مكتوبة في الكود (3 أسماء ثابتة + المستخدم الحالي بـ 2,450 XP و14 يومًا ثابتة) — لا تعكس أي بيانات حقيقية.
 - `src/components/FiveFortressesPlan.jsx` — يعرّف getSurahNameForPage وgetJuzForPage محليًا بقيم تقريبية (الصفحات 305–582 كلها 'عموم السور المتوسطة'، والجزء = ceil(page/20)) بدل utils/quranData — اسم السورة والجزء خاطئان في هذا التبويب.
 - `src/components/onboarding/JoinGroupModal.jsx` — زر 'المتابعة كحافظ مستقل' يستدعي leave فورًا بلا تأكيد — عضو في حلقة يفتح 'إدارة العضوية' ثم يختاره يخرج من حلقته.
 - `src/components/teacher/TeacherStudentsView.jsx` — نموذج الإضافة يجعل البريد 'اختياريًا'، لكن الخادم يتطلب حسابًا مسجلًا (studentUid أو بريد مطابق) — الإضافة بالاسم فقط تفشل دائمًا بـ 'معرف الطالب مطلوب'. حقلا 'عدد الأجزاء' و'الورد' يُرسلان ويتجاهلهما الخادم.
-- `src/pages/OnboardingWizard.jsx` — رفع الصورة يكتب في avatars/{uid}_{time} لكن storage.rules تسمح فقط بـ avatars/{uid}/{file} — الرفع يُرفض دائمًا ويظهر alert 'فشل رفع الصورة' (UserProfileModal يستخدم المسار الصحيح).
 
 ### ⧉ تكرار (3)
 - `server/recitationEngine.js` — في المسار الأول (Gemini مباشر) الدقة يقررها النموذج نفسه لا الخوارزمية — النتيجة قد تختلف عن تلوين الكلمات المحسوب.
@@ -404,7 +403,7 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **لماذا:** قاعدة isSafeOnboardingUpdate في Firestore تسمح بقلب hasCompletedWizard من false إلى true مرة واحدة فقط مع حقول الملف — لذلك كل شيء يُحفظ في كتابة واحدة. الانضمام للحلقة لاحقًا عبر الخادم لأن العضويات ممنوعة على العميل.
 - **متى:** مرة واحدة لكل مستخدم جديد، يفرضها ProtectedRoute.
 - **إن تعطّل:** المستخدم الجديد عالق — لا يصل للوحة أبدًا.
-- **انتبه:** رفع الصورة يكتب في avatars/{uid}_{time} لكن storage.rules تسمح فقط بـ avatars/{uid}/{file} — الرفع يُرفض دائمًا ويظهر alert 'فشل رفع الصورة' (UserProfileModal يستخدم المسار الصحيح). | handleComplete يرمي أخطاء بلا try/catch وhandleNext لا ينتظره — إن فشل الحفظ أو الانضمام لا يرى المستخدم أي رسالة ويبقى الزر بلا استجابة. | الأجزاء الافتراضية [1, 30] = 40 صفحة مصرّح بها إن لم يغيّرها المستخدم. | خطوة 'التحليل بالذكاء الاصطناعي' مجرد مؤقت 2.5 ثانية. | منطق lookup/join مكرر مع JoinGroupModal.
+- **انتبه:** رفع الصورة يكتب في avatars/{uid}/{time}.{ext} ويتحقق من النوع والحجم (≤ 2MB) قبل الرفع، مطابقًا لـ storage.rules وUserProfileModal؛ يحتاج تفعيل Firebase Storage (انظر UserProfileModal). | handleComplete يرمي أخطاء بلا try/catch وhandleNext لا ينتظره — إن فشل الحفظ أو الانضمام لا يرى المستخدم أي رسالة ويبقى الزر بلا استجابة. | الأجزاء الافتراضية [1, 30] = 40 صفحة مصرّح بها إن لم يغيّرها المستخدم. | خطوة 'التحليل بالذكاء الاصطناعي' مجرد مؤقت 2.5 ثانية. | منطق lookup/join مكرر مع JoinGroupModal.
 - **يستخدم:** AuthContext.jsx, LanguageContext.jsx, Button.jsx, Card.jsx, Logo.jsx, JuzMultiSelector.jsx, quranData.js, learningQuizData.js, firebase.js, api.js, groups.js
 - **يستخدمه:** App.jsx
 

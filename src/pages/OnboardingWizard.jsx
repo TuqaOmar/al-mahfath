@@ -337,16 +337,28 @@ const OnboardingWizard = () => {
                           accept="image/*"
                           onChange={async (e) => {
                             const file = e.target.files[0];
+                            e.target.value = '';
                             if (file && user?.uid) {
+                              // Same limits as storage.rules: images only, at most 2MB.
+                              if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+                                alert(lang === 'ar' ? 'يرجى اختيار ملف صورة صحيح' : 'Please select a valid image file');
+                                return;
+                              }
+                              if (file.size > 2 * 1024 * 1024) {
+                                alert(lang === 'ar' ? 'حجم الصورة يجب أن لا يتجاوز 2MB' : 'Image size must not exceed 2MB');
+                                return;
+                              }
                               setUploadingAvatar(true);
                               try {
-                                const storageRef = ref(storage, `avatars/${user.uid}_${Date.now()}`);
-                                await uploadBytes(storageRef, file);
+                                const fileExt = (file.name.split('.').pop() || 'img').replace(/[^a-z0-9]/gi, '').toLowerCase();
+                                const storageRef = ref(storage, `avatars/${user.uid}/${Date.now()}.${fileExt}`);
+                                await uploadBytes(storageRef, file, { contentType: file.type });
                                 const url = await getDownloadURL(storageRef);
                                 setFormData(prev => ({ ...prev, photoURL: url }));
                               } catch (err) {
                                 console.error('Upload failed', err);
-                                alert(lang === 'ar' ? 'فشل رفع الصورة.' : 'Failed to upload image.');
+                                const code = err?.code ? ` (${err.code})` : '';
+                                alert((lang === 'ar' ? 'فشل رفع الصورة.' : 'Failed to upload image.') + code);
                               }
                               setUploadingAvatar(false);
                             }
