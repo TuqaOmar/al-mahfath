@@ -127,7 +127,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **لماذا:** مكان واحد لكل ما 'ينبّه' المستخدم، لأن التذكير والاحتفال والإشعار يتشاركون إعداد الصوت.
 - **متى:** يُحمَّل بعد AuthProvider؛ يجلب إشعارات الخادم عند تغير المستخدم؛ مؤقت التذكير يعمل طالما التطبيق مفتوح.
 - **إن تعطّل:** NotificationCenter وReviewReminderAlert وCelebrationOverlay وDashboard وكل من يستدعي notifyAndCelebrate.
-- **انتبه:** التذكير يعمل فقط والتطبيق مفتوح (setInterval في المتصفح) — لا يوجد جدولة من الخادم. | lastTriggeredDate تاريخ محلي (localDateKey) مثل وقت التذكير — لا تستخدم toISOString (UTC). | markAllAsRead وclearAll يستدعيان الخادم حتى لو كانت كل الإشعارات محلية. | الإشعارات المحلية تضيع عند تحديث الصفحة.
+- **انتبه:** التذكير يعمل فقط والتطبيق مفتوح (setInterval في المتصفح) — لا يوجد جدولة من الخادم. | lastTriggeredDate تاريخ محلي (localDateKey) مثل وقت التذكير — لا تستخدم toISOString (UTC). | markAllAsRead وclearAll يستدعيان الخادم فقط إن وُجدت إشعارات خادم متأثرة، فالمحلية تُعلَّم/تُمسح حتى دون اتصال. | الإشعارات المحلية تضيع عند تحديث الصفحة.
 - **يستخدم:** AuthContext.jsx, api.js, firebase.js, community.js
 - **يستخدمه:** CelebrationOverlay.jsx, FiveFortressesVisualMap.jsx, MindMapsView.jsx, NotificationCenter.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, SimplifiedFortressPlan.jsx, QuranSurahAyahsModal.jsx, main.jsx, Dashboard.jsx, OnboardingWizard.jsx
 

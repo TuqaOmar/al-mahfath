@@ -368,9 +368,20 @@ export const NotificationProvider = ({ children }) => {
     return true;
   };
 
+  // Local notifications (reminders, achievements) live only in this tab, so the server is
+  // called only when server notifications are affected; a failed call changes nothing.
+  const hasServerNotifications = (predicate = () => true) =>
+    notifications.some(item => item.source === 'server' && predicate(item));
+
   const markAllAsRead = async () => {
-    const response = await fetchWithAuth('/api/notifications/read-all', { method: 'POST' });
-    if (!response.ok) return false;
+    if (hasServerNotifications(item => !item.read)) {
+      try {
+        const response = await fetchWithAuth('/api/notifications/read-all', { method: 'POST' });
+        if (!response.ok) return false;
+      } catch {
+        return false;
+      }
+    }
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     return true;
   };
@@ -386,8 +397,14 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const clearAll = async () => {
-    const response = await fetchWithAuth('/api/notifications', { method: 'DELETE' });
-    if (!response.ok) return false;
+    if (hasServerNotifications()) {
+      try {
+        const response = await fetchWithAuth('/api/notifications', { method: 'DELETE' });
+        if (!response.ok) return false;
+      } catch {
+        return false;
+      }
+    }
     setNotifications([]);
     return true;
   };
