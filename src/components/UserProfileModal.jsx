@@ -80,7 +80,8 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       if (localPreview) URL.revokeObjectURL(localPreview);
       setPhotoURL(user?.photoURL || '');
       setPreviewURL('');
-      setErrorMsg(isRTL ? 'فشل رفع الصورة أو حفظها؛ بقيت الصورة السابقة' : 'Upload or profile save failed; the previous photo was kept');
+      const code = err?.code ? ` (${err.code})` : '';
+      setErrorMsg((isRTL ? 'فشل رفع الصورة أو حفظها؛ بقيت الصورة السابقة' : 'Upload or profile save failed; the previous photo was kept') + code);
       setUploadProgress(0);
     } finally {
       setIsUploading(false);

@@ -30,6 +30,10 @@ export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const db = getFirestore(app, target.config.firestoreDatabaseId || undefined);
 export const storage = getStorage(app);
+// The SDK retries a failing upload for up to 10 minutes by default, leaving the
+// profile photo dialog stuck on "uploading"; fail after 30s with a visible error.
+storage.maxUploadRetryTime = 30000;
+storage.maxOperationRetryTime = 30000;
 if (target.emulator) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
   connectFirestoreEmulator(db, '127.0.0.1', 8080);

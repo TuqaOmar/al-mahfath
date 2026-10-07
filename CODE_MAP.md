@@ -171,7 +171,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **لماذا:** نقطة الاتصال الوحيدة بـ Firebase لكل الواجهة؛ الإعدادات تأتي من firebase-applet-config.json في الجذر.
 - **متى:** تُنفَّذ عند تحميل أول ملف يستوردها (AuthContext عبر main.jsx) قبل ظهور أي شاشة.
 - **إن تعطّل:** AuthContext وكل من يقرأ Firestore مباشرة (لوحات المعلم والمشرف، الخدمات) ينكسرون.
-- **انتبه:** requestFcmToken ترسل POST إلى /api/notifications/register-token، لكن هذا المسار غير معرّف في الخادم (routes/community.js فيه فقط GET/PATCH/DELETE للإشعارات) — الخطأ يُبتلع بصمت، فالخادم لا يعرف التوكن أبدًا. | مفتاح VAPID مكتوب داخل الكود. | كل نطاق في SAME_SITE_AUTH_HOSTS يجب إضافة https://<host>/__/auth/handler له في Authorized redirect URIs لعميل Google OAuth، وإلا يفشل الدخول بجوجل بخطأ redirect_uri_mismatch.
+- **انتبه:** requestFcmToken ترسل POST إلى /api/notifications/register-token، لكن هذا المسار غير معرّف في الخادم (routes/community.js فيه فقط GET/PATCH/DELETE للإشعارات) — الخطأ يُبتلع بصمت، فالخادم لا يعرف التوكن أبدًا. | مفتاح VAPID مكتوب داخل الكود. | مهلة إعادة محاولة Storage مضبوطة على 30 ثانية (الافتراضي 10 دقائق كان يعلّق نافذة رفع الصورة). | كل نطاق في SAME_SITE_AUTH_HOSTS يجب إضافة https://<host>/__/auth/handler له في Authorized redirect URIs لعميل Google OAuth، وإلا يفشل الدخول بجوجل بخطأ redirect_uri_mismatch.
 - **يستخدم:** firebaseEmulatorConfig.js, community.js
 - **يستخدمه:** AuthModal.jsx, FiveFortressesPlan.jsx, UserProfileModal.jsx, AdminDashboard.jsx, AuthContext.jsx, api.js, fortressService.js, learningProfileService.js, portfolioService.js, uiConfiguration.js, OnboardingWizard.jsx, NotificationManager.js
 
@@ -308,7 +308,7 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **لماذا:** الحدود تطابق storage.rules (2MB، image/*).
 - **متى:** من الهيدر أو الشريط السفلي.
 - **إن تعطّل:** لا تعديل للملف.
-- **انتبه:** خانة 'الحصون' تعرض 5 ثابتة دائمًا. | الصور القديمة لا تُحذف عند رفع جديدة.
+- **انتبه:** يتطلب تفعيل Firebase Storage في المشروع — حتى 2026-10-07 الحاوية gen-lang-client-0651186360.firebasestorage.app ترد 404 فكل رفع يفشل. مهلة الرفع 30 ثانية (firebase.js) ورسالة الخطأ تعرض رمز Firebase. | خانة 'الحصون' تعرض 5 ثابتة دائمًا. | الصور القديمة لا تُحذف عند رفع جديدة.
 - **يستخدم:** AuthContext.jsx, LanguageContext.jsx, firebase.js
 - **يستخدمه:** Dashboard.jsx
 
