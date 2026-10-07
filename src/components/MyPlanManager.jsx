@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { LearningStyleProfiler } from './LearningStyleProfiler';
 import { JuzMultiSelector } from './JuzMultiSelector';
+import { declaredPages } from '../lib/memorization';
+import { getPageRangeForJuz } from '../utils/quranData';
 import { 
   Sparkles, 
   BookOpen, 
@@ -33,10 +35,17 @@ export const MyPlanManager = () => {
   // Array of selected individual Juz numbers (e.g. [1, 30])
   const [selectedJuzList, setSelectedJuzList] = useState(() => {
     if (Array.isArray(preferences.selectedJuzList)) return preferences.selectedJuzList;
-    return [1, 30]; // default Juz 1 and Juz 30
+    // No saved list: start from the juz the student has fully declared, never an invented default.
+    const pages = new Set(declaredPages(user));
+    return Array.from({ length: 30 }, (_, i) => i + 1).filter(juz => {
+      const { startPage, endPage } = getPageRangeForJuz(juz);
+      for (let page = startPage; page <= endPage; page++) if (!pages.has(page)) return false;
+      return true;
+    });
   });
 
-  const [juzsMemorized, setJuzsMemorized] = useState(preferences.juzsMemorized || 'الجزء 1، الجزء 30');
+  const juzLabel = list => list.length === 0 ? 'لا يوجد أجزاء مسبقة' : list.map(n => `الجزء ${n}`).join('، ');
+  const [juzsMemorized, setJuzsMemorized] = useState(() => preferences.juzsMemorized || juzLabel(selectedJuzList));
   const [planCreatorMode, setPlanCreatorMode] = useState(preferences.planCreatorMode || 'ai'); // 'ai' | 'manual'
   const [dailyTarget, setDailyTarget] = useState(preferences.dailyTarget || 'صفحة واحدة يومياً');
   const [manualNewTarget, setManualNewTarget] = useState(preferences.manualNewTarget || '1');
@@ -44,15 +53,32 @@ export const MyPlanManager = () => {
 
   const handleJuzChange = (newList) => {
     setSelectedJuzList(newList);
-    const label = newList.length === 0 
-      ? 'لا يوجد أجزاء مسبقة' 
-      : newList.map(n => `الجزء ${n}`).join('، ');
-    setJuzsMemorized(label);
+    setJuzsMemorized(juzLabel(newList));
+  };
+
+  // Apply only the juz that changed to the self-declared pages, so pages declared one by one
+  // on the Quran map (in other juz) are kept. Same page source the wizard and the map use.
+  const declaredPagesAfterJuzChange = () => {
+    const juzPages = juz => {
+      const { startPage, endPage } = getPageRangeForJuz(juz);
+      return Array.from({ length: endPage - startPage + 1 }, (_, i) => startPage + i);
+    };
+    const previousJuz = Array.isArray(preferences.selectedJuzList) ? preferences.selectedJuzList : [];
+    const added = selectedJuzList.filter(juz => !previousJuz.includes(juz));
+    const removed = previousJuz.filter(juz => !selectedJuzList.includes(juz));
+    const pages = new Set(declaredPages(user));
+    removed.forEach(juz => juzPages(juz).forEach(page => pages.delete(page)));
+    added.forEach(juz => juzPages(juz).forEach(page => pages.add(page)));
+    const statuses = Object.fromEntries(Object.entries(preferences.studentDeclaredPageStatuses || {})
+      .filter(([page]) => pages.has(Number(page))));
+    return { studentDeclaredPages: [...pages].sort((a, b) => a - b), studentDeclaredPageStatuses: statuses };
   };
 
   const handleSavePlan = async () => {
+    const tracksJuz = unitType === 'juzs' || unitType === 'pages';
     const updatedPreferences = {
       ...preferences,
+      ...(tracksJuz ? declaredPagesAfterJuzChange() : {}),
       unitType,
       oldReviewDailyTarget,
       selectedSurahRange,

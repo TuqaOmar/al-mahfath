@@ -14,7 +14,7 @@
 
 ### ⧉ تكرار (3)
 - `server/recitationEngine.js` — في المسار الأول (Gemini مباشر) الدقة يقررها النموذج نفسه لا الخوارزمية — النتيجة قد تختلف عن تلوين الكلمات المحسوب.
-- `src/components/MyPlanManager.jsx` — تغيير الأجزاء المحفوظة هنا يحدّث selectedJuzList فقط ولا يحدّث studentDeclaredPages (التي يحسبها المعالج) — الصفحة الحالية والخريطة لا تتغير.
+- `src/components/MyPlanManager.jsx` — dailyTarget وoldReviewDailyTarget تُعدَّل هنا وفي 'تخصيص الخطة' داخل FiveFortressesPlan (عبر الخادم) — شاشتان لنفس الإعداد.
 - `src/context/AuthContext.jsx` — إنشاء مستند المستخدم الافتراضي مكرر مرتين (signup، loadAuthenticatedProfile) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser.
 
 ### ☠ ميت (15)
@@ -549,12 +549,12 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/components/MyPlanManager.jsx` **[⧉ تكرار]**
-- **يفعل:** تعديل إعدادات الخطة المحفوظة في preferences: وحدة التتبع (صفحات/أجزاء/سور)، الأجزاء المحفوظة سابقًا (JuzMultiSelector) أو نص السور، معدل المراجعة القديمة، وضع الخطة (آلي بمعدل يومي أو يدوي بمستهدفين نصيين)، ثم LearningStyleProfiler أسفلها. الحفظ عبر updateUserData (Firestore مباشرة).
+- **يفعل:** تعديل إعدادات الخطة المحفوظة في preferences: وحدة التتبع (صفحات/أجزاء/سور)، الأجزاء المحفوظة سابقًا (JuzMultiSelector) أو نص السور، معدل المراجعة القديمة، وضع الخطة (آلي بمعدل يومي أو يدوي بمستهدفين نصيين)، ثم LearningStyleProfiler أسفلها. الحفظ عبر updateUserData (Firestore مباشرة). مع وحدة الأجزاء/الصفحات يطبّق فرق الأجزاء فقط على studentDeclaredPages (جزء مضاف ← تُضاف صفحاته، جزء محذوف ← تُحذف صفحاته وحالاتها) فتبقى الصفحات المصرّح بها منفردة من خريطة المصحف.
 - **لماذا:** تعديل ما اختير في المعالج لاحقًا.
 - **متى:** تبويب my-plan ('تعديل الخطة' من الرئيسية).
 - **إن تعطّل:** لا تعديل للخطة بعد المعالج.
-- **انتبه:** تغيير الأجزاء المحفوظة هنا يحدّث selectedJuzList فقط ولا يحدّث studentDeclaredPages (التي يحسبها المعالج) — الصفحة الحالية والخريطة لا تتغير. | dailyTarget وoldReviewDailyTarget تُعدَّل أيضًا من 'تخصيص الخطة' داخل FiveFortressesPlan (عبر الخادم) — شاشتان لنفس الإعداد. | وضع 'الذكاء الاصطناعي' مجرد تسمية — لا يستدعي أي ذكاء اصطناعي.
-- **يستخدم:** AuthContext.jsx, LanguageContext.jsx, LearningStyleProfiler.jsx, JuzMultiSelector.jsx
+- **انتبه:** إن لم يكن selectedJuzList محفوظًا تبدأ القائمة بالأجزاء المصرّح بكل صفحاتها (لا افتراضي [1، 30]). | dailyTarget وoldReviewDailyTarget تُعدَّل أيضًا من 'تخصيص الخطة' داخل FiveFortressesPlan (عبر الخادم) — شاشتان لنفس الإعداد. | وضع 'الذكاء الاصطناعي' مجرد تسمية — لا يستدعي أي ذكاء اصطناعي.
+- **يستخدم:** AuthContext.jsx, LanguageContext.jsx, LearningStyleProfiler.jsx, JuzMultiSelector.jsx, memorization.js, quranData.js
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/components/NotificationCenter.jsx`
@@ -805,7 +805,7 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **لماذا:** تعليق المؤلف: التصريح الذاتي مدخل للتخطيط فقط وليس شهادة معلم. يحل محل memorizedPagesCount الذي صار الخادم يرجعه null.
 - **متى:** عند حساب 'أين وصلت' في اللوحة والمساعد والخطة.
 - **إن تعطّل:** الصفحة الحالية تعود 1 في كل مكان.
-- **يستخدمه:** AiAssistant.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, QuranMapPage.jsx, SimplifiedFortressPlan.jsx, AdminDashboard.jsx, AdminDistributionView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, Dashboard.jsx
+- **يستخدمه:** AiAssistant.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, QuranMapPage.jsx, SimplifiedFortressPlan.jsx, AdminDashboard.jsx, AdminDistributionView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, Dashboard.jsx, MyPlanManager.jsx
 
 ### `src/lib/portfolioService.js`
 - **يفعل:** محفظة الآيات: كل آية مستند users/{uid}/ayah_progress/{سورة_آية} بحالة (unmemorized/learning/review/memorized) وتكرار ودرجة. fetchUserPortfolio (Firestore ثم كاش ma7fath_portfolio_{uid} عند الفشل)، saveAyahToPortfolio، saveBulkPortfolio (دفعات 300)، subscribeToUserPortfolio، getSurahMemorizationStats وgetGlobalPortfolioStats (نسبة من 6236 آية، صفحات ≈ آيات/10.3).
@@ -852,7 +852,7 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **متى:** عند بناء الخطة وعرض الموقع الحالي.
 - **إن تعطّل:** الخطة واللوحة تعرض أسماء خاطئة.
 - **انتبه:** بيانات السور مكررة أيضًا في utils/quranSurahsList.json وserver/data/quran-uthmani.json.
-- **يستخدمه:** AiAssistant.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, SimplifiedFortressPlan.jsx, fortressService.js, Dashboard.jsx, OnboardingWizard.jsx
+- **يستخدمه:** AiAssistant.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, SimplifiedFortressPlan.jsx, fortressService.js, Dashboard.jsx, OnboardingWizard.jsx, MyPlanManager.jsx
 
 ### `src/utils/quranMindMapsData.js`
 - **يفعل:** getSurahMindMap(رقم أو اسم): يطابق الاسم بعد تطبيع عربي ويرجع سجل السورة من data/quran114MindMaps.json (1MB). getAllSurahsList للقوائم. MIND_MAPS_SOURCE_INFO للمصادر (المختصر في التفسير وأطلس السور).
