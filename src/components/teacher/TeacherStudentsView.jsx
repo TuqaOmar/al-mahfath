@@ -79,6 +79,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
   useEffect(() => () => { requestVersion.current += 1; }, []);
 
   const handleCopyCode = () => {
+    if (!groupCode) return;
     navigator.clipboard?.writeText(groupCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2500);
@@ -228,15 +229,23 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
             <div style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
               رمز دعوة الطالبات المباشر للانضمام للمجموعة:
             </div>
-            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '1px', fontFamily: 'monospace' }}>
-              {groupCode}
-            </div>
+            {groupCode ? (
+              <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--primary)', letterSpacing: '1px', fontFamily: 'monospace' }}>
+                {groupCode}
+              </div>
+            ) : (
+              <div data-testid="teacher-no-group-code" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.6 }}>
+                {loading ? 'جاري تحميل الرمز...' : 'لا توجد حلقة مرتبطة بحسابك بعد، فلا يوجد رمز دعوة. اطلبي من المشرفة إنشاء حلقة لكِ من لوحة الإدارة (التوزيع ← إنشاء حلقة).'}
+              </div>
+            )}
           </div>
         </div>
 
         <button
           onClick={handleCopyCode}
+          disabled={!groupCode}
           style={{
+            opacity: groupCode ? 1 : 0.5,
             padding: '8px 14px',
             borderRadius: '10px',
             background: copiedCode ? '#10B981' : 'var(--bg-surface)',
@@ -244,7 +253,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
             border: `1px solid ${copiedCode ? '#10B981' : 'var(--glass-border)'}`,
             fontSize: '12.5px',
             fontWeight: 700,
-            cursor: 'pointer',
+            cursor: groupCode ? 'pointer' : 'not-allowed',
             display: 'flex',
             alignItems: 'center',
             gap: '6px'
