@@ -65,6 +65,7 @@ import { UserProfileModal } from '../components/UserProfileModal';
 import { PresentationModal } from '../components/PresentationModal';
 import { DocumentationModal } from '../components/DocumentationModal';
 import { QuickSettingsMenu } from '../components/QuickSettingsMenu';
+import { RoleSwitcherMenu } from '../components/RoleSwitcherMenu';
 import { SimilaritiesView } from '../components/SimilaritiesView';
 import { MindMapsView } from '../components/MindMapsView';
 
@@ -92,13 +93,8 @@ const quranHadiths = [
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user, activeRole, availableRoles, setActiveRole, logout, deleteAccount, updateUserData, applyConfirmedUser, refreshUserData } = useAuth();
+  const { user, activeRole, logout, deleteAccount, updateUserData, applyConfirmedUser, refreshUserData } = useAuth();
   const { lang, setLang, t, isRTL } = useLanguage();
-  const roleLabels = {
-    user: isRTL ? 'طالب' : 'Student',
-    teacher: isRTL ? 'معلم' : 'Teacher',
-    admin: isRTL ? 'إداري' : 'Admin'
-  };
   const getUserDefaultTab = (role) => {
     if (role === 'admin') return 'admin-dashboard';
     if (role === 'teacher') return 'teacher-dashboard';
@@ -234,29 +230,6 @@ const Dashboard = () => {
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   const [isLaptop, setIsLaptop] = useState(typeof window !== 'undefined' && window.innerWidth < 1340);
   const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
-  const roleSwitcher = availableRoles.length > 1 ? (
-    <select
-      id="active-role-switcher"
-      aria-label={isRTL ? 'اختيار الدور النشط' : 'Choose active role'}
-      value={activeRole}
-      onChange={event => setActiveRole(event.target.value)}
-      style={{
-        height: '40px',
-        maxWidth: '120px',
-        padding: '0 10px',
-        borderRadius: '12px',
-        border: '1px solid var(--glass-border)',
-        background: 'var(--bg-color)',
-        color: 'var(--text-primary)',
-        fontSize: '13px',
-        fontWeight: 700,
-        flexShrink: 0,
-        cursor: 'pointer'
-      }}
-    >
-      {availableRoles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}
-    </select>
-  ) : null;
 
   // Set default tab only when user logs in or user role changes
   const lastUserRoleRef = useRef(activeRole);
@@ -1065,7 +1038,7 @@ const Dashboard = () => {
           </button>
 
           <div id="mobile-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
-            {roleSwitcher}
+            <RoleSwitcherMenu isMobile={isMobile} />
             <NotificationCenter />
             <QuickSettingsMenu
               soundEnabled={soundEnabled}

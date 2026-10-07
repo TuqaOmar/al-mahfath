@@ -28,15 +28,7 @@ export const getNavigation = (role, lang, configuration) => {
   const ar = lang === 'ar';
   const item = (id, label, shortLabel, icon, extra = {}) => ({ id, label, shortLabel, icon, ...extra });
 
-  const studentJourney = {
-    title: ar ? 'مساري القرآني (طالب)' : 'My Journey (Student)',
-    items: [
-      item('home', ar ? 'رئيسية الطالب' : 'Student Home', ar ? 'الرئيسية' : 'Home', Home),
-      item('quran-map', ar ? 'مصحفي وخريطة الختمة' : 'My Quran', ar ? 'مصحفي' : 'My Quran', Compass),
-      item('five-fortresses', ar ? 'الحصون وإنجازاتي' : 'Five Fortresses', ar ? 'الحصون' : 'Fortresses', ShieldCheck)
-    ]
-  };
-
+  // Each role shows only its own sections; multi-role accounts switch roles from RoleSwitcherMenu.
   if (role === 'admin') {
     return {
       primary: ['admin-dashboard', 'admin-users', 'admin-groups', 'admin-analytics'],
@@ -50,8 +42,7 @@ export const getNavigation = (role, lang, configuration) => {
             item('admin-groups', ar ? 'الحلقات والمجموعات' : 'Groups', ar ? 'الحلقات' : 'Groups', Layers),
             item('admin-analytics', ar ? 'التحليلات ومعدلات النمو' : 'Analytics', ar ? 'التحليلات' : 'Analytics', TrendingUp)
           ]
-        },
-        studentJourney
+        }
       ]
     };
   }
@@ -76,8 +67,7 @@ export const getNavigation = (role, lang, configuration) => {
             item('similarities', ar ? 'المتشابهات القرآنية' : 'Similarities', ar ? 'المتشابهات' : 'Similarities', BookOpen),
             item('mind-maps', ar ? 'الخرائط الذهنية' : 'Mind Maps', ar ? 'الخرائط الذهنية' : 'Mind Maps', Map)
           ]
-        },
-        studentJourney
+        }
       ]
     };
   }

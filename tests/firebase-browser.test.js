@@ -38,6 +38,13 @@ async function login(page, key) {
   await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
+// Multi-role accounts pick their role from the top-bar role menu.
+async function chooseRole(page, role) {
+  await page.locator('#active-role-switcher').click();
+  await page.locator(`#role-option-${role}`).click();
+  await expect(page.locator('#active-role-menu')).toHaveCount(0);
+  await expect(page.locator('#active-role-switcher')).toHaveAttribute('data-active-role', role);
+}
 // Logout lives in the top-bar settings menu (web and mobile).
 async function logout(page) {
   await page.locator('#quick-settings-trigger-btn').click();
@@ -413,18 +420,26 @@ test('browser roles, Firestore community notifications, and Storage profile phot
   const multi = pages.multi;
 
   await login(multi, 'multi');
-  const switcher = multi.locator('#active-role-switcher');
-  await expect(switcher).toHaveValue('user');
+  await expect(multi.locator('#active-role-switcher')).toHaveAttribute('data-active-role', 'user');
   await expect(multi.locator('#sidebar-nav-community')).toBeVisible();
-  await switcher.selectOption('teacher');
+  await multi.locator('#active-role-switcher').click();
+  await expect(multi.locator('#active-role-menu [role="menuitemradio"]')).toHaveCount(3);
+  await expect(multi.locator('#role-option-user')).toHaveAttribute('aria-checked', 'true');
+  await multi.keyboard.press('Escape');
+  await expect(multi.locator('#active-role-menu')).toHaveCount(0);
+  await chooseRole(multi, 'teacher');
   await expect(multi.locator('#sidebar-nav-teacher-dashboard')).toBeVisible();
   await expect(multi.locator('#sidebar-nav-community')).toHaveCount(0);
-  await switcher.selectOption('admin');
+  // Each role shows only its own sections: no student tabs while acting as teacher or admin.
+  await expect(multi.locator('#sidebar-nav-home')).toHaveCount(0);
+  await expect(multi.locator('#sidebar-nav-quran-map')).toHaveCount(0);
+  await chooseRole(multi, 'admin');
   await expect(multi.locator('#sidebar-nav-admin-dashboard')).toBeVisible();
   await expect(multi.locator('#sidebar-nav-teacher-dashboard')).toHaveCount(0);
+  await expect(multi.locator('#sidebar-nav-home')).toHaveCount(0);
   await refresh(multi);
-  await expect(multi.locator('#active-role-switcher')).toHaveValue('admin');
-  await multi.locator('#active-role-switcher').selectOption('user');
+  await expect(multi.locator('#active-role-switcher')).toHaveAttribute('data-active-role', 'admin');
+  await chooseRole(multi, 'user');
   await expect(multi.locator('#sidebar-nav-community')).toBeVisible();
   assert.deepEqual((await db.doc(`users/${uids.multi}`).get()).data().roles, { user: true, teacher: true, admin: true });
   assert.equal((await api('student', '/admin/overview')).status, 403);
@@ -1529,12 +1544,12 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
           await verifySections(page);
           for (const role of roles.slice(1)) {
             await expect(page.locator('#active-role-switcher')).toBeVisible();
-            await page.locator('#active-role-switcher').selectOption(role);
+            await chooseRole(page, role);
             await expect(page.locator(`#mobile-nav-${role === 'user' ? 'home' : `${role}-dashboard`}`)).toBeVisible();
             await verifySections(page);
           }
           if (account === 'multi') {
-            await page.locator('#active-role-switcher').selectOption('user');
+            await chooseRole(page, 'user');
             await expect(page.locator('#mobile-nav-home')).toBeVisible();
           }
         } else {
@@ -1583,12 +1598,17 @@ test('multi-role account can open both home pages and Quran map uses a wide lapt
     await page.locator('#mobile-nav-home').click();
     await expect(page.getByTestId('student-home-view')).toBeVisible();
     await expect(page.locator('#active-role-switcher')).toBeVisible();
-    await page.locator('#active-role-switcher').selectOption('teacher');
+    await chooseRole(page, 'teacher');
     await expect(page.locator('#mobile-nav-teacher-dashboard')).toBeVisible();
     await expect(page.getByTestId('teacher-dashboard')).toBeVisible();
     await expect(page.getByTestId('teacher-dashboard-error')).toHaveCount(0);
+    // The teacher's "more" sheet holds teacher tools only; student pages are reached by switching role.
     await page.locator('#mobile-nav-more-tools').click();
-    await page.locator('#more-tool-item-home').click();
+    await expect(page.locator('#more-tools-modal-sheet')).toBeVisible();
+    await expect(page.locator('#more-tool-item-home')).toHaveCount(0);
+    await page.locator('#more-tools-close-btn').click();
+    await chooseRole(page, 'user');
+    await page.locator('#mobile-nav-home').click();
     await expect(page.getByTestId('student-home-view')).toBeVisible();
     assert.deepEqual(pageErrors, [], `JavaScript errors while opening student home: ${pageErrors.join('; ')}`);
     await page.screenshot({
