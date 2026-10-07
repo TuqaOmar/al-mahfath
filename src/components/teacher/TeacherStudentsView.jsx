@@ -54,29 +54,47 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
     setActiveFilter(initialFilter);
   }, [initialFilter]);
 
+  // The roster and the invite code load independently, so a slow or failed
+  // roster request no longer hides the code. Background refreshes keep the
+  // current data on screen and only clear it when the server refuses access.
   const fetchStudents = useCallback(async () => {
     const version = ++requestVersion.current;
-    setLoading(true); setStudents([]); setLoadError(''); setGroupCode('');
+    setLoading(true); setLoadError('');
     try {
       if (!user?.uid) return;
       const params = new URLSearchParams({ filter: activeFilter, sort: sortBy });
       if (searchQuery) params.set('search', searchQuery);
       if (groupId) params.set('groupId', groupId);
-      const [response, groupResponse] = await Promise.all([
-        fetchWithAuth('/api/teacher/' + encodeURIComponent(user.uid) + '/students?' + params),
-        fetchWithAuth('/api/groups?teacherId=' + encodeURIComponent(user.uid))
-      ]);
-      const data = await response.json(), info = await groupResponse.json();
-      if (!response.ok || !data.success || !groupResponse.ok || !info.success) throw new Error('Roster unavailable');
+      const response = await fetchWithAuth('/api/teacher/' + encodeURIComponent(user.uid) + '/students?' + params,
+        { signal: AbortSignal.timeout(20000) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error('Roster unavailable');
       if (version !== requestVersion.current) return;
       setStudents(data.students || []);
-      setGroupCode((groupId ? info.groups?.find(group => group.id === groupId) : info.groups?.[0])?.code || '');
     } catch {
       if (version === requestVersion.current) { setStudents([]); setLoadError('تعذر تحميل الطلاب أو انتهت صلاحية الوصول.'); }
     } finally { if (version === requestVersion.current) setLoading(false); }
   }, [user?.uid, activeFilter, sortBy, searchQuery, groupId]);
   useTeacherRefresh(fetchStudents);
-  useEffect(() => () => { requestVersion.current += 1; }, []);
+
+  const groupCodeVersion = useRef(0);
+  const [groupCodeLoading, setGroupCodeLoading] = useState(true);
+  const fetchGroupCode = useCallback(async () => {
+    const version = ++groupCodeVersion.current;
+    try {
+      if (!user?.uid) return;
+      const response = await fetchWithAuth('/api/groups?teacherId=' + encodeURIComponent(user.uid),
+        { signal: AbortSignal.timeout(20000) });
+      const info = await response.json();
+      if (!response.ok || !info.success) throw new Error('Groups unavailable');
+      if (version !== groupCodeVersion.current) return;
+      setGroupCode((groupId ? info.groups?.find(group => group.id === groupId) : info.groups?.[0])?.code || '');
+    } catch {
+      if (version === groupCodeVersion.current) setGroupCode('');
+    } finally { if (version === groupCodeVersion.current) setGroupCodeLoading(false); }
+  }, [user?.uid, groupId]);
+  useTeacherRefresh(fetchGroupCode);
+  useEffect(() => () => { requestVersion.current += 1; groupCodeVersion.current += 1; }, []);
 
   const handleCopyCode = () => {
     if (!groupCode) return;
@@ -235,7 +253,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
               </div>
             ) : (
               <div data-testid="teacher-no-group-code" style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.6 }}>
-                {loading ? 'جاري تحميل الرمز...' : 'لا توجد حلقة مرتبطة بحسابك بعد، فلا يوجد رمز دعوة. اطلبي من المشرفة إنشاء حلقة لكِ من لوحة الإدارة (التوزيع ← إنشاء حلقة).'}
+                {groupCodeLoading ? 'جاري تحميل الرمز...' : 'لا توجد حلقة مرتبطة بحسابك بعد، فلا يوجد رمز دعوة. اطلبي من المشرفة إنشاء حلقة لكِ من لوحة الإدارة (التوزيع ← إنشاء حلقة).'}
               </div>
             )}
           </div>
@@ -336,10 +354,28 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
       </div>
 
       {/* Students Cards Grid */}
-      <button data-testid="teacher-roster-refresh" onClick={fetchStudents}>تحديث قائمة الطلاب</button>
+      <button
+        data-testid="teacher-roster-refresh"
+        onClick={() => { fetchStudents(); fetchGroupCode(); }}
+        disabled={loading}
+        style={{
+          alignSelf: 'flex-start',
+          minHeight: '40px',
+          padding: '0 16px',
+          borderRadius: '10px',
+          border: '1px solid var(--glass-border)',
+          background: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
+          fontSize: '13px',
+          fontWeight: 700,
+          cursor: loading ? 'wait' : 'pointer'
+        }}
+      >
+        {loading ? 'جاري التحديث...' : 'تحديث قائمة الطلاب'}
+      </button>
       {groupId && <p data-testid="teacher-roster-group">القائمة مقيدة بالحلقة المحددة. <button data-testid="teacher-roster-all" onClick={onShowAll}>جميع طلاب حلقاتي</button></p>}
       {loadError && <p role="alert" data-testid="teacher-roster-error">{loadError}</p>}
-      {loading ? (
+      {loading && students.length === 0 ? (
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
           جاري تحميل بيانات الطالبات...
         </div>
