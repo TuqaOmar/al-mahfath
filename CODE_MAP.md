@@ -595,7 +595,7 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **لماذا:** الخريطة تصريح ذاتي للتخطيط لا اعتماد — كل نص فيها يؤكد ذلك. الحفظ أولًا ثم تحديث العرض (لا تحديث متفائل).
 - **متى:** تبويب quran-map.
 - **إن تعطّل:** لا خريطة ولا طريقة لتعديل الصفحات المحفوظة بعد المعالج.
-- **انتبه:** لا تقرأ نتائج التسميع (page_progress) — الألوان لا تتغير بالتسميع. | كل حفظ يرسل كائن preferences كاملًا (updateDoc يستبدل الحقل) — تعديل متزامن من تبويب آخر قد يُفقد. | لا تستورد quranMap/QuranSurahAyahsModal ولا QuranMapSurahCard (بقيا يتيمين).
+- **انتبه:** الحاوية الجذرية flex أفقية على سطح المكتب — أي عنصر يوضع مباشرة فيها يصبح عمودًا جانبيًا؛ ضع النصوص داخل العمود الرئيسي (Main Grid View). | لا تقرأ نتائج التسميع (page_progress) — الألوان لا تتغير بالتسميع. | كل حفظ يرسل كائن preferences كاملًا (updateDoc يستبدل الحقل) — تعديل متزامن من تبويب آخر قد يُفقد. | لا تستورد quranMap/QuranSurahAyahsModal ولا QuranMapSurahCard (بقيا يتيمين).
 - **يستخدم:** memorization.js, quranData.js, AuthContext.jsx, NotificationContext.jsx, LanguageContext.jsx, api.js, portfolioService.js
 - **يستخدمه:** Dashboard.jsx
 

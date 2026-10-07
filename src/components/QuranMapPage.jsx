@@ -499,9 +499,9 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
         </div>
       )}
 
-      <p data-testid="self-reported-page-disclaimer">حالات الصفحات تصريحات ذاتية؛ ليست حفظًا معتمدًا أو درجات تسميع.</p>
       {/* Main Grid View */}
       <div style={{ flex: 1, minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <p data-testid="self-reported-page-disclaimer" style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>حالات الصفحات تصريحات ذاتية؛ ليست حفظًا معتمدًا أو درجات تسميع.</p>
         <div data-testid="ayah-progress-editor" style={{ padding: '18px', borderRadius: '18px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
           <h3 style={{ margin: '0 0 6px', color: 'var(--text-primary)' }}>تقدم الآيات المسجل</h3>
           <p style={{ margin: '0 0 14px', color: 'var(--text-secondary)', fontSize: '13px' }}>سجل الطالب الذاتي في المحفظة؛ لا يعتمد الحفظ ولا يمنح XP.</p>
