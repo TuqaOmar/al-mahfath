@@ -71,7 +71,19 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   const stats = student?.recitationStats || {};
   const recentSessions = Array.isArray(student?.recentSessions) ? student.recentSessions : [];
   const recordedProgress = student?.recordedProgress || {};
+  // The server accepts reviews and notes only from the student's own assigned teacher (not an admin viewing).
+  const isAssignedTeacher = Boolean(user?.uid && student?.teacherId === user.uid &&
+    (user.role === 'teacher' || user.roles?.teacher === true));
   const learningPlan = student?.learningPlan || {};
+
+  // 403/404 means this teacher lost access (e.g. the student moved circles): hide the profile.
+  // Any other failure keeps the profile and the typed note so the action can be retried.
+  const handleActionFailure = (error, label) => {
+    if (error.status === 403 || error.status === 404) {
+      setStudent(null); setLoadError('failed'); setNoteText('');
+    }
+    setActionMessage(`${label}: ${error.message}`);
+  };
 
   const reviewSession = async (sessionId, decision) => {
     const version = requestVersion.current;
@@ -82,10 +94,10 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
     });
     const data = await response.json();
     if (version !== requestVersion.current) return;
-    if (!response.ok || !data.success) throw new Error(data.message || 'Review failed');
+    if (!response.ok || !data.success) throw Object.assign(new Error(data.message || 'Review failed'), { status: response.status });
     setActionMessage(decision === 'approved' ? 'تم قبول مراجعة التدريب؛ لا تعتمد صفحات الحفظ ولا تمنح XP.' : 'تم رفض الجلسة.');
     await fetchStudentProfile();
-    } catch (error) { if (version === requestVersion.current) { setStudent(null); setLoadError('failed'); setNoteText(''); setActionMessage(`تعذر حفظ مراجعة التدريب: ${error.message}`); } }
+    } catch (error) { if (version === requestVersion.current) handleActionFailure(error, 'تعذر حفظ مراجعة التدريب'); }
   };
 
   const sendNote = async () => {
@@ -97,10 +109,10 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
     });
     const data = await response.json();
     if (version !== requestVersion.current) return;
-    if (!response.ok || !data.success) throw new Error(data.message || 'Note failed');
+    if (!response.ok || !data.success) throw Object.assign(new Error(data.message || 'Note failed'), { status: response.status });
     setNoteText('');
     setActionMessage('تم حفظ الملاحظة وإرسال إشعار للطالب.');
-    } catch (error) { if (version === requestVersion.current) { setStudent(null); setLoadError('failed'); setNoteText(''); setActionMessage(`تعذر حفظ الملاحظة: ${error.message}`); } }
+    } catch (error) { if (version === requestVersion.current) handleActionFailure(error, 'تعذر حفظ الملاحظة'); }
   };
 
   const statusColor = student?.status === 'needs_attention' 
@@ -394,7 +406,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                         <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', background: 'var(--bg-surface)', padding: '4px 10px', borderRadius: '8px', whiteSpace: 'nowrap' }}>
                           {numberLabel(sess.accuracy, '%')} {text('تطابق النص', 'text match')}
                         </span>
-                        {sess.reviewStatus === 'pending' && (
+                        {sess.reviewStatus === 'pending' && isAssignedTeacher && (
                           <div style={{ display: 'flex', gap: '6px' }}>
                             <button data-testid={`approve-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'approved')}>قبول مراجعة التدريب</button>
                             <button data-testid={`reject-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'rejected')}>رفض الجلسة</button>
@@ -454,9 +466,11 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                   <span>إرسال توجيه أو تشجيع للطالبة</span>
                 </h4>
 
-                <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>{text('تُحفظ الملاحظة في Firestore ويصل إشعار داخل التطبيق للطالب.', 'The note is stored in Firestore and creates an in-app notification.')}</p>
+                <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>{isAssignedTeacher
+                  ? text('تُحفظ الملاحظة في Firestore ويصل إشعار داخل التطبيق للطالب.', 'The note is stored in Firestore and creates an in-app notification.')
+                  : text('الملاحظات ومراجعة الجلسات متاحة لمعلمة الطالبة المعيّنة فقط.', "Notes and session reviews are available only to the student's assigned teacher.")}</p>
 
-                <div style={{ display: 'flex', gap: '8px' }}>
+                {isAssignedTeacher && <div style={{ display: 'flex', gap: '8px' }}>
                   <input
                     type="text"
                     data-testid="teacher-note-input"
@@ -496,7 +510,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     <Send size={14} />
                     <span>إرسال</span>
                   </button>
-                </div>
+                </div>}
 
               </div>
             </>
