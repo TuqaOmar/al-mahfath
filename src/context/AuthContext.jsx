@@ -1,12 +1,13 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { auth, db } from '../lib/firebase';
+import { auth, db, googleProvider } from '../lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
   updateProfile,
-  signInAnonymously
+  signInAnonymously,
+  reauthenticateWithPopup
 } from 'firebase/auth';
 import { doc, getDoc, getDocFromServer, setDoc, updateDoc } from 'firebase/firestore';
 
@@ -205,16 +206,25 @@ export const AuthProvider = ({ children }) => {
   };
 
   const deleteAccount = async () => {
+    const current = auth.currentUser;
+    if (!current) return { success: false, code: 'auth/no-current-user' };
     try {
-      if (auth.currentUser) {
-        await auth.currentUser.delete();
-        setUser(null);
-        localStorage.removeItem('ma7fath_user');
-        return { success: true };
+      try {
+        await current.delete();
+      } catch (error) {
+        // Firebase only deletes an account after a recent sign-in. Google users
+        // confirm in a popup; password users must sign out and back in first.
+        const isGoogle = current.providerData.some(p => p.providerId === 'google.com');
+        if (error?.code !== 'auth/requires-recent-login' || !isGoogle) throw error;
+        await reauthenticateWithPopup(current, googleProvider);
+        await current.delete();
       }
+      setUser(null);
+      localStorage.removeItem('ma7fath_user');
+      return { success: true };
     } catch (error) {
       console.error("Error deleting account:", error);
-      return { success: false, message: error.message };
+      return { success: false, code: error?.code, message: error?.message };
     }
   };
 

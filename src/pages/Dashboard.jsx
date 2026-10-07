@@ -1071,8 +1071,16 @@ const Dashboard = () => {
                 <button
                   onClick={async () => {
                     setShowDeleteConfirm(false);
-                    await deleteAccount();
-                    navigate('/');
+                    const result = await deleteAccount();
+                    if (result?.success) {
+                      navigate('/');
+                      return;
+                    }
+                    // Without this the landing page saw the still-signed-in user and bounced back here.
+                    const code = result?.code ? ` (${result.code})` : '';
+                    window.alert(result?.code === 'auth/requires-recent-login'
+                      ? 'لحماية حسابك، سجّلي الخروج ثم ادخلي مرة أخرى، واحذفي الحساب مباشرة بعد الدخول.'
+                      : 'تعذر حذف الحساب، ولم يُحذف شيء. حاولي مرة أخرى.' + code);
                   }}
                   style={{
                     flex: 1,
