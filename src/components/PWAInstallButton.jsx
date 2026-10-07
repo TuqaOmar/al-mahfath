@@ -1,160 +1,141 @@
 import React, { useState } from 'react';
-import { Download, Smartphone, X, CheckCircle } from 'lucide-react';
+import { Download, Smartphone, X } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
-export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
-  const { isInstallable, isInstalled, isIOS, install } = usePWAInstall();
-  const [showIOSGuide, setShowIOSGuide] = useState(false);
-
-  // If already installed or running standalone, don't show
-  if (isInstalled) {
-    return null;
+const GUIDE_STEPS = {
+  ios: {
+    title: 'تثبيت التطبيق على آيفون / آيباد',
+    intro: 'افتحي الموقع في متصفح Safari ثم:',
+    steps: [
+      <>اضغطي زر <strong>مشاركة (Share)</strong> أسفل شاشة Safari.</>,
+      <>مرّري للأسفل واختاري <strong>إضافة إلى الشاشة الرئيسية (Add to Home Screen)</strong>.</>
+    ]
+  },
+  android: {
+    title: 'تثبيت التطبيق على أندرويد',
+    intro: 'من متصفح Chrome:',
+    steps: [
+      <>اضغطي <strong>قائمة المتصفح ⋮</strong> أعلى الشاشة.</>,
+      <>اختاري <strong>تثبيت التطبيق (Install app)</strong> أو <strong>إضافة إلى الشاشة الرئيسية</strong>.</>
+    ]
   }
+};
 
-  // Android / Chromium / Desktop PWA install trigger
-  if (isInstallable) {
-    return (
+export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
+  const { isInstallable, isInstalled, isIOS, isAndroid, install } = usePWAInstall();
+  const [guide, setGuide] = useState(null);
+
+  if (isInstalled) return null;
+  // Desktop browser without an install prompt: nothing useful to offer.
+  if (!isInstallable && !isIOS && !isAndroid) return null;
+
+  const handleClick = async () => {
+    if (isInstallable) {
+      await install();
+      return;
+    }
+    // iPhone never fires an install prompt; some Android browsers don't either.
+    setGuide(isIOS ? 'ios' : 'android');
+  };
+
+  const content = guide && GUIDE_STEPS[guide];
+
+  return (
+    <>
       <button
-        onClick={install}
+        type="button"
+        onClick={handleClick}
         title="تثبيت التطبيق على جهازك"
+        aria-label="تثبيت التطبيق"
         style={{
           display: 'flex',
           alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'flex-start',
           gap: '8px',
-          padding: collapsed ? '8px' : '9px 14px',
-          borderRadius: '10px',
-          background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+          minHeight: '44px',
+          padding: collapsed ? '8px' : '10px 14px',
+          borderRadius: '12px',
+          background: 'var(--primary)',
           color: '#ffffff',
           border: 'none',
           cursor: 'pointer',
-          fontSize: '13px',
-          fontWeight: '600',
-          boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)',
-          transition: 'all 0.2s ease',
-          justifyContent: collapsed ? 'center' : 'flex-start',
-          width: collapsed ? '40px' : '100%',
+          fontSize: '14px',
+          fontWeight: 700,
+          width: collapsed ? '44px' : '100%',
           ...style
         }}
       >
-        <Download size={16} />
-        {!collapsed && <span>تثبيت التطبيق</span>}
+        {isInstallable ? <Download size={17} /> : <Smartphone size={17} />}
+        {!collapsed && <span>تثبيت التطبيق على جهازك</span>}
       </button>
-    );
-  }
 
-  // iOS Safari guide
-  if (isIOS) {
-    return (
-      <>
-        <button
-          onClick={() => setShowIOSGuide(true)}
-          title="تثبيت التطبيق على الآيفون"
+      {content && (
+        <div
+          onClick={() => setGuide(null)}
           style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.6)',
+            zIndex: 99999,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: collapsed ? '8px' : '8px 12px',
-            borderRadius: '10px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            color: '#E2E8F0',
-            cursor: 'pointer',
-            fontSize: '12px',
-            fontWeight: '500',
-            justifyContent: collapsed ? 'center' : 'flex-start',
-            width: collapsed ? '40px' : '100%',
-            ...style
+            justifyContent: 'center',
+            padding: '20px'
           }}
         >
-          <Smartphone size={15} color="#10B981" />
-          {!collapsed && <span>تثبيت على الآيفون</span>}
-        </button>
-
-        {showIOSGuide && (
-          <div 
-            onClick={() => setShowIOSGuide(false)}
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="pwa-guide-title"
+            onClick={(e) => e.stopPropagation()}
             style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0, 0, 0, 0.75)',
-              backdropFilter: 'blur(6px)',
-              zIndex: 99999,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '20px'
+              width: '100%',
+              maxWidth: '380px',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--glass-border)',
+              borderRadius: '20px',
+              padding: '24px',
+              color: 'var(--text-primary)',
+              boxShadow: 'var(--shadow-lg)',
+              direction: 'rtl',
+              textAlign: 'right'
             }}
           >
-            <div 
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: '100%',
-                maxWidth: '380px',
-                background: '#0F172A',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                borderRadius: '20px',
-                padding: '24px',
-                color: '#F8FAFC',
-                boxShadow: '0 20px 40px rgba(0,0,0,0.5)',
-                direction: 'rtl',
-                textAlign: 'right'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Smartphone size={20} color="#10B981" />
-                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700 }}>تثبيت التطبيق على آيفون / آيباد</h3>
-                </div>
-                <button 
-                  onClick={() => setShowIOSGuide(false)}
-                  style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '4px' }}
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: '1.6', margin: '0 0 16px 0' }}>
-                يمكنك تشغيل التطبيق في وضع الشاشة الكاملة وبدون إنترنت كأي تطبيق أصلي عبر الخطوتين التاليتين في متصفح Safari:
-              </p>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'rgba(16, 185, 129, 0.15)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                  <span style={{ background: '#10B981', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }}>1</span>
-                  <div style={{ fontSize: '13px', color: '#E2E8F0' }}>
-                    اضغط على زر <strong>مشاركة (Share)</strong> 📤 أسفل شاشة Safari.
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'rgba(16, 185, 129, 0.15)', padding: '12px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-                  <span style={{ background: '#10B981', color: '#fff', borderRadius: '50%', width: '22px', height: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 'bold', flexShrink: 0 }}>2</span>
-                  <div style={{ fontSize: '13px', color: '#E2E8F0' }}>
-                    مرر لأسفل واضغط على <strong>إضافة إلى الشاشة الرئيسية (Add to Home Screen)</strong> ➕.
-                  </div>
-                </div>
-              </div>
-
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <h3 id="pwa-guide-title" style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>{content.title}</h3>
               <button
-                onClick={() => setShowIOSGuide(false)}
-                style={{
-                  width: '100%',
-                  padding: '11px',
-                  borderRadius: '10px',
-                  background: '#1E293B',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
-                  color: '#F8FAFC',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer'
-                }}
+                type="button"
+                aria-label="إغلاق"
+                onClick={() => setGuide(null)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', width: '44px', height: '44px' }}
               >
-                حسناً، فهمت
+                <X size={20} />
               </button>
             </div>
-          </div>
-        )}
-      </>
-    );
-  }
 
-  return null;
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: '0 0 14px' }}>{content.intro}</p>
+
+            <ol style={{ listStyle: 'none', padding: 0, margin: '0 0 20px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {content.steps.map((step, index) => (
+                <li key={index} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', background: 'var(--primary-light)', padding: '12px', borderRadius: '12px', fontSize: '14px', lineHeight: 1.7 }}>
+                  <span style={{ background: 'var(--primary)', color: '#fff', borderRadius: '50%', width: '24px', height: '24px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 800, flexShrink: 0 }}>
+                    {index + 1}
+                  </span>
+                  <span>{step}</span>
+                </li>
+              ))}
+            </ol>
+
+            <button
+              type="button"
+              onClick={() => setGuide(null)}
+              style={{ width: '100%', minHeight: '44px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              حسنًا، فهمت
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 };

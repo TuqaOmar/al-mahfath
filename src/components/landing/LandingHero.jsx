@@ -3,6 +3,7 @@ import { ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { PWAInstallButton } from '../PWAInstallButton';
 
 export const LandingHero = ({ onOpenAuth }) => {
   const { isRTL } = useLanguage();
@@ -56,6 +57,10 @@ export const LandingHero = ({ onOpenAuth }) => {
                 </button>
               </>
             )}
+          </div>
+
+          <div style={{ maxWidth: '320px', marginBottom: '24px' }}>
+            <PWAInstallButton style={{ justifyContent: 'center' }} />
           </div>
 
           <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexWrap: 'wrap', gap: '10px 20px' }}>

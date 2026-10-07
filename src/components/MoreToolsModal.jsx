@@ -5,6 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useUiConfiguration } from '../lib/uiConfiguration';
 import { getNavigation, isNavItemActive } from '../lib/navigation';
+import { PWAInstallButton } from './PWAInstallButton';
 
 /**
  * Mobile "More" sheet: every section that is not pinned to the bottom bar,
@@ -83,6 +84,8 @@ export const MoreToolsModal = ({ isOpen, onClose, activeTab, setActiveTab }) => 
             <X size={18} />
           </button>
         </div>
+
+        <PWAInstallButton style={{ justifyContent: 'center', marginTop: '8px' }} />
 
         {groups.map(group => (
           <section key={group.title} style={{ marginTop: '12px' }}>
