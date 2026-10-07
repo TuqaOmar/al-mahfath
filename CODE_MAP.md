@@ -327,7 +327,7 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **لماذا:** الانضمام لحلقة اختياري؛ يمكن البقاء مستقلًا.
 - **متى:** من بطاقة الحلقة في رئيسية الطالب.
 - **إن تعطّل:** لا انضمام من اللوحة (المعالج له منطقه الخاص).
-- **انتبه:** نصوص الأزرار يعتمد عليها tests/firebase-browser.test.js. | يعرض membersCount وteacherAvatar لكن الخادم لا يرجعهما في lookup — يظهر 'undefined طالبة' وصورة افتراضية. | منطق lookup/join مكرر في OnboardingWizard.
+- **انتبه:** نصوص الأزرار يعتمد عليها tests/firebase-browser.test.js. | بطاقة الحلقة تعرض فقط ما يرجعه lookup العام (الاسم، المعلمة بحرفها الأول، المقرر إن وُجد) — لا عدد طالبات ولا صور عمدًا. | منطق lookup/join مكرر في OnboardingWizard.
 - **يستخدم:** AuthContext.jsx, api.js, LanguageContext.jsx, groups.js
 - **يستخدمه:** Dashboard.jsx
 

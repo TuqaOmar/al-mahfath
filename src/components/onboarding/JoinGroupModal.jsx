@@ -410,28 +410,23 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                   </h4>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'var(--bg-surface)', borderRadius: '12px', marginBottom: '12px' }}>
-                  <img
-                    src={foundGroup.teacherAvatar || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Aisha'}
-                    alt={foundGroup.teacherName}
-                    style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--primary)' }}
-                  />
+                {/* The public lookup returns no roster data (no member count or avatars). */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'var(--bg-surface)', borderRadius: '12px', marginBottom: foundGroup.targetJuz ? '12px' : 0 }}>
+                  <div aria-hidden="true" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--primary)', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
+                    {(foundGroup.teacherName || '؟').trim().charAt(0)}
+                  </div>
                   <div>
                     <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>المعلمة المشرفة:</span>
-                    <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{foundGroup.teacherName}</strong>
+                    <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{foundGroup.teacherName || 'غير محددة'}</strong>
                   </div>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div style={{ padding: '8px 12px', background: 'var(--bg-surface)', borderRadius: '10px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>عدد الطالبات:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{foundGroup.membersCount} طالبة</strong>
-                  </div>
+                {foundGroup.targetJuz && (
                   <div style={{ padding: '8px 12px', background: 'var(--bg-surface)', borderRadius: '10px' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>المقرر الحالي:</span>
-                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{foundGroup.targetJuz || 'الأجزاء 1 - 3'}</strong>
+                    <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{foundGroup.targetJuz}</strong>
                   </div>
-                </div>
+                )}
               </div>
 
               {foundGroup.description && (
