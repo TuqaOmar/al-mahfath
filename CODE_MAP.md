@@ -6,19 +6,19 @@
 ## ملخص المعمارية
 - **العميل**: React 19 + Vite في `src/`. الدخول `src/main.jsx` → `App.jsx` → صفحات/تبويبات. الحالة عبر Contexts (`AuthContext`, `LanguageContext`, `ThemeContext`, `NotificationContext`).
 - **الخادم**: Express 5 في `server/index.js` (منفذ 3000؛ Vite middleware في التطوير؛ Vercel عبر `api/index.js`). كل `/api` محمي بـ `server/middleware/auth.js` (Firebase ID token).
-- **البيانات**: Firebase Auth/Firestore/Storage/FCM. بعض المسارات القديمة ما زالت على `server/database.js` (JSON محلي) — انظر قسم العيوب.
+- **البيانات**: Firebase Auth/Firestore/Storage/FCM. مسارات `server/database.js` القديمة (JSON محلي) متوقفة بـ 410.
 - **الذكاء**: Gemini (`@google/genai`) + HuggingFace Whisper للتسميع.
 
 ## العيوب المكتشفة
-### 🐞 خلل (1)
-- `server/index.js` — PUT/DELETE /api/admin/user/:uid و GET /api/quran/pages و/portfolio تستخدم database.js القديم (ملف db.json)، بينما المستخدمون الحقيقيون في Firestore — تعديل/حذف مستخدم من هنا لا يؤثر على حسابه الحقيقي.
+### 🐞 خلل (0)
 
 ### ⧉ تكرار (3)
 - `server/recitationEngine.js` — في المسار الأول (Gemini مباشر) الدقة يقررها النموذج نفسه لا الخوارزمية — النتيجة قد تختلف عن تلوين الكلمات المحسوب.
 - `src/components/MyPlanManager.jsx` — تغيير الأجزاء المحفوظة هنا يحدّث selectedJuzList فقط ولا يحدّث studentDeclaredPages (التي يحسبها المعالج) — الصفحة الحالية والخريطة لا تتغير.
 - `src/context/AuthContext.jsx` — إنشاء مستند المستخدم الافتراضي مكرر مرتين (signup، loadAuthenticatedProfile) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser.
 
-### ☠ ميت (13)
+### ☠ ميت (14)
+- `server/database.js` — صفر مستوردين بعد إيقاف مسارات db.json في index.js (scripts/auditLegacyMemberships.mjs يقرؤه كنص فقط).
 - `server/db.js` — صفر مستوردين في كل المشروع (بما فيه الاختبارات والسكربتات).
 - `server/safarEcosystem.js` — صفر مستوردين (يُذكر اسمه نصيًا فقط في DocumentationModal). 83KB يمكن حذفها مع safar_data*.json.
 - `src/components/AdminPanel.jsx` — Dashboard يستورده لكن case 'admin-panel' الذي يعرضه يأتي بعد case 'admin-panel' آخر في نفس switch — غير قابل للوصول.
@@ -880,13 +880,13 @@ _Express index، routes، middleware، صلاحيات_
 - **إن تعطّل:** خطر كتابة بيانات اختبار في الإنتاج.
 - **يستخدمه:** auth.js
 
-### `server/index.js` **[🐞 خلل]**
-- **يفعل:** يعرّف مسارات: الصحة، نص المصحف (/api/quran/reference/page|surah — عامة)، الملف الشخصي (/api/user/:uid GET/PUT)، خطة الحصون (/api/user/fortress-plan)، محفظة الآيات القديمة (/api/user/:uid/portfolio — تخزين JSON)، المساعد (/api/ai/chat GET/POST/DELETE مع Gemini وردود احتياطية مكتوبة يدويًا)، التسميع (/api/ai/recitation-check، /api/recitation/*)، تقرير الأداء للمشرف. يركّب routes/groups وroutes/community تحت /api. في التطوير يشغّل Vite كـ middleware (npm run dev = node server/index.js)، وفي الإنتاج يخدم dist/.
+### `server/index.js`
+- **يفعل:** يعرّف مسارات: الصحة، نص المصحف (/api/quran/reference/page|surah — عامة)، الملف الشخصي (/api/user/:uid GET/PUT)، خطة الحصون (/api/user/fortress-plan)، مسارات قديمة متوقفة بـ 410 (/api/user/:uid/portfolio*، PUT/DELETE /api/admin/user/:uid، GET /api/quran/pages — كانت تكتب في db.json لا في Firestore)، المساعد (/api/ai/chat GET/POST/DELETE مع Gemini وردود احتياطية مكتوبة يدويًا)، التسميع (/api/ai/recitation-check، /api/recitation/*)، تقرير الأداء للمشرف. يركّب routes/groups وroutes/community تحت /api. في التطوير يشغّل Vite كـ middleware (npm run dev = node server/index.js)، وفي الإنتاج يخدم dist/.
 - **لماذا:** خادم واحد يخدم الواجهة والـ API معًا. كل ما يتطلب ثقة (حساب دقة التسميع، نص المصحف المرجعي، الكتابة في Firestore بصلاحيات Admin) يحدث هنا لا في المتصفح.
 - **متى:** يعمل طوال الوقت؛ كل طلب /api يمر عبر logger ثم requireAuth حسب المسار.
 - **إن تعطّل:** كل حواف calls_api (22 حافة) تنقطع.
-- **انتبه:** PUT/DELETE /api/admin/user/:uid و GET /api/quran/pages و/portfolio تستخدم database.js القديم (ملف db.json)، بينما المستخدمون الحقيقيون في Firestore — تعديل/حذف مستخدم من هنا لا يؤثر على حسابه الحقيقي. | POST /api/ai/chat يقبل apiKey من جسم الطلب ويفضّله على مفتاح الخادم. | /api/ai/recitation-check يقبل token لـ HuggingFace من العميل. | قائمة نماذج Gemini مكررة هنا وفي recitationEngine.js. | review القديم (/api/quran/pages/:n/review) يرجع 410 عمدًا. | Vite يُحمَّل بـ import() داخل startServer فقط (devDependency) — استيراده في أعلى الملف أسقط دالة Vercel كلها (FUNCTION_INVOCATION_FAILED لكل /api). | package.json يثبّت jwks-rsa على ^3 عبر overrides: الإصدار 4 (اعتماد firebase-admin) يعمل require() لـ jose 6 (ESM فقط) ومحمّل Vercel لا يدعمه فيسقط الخادم بـ ERR_REQUIRE_ESM — لا تحذف الـ override. | على Vercel يجب ضبط FIREBASE_SERVICE_ACCOUNT_JSON، وإلا تفشل كل قراءات Firestore في الخادم (503).
-- **يستخدم:** database.js, recitationEngine.js, firestoreRecitation.js, quranReference.js, auth.js, groups.js, community.js, privateUserData.js, fortressPlanPersistence.js
+- **انتبه:** مسارات المحفظة تتحقق من الملكية (403) قبل 410؛ المحفظة الحقيقية في Firestore users/{uid}/ayah_progress عبر portfolioService. | POST /api/ai/chat يقبل apiKey من جسم الطلب ويفضّله على مفتاح الخادم. | /api/ai/recitation-check يقبل token لـ HuggingFace من العميل. | قائمة نماذج Gemini مكررة هنا وفي recitationEngine.js. | review القديم (/api/quran/pages/:n/review) يرجع 410 عمدًا. | Vite يُحمَّل بـ import() داخل startServer فقط (devDependency) — استيراده في أعلى الملف أسقط دالة Vercel كلها (FUNCTION_INVOCATION_FAILED لكل /api). | package.json يثبّت jwks-rsa على ^3 عبر overrides: الإصدار 4 (اعتماد firebase-admin) يعمل require() لـ jose 6 (ESM فقط) ومحمّل Vercel لا يدعمه فيسقط الخادم بـ ERR_REQUIRE_ESM — لا تحذف الـ override. | على Vercel يجب ضبط FIREBASE_SERVICE_ACCOUNT_JSON، وإلا تفشل كل قراءات Firestore في الخادم (503).
+- **يستخدم:** recitationEngine.js, firestoreRecitation.js, quranReference.js, auth.js, groups.js, community.js, privateUserData.js, fortressPlanPersistence.js
 - **يستخدمه:** api/index.js, AiAssistant.jsx, FiveFortressesPlan.jsx, QuranInteractiveView.jsx, SimilaritiesView.jsx, AdminPerformanceDashboard.jsx, QuranSurahAyahsModal.jsx, useRecitationRecorder.js, fortressService.js, learningProfileService.js
 
 ### `server/middleware/auth.js`
@@ -944,14 +944,13 @@ _Express index، routes، middleware، صلاحيات_
 ## طبقة: الخادم: المنطق والتخزين
 _safarEcosystem، database، Firestore، محرك التسميع_
 
-### `server/database.js`
+### `server/database.js` **[☠ ميت]**
 - **يفعل:** يحمّل db.json ويزرع بيانات (مستخدم admin_123/admin123 وdemo_user_123/demo123 بكلمات مرور PBKDF2، 49 صفحة وهمية لخريطة المصحف، منشور مجتمع ثابت) ثم يحفظ. runQuery/getRow/allRows تطابق نص SQL بالـ includes/startsWith وتنفذ على مصفوفات. ويوفر محفظة الآيات (getUserPortfolio/saveAyahToPortfolio/bulkSaveSurahToPortfolio) وsaveRecitationSession القديمة (تمنح XP).
-- **لماذا:** بقايا مرحلة ما قبل Firestore (كانت SQLite ثم JSON). ما زالت مستخدمة من index.js لمسارات المشرف القديمة و/api/quran/pages ومحفظة الآيات.
-- **متى:** يُنفَّذ seedDb عند تحميل الخادم — يكتب db.json في كل إقلاع.
-- **إن تعطّل:** مسارات index.js القديمة فقط.
+- **لماذا:** بقايا مرحلة ما قبل Firestore (كانت SQLite ثم JSON). لم يعد أي ملف يستورده — index.js أوقف مساراته بـ 410. يمكن حذفه مع db.json.
+- **متى:** لا يُحمَّل (كان seedDb يكتب db.json عند كل إقلاع للخادم).
+- **إن تعطّل:** لا شيء.
 - **انتبه:** يعيد كتابة community_posts في الذاكرة في كل إقلاع (لكن المجتمع الحقيقي صار في Firestore). | حسابات بكلمات مرور ثابتة مزروعة (المصادقة القديمة معطلة بـ 410، فلا يمكن استخدامها حاليًا). | على Vercel الكتابة على القرص لا تدوم. | saveRecitationSession/getRecitationHistory/getPageRecitationStats لا يستوردها أحد (حل محلها firestoreRecitation).
 - **يستخدم:** recitationStats.js
-- **يستخدمه:** server/index.js
 
 ### `server/db.js` **[☠ ميت]**
 - **يفعل:** getDb/saveDb لقراءة وكتابة server/db.json.

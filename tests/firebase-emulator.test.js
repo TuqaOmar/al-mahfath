@@ -746,7 +746,8 @@ test('P1 protected memorization fields, self declarations and persisted teacher 
     await api('integrity-a', '/api/user/integrity-a', 400, { method: 'PUT', body: JSON.stringify(update) });
     await api('integrity-a', '/api/user/integrity-b', 403, { method: 'PUT', body: JSON.stringify(update) });
     await api('integrity-a', '/api/admin/user/integrity-a', 403, { method: 'PUT', body: JSON.stringify(update) });
-    await api('admin-1', '/api/admin/user/integrity-a', 400, { method: 'PUT', body: JSON.stringify(update) });
+    // The legacy db.json admin edit is retired; it can no longer touch any profile.
+    await api('admin-1', '/api/admin/user/integrity-a', 410, { method: 'PUT', body: JSON.stringify(update) });
   }
   assert.equal((await firestore('integrity-a', 'users/integrity-b')).status, 403);
   await api('integrity-a', '/api/user/integrity-b', 403);

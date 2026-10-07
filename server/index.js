@@ -3,14 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { GoogleGenAI } from '@google/genai';
-import {
-  runQuery, 
-  getRow, 
-  allRows, 
-  getUserPortfolio,
-  saveAyahToPortfolio,
-  bulkSaveSurahToPortfolio
-} from './database.js';
 import { analyzeRecitation, compareRecitation, comparePageRecitation } from './recitationEngine.js';
 import {
   RecitationError, preparePracticeRequest, findPracticeAttempt, savePracticeAttempt,
@@ -168,52 +160,16 @@ app.get('/api/user/fortress-plan/:uid', requireAuth, async (req, res) => {
 });
 
 // --- USER PERSONAL MEMORIZATION PORTFOLIO (محفظة الحفظ الشخصية) ---
-// Get all portfolio ayahs for user (authenticated, owner only)
-app.get('/api/user/:uid/portfolio', requireAuth, async (req, res) => {
-  const { uid } = req.params;
-  if (req.user.uid !== uid) {
-    return res.status(403).json({ success: false, message: 'Forbidden: Cannot read another user\'s portfolio' });
-  }
-  try {
-    const portfolio = getUserPortfolio(uid);
-    res.json({ success: true, portfolio });
-  } catch (error) {
-    console.error('Error fetching portfolio:', error);
-    res.status(500).json({ success: false, message: 'تعذر جلب بيانات المحفظة' });
-  }
-});
-
-// Update or save single ayah memorization progress (authenticated, owner only)
-app.post('/api/user/:uid/portfolio/ayah', requireAuth, async (req, res) => {
-  const { uid } = req.params;
-  if (req.user.uid !== uid) {
-    return res.status(403).json({ success: false, message: 'Forbidden: Cannot modify another user\'s portfolio' });
-  }
-  const ayahData = req.body;
-  try {
-    const saved = saveAyahToPortfolio(uid, ayahData);
-    res.json({ success: true, item: saved });
-  } catch (error) {
-    console.error('Error saving ayah to portfolio:', error);
-    res.status(500).json({ success: false, message: 'تعذر حفظ تقدم الآية في المحفظة' });
-  }
-});
-
-// Bulk update surah ayahs in portfolio (authenticated, owner only)
-app.post('/api/user/:uid/portfolio/bulk-surah', requireAuth, async (req, res) => {
-  const { uid } = req.params;
-  if (req.user.uid !== uid) {
-    return res.status(403).json({ success: false, message: 'Forbidden: Cannot bulk-update another user\'s portfolio' });
-  }
-  const { surahNumber, ayahs } = req.body;
-  try {
-    const results = bulkSaveSurahToPortfolio(uid, surahNumber, ayahs);
-    res.json({ success: true, count: results.length, items: results });
-  } catch (error) {
-    console.error('Error bulk updating surah:', error);
-    res.status(500).json({ success: false, message: 'تعذر تحديث السورة في المحفظة' });
-  }
-});
+// Retired: these wrote to the legacy db.json. The UI reads and writes ayah progress
+// directly in Firestore (users/{uid}/ayah_progress via src/lib/portfolioService.js).
+for (const route of ['/api/user/:uid/portfolio', '/api/user/:uid/portfolio/ayah', '/api/user/:uid/portfolio/bulk-surah']) {
+  app.all(route, requireAuth, (req, res) => {
+    if (req.user.uid !== req.params.uid) {
+      return res.status(403).json({ success: false, message: "Forbidden: Cannot access another user's portfolio" });
+    }
+    res.status(410).json({ success: false, message: 'تقدم الآيات محفوظ في Firestore (users/{uid}/ayah_progress)' });
+  });
+}
 
 // Delete User Account endpoint removed due to security vulnerability (missing auth and authorization)
 // and destructive global DELETE FROM quran_pages behavior.
@@ -224,64 +180,20 @@ app.use('/api', groupsRouter);
 app.use('/api', communityRouter);
 app.use('/api/admin', requireAuth, requireAdmin);
 
-app.put('/api/admin/user/:uid', async (req, res) => {
-  const { uid } = req.params;
-  const updates = req.body;
-  if (['memorizedPages', 'memorizedPagesCount', 'totalJuz', 'memoryScore'].some(key => Object.hasOwn(updates || {}, key))) {
-    return res.status(400).json({ success: false, message: 'Legacy profile edits cannot approve memorization' });
-  }
-
-  try {
-    const user = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'المستخدم غير موجود' });
-    }
-
-    const name = updates.name !== undefined ? updates.name : user.name;
-    const level = updates.level !== undefined ? updates.level : user.level;
-    const xp = updates.xp !== undefined ? updates.xp : user.xp;
-    const memorizedPagesCount = updates.memorizedPagesCount !== undefined ? updates.memorizedPagesCount : user.memorizedPagesCount;
-    const totalJuz = updates.totalJuz !== undefined ? updates.totalJuz : user.totalJuz;
-
-    await runQuery(`
-      UPDATE users SET name = ?, level = ?, xp = ?, memorizedPagesCount = ?, totalJuz = ?
-      WHERE uid = ?
-    `, [name, level, xp, memorizedPagesCount, totalJuz, uid]);
-
-    const updatedUser = await getRow('SELECT * FROM users WHERE uid = ?', [uid]);
-    delete updatedUser.passwordHash;
-    delete updatedUser.salt;
-    updatedUser.preferences = safeParsePreferences(updatedUser.preferences);
-    updatedUser.hasCompletedWizard = Boolean(updatedUser.hasCompletedWizard);
-
-    res.json({ success: true, user: updatedUser });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
-
-app.delete('/api/admin/user/:uid', async (req, res) => {
-  const { uid } = req.params;
-  try {
-    await runQuery('DELETE FROM users WHERE uid = ?', [uid]);
-    res.json({ success: true, message: 'تم حذف المستخدم بنجاح' });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
-});
+// Retired: these edited/deleted rows in the legacy db.json, never the real Firestore
+// account, so they reported success without changing anything. Roles are managed from
+// the admin dashboard (Firestore + /api/admin/assign|remove-teacher).
+for (const method of ['put', 'delete']) {
+  app[method]('/api/admin/user/:uid', (_req, res) => {
+    res.status(410).json({ success: false, message: 'تعديل وحذف المستخدمين من هذا المسار متوقف؛ البيانات في Firestore' });
+  });
+}
 
 // --- QURAN MAP 604 PAGES ENDPOINT ---
 
-app.get('/api/quran/pages', async (req, res) => {
-  try {
-    const pages = await allRows('SELECT * FROM quran_pages');
-    res.json({ success: true, pages });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false });
-  }
+// Retired with db.json: the Quran map is built on the client from utils/quranData.
+app.get('/api/quran/pages', (_req, res) => {
+  res.status(410).json({ success: false, message: 'استخدم /api/quran/reference/page/:pageNumber' });
 });
 
 app.post('/api/quran/pages/:pageNumber/review', requireAuth, (req, res) => {
