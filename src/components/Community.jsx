@@ -70,6 +70,25 @@ export const Community = ({ setActiveTab }) => {
     loadFromApi();
   }, [user?.uid]);
 
+  // Leaderboard: loaded each time the tab opens so XP/streak are current.
+  const [leaderboard, setLeaderboard] = useState({ status: 'idle', leaders: [], me: null });
+  useEffect(() => {
+    if (activeSubTab !== 'leaderboard' || !user?.uid) return undefined;
+    let cancelled = false;
+    setLeaderboard(prev => ({ ...prev, status: 'loading' }));
+    (async () => {
+      try {
+        const res = await fetchWithAuth('/api/community/leaderboard');
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.message);
+        if (!cancelled) setLeaderboard({ status: 'ready', leaders: data.leaders || [], me: data.me || null });
+      } catch {
+        if (!cancelled) setLeaderboard({ status: 'error', leaders: [], me: null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeSubTab, user?.uid]);
+
   // Handle Post Submission to Database
   const handleCreatePost = async (e) => {
     e.preventDefault();
@@ -716,17 +735,33 @@ export const Community = ({ setActiveTab }) => {
           boxShadow: 'var(--shadow-soft)'
         }}>
           <h2 style={{ fontSize: '24px', color: 'var(--text-primary)', marginBottom: '8px' }}>🏆 قسم الالتزام وتنافس الحفاظ</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '28px' }}>تدرج الحفاظ حسب الأيام المتتالية (Streak) ومؤشر الإتقان اليومي.</p>
+          <p style={{ color: 'var(--text-secondary)', marginBottom: '28px' }}>أعلى الحفاظ في نقاط الخبرة (XP)، مع عدد أيام صحبة القرآن المتتالية.</p>
 
-          <div style={{ display: 'grid', gap: '16px' }}>
+          {leaderboard.status === 'loading' && leaderboard.leaders.length === 0 && (
+            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>جاري تحميل الترتيب...</p>
+          )}
+          {leaderboard.status === 'error' && (
+            <p style={{ color: '#EF4444', margin: 0 }}>تعذر تحميل الترتيب، حاول مرة أخرى لاحقًا.</p>
+          )}
+          {leaderboard.status === 'ready' && leaderboard.leaders.length === 0 && (
+            <p style={{ color: 'var(--text-secondary)', margin: 0 }}>لا يوجد حفاظ في الترتيب بعد — كن أول من يجمع النقاط!</p>
+          )}
+
+          <div data-testid="community-leaderboard" style={{ display: 'grid', gap: '16px' }}>
             {[
-              { rank: 1, name: 'عبد الرحمن السالم', points: '14,250 XP', streak: '120 يوم', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Abdelrahman' },
-              { rank: 2, name: 'فاطمة الزهراء', points: '12,800 XP', streak: '95 يوم', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Fatima' },
-              { rank: 3, name: 'عمر الفاروق', points: '11,400 XP', streak: '80 يوم', avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Omar' },
-              { rank: 4, name: user?.name || 'أحمد محمد', points: '2,450 XP', streak: '14 يوم', avatar: user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad', isUser: true },
-            ].map((member) => (
-              <div 
-                key={member.rank} 
+              ...leaderboard.leaders,
+              // The viewer's own row when outside the top list (rank unknown, shown as "—").
+              ...(leaderboard.me && !leaderboard.leaders.some(entry => entry.isMe) && leaderboard.leaders.length > 0 ? [leaderboard.me] : [])
+            ].map((entry) => ({
+              rank: entry.rank,
+              name: entry.name,
+              points: `${entry.xp.toLocaleString('en-US')} XP`,
+              streak: `${entry.streak} يوم`,
+              avatar: entry.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(entry.name)}`,
+              isUser: entry.isMe
+            })).map((member) => (
+              <div
+                key={member.isUser ? 'me' : member.rank}
                 style={{ 
                   padding: '16px 24px', 
                   borderRadius: '16px', 
@@ -738,7 +773,7 @@ export const Community = ({ setActiveTab }) => {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <span style={{ fontSize: '18px', fontWeight: 'bold', width: '28px', color: member.rank <= 3 ? 'var(--primary)' : 'var(--text-secondary)' }}>#{member.rank}</span>
+                  <span style={{ fontSize: '18px', fontWeight: 'bold', width: '28px', color: member.rank && member.rank <= 3 ? 'var(--primary)' : 'var(--text-secondary)' }}>{member.rank ? `#${member.rank}` : '—'}</span>
                   <img src={member.avatar} alt="" style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'var(--bg-surface)' }} />
                   <div>
                     <h4 style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)' }}>{member.name} {member.isUser && '(أنت)'}</h4>

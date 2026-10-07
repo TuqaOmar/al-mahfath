@@ -343,6 +343,30 @@ test('UI configuration is readable by signed-in users and writable only by admin
   assert.equal((await firestore('student-1', 'app_config/navigation')).status, 200);
 });
 
+test('community leaderboard ranks students by XP from Firestore and exposes no identifiers', async () => {
+  const original = {};
+  for (const [uid, xp] of [['student-1', 300], ['student-2', 500], ['teacher-1', 9999]]) {
+    original[uid] = (await db.doc(`users/${uid}`).get()).data().xp;
+    await db.doc(`users/${uid}`).update({ xp });
+  }
+  try {
+    assert.equal((await api(null, '/api/community/leaderboard', 401)).success, false);
+    const { leaders, me } = await api('student-1', '/api/community/leaderboard', 200);
+    const ranked = leaders.map(entry => entry.name);
+    assert.ok(!ranked.includes('teacher-1') && !ranked.includes('admin-1'), 'staff are not ranked');
+    assert.ok(ranked.indexOf('student-2') < ranked.indexOf('student-1'), 'higher XP ranks first');
+    assert.deepEqual(leaders.map(entry => entry.rank), leaders.map((_, index) => index + 1));
+    for (const entry of leaders) {
+      assert.deepEqual(Object.keys(entry).sort(), ['isMe', 'name', 'photoURL', 'rank', 'streak', 'xp']);
+    }
+    assert.equal(leaders.find(entry => entry.name === 'student-1').isMe, true);
+    assert.equal(me.name, 'student-1');
+    assert.equal(me.xp, 300);
+  } finally {
+    for (const [uid, xp] of Object.entries(original)) await db.doc(`users/${uid}`).update({ xp });
+  }
+});
+
 test('Quran display endpoint preserves Uthmani marks and is the recitation reference', async () => {
   const page = await api('student-1', '/api/quran/reference/page/2', 200);
   assert.equal(page.source.identifier, 'quran-uthmani');

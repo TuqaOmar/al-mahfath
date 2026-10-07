@@ -45,6 +45,31 @@ router.get('/community/posts', requireAuth, route(async (req, res) => {
   res.json({ success: true, posts, source: 'firestore' });
 }));
 
+// Top students by XP. Exposes only display fields (no uid/email); teachers and admins are left out.
+const LEADERBOARD_SIZE = 10;
+router.get('/community/leaderboard', requireAuth, route(async (req, res) => {
+  const snapshot = await db.collection('users').orderBy('xp', 'desc').limit(LEADERBOARD_SIZE * 5).get();
+  const students = snapshot.docs.filter(doc => !hasRole(doc.data(), 'teacher') && !hasRole(doc.data(), 'admin'));
+  const leaders = students.slice(0, LEADERBOARD_SIZE).map((doc, index) => {
+    const data = doc.data();
+    return {
+      rank: index + 1,
+      name: data.name || 'حافظ',
+      photoURL: data.photoURL || null,
+      xp: Number(data.xp || 0),
+      streak: Number(data.streak || 0),
+      isMe: doc.id === req.user.uid
+    };
+  });
+  let me = leaders.find(entry => entry.isMe) || null;
+  if (!me) {
+    const data = req.user.profile || await profile(req.user.uid);
+    me = { rank: null, name: data.name || 'حافظ', photoURL: data.photoURL || null,
+      xp: Number(data.xp || 0), streak: Number(data.streak || 0), isMe: true };
+  }
+  res.json({ success: true, leaders, me });
+}));
+
 router.post('/community/posts', requireAuth, route(async (req, res) => {
   const content = cleanText(req.body.content, 4000, 'نص المنشور');
   const category = cleanText(req.body.category || 'تدبر', 80, 'التصنيف');
