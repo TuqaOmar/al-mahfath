@@ -34,38 +34,16 @@ import { auth } from '../lib/firebase';
 import { SimplifiedFortressPlan } from './SimplifiedFortressPlan';
 import { FiveFortressesVisualMap } from './FiveFortressesVisualMap';
 import { getFortressPlanFromFirestore, saveFortressPlanToFirestore, currentFortressCompletion, numericFortressCompletion } from '../lib/fortressService';
+import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 
-// Helper to determine Surah and Juz based on page number
-const getSurahNameForPage = (page) => {
-  if (page <= 1) return 'الفاتحة';
-  if (page <= 49) return 'البقرة';
-  if (page <= 76) return 'آل عمران';
-  if (page <= 106) return 'النساء';
-  if (page <= 127) return 'المائدة';
-  if (page <= 150) return 'الأنعام';
-  if (page <= 176) return 'الأعراف';
-  if (page <= 186) return 'الأنفال';
-  if (page <= 207) return 'التوبة';
-  if (page <= 221) return 'يونس';
-  if (page <= 235) return 'هود';
-  if (page <= 248) return 'يوسف';
-  if (page <= 255) return 'الرعد';
-  if (page <= 261) return 'إبراهيم';
-  if (page <= 267) return 'الحجر';
-  if (page <= 281) return 'النحل';
-  if (page <= 293) return 'الإسراء';
-  if (page <= 304) return 'الكهف';
-  if (page <= 582) return 'عموم السور المتوسطة';
-  return 'جزء عمّ';
-};
-
-const getJuzForPage = (page) => {
-  return Math.min(30, Math.max(1, Math.ceil(page / 20)));
-};
-
-export const FiveFortressesPlan = ({ setActiveTab }) => {
+// onSelectPageForRecitation(page): open the interactive mushaf (daily-session) on that page.
+export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) => {
   const { user, applyConfirmedUser } = useAuth();
   const { isRTL, lang } = useLanguage();
+  const openQuranPage = (page) => {
+    if (onSelectPageForRecitation) onSelectPageForRecitation(Number(page) || nextDeclaredPage(user));
+    else if (setActiveTab) setActiveTab('daily-session');
+  };
 
   const [activeSubTab, setActiveSubTab] = useState('visual-map'); // 'visual-map' | 'simplified-plan' | 'daily-plan' | 'methodology' | 'repetition-studio' | 'plan-customizer'
   const [expandedFortress, setExpandedFortress] = useState(null);
@@ -469,8 +447,8 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
       {activeSubTab === 'visual-map' && (
         <FiveFortressesVisualMap 
           onPlanSaved={handleChildPlanSaved}
-          onNavigateToVoiceRecitation={(p) => setActiveTab && setActiveTab('daily-session')} 
-          onNavigateToQuran={(p) => setActiveTab && setActiveTab('quran-interactive')} 
+          onNavigateToVoiceRecitation={openQuranPage}
+          onNavigateToQuran={openQuranPage}
         />
       )}
 
@@ -478,7 +456,7 @@ export const FiveFortressesPlan = ({ setActiveTab }) => {
       {activeSubTab === 'simplified-plan' && (
         <SimplifiedFortressPlan 
           onPlanSaved={handleChildPlanSaved}
-          onNavigateToQuran={(p) => setActiveTab && setActiveTab('quran-interactive')} 
+          onNavigateToQuran={openQuranPage}
           onAskAi={(prompt) => setActiveTab && setActiveTab('ai-assistant')} 
         />
       )}

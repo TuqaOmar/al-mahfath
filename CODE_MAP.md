@@ -10,10 +10,9 @@
 - **الذكاء**: Gemini (`@google/genai`) + HuggingFace Whisper للتسميع.
 
 ## العيوب المكتشفة
-### 🐞 خلل (3)
+### 🐞 خلل (2)
 - `server/index.js` — PUT/DELETE /api/admin/user/:uid و GET /api/quran/pages و/portfolio تستخدم database.js القديم (ملف db.json)، بينما المستخدمون الحقيقيون في Firestore — تعديل/حذف مستخدم من هنا لا يؤثر على حسابه الحقيقي.
 - `src/components/Community.jsx` — لوحة 'التنافس' بيانات وهمية مكتوبة في الكود (3 أسماء ثابتة + المستخدم الحالي بـ 2,450 XP و14 يومًا ثابتة) — لا تعكس أي بيانات حقيقية.
-- `src/components/FiveFortressesPlan.jsx` — يعرّف getSurahNameForPage وgetJuzForPage محليًا بقيم تقريبية (الصفحات 305–582 كلها 'عموم السور المتوسطة'، والجزء = ceil(page/20)) بدل utils/quranData — اسم السورة والجزء خاطئان في هذا التبويب.
 
 ### ⧉ تكرار (3)
 - `server/recitationEngine.js` — في المسار الأول (Gemini مباشر) الدقة يقررها النموذج نفسه لا الخوارزمية — النتيجة قد تختلف عن تلوين الكلمات المحسوب.
@@ -505,13 +504,13 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **يستخدم:** memorization.js, AuthContext.jsx, api.js, quranData.js, community.js
 - **يستخدمه:** Dashboard.jsx
 
-### `src/components/FiveFortressesPlan.jsx` **[🐞 خلل]**
-- **يفعل:** تبويب 'الحصون الخمسة' بستة أقسام: خريطة الحصون البصرية (FiveFortressesVisualMap)، الخطة المبسطة (SimplifiedFortressPlan)، خطة اليوم التفصيلية (بطاقات الحصون مع خطوات وقاعدة ذهبية وزر 'تحديد كمنجز' + توليد خطة بالمساعد وحفظها في aiPlanText)، معمل التكرار (عداد محلي 20/20/40/15 مع مؤقت)، الدليل والمنهجية، وتخصيص الخطة (5 تفضيلات تُحفظ عبر PUT /api/user/:uid). يقرأ الخطة المحفوظة عند كل تغيير تبويب.
+### `src/components/FiveFortressesPlan.jsx`
+- **يفعل:** تبويب 'الحصون الخمسة' بستة أقسام: خريطة الحصون البصرية (FiveFortressesVisualMap)، الخطة المبسطة (SimplifiedFortressPlan)، خطة اليوم التفصيلية (بطاقات الحصون مع خطوات وقاعدة ذهبية وزر 'تحديد كمنجز' + توليد خطة بالمساعد وحفظها في aiPlanText)، معمل التكرار (عداد محلي 20/20/40/15 مع مؤقت)، الدليل والمنهجية، وتخصيص الخطة (5 تفضيلات تُحفظ عبر PUT /api/user/:uid). يقرأ الخطة المحفوظة عند كل تغيير تبويب. السورة والجزء الحاليان من utils/quranData. أزرار 'المصحف'/'التسميع' في الخريطة والخطة المبسطة تستدعي onSelectPageForRecitation(page) فيفتح Dashboard تبويب daily-session على تلك الصفحة.
 - **لماذا:** المنهجية الكاملة للحصون الخمسة (د. سعيد أبو العلا حمزة) في مكان واحد؛ كل تعليم إنجاز يمر عبر saveFortressPlanToFirestore ليبقى متطابقًا مع رئيسية اللوحة.
 - **متى:** تبويب five-fortresses أو من روابط اللوحة والمجتمع.
 - **إن تعطّل:** لا خطة حصون.
-- **انتبه:** يعرّف getSurahNameForPage وgetJuzForPage محليًا بقيم تقريبية (الصفحات 305–582 كلها 'عموم السور المتوسطة'، والجزء = ceil(page/20)) بدل utils/quranData — اسم السورة والجزء خاطئان في هذا التبويب. | يمرر للأبناء onNavigateToQuran → setActiveTab('quran-interactive') وهذا التبويب غير موجود في Dashboard — يظهر 'قسم quran-interactive قيد التفعيل'. | توليد الخطة بالمساعد يمر عبر /api/ai/chat فيُضاف لسجل المحادثة. | منطق تعليم الحصن وحفظه مكرر في هذا الملف وفي VisualMap وSimplified وDashboard.
-- **يستخدم:** memorization.js, AuthContext.jsx, LanguageContext.jsx, api.js, firebase.js, SimplifiedFortressPlan.jsx, FiveFortressesVisualMap.jsx, fortressService.js, server/index.js
+- **انتبه:** توليد الخطة بالمساعد يمر عبر /api/ai/chat فيُضاف لسجل المحادثة. | منطق تعليم الحصن وحفظه مكرر في هذا الملف وفي VisualMap وSimplified وDashboard.
+- **يستخدم:** memorization.js, AuthContext.jsx, LanguageContext.jsx, api.js, firebase.js, SimplifiedFortressPlan.jsx, FiveFortressesVisualMap.jsx, fortressService.js, quranData.js, server/index.js
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/components/FiveFortressesVisualMap.jsx`
@@ -854,7 +853,7 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **متى:** عند بناء الخطة وعرض الموقع الحالي.
 - **إن تعطّل:** الخطة واللوحة تعرض أسماء خاطئة.
 - **انتبه:** بيانات السور مكررة أيضًا في utils/quranSurahsList.json وserver/data/quran-uthmani.json.
-- **يستخدمه:** AiAssistant.jsx, Community.jsx, FiveFortressesVisualMap.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, SimplifiedFortressPlan.jsx, fortressService.js, Dashboard.jsx, OnboardingWizard.jsx
+- **يستخدمه:** AiAssistant.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, SimplifiedFortressPlan.jsx, fortressService.js, Dashboard.jsx, OnboardingWizard.jsx
 
 ### `src/utils/quranMindMapsData.js`
 - **يفعل:** getSurahMindMap(رقم أو اسم): يطابق الاسم بعد تطبيع عربي ويرجع سجل السورة من data/quran114MindMaps.json (1MB). getAllSurahsList للقوائم. MIND_MAPS_SOURCE_INFO للمصادر (المختصر في التفسير وأطلس السور).

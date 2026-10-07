@@ -869,7 +869,13 @@ const Dashboard = () => {
       case 'five-fortresses':
         return (
           <Card style={{ padding: isMobile ? '16px' : '28px' }}>
-            <FiveFortressesPlan setActiveTab={setActiveTab} />
+            <FiveFortressesPlan
+              setActiveTab={setActiveTab}
+              onSelectPageForRecitation={(pNum) => {
+                setSelectedQuranPage(pNum);
+                setActiveTab('daily-session');
+              }}
+            />
           </Card>
         );
 
