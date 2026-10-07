@@ -22,6 +22,23 @@ export function nextQuranActivityStreak(profile = {}, activityTime = new Date())
   return { streak: consecutive ? previousStreak + 1 : 1, lastQuranActivityDate: today, changed: true };
 }
 
+// Whole Amman days since the last confirmed Quran activity; null when there is none.
+export function daysSinceQuranActivity(profile = {}, now = new Date()) {
+  const last = String(profile.lastQuranActivityDate || '');
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(last)) return null;
+  return Math.max(0, dayNumber(ammanDateKey(now)) - dayNumber(last));
+}
+
+// Roster status used by the teacher filters (derived, never stored):
+// inactive = nothing in 7+ days, needs_attention = last activity 3-7 days ago,
+// excellent = active in the last 2 days with a streak of 3+, otherwise active.
+export function studentActivityStatus(profile = {}, now = new Date()) {
+  const days = daysSinceQuranActivity(profile, now);
+  if (days === null || days > 7) return 'inactive';
+  if (days >= 3) return 'needs_attention';
+  return Number(profile.streak) >= 3 ? 'excellent' : 'active';
+}
+
 export function activityNow() {
   if (process.env.NODE_ENV === 'test' && process.env.MA7FATH_EMULATOR_TEST === '1' && process.env.MA7FATH_TEST_NOW) {
     return new Date(process.env.MA7FATH_TEST_NOW);

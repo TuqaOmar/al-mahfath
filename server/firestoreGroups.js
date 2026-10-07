@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { db } from './middleware/auth.js';
 import { activeTeacherMembers, requireTeacherStudent } from './teacherScope.js';
 import { hasRole, isAdmin, isActiveTeacherMembership } from './accessControl.js';
+import { activityNow, studentActivityStatus } from './quranActivityStreak.js';
 
 export class GroupError extends Error {
   constructor(status, message) { super(message); this.status = status; }
@@ -166,6 +167,7 @@ export async function teacherStudents(teacherId, { search = '', filter = 'all', 
   const activeMembers = await activeTeacherMembers(teacherId, { groupId });
   if (!activeMembers.length) return [];
   const docs = await db.getAll(...activeMembers.map(member => db.doc(`users/${member.id}`)));
+  const now = activityNow();
   let students = docs.filter(doc => doc.exists).map(doc => {
     const data = doc.data();
     // consistencyRate and thisWeekSessions are denormalized cache fields that may be absent.
@@ -178,8 +180,9 @@ export async function teacherStudents(teacherId, { search = '', filter = 'all', 
       consistencyRate,
       thisWeekSessions,
       currentSurah: data.currentSurah || null,
-      status: data.status || 'active',
-      lastRecitationDate: data.lastRecitationDate || ''
+      // Derived from the last confirmed practice day (written by firestoreRecitation), never stored.
+      status: studentActivityStatus(data, now),
+      lastRecitationDate: data.lastQuranActivityDate || ''
     };
   });
   const term = String(search).trim().toLowerCase();

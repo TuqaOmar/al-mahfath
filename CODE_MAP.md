@@ -761,7 +761,7 @@ _لوحات المعلم والإدارة_
 - **لماذا:** المعلم يرى فقط من له عضوية نشطة في حلقاته (الخادم يفرض ذلك).
 - **متى:** تبويب teacher-students، أو من 'عرض طالبات الحلقة'.
 - **إن تعطّل:** لا قائمة طلاب.
-- **انتبه:** المعلمة لا تستطيع إضافة طالبة جديدة مباشرة — setMembership يسمح لها فقط بنقل طالبة لها عضوية نشطة في حلقاتها (حماية للخصوصية)؛ الطالبة الجديدة تنضم برمز الدعوة. | فلاتر 'متميزات/بحاجة لمتابعة/منقطعات' تعتمد على حقل status في ملف الطالب الذي لا يكتبه أي جزء من الكود (الافتراضي active) — تبقى فارغة. | كل حرف في البحث يعيد طلبين للخادم. | إن لم تكن للمعلمة حلقة (الإنشاء للمشرف فقط) يعرض رسالة بدل رمز فارغ ويعطّل زر النسخ (data-testid=teacher-no-group-code). | رمز الدعوة يُحمَّل بطلب مستقل عن قائمة الطالبات (مهلة 20 ثانية لكل طلب)، والتحديث كل 30 ثانية يُبقي البيانات المعروضة ولا يمسحها إلا عند رفض الخادم.
+- **انتبه:** يجلب القائمة كاملة (filter=all) ويفلتر محليًا حتى تبقى أعداد التبويبات صحيحة؛ الحالة مشتقة في الخادم من آخر يوم تدريب والـ streak (شرحها تحت الفلاتر). البطاقة تعرض الصفحات المصرّح بها، الأيام المتتالية، وآخر تدريب. | المعلمة لا تستطيع إضافة طالبة جديدة مباشرة — setMembership يسمح لها فقط بنقل طالبة لها عضوية نشطة في حلقاتها (حماية للخصوصية)؛ الطالبة الجديدة تنضم برمز الدعوة. | كل حرف في البحث يعيد طلبين للخادم. | إن لم تكن للمعلمة حلقة (الإنشاء للمشرف فقط) يعرض رسالة بدل رمز فارغ ويعطّل زر النسخ (data-testid=teacher-no-group-code). | رمز الدعوة يُحمَّل بطلب مستقل عن قائمة الطالبات (مهلة 20 ثانية لكل طلب)، والتحديث كل 30 ثانية يُبقي البيانات المعروضة ولا يمسحها إلا عند رفض الخادم.
 - **يستخدم:** memorization.js, AuthContext.jsx, LanguageContext.jsx, useTeacherRefresh.js, api.js, groups.js
 - **يستخدمه:** Dashboard.jsx
 
@@ -959,12 +959,12 @@ _safarEcosystem، database، Firestore، محرك التسميع_
 - **انتبه:** صفر مستوردين في كل المشروع (بما فيه الاختبارات والسكربتات).
 
 ### `server/firestoreGroups.js`
-- **يفعل:** GroupError، publicUser (يحذف كلمات المرور ويُصفّر حقول الحفظ المعتمد)، listUsers، listGroups (عدد الطلاب يُحسب من العضويات لا من العدّاد المخزن)، findGroup بالرمز، createFirestoreGroup (رمز عشوائي + groupInvites)، setMembership (العملية المركزية: عضوية واحدة نشطة لكل طالب، joinedAt يُضبط عند دخول حلقة جديدة ويُحفظ عند إعادة الكتابة لنفس الحلقة، تحدّث مؤشرات المستخدم وعدّادات الحلقتين وحالة الطلب في transaction واحدة، مع فحص السعة وصلاحية الفاعل)، submitRequest، listRequests، changeTeacherRole (يمنع إزالة الدور إن كان يملك حلقات)، teacherStudents (بحث/فلترة/ترتيب).
+- **يفعل:** GroupError، publicUser (يحذف كلمات المرور ويُصفّر حقول الحفظ المعتمد)، listUsers، listGroups (عدد الطلاب يُحسب من العضويات لا من العدّاد المخزن)، findGroup بالرمز، createFirestoreGroup (رمز عشوائي + groupInvites)، setMembership (العملية المركزية: عضوية واحدة نشطة لكل طالب، joinedAt يُضبط عند دخول حلقة جديدة ويُحفظ عند إعادة الكتابة لنفس الحلقة، تحدّث مؤشرات المستخدم وعدّادات الحلقتين وحالة الطلب في transaction واحدة، مع فحص السعة وصلاحية الفاعل)، submitRequest، listRequests، changeTeacherRole (يمنع إزالة الدور إن كان يملك حلقات)، teacherStudents (بحث/فلترة/ترتيب؛ status مشتق بـ studentActivityStatus وlastRecitationDate = lastQuranActivityDate، لا يُخزَّنان).
 - **لماذا:** يضمن الاتساق: لا يمكن أن يكون الطالب في حلقتين، ولا أن يختلف العدّاد عن الواقع بعد نقل.
 - **متى:** عند الانضمام/المغادرة/النقل/القبول/إنشاء حلقة/تعيين معلم.
 - **إن تعطّل:** كل عمليات الحلقات في routes/groups.js.
-- **انتبه:** memorizedPages وtotalJuz وmemoryScore تُرجع null دائمًا عمدًا ('unavailable_no_page_approval_workflow') — أي واجهة تعرضها ستُظهر فراغًا أو 0. | في sort: الخيار 'memorization' يرتّب بالاسم فعليًا.
-- **يستخدم:** auth.js, teacherScope.js, accessControl.js
+- **انتبه:** memorizedPages وtotalJuz وmemoryScore تُرجع null دائمًا عمدًا ('unavailable_no_page_approval_workflow') — أي واجهة تعرضها ستُظهر فراغًا أو 0. | في sort: الخيار 'memorization' يرتّب بالاسم فعليًا. | consistencyRate وthisWeekSessions لا يكتبهما أي كود — يرجعان null دائمًا.
+- **يستخدم:** auth.js, teacherScope.js, accessControl.js, quranActivityStreak.js
 - **يستخدمه:** groups.js
 
 ### `server/firestoreRecitation.js`
@@ -985,11 +985,11 @@ _safarEcosystem، database، Firestore، محرك التسميع_
 - **يستخدمه:** server/index.js
 
 ### `server/quranActivityStreak.js`
-- **يفعل:** ammanDateKey (YYYY-MM-DD بتوقيت Asia/Amman)، nextQuranActivityStreak (+1 إن كان النشاط السابق أمس، يبقى إن كان اليوم، وإلا يعود 1)، activityNow (يسمح بتثبيت الوقت في الاختبارات عبر MA7FATH_TEST_NOW).
+- **يفعل:** ammanDateKey (YYYY-MM-DD بتوقيت Asia/Amman)، nextQuranActivityStreak (+1 إن كان النشاط السابق أمس، يبقى إن كان اليوم، وإلا يعود 1)، activityNow (يسمح بتثبيت الوقت في الاختبارات عبر MA7FATH_TEST_NOW). daysSinceQuranActivity وstudentActivityStatus: حالة الطالب لفلاتر المعلمة — منقطعة (لا نشاط أو أكثر من 7 أيام)، بحاجة لمتابعة (3–7 أيام)، متميزة (خلال يومين وstreak ≥ 3)، وإلا نشطة.
 - **لماذا:** اليوم يُحسب بتوقيت عمّان لا UTC حتى لا ينكسر الـ streak بعد منتصف الليل UTC (الثالثة فجرًا بتوقيت عمّان).
 - **متى:** عند حفظ كل محاولة تسميع، وفي إحصاءات المشرف والتحليلات وخطة الحصون.
 - **إن تعطّل:** الـ streak يُحسب خطأ أو يُصفّر.
-- **يستخدمه:** firestoreRecitation.js, fortressPlanPersistence.js, groups.js
+- **يستخدمه:** firestoreRecitation.js, fortressPlanPersistence.js, groups.js, firestoreGroups.js
 
 ### `server/quranReference.js`
 - **يفعل:** يحمّل server/data/quran-uthmani.json (1.7MB) ويتحقق أنه 114 سورة و6236 آية وإلا يرمي عند الإقلاع. quranPageReference(page)، quranSurahReference(n)، trustedQuranReference: يبني النص المتوقع للمقارنة من رقم السورة/الآية/الصفحة ويتحقق من تطابقها.

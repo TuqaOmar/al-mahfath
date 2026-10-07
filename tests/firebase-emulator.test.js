@@ -632,6 +632,31 @@ test('student card fields: null returned for absent denormalized cache fields, c
   assert.equal(sf.consistencyRate, 85);
   assert.equal(sf.thisWeekSessions, 3);
   await db.doc('users/metrics-student-1').update({ consistencyRate: null, thisWeekSessions: null });
+
+  // Roster status and last practice day are derived from the confirmed activity day and streak.
+  const { ammanDateKey, activityNow } = await import('../server/quranActivityStreak.js');
+  const daysAgo = days => ammanDateKey(new Date(activityNow().getTime() - days * 86400000));
+  const original = (await db.doc('users/metrics-student-1').get()).data();
+  const statusFor = async (lastQuranActivityDate, streak) => {
+    await db.doc('users/metrics-student-1').update({ lastQuranActivityDate, streak });
+    const roster = await api('metrics-teacher-1', '/api/teacher/metrics-teacher-1/students', 200);
+    return roster.students.find(s => s.uid === 'metrics-student-1');
+  };
+  try {
+    const excellent = await statusFor(daysAgo(0), 4);
+    assert.equal(excellent.status, 'excellent');
+    assert.equal(excellent.lastRecitationDate, daysAgo(0));
+    assert.equal((await statusFor(daysAgo(1), 1)).status, 'active');
+    assert.equal((await statusFor(daysAgo(5), 9)).status, 'needs_attention');
+    assert.equal((await statusFor(daysAgo(10), 9)).status, 'inactive');
+    const never = await statusFor(null, 0);
+    assert.equal(never.status, 'inactive');
+    assert.equal(never.lastRecitationDate, '');
+  } finally {
+    await db.doc('users/metrics-student-1').update({
+      lastQuranActivityDate: original.lastQuranActivityDate ?? null, streak: original.streak ?? 0
+    });
+  }
 });
 
 test('group studentsCount uses live memberships not stale stored counter, empty group shows zero', async () => {

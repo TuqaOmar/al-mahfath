@@ -61,7 +61,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
     setLoading(true); setLoadError('');
     try {
       if (!user?.uid) return;
-      const params = new URLSearchParams({ filter: activeFilter, sort: sortBy });
+      const params = new URLSearchParams({ filter: 'all', sort: sortBy });
       if (searchQuery) params.set('search', searchQuery);
       if (groupId) params.set('groupId', groupId);
       const response = await fetchWithAuth('/api/teacher/' + encodeURIComponent(user.uid) + '/students?' + params,
@@ -73,7 +73,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
     } catch {
       if (version === requestVersion.current) { setStudents([]); setLoadError('تعذر تحميل الطلاب أو انتهت صلاحية الوصول.'); }
     } finally { if (version === requestVersion.current) setLoading(false); }
-  }, [user?.uid, activeFilter, sortBy, searchQuery, groupId]);
+  }, [user?.uid, sortBy, searchQuery, groupId]);
   useTeacherRefresh(fetchStudents);
 
   const groupCodeVersion = useRef(0);
@@ -159,6 +159,8 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
     }
   };
 
+  // Status is derived on the server from the last practice day and streak (see studentActivityStatus).
+  const visibleStudents = activeFilter === 'all' ? students : students.filter(s => s.status === activeFilter);
   const filterTabs = [
     { id: 'all', label: 'الكل', count: students.length },
     { id: 'excellent', label: 'متميزات 🟢', count: students.filter(s => s.status === 'excellent').length },
@@ -364,11 +366,14 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                   transition: 'all 0.15s ease'
                 }}
               >
-                {tab.label}
+                {tab.label} ({tab.count})
               </button>
             );
           })}
         </div>
+        <p style={{ margin: '8px 0 0 0', fontSize: '11.5px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+          متميزة: تدرّبت خلال آخر يومين و3 أيام متتالية أو أكثر • بحاجة لمتابعة: آخر تدريب قبل 3–7 أيام • منقطعة: لا تدريب منذ أكثر من 7 أيام
+        </p>
       </div>
 
       {/* Students Cards Grid */}
@@ -397,7 +402,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
         <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
           جاري تحميل بيانات الطالبات...
         </div>
-      ) : students.length === 0 ? (
+      ) : visibleStudents.length === 0 ? (
         <div style={{ padding: '40px', textAlign: 'center', background: 'var(--bg-surface)', borderRadius: '18px', border: '1px solid var(--glass-border)' }}>
           <Users size={40} color="var(--text-secondary)" style={{ margin: '0 auto 12px auto' }} />
           <h4 style={{ margin: '0 0 6px 0', color: 'var(--text-primary)' }}>لا توجد طالبات تطابق البحث أو التصنيف</h4>
@@ -409,11 +414,12 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
           gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           gap: '14px'
         }}>
-          {students.map((student) => {
+          {visibleStudents.map((student) => {
             const isNeedAttention = student.status === 'needs_attention';
             const isInactive = student.status === 'inactive';
-            const statusColor = isNeedAttention ? '#F59E0B' : (isInactive ? '#EF4444' : '#10B981');
-            const statusLabel = isNeedAttention ? 'بحاجة لمتابعة' : (isInactive ? 'منقطعة' : 'متميزة');
+            const isExcellent = student.status === 'excellent';
+            const statusColor = isNeedAttention ? '#F59E0B' : (isInactive ? '#EF4444' : (isExcellent ? '#10B981' : '#3B82F6'));
+            const statusLabel = isNeedAttention ? 'بحاجة لمتابعة' : (isInactive ? 'منقطعة' : (isExcellent ? 'متميزة' : 'نشطة'));
 
             return (
               <div
@@ -481,7 +487,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                 {/* Key Metrics Grid */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: '6px',
                   padding: '10px',
                   borderRadius: '12px',
@@ -492,16 +498,12 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                     <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{declaredPages(student).length} صفحة</strong>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>آخر 7 أيام</span>
-                    <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{student.thisWeekSessions ?? 0} جلسة</strong>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>أيام متتالية</span>
+                    <strong style={{ fontSize: '12.5px', color: 'var(--text-primary)' }}>{Number(student.streak) || 0} يوم</strong>
                   </div>
                   <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>الالتزام</span>
-                    <strong style={{ fontSize: '12.5px', color: (student.consistencyRate == null) ? 'var(--text-secondary)' : (student.consistencyRate < 75 ? '#EF4444' : '#10B981') }}>{student.consistencyRate == null ? 'غير متاح' : `${student.consistencyRate}%`}</strong>
-                  </div>
-                  <div style={{ textAlign: 'center' }}>
-                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>آخر تسميع</span>
-                    <strong style={{ fontSize: '11.5px', color: 'var(--text-primary)' }}>{student.lastRecitationDate}</strong>
+                    <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>آخر تدريب</span>
+                    <strong style={{ fontSize: '11.5px', color: student.lastRecitationDate ? 'var(--text-primary)' : 'var(--text-secondary)' }}>{student.lastRecitationDate || 'لا يوجد'}</strong>
                   </div>
                 </div>
 
