@@ -1251,9 +1251,9 @@ test('Chrome quiz saves, profile refresh failures and dismiss-only reminders rep
   await student.setViewportSize({ width: 390, height: 844 });
   await expect(student.locator('#pull-to-refresh-container')).toBeVisible();
   const pull = async () => {
-    await student.evaluate(() => { window.scrollTo(0, 0); const el = document.getElementById('pull-to-refresh-container'); el.scrollTop = 0; });
-    await student.locator('#pull-to-refresh-container').dispatchEvent('touchstart', { touches: [{ clientX: 100, clientY: 90 }], cancelable: true });
-    await student.locator('#pull-to-refresh-container').dispatchEvent('touchmove', { touches: [{ clientX: 100, clientY: 290 }], cancelable: true });
+    await student.evaluate(() => { window.scrollTo({ top: 0, behavior: 'instant' }); const el = document.getElementById('pull-to-refresh-container'); el.scrollTop = 0; });
+    await student.locator('#pull-to-refresh-container').dispatchEvent('touchstart', { touches: [{ identifier: 1, clientX: 100, clientY: 90 }], cancelable: true });
+    await student.locator('#pull-to-refresh-container').dispatchEvent('touchmove', { touches: [{ identifier: 1, clientX: 100, clientY: 290 }], cancelable: true });
     await student.locator('#pull-to-refresh-container').dispatchEvent('touchend', { touches: [], cancelable: true });
   };
   await profileRef.delete();
