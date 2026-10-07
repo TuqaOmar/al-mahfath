@@ -126,6 +126,9 @@ router.get('/teacher/:teacherId/students', requireAuth, teacherScope, route(asyn
 }));
 router.get('/teacher/:teacherId/student/:studentId', requireAuth, teacherScope, route(async (req, res) => {
   if (!isAdmin(req.user)) await requireTeacherStudent(req.params.teacherId, req.params.studentId);
+  // Same rule as the review/notes routes, from the live membership (users/{id}.teacherId can be missing or stale).
+  const canManage = req.user.uid === req.params.teacherId && hasRole(req.user, 'teacher') &&
+    await requireTeacherStudent(req.params.teacherId, req.params.studentId).then(() => true, () => false);
   const student = await db.doc(`users/${req.params.studentId}`).get();
   if (!student.exists) throw new GroupError(404, 'حساب الطالب غير موجود');
   const [recitationStats, recentSessions, ayahProgress, membership] = await Promise.all([
@@ -149,7 +152,7 @@ router.get('/teacher/:teacherId/student/:studentId', requireAuth, teacherScope, 
     manualOldReviewTarget: preferences.manualOldReviewTarget || null,
     oldReviewDailyTarget: preferences.oldReviewDailyTarget || null
   };
-  success(res, { student: { ...publicUser(student), memorizedJuz: null, joinedDate,
+  success(res, { student: { ...publicUser(student), memorizedJuz: null, joinedDate, canManage,
     recitationStats, recentSessions, recordedProgress, learningPlan } });
 }));
 router.patch('/teacher/:teacherId/student/:studentId/sessions/:sessionId/review', requireAuth, teacherScope, route(async (req, res) => {

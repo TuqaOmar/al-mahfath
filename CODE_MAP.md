@@ -752,7 +752,7 @@ _لوحات المعلم والإدارة_
 - **لماذا:** المعلم يراجع جلسات التدريب المرسلة له؛ القبول لا يعتمد الحفظ ولا يمنح XP.
 - **متى:** عند النقر على طالب من اللوحة أو القائمة.
 - **إن تعطّل:** لا مراجعة للجلسات ولا ملاحظات.
-- **انتبه:** فشل المراجعة أو الملاحظة بـ 403/404 (فقدت المعلمة الوصول، مثل نقل الطالبة) يمسح بيانات الطالب من النافذة — تعتمد عليه اختبارات المتصفح؛ أي فشل آخر يبقي البيانات ونص الملاحظة لإعادة المحاولة. | أزرار القبول/الرفض ونموذج الملاحظة يظهران فقط للمعلمة المعيّنة (student.teacherId === user.uid مع دور teacher)؛ المشرف يرى رسالة توضيحية. | نسبة إنجاز الهدف والهدف الحالي لا يرسلها الخادم فتظهر '—' دائمًا. | تاريخ الانضمام = joinedDate من الخادم (memberships.joinedAt، وللعضويات القديمة updatedAt ثم createdAt للحساب).
+- **انتبه:** فشل المراجعة أو الملاحظة بـ 403/404 (فقدت المعلمة الوصول، مثل نقل الطالبة) يمسح بيانات الطالب من النافذة — تعتمد عليه اختبارات المتصفح؛ أي فشل آخر يبقي البيانات ونص الملاحظة لإعادة المحاولة. | أزرار القبول/الرفض ونموذج الملاحظة يظهران فقط إن أعاد الخادم student.canManage (المعلمة نفسها بدور teacher وعضوية فعّالة في حلقتها — لا يُعتمد على users.teacherId لأنه قد يكون ناقصًا أو قديمًا)؛ المشرف يرى رسالة توضيحية. | نسبة إنجاز الهدف والهدف الحالي لا يرسلها الخادم فتظهر '—' دائمًا. | تاريخ الانضمام = joinedDate من الخادم (memberships.joinedAt، وللعضويات القديمة updatedAt ثم createdAt للحساب).
 - **يستخدم:** memorization.js, LanguageContext.jsx, AuthContext.jsx, useTeacherRefresh.js, api.js, groups.js
 - **يستخدمه:** Dashboard.jsx
 
@@ -920,7 +920,7 @@ _Express index، routes، middleware، صلاحيات_
 - **لماذا:** استبدل منطق safarEcosystem.js (JSON وهمي) بمنطق Firestore حقيقي عبر firestoreGroups.js. كل مسار محمي بـ requireAuth + requireAdmin أو teacherScope (canActAsTeacher).
 - **متى:** عند فتح لوحات المعلم/المشرف، الانضمام لحلقة من المعالج أو JoinGroupModal، وفتح شاشة التحليلات.
 - **إن تعطّل:** TeacherDashboard وTeacherStudents/Groups/Reports وAdminDashboard وAdminDistributionView وJoinGroupModal وOnboardingWizard (خطوة الحلقة) وAnalyticsView.
-- **انتبه:** مراجعة الجلسة وكتابة الملاحظات تشترط أن يكون المستخدم هو المعلم نفسه — المشرف (admin) لا يستطيع رغم أن teacherScope يسمح له بالقراءة. | /teacher/:id/dashboard و/reports تقرأ كل جلسات كل طالب بلا ترقيم — بطيء مع كثرة البيانات. | GET /groups/lookup عام بلا مصادقة (مقصود: يعرض بيانات الحلقة فقط).
+- **انتبه:** مراجعة الجلسة وكتابة الملاحظات تشترط أن يكون المستخدم هو المعلم نفسه — المشرف (admin) لا يستطيع رغم أن teacherScope يسمح له بالقراءة. GET /teacher/:id/student/:id يعيد canManage بنفس هذا الشرط لتقرر الواجهة إظهار الأزرار. | /teacher/:id/dashboard و/reports تقرأ كل جلسات كل طالب بلا ترقيم — بطيء مع كثرة البيانات. | GET /groups/lookup عام بلا مصادقة (مقصود: يعرض بيانات الحلقة فقط).
 - **يستخدم:** auth.js, accessControl.js, firestoreRecitation.js, quranActivityStreak.js, firestoreGroups.js, teacherScope.js, pushNotifications.js
 - **يستخدمه:** server/index.js, AnalyticsView.jsx, AdminDashboard.jsx, AdminDistributionView.jsx, AdminPerformanceDashboard.jsx, JoinGroupModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, OnboardingWizard.jsx
 

@@ -71,9 +71,9 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   const stats = student?.recitationStats || {};
   const recentSessions = Array.isArray(student?.recentSessions) ? student.recentSessions : [];
   const recordedProgress = student?.recordedProgress || {};
-  // The server accepts reviews and notes only from the student's own assigned teacher (not an admin viewing).
-  const isAssignedTeacher = Boolean(user?.uid && student?.teacherId === user.uid &&
-    (user.role === 'teacher' || user.roles?.teacher === true));
+  // The server accepts reviews and notes only from the student's own assigned teacher (not an admin viewing)
+  // and reports that decision as canManage, from the live circle membership.
+  const isAssignedTeacher = student?.canManage === true;
   const learningPlan = student?.learningPlan || {};
 
   // 403/404 means this teacher lost access (e.g. the student moved circles): hide the profile.
@@ -398,7 +398,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                       </p>
                     )}
                     {recentSessions.map(sess => (
-                      <div key={sess.id} data-testid={`student-practice-${sess.id}`} style={{ padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <div key={sess.id} data-testid={`student-practice-${sess.id}`} style={{ padding: '10px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
                         <div>
                           <strong style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{sess.surahName || text('مقارنة نصية', 'Text comparison')} • {text('الصفحة', 'Page')} {numberLabel(sess.pageNumber)}</strong>
                           <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>{dateLabel(sess.createdAt)} • {text('تدريب؛ مرجع عثماني من الخادم', 'Practice; server Uthmani reference')}</span>
