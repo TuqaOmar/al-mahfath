@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { auth, googleProvider } from '../lib/firebase';
 import { signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { Logo } from './ui/Logo';
-import { isNativeMobile } from '../utils/platform';
 
 export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
   const [isSignUp, setIsSignUp] = useState(initialMode === 'signup');
@@ -52,16 +51,19 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
     setError('');
     try {
       if (auth && googleProvider) {
-        const isMobileBrowser = !isNativeMobile() && (
-          /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
-          window.matchMedia('(pointer: coarse)').matches
-        );
-        if (isMobileBrowser) {
-          await signInWithRedirect(auth, googleProvider);
-          return;
+        // Popup on every browser, phones included: mobile Safari/Chrome block the
+        // cross-site storage signInWithRedirect needs (authDomain is firebaseapp.com,
+        // the app is on Vercel), so a redirect returns to the page signed out.
+        let result;
+        try {
+          result = await signInWithPopup(auth, googleProvider);
+        } catch (popupErr) {
+          if (popupErr?.code === 'auth/popup-blocked') {
+            await signInWithRedirect(auth, googleProvider);
+            return;
+          }
+          throw popupErr;
         }
-
-        const result = await signInWithPopup(auth, googleProvider);
         if (result && result.user) {
           const user = result.user;
           const res = await loginWithGoogle(user.email, user.displayName, user.photoURL);
@@ -74,8 +76,11 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
         }
       }
     } catch (popupErr) {
-      console.error('Firebase popup error:', popupErr.message);
-      setError(isRTL ? 'فشل تسجيل الدخول بحساب جوجل' : 'Failed to login with Google');
+      console.error('Firebase popup error:', popupErr.code, popupErr.message);
+      const closedByUser = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(popupErr?.code);
+      if (!closedByUser) {
+        setError(isRTL ? 'فشل تسجيل الدخول بحساب جوجل' : 'Failed to login with Google');
+      }
     }
     setIsLoading(false);
   };

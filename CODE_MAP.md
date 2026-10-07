@@ -210,11 +210,11 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدمه:** main.jsx
 
 ### `src/components/AuthModal.jsx`
-- **يفعل:** تسجيل دخول/إنشاء حساب بالبريد عبر useAuth، أو Google (popup على سطح المكتب، redirect على متصفح الجوال). بعد النجاح يوجّه لـ /dashboard أو /wizard حسب isAccountReady.
-- **لماذا:** popup يُحظر غالبًا على متصفحات الجوال فيُستخدم redirect.
+- **يفعل:** تسجيل دخول/إنشاء حساب بالبريد عبر useAuth، أو Google بـ signInWithPopup على كل الأجهزة (redirect فقط إن حُظرت النافذة: auth/popup-blocked). بعد النجاح يوجّه لـ /dashboard أو /wizard حسب isAccountReady.
+- **لماذا:** signInWithRedirect لا يعمل على Safari وChrome في الجوال: authDomain هو firebaseapp.com والتطبيق على Vercel، فالمتصفح يحجب التخزين عبر المواقع ويعود المستخدم للصفحة دون دخول. لذلك popup حتى على الجوال.
 - **متى:** عند نقر 'تسجيل الدخول/ابدأ' في الصفحة التعريفية.
 - **إن تعطّل:** لا يمكن الدخول.
-- **انتبه:** بعد redirect من Google لا يُستدعى loginWithGoogle — يعتمد على onAuthStateChanged لإنشاء المستند (يعمل لكن بمسار مختلف). | isAccountReady نسخة من منطق ProtectedRoute.
+- **انتبه:** لا ترجع إلى redirect للجوال — يكسر الدخول بجوجل هناك. إغلاق النافذة من المستخدم لا يُظهر خطأ. | isAccountReady نسخة من منطق ProtectedRoute.
 - **يستخدم:** AuthContext.jsx, LanguageContext.jsx, firebase.js, Logo.jsx, platform.js
 - **يستخدمه:** LandingPage.jsx
 
