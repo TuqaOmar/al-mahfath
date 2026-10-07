@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import {
   runQuery, 
@@ -601,6 +600,9 @@ app.get('/api/admin/memorization-performance', requireAuth, requireAdmin, async 
 // Serve Vite dev middleware or production static files
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
+    // Vite is a devDependency: load it only for local dev. A top-level import
+    // crashed the Vercel function (every /api route returned FUNCTION_INVOCATION_FAILED).
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true, allowedHosts: true },
       appType: 'spa',
