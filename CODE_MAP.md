@@ -10,11 +10,10 @@
 - **الذكاء**: Gemini (`@google/genai`) + HuggingFace Whisper للتسميع.
 
 ## العيوب المكتشفة
-### 🐞 خلل (5)
+### 🐞 خلل (4)
 - `server/index.js` — PUT/DELETE /api/admin/user/:uid و GET /api/quran/pages و/portfolio تستخدم database.js القديم (ملف db.json)، بينما المستخدمون الحقيقيون في Firestore — تعديل/حذف مستخدم من هنا لا يؤثر على حسابه الحقيقي.
 - `src/components/Community.jsx` — لوحة 'التنافس' بيانات وهمية مكتوبة في الكود (3 أسماء ثابتة + المستخدم الحالي بـ 2,450 XP و14 يومًا ثابتة) — لا تعكس أي بيانات حقيقية.
 - `src/components/FiveFortressesPlan.jsx` — يعرّف getSurahNameForPage وgetJuzForPage محليًا بقيم تقريبية (الصفحات 305–582 كلها 'عموم السور المتوسطة'، والجزء = ceil(page/20)) بدل utils/quranData — اسم السورة والجزء خاطئان في هذا التبويب.
-- `src/components/onboarding/JoinGroupModal.jsx` — زر 'المتابعة كحافظ مستقل' يستدعي leave فورًا بلا تأكيد — عضو في حلقة يفتح 'إدارة العضوية' ثم يختاره يخرج من حلقته.
 - `src/components/teacher/TeacherStudentsView.jsx` — نموذج الإضافة يجعل البريد 'اختياريًا'، لكن الخادم يتطلب حسابًا مسجلًا (studentUid أو بريد مطابق) — الإضافة بالاسم فقط تفشل دائمًا بـ 'معرف الطالب مطلوب'. حقلا 'عدد الأجزاء' و'الورد' يُرسلان ويتجاهلهما الخادم.
 
 ### ⧉ تكرار (3)
@@ -326,12 +325,12 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **إن تعطّل:** لا دخول من الجوال.
 - **يستخدمه:** LandingPage.jsx
 
-### `src/components/onboarding/JoinGroupModal.jsx` **[🐞 خلل]**
-- **يفعل:** prompt ← enter_code ← confirm_group ← success. يبحث بالرمز عبر /api/groups/lookup (عام)، ينضم عبر /api/groups/join، أو 'المتابعة كحافظ مستقل' عبر /api/groups/leave، ثم refreshUserData.
+### `src/components/onboarding/JoinGroupModal.jsx`
+- **يفعل:** prompt ← enter_code ← confirm_group ← success. يبحث بالرمز عبر /api/groups/lookup (عام)، ينضم عبر /api/groups/join. 'المتابعة كحافظ مستقل': لغير العضو يغلق النافذة فقط؛ للعضو (isSafarMember) يصبح 'الخروج من الحلقة…' ويعرض خطوة confirm_leave باسم الحلقة ('البقاء في الحلقة' / 'نعم، الخروج') ثم /api/groups/leave وrefreshUserData.
 - **لماذا:** الانضمام لحلقة اختياري؛ يمكن البقاء مستقلًا.
 - **متى:** من بطاقة الحلقة في رئيسية الطالب.
 - **إن تعطّل:** لا انضمام من اللوحة (المعالج له منطقه الخاص).
-- **انتبه:** زر 'المتابعة كحافظ مستقل' يستدعي leave فورًا بلا تأكيد — عضو في حلقة يفتح 'إدارة العضوية' ثم يختاره يخرج من حلقته. | يعرض membersCount وteacherAvatar لكن الخادم لا يرجعهما في lookup — يظهر 'undefined طالبة' وصورة افتراضية. | منطق lookup/join مكرر في OnboardingWizard.
+- **انتبه:** نصوص الأزرار يعتمد عليها tests/firebase-browser.test.js. | يعرض membersCount وteacherAvatar لكن الخادم لا يرجعهما في lookup — يظهر 'undefined طالبة' وصورة افتراضية. | منطق lookup/join مكرر في OnboardingWizard.
 - **يستخدم:** AuthContext.jsx, api.js, LanguageContext.jsx, groups.js
 - **يستخدمه:** Dashboard.jsx
 

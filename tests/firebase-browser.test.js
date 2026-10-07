@@ -187,7 +187,10 @@ test('actual browser group journey: roles, groups, join, reload, transfer, logou
   await pages.student.getByRole('button', { name: 'تأكيد الانضمام للحلقة', exact: true }).click();
   await expect(pages.student.getByText(`عضوة مسجلة في ${first.name} 🌸`, { exact: true })).toBeVisible();
   await pages.student.getByRole('button', { name: 'إدارة عضوية الحلقة', exact: true }).click();
-  await expect(pages.student.getByRole('button', { name: 'المتابعة كحافظ مستقل دون حلقة', exact: true })).toBeVisible();
+  // Leaving asks first; "stay" keeps the membership.
+  await pages.student.getByRole('button', { name: 'الخروج من الحلقة والمتابعة كحافظ مستقل', exact: true }).click();
+  await expect(pages.student.getByText(`هل تريدين الخروج من ${first.name}؟`, { exact: true })).toBeVisible();
+  await pages.student.getByRole('button', { name: 'البقاء في الحلقة', exact: true }).click();
   await pages.student.getByRole('button', { name: 'إغلاق نافذة الحلقة', exact: true }).click();
   await refresh(pages.student);
   await expect(pages.student.getByText(`عضوة مسجلة في ${first.name} 🌸`, { exact: true })).toBeVisible();
@@ -227,7 +230,8 @@ test('actual browser group journey: roles, groups, join, reload, transfer, logou
   await login(pages.student, 'student');
   await expect(pages.student.getByText(`عضوة مسجلة في ${second.name} 🌸`, { exact: true })).toBeVisible();
   await pages.student.getByRole('button', { name: 'إدارة عضوية الحلقة', exact: true }).click();
-  await pages.student.getByRole('button', { name: 'المتابعة كحافظ مستقل دون حلقة', exact: true }).click();
+  await pages.student.getByRole('button', { name: 'الخروج من الحلقة والمتابعة كحافظ مستقل', exact: true }).click();
+  await pages.student.getByRole('button', { name: 'نعم، الخروج من الحلقة', exact: true }).click();
   await expect(pages.student.getByRole('button', { name: 'انضمام لحلقة', exact: true })).toBeVisible();
   await refresh(pages.student);
   await expect(pages.student.getByRole('button', { name: 'انضمام لحلقة', exact: true })).toBeVisible();

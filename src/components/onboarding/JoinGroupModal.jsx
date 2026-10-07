@@ -19,10 +19,10 @@ import { fetchWithAuth } from '../../lib/api';
 import { useLanguage } from '../../context/LanguageContext';
 
 export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
-  const { refreshUserData } = useAuth();
+  const { user, refreshUserData } = useAuth();
   const { lang, isRTL } = useLanguage();
 
-  const [step, setStep] = useState('prompt'); // 'prompt' | 'enter_code' | 'confirm_group' | 'success'
+  const [step, setStep] = useState('prompt'); // 'prompt' | 'enter_code' | 'confirm_group' | 'confirm_leave' | 'success'
   const [groupCode, setGroupCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -99,7 +99,19 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
     }
   };
 
-  const handleContinueIndependent = async () => {
+  // A student who is not in a circle has nothing to leave; a member must confirm first.
+  const handleContinueIndependent = () => {
+    if (user?.isSafarMember) {
+      setErrorMsg('');
+      setStep('confirm_leave');
+    } else {
+      onClose();
+    }
+  };
+
+  const handleConfirmLeave = async () => {
+    setLoading(true);
+    setErrorMsg('');
     try {
       const res = await fetchWithAuth('/api/groups/leave', { method: 'POST' });
       const data = await res.json();
@@ -109,6 +121,8 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
     } catch (error) {
       console.error('Leave group error:', error);
       setErrorMsg(error.message || (lang === 'ar' ? 'تعذر الخروج من الحلقة' : 'Could not leave the group'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -276,7 +290,11 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                   }}
                 >
                   <BookOpen size={16} />
-                  <span>{lang === 'ar' ? 'المتابعة كحافظ مستقل دون حلقة' : 'Continue Without a Group'}</span>
+                  <span>
+                    {user?.isSafarMember
+                      ? (lang === 'ar' ? 'الخروج من الحلقة والمتابعة كحافظ مستقل' : 'Leave Group and Continue Independently')
+                      : (lang === 'ar' ? 'المتابعة كحافظ مستقل دون حلقة' : 'Continue Without a Group')}
+                  </span>
                 </button>
               </div>
 
@@ -461,6 +479,76 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                 >
                   <UserCheck size={18} />
                   <span>{loading ? 'جارٍ الانضمام...' : 'تأكيد الانضمام للحلقة'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* CONFIRM LEAVING THE CURRENT GROUP */}
+          {step === 'confirm_leave' && (
+            <div style={{ textAlign: 'center' }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '20px',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#EF4444',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 16px auto'
+              }}>
+                <AlertCircle size={32} />
+              </div>
+
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
+                {lang === 'ar'
+                  ? `هل تريدين الخروج من ${user?.groupName || 'حلقتك'}؟`
+                  : `Leave ${user?.groupName || 'your group'}?`}
+              </h3>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+                {lang === 'ar'
+                  ? 'ستتوقف متابعة المعلمة لوردك وتسميعك، ولن تظهري في قائمة طالبات الحلقة. يمكنك الانضمام مجددًا لاحقًا برمز الدعوة.'
+                  : 'Your teacher will no longer follow your progress and you will be removed from the group roster. You can rejoin later with the invite code.'}
+              </p>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => setStep('prompt')}
+                  disabled={loading}
+                  style={{
+                    flex: 1,
+                    padding: '14px 18px',
+                    borderRadius: '14px',
+                    background: 'var(--bg-color)',
+                    color: 'var(--text-primary)',
+                    border: '1px solid var(--glass-border)',
+                    fontSize: '14px',
+                    fontWeight: 600,
+                    cursor: 'pointer'
+                  }}
+                >
+                  {lang === 'ar' ? 'البقاء في الحلقة' : 'Stay in Group'}
+                </button>
+
+                <button
+                  onClick={handleConfirmLeave}
+                  disabled={loading}
+                  style={{
+                    flex: 1,
+                    padding: '14px',
+                    borderRadius: '14px',
+                    background: '#EF4444',
+                    color: '#FFFFFF',
+                    border: 'none',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    cursor: loading ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {loading
+                    ? (lang === 'ar' ? 'جارٍ الخروج...' : 'Leaving...')
+                    : (lang === 'ar' ? 'نعم، الخروج من الحلقة' : 'Yes, Leave Group')}
                 </button>
               </div>
             </div>
