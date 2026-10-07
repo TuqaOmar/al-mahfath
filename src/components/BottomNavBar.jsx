@@ -62,7 +62,8 @@ const NavButton = ({ id, label, icon: Icon, isActive, onClick }) => (
   </button>
 );
 
-export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, isMoreOpen = false }) => {
+// `hidden`: slide away while the on-screen keyboard is open so it never sits on top of a text field.
+export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, isMoreOpen = false, hidden = false }) => {
   const { lang } = useLanguage();
   const { activeRole } = useAuth();
   const { configuration } = useUiConfiguration();
@@ -76,6 +77,8 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, isMoreOpen =
     <nav
       id="mobile-bottom-navigation"
       className="mobile-bottom-navigation"
+      aria-hidden={hidden || undefined}
+      inert={hidden || undefined}
       style={{
         position: 'fixed',
         bottom: 0,
@@ -88,6 +91,9 @@ export const BottomNavBar = ({ activeTab, setActiveTab, onOpenMore, isMoreOpen =
         display: 'flex',
         alignItems: 'stretch',
         zIndex: 90,
+        transform: hidden ? 'translateY(100%)' : 'none',
+        visibility: hidden ? 'hidden' : 'visible',
+        transition: hidden ? 'transform 0.18s ease, visibility 0s 0.18s' : 'transform 0.18s ease',
         padding: '0 4px env(safe-area-inset-bottom, 0px) 4px',
         userSelect: 'none',
         WebkitUserSelect: 'none',

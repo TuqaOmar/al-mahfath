@@ -560,6 +560,41 @@ a {
 html, body {
   -webkit-tap-highlight-color: transparent;
   touch-action: pan-y pinch-zoom;
+  /* The app has its own pull-to-refresh; stop the browser's from firing too. */
+  overscroll-behavior-y: none;
+}
+
+/* Notification panel: dropdown under the bell on desktop, full-width panel under the top bar on phones. */
+.notification-center-panel {
+  position: absolute;
+  top: 48px;
+  width: 390px;
+  max-width: calc(100vw - 20px);
+  z-index: 110;
+}
+
+@media (max-width: 768px) {
+  .notification-center-panel {
+    position: fixed;
+    top: calc(64px + env(safe-area-inset-top, 0px));
+    left: 8px !important;
+    right: 8px !important;
+    width: auto;
+    max-width: none;
+    max-height: calc(100dvh - 64px - env(safe-area-inset-top, 0px) - 16px);
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+}
+
+/* Respect the OS "reduce motion" setting for CSS transitions too. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }
 
 /* Safe Area Insets for modern devices with notches/home bars */

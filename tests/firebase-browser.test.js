@@ -76,8 +76,11 @@ async function api(key, pathname, options = {}) {
   return response;
 }
 
+// A repository data file may be absent (e.g. local backups removed); it must then stay absent.
+const fileHash = file => readFile(file).then(hash, error => { if (error.code === 'ENOENT') return 'absent'; throw error; });
+
 test.before(async () => {
-  for (const file of sourceFiles) hashes[file] = hash(await readFile(file));
+  for (const file of sourceFiles) hashes[file] = await fileHash(file);
   temporary = await mkdtemp(path.join(tmpdir(), 'ma7fath-ui-data-'));
   process.env.MA7FATH_TEST_DATA_DIR = temporary;
   process.env.VERCEL = '1';
@@ -135,7 +138,7 @@ test.after(async () => {
   if (vite) await vite.close();
   if (db) await db.terminate();
   if (temporary) await rm(temporary, { recursive: true, force: true });
-  for (const file of sourceFiles) assert.equal(hash(await readFile(file)), hashes[file], `${file} unchanged`);
+  for (const file of sourceFiles) assert.equal(await fileHash(file), hashes[file], `${file} unchanged`);
   evidence.sourceHashesUnchanged = true;
   if (evidence.passed) {
     for (const key of Object.keys(pages)) await rm(path.join(reportDir, `failure-${key}.png`), { force: true });
@@ -1480,6 +1483,42 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
           await page.locator('#quick-settings-trigger-btn').click();
           await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
           await expect.poll(() => page.locator('body').evaluate(body => body.classList.contains('dark'))).toBe(true);
+
+          // App-like back: first closes the open sheet, then returns to the home tab; the URL never changes.
+          await page.locator('#mobile-nav-quran-map').click();
+          await page.locator('#mobile-nav-more-tools').click();
+          await expect(page.locator('#more-tools-modal-sheet')).toBeVisible();
+          await page.goBack();
+          await expect(page.locator('#more-tools-modal-sheet')).toHaveCount(0);
+          await expect(page.locator('#mobile-nav-quran-map')).toHaveAttribute('aria-current', 'page');
+          await page.goBack();
+          await expect(page.locator('#mobile-nav-home')).toHaveAttribute('aria-current', 'page');
+          await expect(page).toHaveURL(/\/dashboard$/);
+
+          // The open tab survives a reload (or the OS killing the backgrounded app).
+          await page.locator('#mobile-nav-five-fortresses').click();
+          await page.reload();
+          await expect(page.locator('#mobile-nav-five-fortresses')).toHaveAttribute('aria-current', 'page');
+          await page.locator('#mobile-nav-home').click();
+
+          // Notifications open as a panel under the top bar that fits the screen; back closes it.
+          await page.getByLabel('فتح مركز الإشعارات').click();
+          const notificationPanel = page.locator('#notification-center-panel');
+          await expect(notificationPanel).toBeVisible();
+          const panelBounds = await notificationPanel.boundingBox();
+          assert.ok(panelBounds.x >= 0 && panelBounds.x + panelBounds.width <= width && panelBounds.y + panelBounds.height <= 844,
+            `notification panel does not fit at ${width}px`);
+          await page.goBack();
+          await expect(notificationPanel).toHaveCount(0);
+
+          // While typing, the bottom bar steps aside so it never covers the field or sits on the keyboard.
+          await page.locator('#header-user-profile-card').click();
+          const nameField = page.locator('input[type="text"][required]').first();
+          await nameField.focus();
+          await expect(page.locator('#mobile-bottom-navigation')).toBeHidden();
+          await page.goBack();
+          await expect(nameField).toHaveCount(0);
+          await expect(page.locator('#mobile-bottom-navigation')).toBeVisible();
         }
 
         if (width === 320) {

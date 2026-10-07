@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { fetchWithAuth } from '../lib/api';
+import { requestFcmToken } from '../lib/firebase';
 
 const NotificationContext = createContext();
 
@@ -76,6 +77,13 @@ export const NotificationProvider = ({ children }) => {
     if (!user?.uid) { setNotifications([]); return; }
     refreshNotifications();
   }, [user?.uid, refreshNotifications]);
+
+  // Re-register this device for server push on every sign-in (tokens rotate; never prompts here).
+  useEffect(() => {
+    if (user?.uid && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      requestFcmToken(user.uid);
+    }
+  }, [user?.uid]);
 
   // Save reminder settings to local storage on change
   useEffect(() => {
@@ -197,6 +205,7 @@ export const NotificationProvider = ({ children }) => {
       updateReminderSettings({ browserPushEnabled: isGranted });
 
       if (isGranted) {
+        if (user?.uid) requestFcmToken(user.uid);
         setToast({
           title: 'تم تفعيل إشعارات المتصفح بنجاح! 🔔',
           message: 'ستصلك التنبيهات على جهازك ومكتملة بالصوت.',

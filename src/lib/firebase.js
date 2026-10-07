@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInAnonymously, onAuthStateChanged, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer, setDoc, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, doc, getDocFromServer, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 import { getMessaging, getToken, onMessage, isSupported } from 'firebase/messaging';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -94,25 +94,19 @@ export async function requestFcmToken(userId = null) {
       console.log('Firebase Cloud Messaging (FCM) Token obtained:', token.substring(0, 15) + '...');
       localStorage.setItem('almahfath_fcm_token', token);
 
-      // Save token to Firestore if user is present
-      if (userId) {
+      // The server owns the token list (pushTokens) and sends the pushes; it needs the signed-in user.
+      if (auth.currentUser) {
         try {
-          const userRef = doc(db, 'users', userId);
-          await setDoc(userRef, { fcmToken: token, fcmUpdatedAt: new Date().toISOString() }, { merge: true });
+          const idToken = await auth.currentUser.getIdToken();
+          const response = await fetch('/api/notifications/register-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
+            body: JSON.stringify({ token })
+          });
+          if (!response.ok) console.warn('FCM token registration failed:', response.status);
         } catch (e) {
-          console.log('Firestore token sync note:', e?.message);
+          console.warn('FCM token registration failed:', e?.message);
         }
-      }
-
-      // Also register token with local server
-      try {
-        await fetch('/api/notifications/register-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token, userId })
-        });
-      } catch (e) {
-        // Backend sync optional
       }
 
       return token;

@@ -2,6 +2,7 @@ import express from 'express';
 import { randomUUID } from 'node:crypto';
 import { db, requireAuth } from '../middleware/auth.js';
 import { hasRole } from '../accessControl.js';
+import { registerPushToken, sendPush } from '../pushNotifications.js';
 
 const router = express.Router();
 const fail = (status, message) => Object.assign(new Error(message), { status });
@@ -80,7 +81,8 @@ router.delete('/community/posts/:id', requireAuth, route(async (req, res) => {
   if (snapshot.data().authorId !== req.user.uid && !hasRole(req.user.profile, 'admin')) throw fail(403, 'لا تملك حذف هذا المنشور');
   const [comments, likes, notifications] = await Promise.all([
     ref.collection('comments').get(), ref.collection('likes').get(),
-    db.collectionGroup('notifications').where('postId', '==', ref.id).get()
+    // Post notifications only go to the author; a collectionGroup query here needs an index that does not exist.
+    db.collection(`users/${snapshot.data().authorId}/notifications`).where('postId', '==', ref.id).get()
   ]);
   const batch = db.batch();
   comments.docs.forEach(doc => batch.delete(doc.ref));
@@ -109,9 +111,13 @@ router.post('/community/posts/:id/like', requireAuth, route(async (req, res) => 
         postId: postRef.id, read: false, createdAt: new Date().toISOString() });
       else tx.delete(notificationRef);
     }
-    return { liked, likes };
+    return { liked, likes, authorId: post.data().authorId };
   });
-  res.json({ success: true, ...result });
+  const { authorId, ...state } = result;
+  if (state.liked && authorId !== req.user.uid) {
+    await sendPush(authorId, { title: 'إعجاب جديد بمنشورك', body: 'أعجب مستخدم بمنشورك في المجتمع.', tag: `like_${postRef.id}` });
+  }
+  res.json({ success: true, ...state });
 }));
 
 router.post('/community/posts/:id/comments', requireAuth, route(async (req, res) => {
@@ -120,7 +126,7 @@ router.post('/community/posts/:id/comments', requireAuth, route(async (req, res)
   const authorProfile = await profile(req.user.uid);
   const commentRef = postRef.collection('comments').doc(randomUUID());
   const createdAt = new Date().toISOString();
-  await db.runTransaction(async tx => {
+  const postAuthorId = await db.runTransaction(async tx => {
     const post = await tx.get(postRef);
     if (!post.exists) throw fail(404, 'المنشور غير موجود');
     tx.create(commentRef, { authorId: req.user.uid, author: authorProfile.name || 'مستخدم', avatar: authorProfile.photoURL || null, text, createdAt });
@@ -132,14 +138,37 @@ router.post('/community/posts/:id/comments', requireAuth, route(async (req, res)
         postId: postRef.id, commentId: commentRef.id, read: false, createdAt
       });
     }
+    return post.data().authorId;
   });
+  if (postAuthorId !== req.user.uid) {
+    await sendPush(postAuthorId, { title: 'تعليق جديد على منشورك', body: `${authorProfile.name || 'مستخدم'}: ${text}`, tag: `comment_${postRef.id}` });
+  }
   const post = await serializePost(await postRef.get(), req.user.uid, req.user.profile);
   res.status(201).json({ success: true, post });
+}));
+
+router.delete('/community/posts/:id/comments/:commentId', requireAuth, route(async (req, res) => {
+  const postRef = db.doc(`community_posts/${req.params.id}`);
+  const commentRef = postRef.collection('comments').doc(req.params.commentId);
+  await db.runTransaction(async tx => {
+    const [post, comment] = await tx.getAll(postRef, commentRef);
+    if (!post.exists || !comment.exists) throw fail(404, 'التعليق غير موجود');
+    if (comment.data().authorId !== req.user.uid && !hasRole(req.user.profile, 'admin')) throw fail(403, 'لا تملك حذف هذا التعليق');
+    tx.delete(commentRef);
+    tx.update(postRef, { commentsCount: Math.max(0, Number(post.data().commentsCount || 0) - 1) });
+    tx.delete(db.doc(`users/${post.data().authorId}/notifications/comment_${commentRef.id}`));
+  });
+  res.json({ success: true, post: await serializePost(await postRef.get(), req.user.uid, req.user.profile) });
 }));
 
 router.get('/notifications', requireAuth, route(async (req, res) => {
   const snapshot = await db.collection(`users/${req.user.uid}/notifications`).orderBy('createdAt', 'desc').limit(100).get();
   res.json({ success: true, notifications: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) });
+}));
+
+router.post('/notifications/register-token', requireAuth, route(async (req, res) => {
+  await registerPushToken(req.user.uid, req.body?.token, req.get('user-agent'));
+  res.json({ success: true });
 }));
 
 router.patch('/notifications/:id/read', requireAuth, route(async (req, res) => {

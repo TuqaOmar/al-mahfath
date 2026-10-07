@@ -29,6 +29,7 @@
     "@capacitor/cli": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "@capacitor/ios": "^8.5.2",
+    "@capawesome/capacitor-app-update": "^8.1.0",
     "@google/genai": "^2.15.0",
     "@vitejs/plugin-react": "^6.0.3",
     "cors": "^2.8.6",

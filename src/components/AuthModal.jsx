@@ -69,7 +69,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           if (res.success && res.user) {
             setIsLoading(false);
             onClose();
-            navigate(isAccountReady(res.user) ? '/dashboard' : '/wizard');
+            navigate(isAccountReady(res.user) ? '/dashboard' : '/wizard', { replace: true });
             return;
           }
         }
@@ -108,11 +108,11 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
 
       if (result.success && result.user) {
         onClose();
-        navigate(isAccountReady(result.user) ? '/dashboard' : '/wizard');
+        navigate(isAccountReady(result.user) ? '/dashboard' : '/wizard', { replace: true });
       } else if (result.success) {
         onClose();
         const storedUser = JSON.parse(localStorage.getItem('ma7fath_user') || '{}');
-        navigate(isAccountReady(storedUser) ? '/dashboard' : '/wizard');
+        navigate(isAccountReady(storedUser) ? '/dashboard' : '/wizard', { replace: true });
       } else {
         setError(result.message || (isRTL ? 'فشلت العملية، يرجى التحقق من المدخلات' : 'Operation failed, please check inputs'));
       }

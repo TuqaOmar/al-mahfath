@@ -1,7 +1,7 @@
 import { declaredPages, nextDeclaredPage } from '../lib/memorization';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, MotionConfig } from 'framer-motion';
 import { 
   Bell, 
   Search, 
@@ -76,6 +76,9 @@ import { TeacherGroupsView } from '../components/teacher/TeacherGroupsView';
 import { TeacherReportsView } from '../components/teacher/TeacherReportsView';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
 import { useUiConfiguration } from '../lib/uiConfiguration';
+import { getNavigation } from '../lib/navigation';
+import { useBackHandler } from '../hooks/useBackHandler';
+import { useSoftKeyboard } from '../hooks/useSoftKeyboard';
 import { getFortressPlanFromFirestore, saveFortressPlanToFirestore, currentFortressCompletion, numericFortressCompletion, fortressKeys } from '../lib/fortressService';
 
 
@@ -101,7 +104,17 @@ const Dashboard = () => {
     if (role === 'teacher') return 'teacher-dashboard';
     return 'home';
   };
-  const [activeTab, setActiveTab] = useState(() => getUserDefaultTab(activeRole));
+  const tabStorageKey = (uid, role) => `ma7fath_active_tab:${uid}:${role || 'user'}`;
+  const [activeTab, setActiveTab] = useState(() => {
+    const fallback = getUserDefaultTab(activeRole);
+    try {
+      const saved = sessionStorage.getItem(tabStorageKey(user?.uid, activeRole));
+      const known = getNavigation(activeRole || 'user', 'ar').sections.some(section => section.items.some(entry => entry.id === saved));
+      return known ? saved : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  });
   const [selectedQuranPage, setSelectedQuranPage] = useState(2);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -269,6 +282,38 @@ const Dashboard = () => {
     }
   }, [activeTab, uiConfiguration, activeRole]);
 
+  useEffect(() => {
+    try { sessionStorage.setItem(tabStorageKey(user?.uid, activeRole), activeTab); } catch (e) { /* storage unavailable */ }
+  }, [activeTab, user?.uid, activeRole]);
+
+  // Each tab keeps its own scroll position; a tab opened for the first time starts at the top.
+  const tabScrollRef = useRef({});
+  const activeTabRef = useRef(activeTab);
+  useEffect(() => {
+    const remember = () => { tabScrollRef.current[activeTabRef.current] = window.scrollY; };
+    window.addEventListener('scroll', remember, { passive: true });
+    return () => window.removeEventListener('scroll', remember);
+  }, []);
+  useLayoutEffect(() => {
+    if (activeTabRef.current === activeTab) return;
+    activeTabRef.current = activeTab;
+    window.scrollTo({ top: tabScrollRef.current[activeTab] || 0, behavior: 'instant' });
+  }, [activeTab]);
+
+  // Back button (browser, PWA, Android hardware): close the top sheet/dialog first,
+  // then return to this role's home tab, then leave.
+  const homeTab = getUserDefaultTab(activeRole);
+  useBackHandler(activeTab !== homeTab, () => setActiveTab(homeTab));
+  useBackHandler(showMoreToolsModal, () => setShowMoreToolsModal(false));
+  useBackHandler(showProfileModal, () => setShowProfileModal(false));
+  useBackHandler(showJoinGroupModal, () => setShowJoinGroupModal(false));
+  useBackHandler(Boolean(selectedStudentId), () => setSelectedStudentId(null));
+  useBackHandler(showDeleteConfirm, () => setShowDeleteConfirm(false));
+  useBackHandler(showDocsModal, () => setShowDocsModal(false));
+  useBackHandler(showPresentationModal, () => setShowPresentationModal(false));
+
+  const keyboardOpen = useSoftKeyboard(isMobile);
+
   // Track screen size changes for responsiveness (Laptop & Mobile)
   useEffect(() => {
     const handleResize = () => {
@@ -360,7 +405,7 @@ const Dashboard = () => {
 
       case 'home':
         return (
-          <div data-testid="student-home-view" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', maxWidth: '1040px', margin: '0 auto', paddingBottom: isMobile ? '80px' : '20px' }}>
+          <div data-testid="student-home-view" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', maxWidth: '1040px', margin: '0 auto', paddingBottom: '20px' }}>
             
             {/* Optional Banner: Safar Membership status or gentle invitation */}
             {user?.isSafarMember ? (
@@ -857,7 +902,12 @@ const Dashboard = () => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
               {[...uiConfiguration.badges].filter(badge => badge.visible).sort((a, b) => a.order - b.order).map((badge) => {
-                const state = badgeState[badge.id];
+                const state = badgeState[badge.id] || {
+                  unlocked: user?.earnedBadges?.includes(badge.id) === true || (badge.criterion && Number({
+                    streak: user?.streak, xp: user?.xp, level: user?.level, pages: declaredPages(user).length
+                  }[badge.criterion.type] || 0) >= badge.criterion.value),
+                  icon: Award
+                };
                 const Icon = state.icon;
                 return <div key={badge.id} data-testid={`achievement-${badge.id}`} style={{ padding: '28px 20px', borderRadius: '20px', background: state.unlocked ? 'var(--primary-light)' : 'var(--bg-color)', border: `1px solid ${state.unlocked ? 'var(--primary)' : 'var(--glass-border)'}`, textAlign: 'center' }}>
                   <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: state.unlocked ? 'var(--primary)' : 'var(--glass-border)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
@@ -1146,13 +1196,18 @@ const Dashboard = () => {
             </div>
           )}
 
-          {isMobile ? (
-            <PullToRefresh onRefresh={handleRefreshDashboard}>
-              {renderTabContent()}
-            </PullToRefresh>
-          ) : (
-            renderTabContent()
-          )}
+          {/* Short fade between tabs (opacity only: a transform would re-anchor fixed docks inside a tab). */}
+          <MotionConfig reducedMotion="user">
+            <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.16, ease: 'easeOut' }}>
+              {isMobile ? (
+                <PullToRefresh onRefresh={handleRefreshDashboard}>
+                  {renderTabContent()}
+                </PullToRefresh>
+              ) : (
+                renderTabContent()
+              )}
+            </motion.div>
+          </MotionConfig>
         </main>
 
         {/* Mobile Bottom Navigation Bar */}
@@ -1162,6 +1217,7 @@ const Dashboard = () => {
             setActiveTab={setActiveTab}
             onOpenMore={() => setShowMoreToolsModal(true)}
             isMoreOpen={showMoreToolsModal}
+            hidden={keyboardOpen}
           />
         )}
 

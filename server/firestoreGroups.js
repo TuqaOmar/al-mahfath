@@ -115,7 +115,8 @@ export async function setMembership(uid, groupId, { actor, requestId, teacherId 
       isSafarMember: Boolean(group)
     };
     tx.update(userRef, pointers);
-    if (group) tx.set(memberRef, { uid, groupId, teacherId: group.teacherId, status: 'active', updatedAt: now });
+    const joinedAt = sameGroup && member.exists ? member.data().joinedAt || member.data().updatedAt || now : now;
+    if (group) tx.set(memberRef, { uid, groupId, teacherId: group.teacherId, status: 'active', joinedAt, updatedAt: now });
     else tx.delete(memberRef);
     if (oldDoc?.exists) tx.update(oldRef, { studentsCount: Math.max(0, (oldDoc.data().studentsCount || 0) - 1) });
     if (group && !sameGroup) tx.update(groupRef, { studentsCount: (group.studentsCount || 0) + 1 });

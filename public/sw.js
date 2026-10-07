@@ -93,6 +93,7 @@ self.addEventListener('push', (event) => {
       }
       if (payload.data) {
         notificationData.data = payload.data;
+        if (payload.data.tag) notificationData.tag = payload.data.tag;
       }
     } catch (err) {
       notificationData.body = event.data.text();

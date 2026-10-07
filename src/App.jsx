@@ -4,10 +4,12 @@ import LandingPage from './pages/LandingPage';
 import Dashboard from './pages/Dashboard';
 import OnboardingWizard from './pages/OnboardingWizard';
 import ProtectedRoute from './components/ProtectedRoute';
+import AppUpdatePrompt from './components/AppUpdatePrompt';
 
 function App() {
   return (
     <Router>
+      <AppUpdatePrompt />
       <Routes>
         {/* Public Route */}
         <Route path="/" element={<LandingPage />} />

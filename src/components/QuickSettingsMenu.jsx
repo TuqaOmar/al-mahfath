@@ -15,6 +15,7 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useBackHandler } from '../hooks/useBackHandler';
 
 const Switch = ({ on, isRTL }) => (
   <span aria-hidden="true" style={{
@@ -59,6 +60,7 @@ export const QuickSettingsMenu = ({
   const { isDark, toggleTheme } = useTheme();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
+  useBackHandler(isOpen, () => setIsOpen(false));
 
   useEffect(() => {
     if (!isOpen) return undefined;

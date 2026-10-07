@@ -10,6 +10,7 @@ import {
 } from '../firestoreGroups.js';
 
 import { activeTeacherMembers, requireTeacherStudent } from '../teacherScope.js';
+import { sendPush } from '../pushNotifications.js';
 
 const router = Router();
 const route = fn => async (req, res) => {
@@ -121,10 +122,13 @@ router.get('/teacher/:teacherId/student/:studentId', requireAuth, teacherScope, 
   if (!isAdmin(req.user)) await requireTeacherStudent(req.params.teacherId, req.params.studentId);
   const student = await db.doc(`users/${req.params.studentId}`).get();
   if (!student.exists) throw new GroupError(404, 'حساب الطالب غير موجود');
-  const [recitationStats, recentSessions, ayahProgress] = await Promise.all([
+  const [recitationStats, recentSessions, ayahProgress, membership] = await Promise.all([
     readPracticeStats(req.params.studentId), readPracticeHistory(req.params.studentId, { limit: 10 }),
-    db.collection(`users/${req.params.studentId}/ayah_progress`).get()
+    db.collection(`users/${req.params.studentId}/ayah_progress`).get(),
+    db.doc(`memberships/${req.params.studentId}`).get()
   ]);
+  // Older memberships predate joinedAt; their last write (updatedAt) or the account creation is the best fallback.
+  const joinedDate = membership.data()?.joinedAt || membership.data()?.updatedAt || student.data().createdAt || null;
   const recordedProgress = ayahProgress.docs.reduce((summary, item) => {
     const status = item.data().status;
     summary.total += 1;
@@ -139,7 +143,7 @@ router.get('/teacher/:teacherId/student/:studentId', requireAuth, teacherScope, 
     manualOldReviewTarget: preferences.manualOldReviewTarget || null,
     oldReviewDailyTarget: preferences.oldReviewDailyTarget || null
   };
-  success(res, { student: { ...publicUser(student), memorizedJuz: null,
+  success(res, { student: { ...publicUser(student), memorizedJuz: null, joinedDate,
     recitationStats, recentSessions, recordedProgress, learningPlan } });
 }));
 router.patch('/teacher/:teacherId/student/:studentId/sessions/:sessionId/review', requireAuth, teacherScope, route(async (req, res) => {
@@ -162,6 +166,7 @@ router.post('/teacher/:teacherId/student/:studentId/notes', requireAuth, teacher
   tx.create(notificationRef, { id: notificationRef.id, userId: req.params.studentId, type: 'teacher_note',
     title: 'ملاحظة جديدة من المعلم', message: text, teacherId: req.params.teacherId, noteId: noteRef.id, read: false, createdAt: now });
   });
+  await sendPush(req.params.studentId, { title: 'ملاحظة جديدة من المعلم', body: text, tag: `teacher_note_${noteRef.id}` });
   success(res, { note });
 }));
 router.get('/teacher/:teacherId/reports', requireAuth, teacherScope, route(async (req, res) => {

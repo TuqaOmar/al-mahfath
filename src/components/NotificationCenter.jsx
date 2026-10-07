@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useBackHandler } from '../hooks/useBackHandler';
 
 export const NotificationCenter = () => {
   const {
@@ -39,8 +40,9 @@ export const NotificationCenter = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('all'); // 'all' | 'achievements' | 'reminder' | 'unread'
   const dropdownRef = useRef(null);
+  useBackHandler(isOpen, () => setIsOpen(false));
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking or tapping outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -48,7 +50,11 @@ export const NotificationCenter = () => {
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, []);
 
   const filteredNotifications = notifications.filter(n => {
@@ -160,10 +166,10 @@ export const NotificationCenter = () => {
         style={{
           width: '40px',
           height: '40px',
-          borderRadius: '50%',
+          borderRadius: '12px',
           cursor: 'pointer',
-          background: isOpen ? 'var(--primary-light)' : 'var(--bg-color)',
-          border: `1px solid ${isOpen ? 'var(--primary)' : 'var(--glass-border)'}`,
+          background: isOpen ? 'var(--primary-light)' : 'transparent',
+          border: 'none',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -212,12 +218,13 @@ export const NotificationCenter = () => {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             transition={{ duration: 0.18 }}
-            className="fixed inset-x-2.5 top-[60px] sm:absolute sm:inset-auto sm:top-[48px] z-50"
+            id="notification-center-panel"
+            role="dialog"
+            aria-label={lang === 'ar' ? 'الإشعارات' : 'Notifications'}
+            className="notification-center-panel"
             style={{
               left: isRTL ? '0' : 'auto',
               right: isRTL ? 'auto' : '0',
-              width: '390px',
-              maxWidth: 'calc(100vw - 20px)',
               background: 'var(--bg-surface)',
               border: '1px solid var(--glass-border)',
               borderRadius: '20px',

@@ -199,6 +199,10 @@ export const AuthProvider = ({ children }) => {
     try {
       await signOut(auth);
       localStorage.removeItem('ma7fath_user');
+      // The dashboard keeps the open tab across reloads only; a new sign-in starts at home.
+      try {
+        Object.keys(sessionStorage).filter(key => key.startsWith('ma7fath_active_tab:')).forEach(key => sessionStorage.removeItem(key));
+      } catch (e) { /* storage unavailable */ }
       setUser(null);
     } catch (error) {
       console.error("Error signing out:", error);

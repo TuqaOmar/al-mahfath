@@ -17,15 +17,40 @@ export const defaultUiConfiguration = Object.freeze({
   ]
 });
 
+// Admin-created badges unlock automatically once the student's metric reaches the threshold.
+export const badgeCriteria = Object.freeze({
+  streak: 'أيام الاستمرار المتتالية',
+  xp: 'نقاط الخبرة XP',
+  level: 'المستوى',
+  pages: 'عدد الصفحات المحفوظة'
+});
+
+const normalizeCustomBadge = item => {
+  const type = Object.hasOwn(badgeCriteria, item?.criterion?.type) ? item.criterion.type : null;
+  const value = Number(item?.criterion?.value);
+  if (!item?.id || !type || !Number.isFinite(value) || value < 1) return null;
+  return {
+    id: String(item.id), custom: true, visible: item.visible !== false,
+    order: Number(item.order) || 100,
+    title: String(item.title || '').trim() || 'وسام جديد',
+    description: String(item.description || '').trim(),
+    criterion: { type, value }
+  };
+};
+
 const normalize = data => ({
   sections: {
     community: { ...defaultUiConfiguration.sections.community, ...data?.sections?.community },
     achievements: { ...defaultUiConfiguration.sections.achievements, ...data?.sections?.achievements }
   },
-  badges: defaultUiConfiguration.badges.map(fallback => ({
-    ...fallback,
-    ...(Array.isArray(data?.badges) ? data.badges.find(item => item.id === fallback.id) : null)
-  }))
+  badges: [
+    ...defaultUiConfiguration.badges.map(fallback => ({
+      ...fallback,
+      ...(Array.isArray(data?.badges) ? data.badges.find(item => item.id === fallback.id) : null),
+      custom: false
+    })),
+    ...(Array.isArray(data?.badges) ? data.badges.filter(item => item?.custom).map(normalizeCustomBadge).filter(Boolean) : [])
+  ]
 });
 
 export function useUiConfiguration() {
