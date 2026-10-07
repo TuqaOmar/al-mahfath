@@ -686,12 +686,12 @@ _لوحات المعلم والإدارة_
 - **يستخدم:** api.js, server/routes/community.js
 - **يستخدمه:** AdminDashboard.jsx
 
-### `src/components/admin/AdminDashboard.jsx` **[🐞 خلل]**
+### `src/components/admin/AdminDashboard.jsx`
 - **يفعل:** عشرة تبويبات: لوحة القيادة (إحصاءات /api/admin/overview)، تحليلات الحفظ (AdminPerformanceDashboard)، التوزيع (AdminDistributionView)، المستخدمون/المعلمات (بحث وفلاتر، ترقية/إلغاء مشرف بكتابة Firestore مباشرة، تعيين/إلغاء معلم عبر /api/admin/assign|remove-teacher)، المجموعات، التحليلات، المنتدى (AdminCommunityView)، الأوسمة/الظهور (AdminExperienceSettings).
 - **لماذا:** دور المعلم يمر عبر الخادم (لأنه يتحقق من ملكية الحلقات)، بينما دور المشرف يُكتب مباشرة (قواعد Firestore تسمح للمشرف).
 - **متى:** التبويب الافتراضي للدور 'مشرف'.
 - **إن تعطّل:** لا إدارة.
-- **انتبه:** إنشاء الحلقة موجود في تبويب التوزيع (AdminDistributionView) فقط؛ تبويب المجموعات فيه زر 'إنشاء حلقة جديدة' (admin-groups-create) ينقل إليه. | تبويب 'التحليلات والنمو' نص فقط بلا بيانات. | فلترا 'نشطون/غير نشطين' بلا تنفيذ؛ وحالة كل مستخدم تظهر 'خامل' لأن حقل status غير موجود. | كل حرف في البحث يعيد 3 طلبات للخادم والفلترة تتم محليًا. | يمكن للمشرف إزالة صلاحية الإدارة عن نفسه أو عن آخر مشرف بلا تحذير.
+- **انتبه:** إنشاء الحلقة موجود في تبويب التوزيع (AdminDistributionView) فقط؛ تبويب المجموعات فيه زر 'إنشاء حلقة جديدة' (admin-groups-create) ينقل إليه. | تبويب 'التحليلات والنمو' نص فقط بلا بيانات. | حالة المستخدم 'نشط' = تدريب مؤكد خلال آخر 7 أيام بتوقيت عمّان (status من /api/admin/users، نفس تعريف 'النشطون هذا الأسبوع')، وعليها يعمل فلترا 'نشطون/غير نشطين'. | البيانات تُجلب عند تغيير التبويب فقط؛ البحث والفلاتر محلية (useMemo). | لا يمكن إلغاء صلاحية الإدارة عن الحساب نفسه أو عن آخر مشرف (فحص في الواجهة فقط — قواعد Firestore تسمح للمشرف).
 - **يستخدم:** memorization.js, LanguageContext.jsx, AdminPerformanceDashboard.jsx, AdminDistributionView.jsx, firebase.js, api.js, AdminExperienceSettings.jsx, AdminCommunityView.jsx, groups.js
 - **يستخدمه:** AdminPanel.jsx, Dashboard.jsx
 
@@ -916,7 +916,7 @@ _Express index، routes، middleware، صلاحيات_
 - **يستخدمه:** server/index.js, Community.jsx, NotificationContext.jsx, firebase.js, AdminCommunityView.jsx
 
 ### `server/routes/groups.js`
-- **يفعل:** مسارات الحلقات والمعلم والمشرف وتحليلات الطالب: /groups (قائمة/lookup عام/join/leave)، /admin/* (إنشاء حلقة، users، safar-users، overview بإحصاءات الأسبوع بتوقيت عمّان، assign/remove-teacher، create-teacher لحساب موجود فقط، distribute-student، enrollment-requests)، /teacher/:teacherId/* (students، student/:id مع إحصاءات وتقدم وjoinedDate، مراجعة جلسة، ملاحظات + إشعار للطالب + إشعار دفع، reports، dashboard، enroll/add-student)، /student/analytics، /safar/enrollment-request.
+- **يفعل:** مسارات الحلقات والمعلم والمشرف وتحليلات الطالب: /groups (قائمة/lookup عام/join/leave)، /admin/* (إنشاء حلقة، users مع status نشط/غير نشط من daysSinceQuranActivity، safar-users، overview بإحصاءات الأسبوع بتوقيت عمّان، assign/remove-teacher، create-teacher لحساب موجود فقط، distribute-student، enrollment-requests)، /teacher/:teacherId/* (students، student/:id مع إحصاءات وتقدم وjoinedDate، مراجعة جلسة، ملاحظات + إشعار للطالب + إشعار دفع، reports، dashboard، enroll/add-student)، /student/analytics، /safar/enrollment-request.
 - **لماذا:** استبدل منطق safarEcosystem.js (JSON وهمي) بمنطق Firestore حقيقي عبر firestoreGroups.js. كل مسار محمي بـ requireAuth + requireAdmin أو teacherScope (canActAsTeacher).
 - **متى:** عند فتح لوحات المعلم/المشرف، الانضمام لحلقة من المعالج أو JoinGroupModal، وفتح شاشة التحليلات.
 - **إن تعطّل:** TeacherDashboard وTeacherStudents/Groups/Reports وAdminDashboard وAdminDistributionView وJoinGroupModal وOnboardingWizard (خطوة الحلقة) وAnalyticsView.

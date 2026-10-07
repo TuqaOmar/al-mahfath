@@ -3,7 +3,7 @@ import { getAuth } from 'firebase-admin/auth';
 import { db, requireAuth, requireAdmin } from '../middleware/auth.js';
 import { canActAsTeacher, isAdmin, hasRole } from '../accessControl.js';
 import { readPracticeStats, readPracticeHistory, reviewPracticeSession } from '../firestoreRecitation.js';
-import { activityNow, ammanDateKey } from '../quranActivityStreak.js';
+import { activityNow, ammanDateKey, daysSinceQuranActivity } from '../quranActivityStreak.js';
 import {
   GroupError, listUsers, listGroups, findGroup, createFirestoreGroup, setMembership,
   submitRequest, listRequests, changeTeacherRole, teacherStudents, publicUser, docData
@@ -50,7 +50,13 @@ router.post('/admin/groups/create', requireAuth, requireAdmin, route(async (req,
   success(res, { group: await createFirestoreGroup(req.body), message: 'تم إنشاء الحلقة' });
 }));
 router.get('/admin/users', requireAuth, requireAdmin, route(async (req, res) => {
-  success(res, { users: await listUsers() });
+  // status matches overview.activeThisWeek: a confirmed Quran activity within the last 7 Amman days.
+  const now = activityNow();
+  const users = (await listUsers()).map(user => {
+    const days = daysSinceQuranActivity(user, now);
+    return { ...user, status: days !== null && days < 7 ? 'active' : 'inactive' };
+  });
+  success(res, { users });
 }));
 router.get('/admin/safar-users', requireAuth, requireAdmin, route(async (req, res) => {
   let users = await listUsers();

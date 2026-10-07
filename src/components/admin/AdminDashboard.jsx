@@ -1,5 +1,5 @@
 import { declaredPages, nextDeclaredPage } from '../../lib/memorization';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Users, 
   BookOpen, 
@@ -28,7 +28,7 @@ import {
 import { useLanguage } from '../../context/LanguageContext';
 import { AdminPerformanceDashboard } from './AdminPerformanceDashboard';
 import { AdminDistributionView } from './AdminDistributionView';
-import { db } from '../../lib/firebase';
+import { db, auth } from '../../lib/firebase';
 import { fetchWithAuth } from '../../lib/api';
 import { AdminExperienceSettings } from './AdminExperienceSettings';
 import { AdminCommunityView } from './AdminCommunityView';
@@ -38,7 +38,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
   const [currentTab, setCurrentTab] = useState(activeAdminTab);
   const [overview, setOverview] = useState(null);
-  const [users, setUsers] = useState([]);
+  const [allUsers, setAllUsers] = useState([]);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -55,7 +55,31 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
   useEffect(() => {
     fetchAdminData();
-  }, [searchQuery, userFilter, currentTab]);
+  }, [currentTab]);
+
+  const users = useMemo(() => {
+    let filtered = allUsers;
+    if (searchQuery) {
+      filtered = filtered.filter(u => 
+        (u.name && u.name.includes(searchQuery)) || 
+        (u.email && u.email.includes(searchQuery))
+      );
+    }
+    
+    if (userFilter === 'teacher') {
+      // Multi-role support: check both role field and roles map
+      filtered = filtered.filter(u => u.role === 'teacher' || (u.roles && u.roles.teacher === true));
+    } else if (userFilter === 'independent') {
+      filtered = filtered.filter(u => !u.isSafarMember && !u.groupId && u.role !== 'teacher' && u.role !== 'admin' && !(u.roles && (u.roles.teacher || u.roles.admin)));
+    } else if (userFilter === 'safar_member') {
+      filtered = filtered.filter(u => u.isSafarMember || u.groupId);
+    } else if (userFilter === 'active' || userFilter === 'inactive') {
+      // status comes from the server: practiced within the last 7 days (same as 'active this week').
+      filtered = filtered.filter(u => u.status === userFilter);
+    }
+
+    return filtered;
+  }, [allUsers, searchQuery, userFilter]);
 
   const fetchAdminData = async () => {
     setLoading(true);
@@ -74,33 +98,13 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
       }
       const allGroups = groupsPayload.groups || [];
       setGroups(allGroups);
-      const allUsers = usersPayload.users || [];
+      setAllUsers(usersPayload.users || []);
       setOverview({ stats: overviewPayload.stats, realTimeActivity: overviewPayload.realTimeActivity });
-
-      // Filter
-      let filtered = allUsers;
-      if (searchQuery) {
-        filtered = filtered.filter(u => 
-          (u.name && u.name.includes(searchQuery)) || 
-          (u.email && u.email.includes(searchQuery))
-        );
-      }
-      
-      if (userFilter === 'teacher') {
-        // Multi-role support: check both role field and roles map
-        filtered = filtered.filter(u => u.role === 'teacher' || (u.roles && u.roles.teacher === true));
-      } else if (userFilter === 'independent') {
-        filtered = filtered.filter(u => !u.isSafarMember && !u.groupId && u.role !== 'teacher' && u.role !== 'admin' && !(u.roles && (u.roles.teacher || u.roles.admin)));
-      } else if (userFilter === 'safar_member') {
-        filtered = filtered.filter(u => u.isSafarMember || u.groupId);
-      }
-
-      setUsers(filtered);
 
     } catch (e) {
       console.error('Error loading admin data:', e);
       setOverview(null);
-      setUsers([]);
+      setAllUsers([]);
       setGroups([]);
     } finally {
       setLoading(false);
@@ -110,7 +114,21 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
   const handleRoleAction = async () => {
     if (!confirmTeacherModal) return;
     const { user, action } = confirmTeacherModal;
-    
+
+    // Never leave the platform without an administrator, and never demote yourself by accident.
+    if (action === 'remove_admin') {
+      const admins = allUsers.filter(u => u.role === 'admin' || u.roles?.admin === true);
+      const blocked = user.uid === auth.currentUser?.uid
+        ? 'لا يمكنك إلغاء صلاحية الإدارة عن حسابك أنت؛ اطلب ذلك من مشرف آخر.'
+        : (admins.length <= 1 ? 'لا يمكن إلغاء صلاحية آخر مشرف في المنصة؛ رقِّ مشرفًا آخر أولًا.' : '');
+      if (blocked) {
+        setActionFeedback({ type: 'error', text: blocked });
+        setConfirmTeacherModal(null);
+        setTimeout(() => setActionFeedback(null), 3500);
+        return;
+      }
+    }
+
     try {
       const userRef = doc(db, 'users', user.uid);
       // Multi-role support: update roles map without overwriting existing roles
@@ -600,7 +618,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                         تصريح ذاتي: <strong style={{ color: 'var(--text-primary)' }}>{declaredPages(u).length} صفحة</strong>
                       </div>
                       <div>
-                        الحالة: <span style={{ color: u.status === 'active' ? '#10B981' : '#F59E0B', fontWeight: 600 }}>{u.status === 'active' ? 'نشط 🟢' : 'خامل 🟡'}</span>
+                        الحالة: <span style={{ color: u.status === 'active' ? '#10B981' : '#F59E0B', fontWeight: 600 }}>{u.status === 'active' ? 'نشط 🟢' : 'غير نشط هذا الأسبوع 🟡'}</span>
                       </div>
                     </div>
 
