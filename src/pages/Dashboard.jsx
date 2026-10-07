@@ -404,6 +404,12 @@ const Dashboard = () => {
       case 'admin-experience':
         return <AdminDashboard activeAdminTab="experience" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
 
+      case 'admin-community':
+        return <AdminDashboard activeAdminTab="community" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
+      case 'admin-badges':
+        return <AdminDashboard activeAdminTab="badges" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
       case 'home':
         return (
           <div data-testid="student-home-view" style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '16px' : '24px', maxWidth: '1040px', margin: '0 auto', paddingBottom: '20px' }}>
