@@ -724,13 +724,40 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
       {/* VIEW 3: GROUPS MANAGEMENT */}
       {currentTab === 'groups' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-          <div>
-            <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
-              إدارة الحلقات والمجموعات ({groups.length} حلقة)
-            </h2>
-            <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
-              قائمة الحلقات المسجلة في منصة سَفَر ورموز الانضمام والمعلمات المشرفات عليها
-            </p>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div>
+              <h2 style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                إدارة الحلقات والمجموعات ({groups.length} حلقة)
+              </h2>
+              <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
+                قائمة الحلقات المسجلة في منصة سَفَر ورموز الانضمام والمعلمات المشرفات عليها
+              </p>
+            </div>
+            {/* Group creation lives in the distribution tab; admins look for it here first. */}
+            <button
+              data-testid="admin-groups-create"
+              onClick={() => {
+                setCurrentTab('distribution');
+                if (onNavigateTab) onNavigateTab('distribution');
+              }}
+              style={{
+                minHeight: '44px',
+                padding: '0 18px',
+                borderRadius: '12px',
+                background: 'var(--primary)',
+                color: '#FFFFFF',
+                border: 'none',
+                fontSize: '14px',
+                fontWeight: 700,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <Layers size={16} />
+              <span>إنشاء حلقة جديدة</span>
+            </button>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px' }}>
