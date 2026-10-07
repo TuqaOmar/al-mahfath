@@ -608,13 +608,13 @@ export const QuranSurahAyahsModal = ({
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '8px' }}>
                       <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'rgba(220, 38, 38, 0.08)', border: '1px solid rgba(220, 38, 38, 0.2)' }}>
                         <div style={{ fontSize: '10px', color: '#DC2626', fontWeight: 'bold' }}>❌ ما نطقته أنت:</div>
-                        <div style={{ fontSize: '16px', fontFamily: 'serif', fontWeight: 700, color: '#B91C1C' }}>
+                        <div style={{ fontSize: '16px', fontFamily: 'var(--font-quran)', fontWeight: 700, color: '#B91C1C' }}>
                           {m.spoken ? `« ${m.spoken} »` : '« لم تُنطق (نسيان) »'}
                         </div>
                       </div>
                       <div style={{ padding: '8px 10px', borderRadius: '8px', background: 'var(--primary-light)', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                         <div style={{ fontSize: '10px', color: 'var(--primary, #10B981)', fontWeight: 'bold' }}>✅ الصواب في القرآن:</div>
-                        <div style={{ fontSize: '16px', fontFamily: 'serif', fontWeight: 800, color: 'var(--primary, #10B981)' }}>
+                        <div style={{ fontSize: '16px', fontFamily: 'var(--font-quran)', fontWeight: 800, color: 'var(--primary, #10B981)' }}>
                           « {m.expected} »
                         </div>
                       </div>
@@ -672,7 +672,7 @@ export const QuranSurahAyahsModal = ({
                 <div style={{
                   textAlign: 'center',
                   padding: '16px',
-                  fontFamily: 'serif',
+                  fontFamily: 'var(--font-quran)',
                   fontSize: '22px',
                   color: 'var(--primary)',
                   borderBottom: '1px dashed var(--glass-border)'
@@ -832,7 +832,7 @@ export const QuranSurahAyahsModal = ({
                     <div data-testid={`surah-ayah-${ayah.number}`} data-quran-text={ayah.text} dir="rtl" lang="ar" style={{
                       fontSize: '20px',
                       lineHeight: '2.2',
-                      fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
+                      fontFamily: 'var(--font-quran)',
                       color: 'var(--text-primary)',
                       textAlign: 'justify',
                       padding: '4px 0'

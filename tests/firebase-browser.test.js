@@ -38,6 +38,16 @@ async function login(page, key) {
   await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click();
   await expect(page).toHaveURL(/\/dashboard$/);
 }
+// Logout lives in the top-bar settings menu (web and mobile).
+async function logout(page) {
+  await page.locator('#quick-settings-trigger-btn').click();
+  await page.locator('#menu-logout-btn').click();
+}
+// Account refresh lives in the same settings menu.
+async function refreshAccount(page) {
+  await page.locator('#quick-settings-trigger-btn').click();
+  await page.getByTestId('dashboard-refresh').click();
+}
 async function teacherRoster(page) {
   await page.locator('#sidebar-nav-teacher-students').click();
   await expect(page.getByRole('heading', { name: 'سجل طالبات المجموعة' })).toBeVisible();
@@ -209,7 +219,7 @@ test('actual browser group journey: roles, groups, join, reload, transfer, logou
   await pages.teacher2.locator('#sidebar-nav-teacher-groups').click();
   await expect(pages.teacher2.getByTestId(`teacher-group-count-${second.id}`)).toHaveText('1');
   await checkpoint(pages.teacher2, '05-transferred-teacher-roster');
-  await pages.student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(pages.student);
   await expect(pages.student).toHaveURL(baseUrl + '/');
   await login(pages.student, 'student');
   await expect(pages.student.getByText(`عضوة مسجلة في ${second.name} 🌸`, { exact: true })).toBeVisible();
@@ -239,7 +249,7 @@ test('actual browser group journey: roles, groups, join, reload, transfer, logou
   await expect(admin.getByTestId(`admin-group-count-${first.id}`)).toContainText('1');
   await expect(admin.getByTestId(`admin-group-count-${second.id}`)).toContainText('0');
   await checkpoint(pages.teacher1, '07-approved-request-roster');
-  await pages.student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(pages.student);
   await expect(pages.student).toHaveURL(baseUrl + '/');
   await login(pages.student, 'applicant');
   await expect(pages.student.getByText(`عضوة مسجلة في ${first.name} 🌸`, { exact: true })).toBeVisible();
@@ -371,7 +381,7 @@ test('browser practice attempts persist once and show real teacher/admin counts,
   await submit.click();
   await expect(student.getByText('تم حفظ محاولة التسميع في سجلك', { exact: true })).toBeVisible();
   assert.equal((await collection.get()).size, 2);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await expect(student).toHaveURL(baseUrl + '/');
   await login(student, 'applicant');
   await expect(student.getByTestId('quran-companion-streak')).toContainText('1');
@@ -468,7 +478,7 @@ test('browser roles, Firestore community notifications, and Storage profile phot
   await expect(owner.getByTestId('sidebar-profile-photo')).toHaveAttribute('src', savedPhoto);
   await refresh(owner);
   await expect(owner.getByTestId('sidebar-profile-photo')).toHaveAttribute('src', savedPhoto);
-  await owner.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(owner);
   await login(owner, 'applicant');
   await expect(owner.getByTestId('sidebar-profile-photo')).toHaveAttribute('src', savedPhoto);
   assert.equal((await db.doc(`users/${uids.multi}`).get()).data().photoURL, '');
@@ -537,7 +547,7 @@ test('student plan and recorded ayah progress persist and reach teacher and admi
   assert.equal(after.xp, before.xp);
   assert.equal(after.memorizedPagesCount, before.memorizedPagesCount);
 
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'applicant');
   await student.getByRole('button', { name: 'تعديل الخطة', exact: true }).click();
   await expect(student.getByTestId('plan-unit-surahs')).toHaveAttribute('aria-pressed', 'true');
@@ -717,7 +727,7 @@ test('P0 Chrome chat ownership, persisted reload/login, failed delete/send and f
   await refresh(student);
   await student.locator('#sidebar-nav-ai-assistant').click();
   await expect(student.getByText(marker, { exact: true })).toBeVisible();
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'applicant');
   await student.locator('#sidebar-nav-ai-assistant').click();
   await expect(student.getByText(marker, { exact: true })).toBeVisible();
@@ -740,7 +750,7 @@ test('P0 Chrome chat ownership, persisted reload/login, failed delete/send and f
   await student.getByTestId('clear-chat').click();
   await expect(student.getByText(marker, { exact: true })).toHaveCount(0);
   assert.equal((await db.doc(`users/${uids.student}/private_ai_chat/current`).get()).data().history.length, 2);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'student');
   await student.locator('#sidebar-nav-ai-assistant').click();
   await expect(student.getByText('B private browser message', { exact: true })).toBeVisible();
@@ -782,9 +792,11 @@ test('P0 Chrome chat ownership, persisted reload/login, failed delete/send and f
 test('P1 Chrome self declarations persist without approved counts and failed saves keep prior state', { timeout: 120000 }, async () => {
   const student = pages.student, teacher = pages.teacher1;
   await db.doc(`users/${uids.applicant}`).update({ memorizedPagesCount: 77, memorizedPages: [1, 2, 3], totalJuz: 12, memoryScore: 99 });
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'applicant');
-  await expect(student.getByTestId('home-memory-score')).toHaveText('غير متاح');
+  await expect(student.getByTestId('student-home-view')).toBeVisible();
+  await expect(student.getByTestId('home-memory-score')).toHaveCount(0);
+  await expect(student.getByTestId('student-home-view')).not.toContainText('99');
   await student.locator('#sidebar-nav-quran-map').click();
   await expect(student.getByTestId('self-reported-page-disclaimer')).toBeVisible();
   await student.getByTestId('open-declared-pages').click();
@@ -804,7 +816,7 @@ test('P1 Chrome self declarations persist without approved counts and failed sav
   await expect(student.getByTestId('declared-pages-count')).toContainText('2');
   await db.doc(`users/${uids.applicant}`).set(original);
   await refresh(student);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'applicant');
   await expect(student.getByTestId('home-declared-pages')).toContainText('2');
   await student.locator('#sidebar-nav-analytics').click();
@@ -834,7 +846,7 @@ test('P1 Chrome self declarations persist without approved counts and failed sav
   await expect(teacher.getByTestId('session-review-dashboard-one')).toHaveText('مراجعة تدريب مقبولة من المعلم');
   assert.equal((await db.doc(`users/${uids.applicant}`).get()).data().memorizedPagesCount, 77);
   assert.equal((await db.doc(`users/${uids.applicant}`).get()).data().xp, original.xp);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'student');
   await expect(student.getByTestId('home-declared-pages')).toContainText('0');
   await student.locator('#sidebar-nav-analytics').click();
@@ -1039,7 +1051,7 @@ test('Chrome fortress drafts, plan generation and all completion views preserve 
   await fortressNav();
   await expect(student.getByTestId('visual-fortress-juz')).toHaveValue('3');
   await expect(student.getByTestId('visual-fortress-count')).toContainText('1 / 5');
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'student');
   await fortressNav('simplified-plan');
   await expect(student.getByTestId('simplified-fortress-count')).toContainText('1 من أصل 5');
@@ -1115,7 +1127,7 @@ test('Chrome fortress drafts, plan generation and all completion views preserve 
   await expect(student.getByTestId('fortress-ai-save')).toHaveCount(0);
   const savedAiText = (await getPlan()).aiPlanText;
   assert.equal(typeof savedAiText, 'string'); assert.ok(savedAiText.length > 0);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'student');
   await fortressNav('daily-plan');
   await expect(student.getByText('اقتراح مساعد محفوظ ضمن خطتك', { exact: false })).toBeVisible();
@@ -1141,7 +1153,7 @@ test('Chrome fortress drafts, plan generation and all completion views preserve 
   const finalPlan = await getPlan();
   await refresh(student);
   await expect(student.getByTestId('home-fortress-count')).toContainText(`${Object.values(finalPlan.completionStatus).filter(Boolean).length} / 5`);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'student');
   await expect(student.getByTestId('home-fortress-count')).toContainText(`${Object.values(finalPlan.completionStatus).filter(Boolean).length} / 5`);
   const after = (await profileRef.get()).data();
@@ -1175,7 +1187,7 @@ test('Chrome quiz saves, profile refresh failures and dismiss-only reminders rep
   await refresh(student);
   await quizNav();
   await expect(student.getByTestId('learning-saved-style')).toHaveText(savedFirst.preferences.learningStyle);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'student');
   await quizNav();
   await expect(student.getByTestId('learning-saved-style')).toHaveText(savedFirst.preferences.learningStyle);
@@ -1207,14 +1219,14 @@ test('Chrome quiz saves, profile refresh failures and dismiss-only reminders rep
   await refresh(student);
   await quizNav();
   await expect(student.getByTestId('learning-saved-style')).toHaveText(savedThird.preferences.learningStyle);
-  await student.getByTitle('تسجيل الخروج', { exact: true }).click();
+  await logout(student);
   await login(student, 'student');
   await quizNav();
   await expect(student.getByTestId('learning-saved-style')).toHaveText(savedThird.preferences.learningStyle);
   await student.locator('#sidebar-nav-home').click();
   // Refresh claims only a server profile read, not that all features/sessions refreshed.
   await profileRef.update({ 'preferences.studentDeclaredPages': [9, 10, 11] });
-  await student.getByTestId('dashboard-refresh').click();
+  await refreshAccount(student);
   await expect(student.getByTestId('dashboard-refresh-feedback')).toHaveAttribute('data-status', 'success');
   await expect(student.getByTestId('dashboard-refresh-feedback')).toContainText('ملف الحساب من Firestore');
   await expect(student.getByTestId('home-declared-pages')).toHaveText('3');
@@ -1222,11 +1234,11 @@ test('Chrome quiz saves, profile refresh failures and dismiss-only reminders rep
   // Inject a missing synthetic profile; the real getDocFromServer must fail instead of reusing cache.
   await profileRef.delete();
   try {
-    await student.getByTestId('dashboard-refresh').click();
+    await refreshAccount(student);
     await expect(student.getByTestId('dashboard-refresh-feedback')).toHaveAttribute('data-status', 'error');
     await expect(student.getByTestId('home-declared-pages')).toHaveText('3');
   } finally { await profileRef.set(confirmedProfile); }
-  await student.getByTestId('dashboard-refresh').click();
+  await refreshAccount(student);
   await expect(student.getByTestId('dashboard-refresh-feedback')).toHaveAttribute('data-status', 'success');
   assert.deepEqual((await profileRef.get()).data(), confirmedProfile);
   await student.setViewportSize({ width: 390, height: 844 });
@@ -1309,7 +1321,6 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
     });
     assert.equal(layout.viewportWidth, width);
     assert.ok(layout.documentWidth <= width, `document overflows at ${width}px: ${layout.documentWidth}px`);
-    assert.ok(layout.theme && layout.theme.left >= 0 && layout.theme.right <= width, `theme toggle is off-screen at ${width}px`);
     assert.ok(layout.bottomNavigation.left >= 0 && layout.bottomNavigation.right <= width, `bottom bar is off-screen at ${width}px`);
     assert.ok(layout.bottomNavigation.height <= layout.bottomNavigation.bottom, `bottom bar is clipped at ${width}px`);
     assert.ok(layout.bottomItems.every(item => item.left >= 0 && item.right <= width && item.width >= 44 && item.height >= 44),
@@ -1326,12 +1337,12 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
       assert.equal(await page.locator('#active-role-switcher').evaluate(element => Boolean(element.closest('header'))), true,
         'role selector must remain in the top bar');
     }
-    await expect(page.locator('.mobile-theme-toggle')).toBeVisible();
     await expect(page.locator('#quick-settings-trigger-btn')).toBeVisible();
     await expect(page.locator('#mobile-bottom-navigation')).toBeVisible();
     await page.locator('#quick-settings-trigger-btn').click();
     const settingsMenu = page.locator('#quick-settings-dropdown');
     await expect(settingsMenu).toBeVisible();
+    await expect(settingsMenu.locator('.mobile-theme-toggle')).toBeVisible();
     const settingsBounds = await settingsMenu.boundingBox();
     assert.ok(settingsBounds && settingsBounds.x >= 0 && settingsBounds.x + settingsBounds.width <= width);
     assert.ok(settingsBounds.y >= 0 && settingsBounds.y + settingsBounds.height <= layout.viewportHeight);
@@ -1348,23 +1359,20 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
       await expect(button).toHaveAttribute('aria-current', 'page');
     }
 
+    await expect(page.locator('#app-main-sidebar')).toHaveCount(0);
     await page.locator('#mobile-nav-more-tools').click();
-    await page.locator('#more-tool-item-mind-maps').click();
-    await expect(page.locator('#mobile-nav-more-tools')).toHaveAttribute('aria-current', 'page');
-
-    const sectionIds = await page.locator('#app-main-sidebar nav button[id^="sidebar-nav-"]')
+    const sectionIds = await page.locator('#more-tools-modal-sheet button[id^="more-tool-item-"]')
       .evaluateAll(buttons => buttons.map(button => button.id));
+    await page.locator('#more-tools-close-btn').click();
     for (const id of sectionIds) {
-      await page.locator('#mobile-drawer-toggle-btn').click();
-      const sidebar = page.locator('#app-main-sidebar');
-      await expect(sidebar).toHaveCSS('transform', 'matrix(1, 0, 0, 1, 0, 0)');
-      const drawer = await sidebar.boundingBox();
-      assert.ok(drawer && drawer.x >= 0 && drawer.x + drawer.width <= page.viewportSize().width);
-      assert.ok(drawer.height <= page.viewportSize().height);
-      const section = page.locator(`#${id}`);
-      await section.click();
-      await expect(section).toHaveAttribute('aria-current', 'page');
-      if (id === 'sidebar-nav-daily-session') {
+      await page.locator('#mobile-nav-more-tools').click();
+      const sheet = await page.locator('#more-tools-modal-sheet').boundingBox();
+      assert.ok(sheet && sheet.x >= 0 && sheet.x + sheet.width <= page.viewportSize().width);
+      assert.ok(sheet.height <= page.viewportSize().height);
+      await page.locator(`#${id}`).click();
+      await expect(page.locator('#more-tools-modal-sheet')).toHaveCount(0);
+      await expect(page.locator('#mobile-nav-more-tools')).toHaveAttribute('aria-current', 'page');
+      if (id === 'more-tool-item-daily-session') {
         await expect(page.getByRole('heading', { name: /تصفح المصحف الشريف والتسميع التفاعلي/ })).toBeVisible();
       }
     }
@@ -1372,7 +1380,7 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
 
   const loginMobile = async (page, account) => {
     await page.goto(baseUrl);
-    await page.getByRole('button', { name: 'ابدأ رحلتك مجاناً 🚀', exact: true }).click();
+    await page.getByRole('button', { name: 'ابدأ مجانًا', exact: true }).click();
     await page.getByRole('button', { name: 'تسجيل الدخول هنا', exact: true }).click();
     await page.locator('#email-field').fill(`${uids[account]}@example.test`);
     await page.locator('#password-field').fill(password);
@@ -1384,7 +1392,7 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
   const verifyLandingNavbar = async page => {
     await page.goto(baseUrl);
     await expect(page.locator('#landing-language-toggle')).toBeVisible();
-    await expect(page.locator('.nav-links-mobile a')).toHaveCount(4);
+    await expect(page.locator('.nav-links-mobile a')).toHaveCount(3);
     for (const width of viewports) {
       await page.setViewportSize({ width, height: 844 });
       const bounds = await page.evaluate(() => {
@@ -1411,7 +1419,7 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
         `language control is hidden or clipped at ${width}px`);
       assert.ok(bounds.theme?.visible && bounds.theme.left >= 0 && bounds.theme.right <= width,
         `theme control is hidden or clipped at ${width}px`);
-      assert.equal(bounds.links.length, 4);
+      assert.equal(bounds.links.length, 3);
       assert.ok(bounds.links.every(link => link.visible && link.left >= 0 && link.right <= width && link.height > 0),
         `one or more section links are hidden or clipped at ${width}px`);
       await page.screenshot({
@@ -1425,10 +1433,10 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
     await expect(page).toHaveURL(/#features$/);
     await page.goto(baseUrl);
     await page.locator('#landing-language-toggle').click();
-    await expect(page.locator('.nav-links-mobile')).toContainText('Showcase');
-    await expect(page.locator('.nav-links-mobile a')).toHaveCount(4);
+    await expect(page.locator('.nav-links-mobile')).toContainText('Features');
+    await expect(page.locator('.nav-links-mobile a')).toHaveCount(3);
     await page.locator('#landing-language-toggle').click();
-    await expect(page.locator('.nav-links-mobile')).toContainText('استعراض المنصة');
+    await expect(page.locator('.nav-links-mobile')).toContainText('المميزات');
   };
 
   for (const { account, roles } of accounts) {
@@ -1459,13 +1467,17 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
         console.log(`Mobile screenshot saved: ${account} at ${width}px`);
 
         if (account === 'student' && width === 320) {
+          await page.locator('#quick-settings-trigger-btn').click();
           const themeToggle = page.locator('.mobile-theme-toggle');
           if (await themeToggle.getAttribute('aria-pressed') !== 'true') await themeToggle.click();
           await expect(themeToggle).toHaveAttribute('aria-pressed', 'true');
+          await page.locator('#quick-settings-trigger-btn').click();
           await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
           await expect.poll(() => page.locator('body').evaluate(body => body.classList.contains('dark'))).toBe(true);
           await page.reload();
+          await page.locator('#quick-settings-trigger-btn').click();
           await expect(page.locator('.mobile-theme-toggle')).toHaveAttribute('aria-pressed', 'true');
+          await page.locator('#quick-settings-trigger-btn').click();
           await expect.poll(() => page.evaluate(() => localStorage.getItem('theme'))).toBe('dark');
           await expect.poll(() => page.locator('body').evaluate(body => body.classList.contains('dark'))).toBe(true);
         }
@@ -1483,7 +1495,7 @@ test('Chrome mobile navigation, theme persistence, and viewport fit', { timeout:
             await expect(page.locator('#mobile-nav-home')).toBeVisible();
           }
         } else {
-          assert.ok(layout.bottomItems.length >= 5, `expected all fixed actions and section tabs at ${width}px`);
+          assert.equal(layout.bottomItems.length, 5, `expected all fixed actions and section tabs at ${width}px`);
           const firstSection = page.locator('#mobile-bottom-navigation button[id^="mobile-nav-"]:not(#mobile-nav-more-tools):not(#mobile-nav-profile)').first();
           await firstSection.click();
           await expect(firstSection).toHaveAttribute('aria-current', 'page');
@@ -1516,7 +1528,7 @@ test('multi-role account can open both home pages and Quran map uses a wide lapt
   try {
     await mkdir(path.resolve('reports/mobile-responsive'), { recursive: true });
     await page.goto(baseUrl);
-    await page.getByRole('button', { name: 'ابدأ رحلتك مجاناً 🚀', exact: true }).click();
+    await page.getByRole('button', { name: 'ابدأ مجانًا', exact: true }).click();
     await page.getByRole('button', { name: 'تسجيل الدخول هنا', exact: true }).click();
     await expect(page.locator('#email-field')).toHaveAttribute('autocomplete', 'email');
     await expect(page.locator('#password-field')).toHaveAttribute('autocomplete', 'current-password');
@@ -1525,16 +1537,15 @@ test('multi-role account can open both home pages and Quran map uses a wide lapt
     await page.getByRole('button', { name: 'تسجيل الدخول', exact: true }).click();
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.locator('#mobile-bottom-navigation')).toBeVisible();
-    await expect(page.locator('#sidebar-nav-home')).toBeVisible();
     await page.locator('#mobile-nav-home').click();
     await expect(page.getByTestId('student-home-view')).toBeVisible();
     await expect(page.locator('#active-role-switcher')).toBeVisible();
     await page.locator('#active-role-switcher').selectOption('teacher');
-    await expect(page.locator('#sidebar-nav-teacher-dashboard')).toBeVisible();
+    await expect(page.locator('#mobile-nav-teacher-dashboard')).toBeVisible();
     await expect(page.getByTestId('teacher-dashboard')).toBeVisible();
     await expect(page.getByTestId('teacher-dashboard-error')).toHaveCount(0);
-    await page.locator('#mobile-drawer-toggle-btn').click();
-    await page.locator('#sidebar-nav-home').click();
+    await page.locator('#mobile-nav-more-tools').click();
+    await page.locator('#more-tool-item-home').click();
     await expect(page.getByTestId('student-home-view')).toBeVisible();
     assert.deepEqual(pageErrors, [], `JavaScript errors while opening student home: ${pageErrors.join('; ')}`);
     await page.screenshot({

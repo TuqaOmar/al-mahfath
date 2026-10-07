@@ -1215,7 +1215,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                   <p data-testid="quran-reference-page" dir="rtl" lang="ar" style={{
                     margin: 0,
                     fontSize: '20px',
-                    fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
+                    fontFamily: 'var(--font-quran)',
                     lineHeight: 2.2,
                     color: 'var(--text-primary)',
                     fontWeight: 700
@@ -1245,7 +1245,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                   <p data-testid="quran-reference-ayah" data-quran-text={activeAyahObj?.text || ''} dir="rtl" lang="ar" style={{
                     margin: 0,
                     fontSize: '23px',
-                    fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
+                    fontFamily: 'var(--font-quran)',
                     lineHeight: 1.9,
                     color: 'var(--text-primary)',
                     fontWeight: 700
@@ -1392,7 +1392,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                   background: 'var(--bg-color)',
                   color: 'var(--text-primary)',
                   fontSize: '18px',
-                  fontFamily: 'serif',
+                  fontFamily: 'var(--font-quran)',
                   lineHeight: 1.8,
                   outline: 'none',
                   boxSizing: 'border-box'
@@ -1710,7 +1710,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                             </span>
                             <span style={{
                               fontSize: '17px',
-                              fontFamily: 'serif',
+                              fontFamily: 'var(--font-quran)',
                               fontWeight: 700,
                               color: '#B91C1C',
                               direction: 'rtl'
@@ -1734,7 +1734,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                             </span>
                             <span style={{
                               fontSize: '18px',
-                              fontFamily: 'serif',
+                              fontFamily: 'var(--font-quran)',
                               fontWeight: 800,
                               color: 'var(--primary, #10B981)',
                               direction: 'rtl'
@@ -1823,7 +1823,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                           padding: '6px 12px',
                           borderRadius: '10px',
                           fontSize: '18px',
-                          fontFamily: 'serif',
+                          fontFamily: 'var(--font-quran)',
                           fontWeight: 700,
                           background: bg,
                           color: color,
@@ -1939,7 +1939,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                           whiteSpace: 'nowrap',
                           overflow: 'hidden',
                           textOverflow: 'ellipsis',
-                          fontFamily: 'serif'
+                          fontFamily: 'var(--font-quran)'
                         }}>
                           {ab.text}
                         </p>
@@ -2213,7 +2213,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                       style={{
                       margin: 0,
                       fontSize: '22px',
-                      fontFamily: '"Noto Naskh Arabic", "Amiri", serif',
+                      fontFamily: 'var(--font-quran)',
                       lineHeight: 1.8,
                       color: isActive ? 'var(--primary)' : 'var(--text-primary)',
                       fontWeight: isActive ? 'bold' : 'normal',

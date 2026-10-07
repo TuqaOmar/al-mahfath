@@ -750,7 +750,7 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                       <p style={{
                         margin: 0,
                         fontSize: '17px',
-                        fontFamily: 'serif',
+                        fontFamily: 'var(--font-quran)',
                         color: 'var(--text-primary)',
                         direction: 'rtl',
                         textAlign: 'right',

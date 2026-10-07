@@ -1,16 +1,33 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Globe, ArrowLeft, ArrowRight, Sparkles, UserCheck, ShieldCheck, LogIn, LayoutDashboard, BookOpen } from 'lucide-react';
+import { Globe, UserCheck, LayoutDashboard } from 'lucide-react';
 import { Logo } from '../ui/Logo';
 import { ThemeToggle } from '../ThemeToggle';
 import { useLanguage } from '../../context/LanguageContext';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 
-export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
-  const { lang, setLang, t, isRTL } = useLanguage();
+export const LandingNavbar = ({ onOpenAuth }) => {
+  const { lang, setLang, isRTL } = useLanguage();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
+  const links = [
+    { href: '#features', label: isRTL ? 'المميزات' : 'Features' },
+    { href: '#method', label: isRTL ? 'الحصون الخمسة' : 'Five Fortresses' },
+    { href: '#faq', label: isRTL ? 'الأسئلة الشائعة' : 'FAQ' }
+  ];
+
+  const smallButton = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 14px',
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: 700,
+    cursor: 'pointer',
+    whiteSpace: 'nowrap'
+  };
 
   return (
     <nav style={{
@@ -21,8 +38,7 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
       background: 'var(--glass-bg)',
       backdropFilter: 'blur(16px)',
       WebkitBackdropFilter: 'blur(16px)',
-      borderBottom: '1px solid var(--glass-border)',
-      transition: 'all 0.3s ease'
+      borderBottom: '1px solid var(--glass-border)'
     }}>
       <div className="container landing-navbar__inner" style={{
         display: 'flex',
@@ -31,152 +47,46 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
         padding: '12px 20px',
         gap: '12px'
       }}>
-        {/* Brand Logo & Name */}
-        <div 
-          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', flexShrink: 0 }}
-        >
-          <Logo size={34} showText={false} />
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'flex', gap: '4px' }}>
-                <span>{isRTL ? 'المُحَفِّظ' : 'Al-Mahfath'}</span>
-                <span style={{ color: 'var(--primary)' }}>{isRTL ? 'الإلكتروني' : 'Electronic'}</span>
-              </span>
-            </div>
-          </div>
+        <a href="#top" style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <Logo size={32} showText={false} />
+          <span style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+            {isRTL ? 'المُحَفِّظ' : 'Al-Mahfath'}{' '}
+            <span style={{ color: 'var(--primary)' }}>{isRTL ? 'الإلكتروني' : 'Electronic'}</span>
+          </span>
+        </a>
+
+        <div className="nav-links-desktop" style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+          {links.map(link => (
+            <a key={link.href} href={link.href} className="lp-nav-link">{link.label}</a>
+          ))}
         </div>
 
-        {/* Center Nav Links (Desktop) */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }} className="nav-links-desktop">
-          <a 
-            href="#showcase" 
-            style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >
-            {isRTL ? 'استعراض المنصة' : 'Showcase'}
-          </a>
-          <a 
-            href="#methodology" 
-            style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >
-            {isRTL ? 'خطة الحصون الخمسة' : '5 Fortresses'}
-          </a>
-          <a 
-            href="#features" 
-            style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >
-            {isRTL ? 'المميزات الذكية' : 'Features'}
-          </a>
-          <a 
-            href="#faq" 
-            style={{ fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)', transition: 'color 0.2s' }}
-            onMouseOver={e => e.currentTarget.style.color = 'var(--primary)'}
-            onMouseOut={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-          >
-            {isRTL ? 'الأسئلة الشائعة' : 'FAQ'}
-          </a>
-        </div>
-
-        {/* Right Actions */}
         <div className="landing-navbar__actions" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-
-          {/* Language Switch */}
           <button
             id="landing-language-toggle"
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '6px 10px',
-              borderRadius: '9px',
-              border: '1px solid var(--glass-border)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-secondary)',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }}
-            title={isRTL ? 'Switch to English' : 'التبديل إلى العربية'}
+            style={{ ...smallButton, padding: '8px 10px', border: '1px solid var(--glass-border)', background: 'var(--bg-surface)', color: 'var(--text-secondary)' }}
             aria-label={isRTL ? 'التبديل إلى اللغة الإنجليزية' : 'Switch to Arabic'}
           >
             <Globe size={14} color="var(--primary)" />
             <span>{lang === 'ar' ? 'English' : 'العربية'}</span>
           </button>
 
-          {/* Theme Toggle */}
           <ThemeToggle variant="icon" size="small" />
 
-          {/* User Auth Buttons */}
           {user ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                onClick={() => navigate('/dashboard')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  padding: '7px 14px',
-                  borderRadius: '9px',
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%)',
-                  color: 'white',
-                  border: 'none',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 8px var(--primary-glow)'
-                }}
-              >
+              <button onClick={() => navigate('/dashboard')} style={{ ...smallButton, background: 'var(--primary)', color: '#fff', border: 'none' }}>
                 <LayoutDashboard size={14} />
                 <span>{isRTL ? 'لوحة الحفظ' : 'Dashboard'}</span>
               </button>
-
-              <button
-                onClick={logout}
-                style={{
-                  padding: '7px 10px',
-                  borderRadius: '9px',
-                  border: '1px solid rgba(239, 68, 68, 0.3)',
-                  background: 'rgba(239, 68, 68, 0.08)',
-                  color: '#ef4444',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
+              <button onClick={logout} style={{ ...smallButton, border: '1px solid var(--glass-border)', background: 'transparent', color: 'var(--text-secondary)' }}>
                 {isRTL ? 'خروج' : 'Sign Out'}
               </button>
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <button
-                onClick={() => onOpenAuth('signup')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '5px',
-                  padding: '7px 14px',
-                  borderRadius: '9px',
-                  background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%)',
-                  color: 'white',
-                  border: 'none',
-                  fontSize: '12.5px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  boxShadow: '0 4px 14px var(--primary-glow)',
-                  transition: 'transform 0.2s, box-shadow 0.2s'
-                }}
-                onMouseOver={e => e.currentTarget.style.transform = 'translateY(-1px)'}
-                onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
-              >
+              <button onClick={() => onOpenAuth('signup')} style={{ ...smallButton, background: 'var(--primary)', color: '#fff', border: 'none' }}>
                 <UserCheck size={14} />
                 <span>{isRTL ? 'ابدأ الآن' : 'Get Started'}</span>
               </button>
@@ -185,10 +95,9 @@ export const LandingNavbar = ({ onOpenAuth, onDemoLogin, onOpenDocs }) => {
         </div>
 
         <div className="nav-links-mobile" aria-label={isRTL ? 'أقسام الصفحة' : 'Page sections'}>
-          <a href="#showcase">{isRTL ? 'استعراض المنصة' : 'Showcase'}</a>
-          <a href="#methodology">{isRTL ? 'خطة الحصون الخمسة' : '5 Fortresses'}</a>
-          <a href="#features">{isRTL ? 'المميزات الذكية' : 'Features'}</a>
-          <a href="#faq">{isRTL ? 'الأسئلة الشائعة' : 'FAQ'}</a>
+          {links.map(link => (
+            <a key={link.href} href={link.href}>{link.label}</a>
+          ))}
         </div>
       </div>
     </nav>

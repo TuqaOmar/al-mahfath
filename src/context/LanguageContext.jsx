@@ -21,9 +21,6 @@ export const LanguageProvider = ({ children }) => {
     const isRTL = lang === 'ar';
     document.documentElement.dir  = isRTL ? 'rtl' : 'ltr';
     document.documentElement.lang = lang;
-    document.documentElement.style.fontFamily = isRTL
-      ? "'Cairo', 'Segoe UI', sans-serif"
-      : "'Inter', 'Segoe UI', sans-serif";
   }, [lang]);
 
   /** Translation helper — returns the string for the current language */

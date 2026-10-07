@@ -1,211 +1,70 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { 
-  BrainCircuit, 
-  ShieldCheck, 
-  GitFork, 
-  Sparkles, 
-  BellRing, 
-  Users, 
-  Award,
-  BookOpen,
-  ArrowLeft,
-  ArrowRight
-} from 'lucide-react';
+import { Mic, ShieldCheck, Users } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
 
-export const LandingFeatures = () => {
+export const LandingFeatures = ({ children }) => {
   const { isRTL } = useLanguage();
 
-  const features = [
-    {
-      icon: BrainCircuit,
-      tag: isRTL ? 'محرك صوتي ذكي' : 'Voice AI Engine',
-      title: isRTL ? 'التسميع الصوتي والتصحيح اللحظي' : 'Real-time Voice AI Recitation',
-      desc: isRTL 
-        ? 'يتعرف الذكاء الاصطناعي على تلاوتك كلمة بكلمة، ويبرز أي خطأ في الحفظ أو التشكيل مع تقديم تنبيه فوري لطيف دون إحباط.'
-        : 'AI tracks your recitation word-by-word, highlighting errors and offering gentle, instant guidance.',
-      color: 'var(--primary)'
-    },
-    {
-      icon: ShieldCheck,
-      tag: isRTL ? 'منهجية راسخة' : 'Proven System',
-      title: isRTL ? 'نظام الحصون الخمسة المتكامل' : 'Integrated 5-Fortresses System',
-      desc: isRTL 
-        ? 'جدولة آلية لورد الحفظ الجديد، التحضير، ومراجعة الماضي القريب والبعيد لضمان رسوخ القرآن كالجبال الرواسي في صدرك.'
-        : 'Automated scheduling for new memorization, prep, and near/distant review guaranteeing unshakable retention.',
-      color: 'var(--accent)'
-    },
-    {
-      icon: GitFork,
-      tag: isRTL ? 'تثبيت بصري' : 'Visual Retention',
-      title: isRTL ? 'الخرائط الذهنية وتصنيف الآيات' : 'Thematic Mind Maps',
-      desc: isRTL 
-        ? 'ربط بصري وموضوعي لآيات السورة الكريمة يوضح الوحدة الموضوعية وييسر الربط الذهني بين أوائل الآيات وأواخرها.'
-        : 'Visual thematic breakdowns linking verse beginnings and endings into cohesive conceptual maps.',
-      color: 'var(--secondary)'
-    },
-    {
-      icon: Sparkles,
-      tag: isRTL ? 'إتقان المتشابهات' : 'Verse Similarities',
-      title: isRTL ? 'كاشف المتشابهات اللفظية' : 'Similar Verses Identifier',
-      desc: isRTL 
-        ? 'تنبيهك للآيات المتشابهة في السور الأخرى مع توضيح الفروق الدقيقة وقواعد الضبط والتوجيه لتجنب الخلط أثناء التسميع.'
-        : 'Flags similar verses across Surahs with clear mnemonic distinctions to prevent confusion.',
-      color: '#8B5CF6'
-    },
-    {
-      icon: BellRing,
-      tag: isRTL ? 'انضباط يومي' : 'Daily Discipline',
-      title: isRTL ? 'التنبيهات الذكية والتذكير المخصص' : 'Smart Daily Reminders',
-      desc: isRTL 
-        ? 'إشعارات تفاعلية ترسل في الموعد الأنسب لك يومياً لتذكيرك بجلسة الحفظ وتثبيت الورد دون انقطاع أو تسويف.'
-        : 'Timely personalized notifications tailored to your routine, ensuring consistent daily practice.',
-      color: '#EC4899'
-    },
-    {
-      icon: Users,
-      tag: isRTL ? 'بيئة محفزة' : 'Inspiring Community',
-      title: isRTL ? 'مجتمع الحفاظ ولوحات الشرف' : 'Memorizers Community & Leaderboard',
-      desc: isRTL 
-        ? 'تنافس في الخيرات مع آلاف الحفاظ، واكسب أوسمة ونقاط خبرة (XP) مع كل صفحة تتقنها، وتابع مسارك على سلم الإتقان.'
-        : 'Compete in righteousness, earn badges and XP with every mastered page, and track your climb on the leaderboard.',
-      color: 'var(--primary)'
-    }
+  const features = isRTL ? [
+    { icon: Mic, title: 'تسميع صوتي يكشف الخطأ', text: 'اقرأ الآية أو الصفحة، فيقارن التطبيق تلاوتك بالنص العثماني كلمة بكلمة ويلوّن مواضع الخطأ.' },
+    { icon: ShieldCheck, title: 'خطة الحصون الخمسة', text: 'ورد يومي يوزّع وقتك بين القراءة والتحضير والحفظ الجديد والمراجعة القريبة والبعيدة.' },
+    { icon: Users, title: 'حلقتك ومعلمتك', text: 'انضم لحلقة برمز دعوة، وأرسل جلسات التسميع لمعلمتك لتراجعها وتكتب لك ملاحظاتها.' }
+  ] : [
+    { icon: Mic, title: 'Recitation that catches mistakes', text: 'Recite an ayah or a page; the app compares it word by word with the Uthmani text and highlights errors.' },
+    { icon: ShieldCheck, title: 'The Five Fortresses plan', text: 'A daily routine split between reading, preparation, new memorization, and near and far review.' },
+    { icon: Users, title: 'Your circle and teacher', text: 'Join a circle with an invite code and send recitation sessions to your teacher for review and notes.' }
+  ];
+
+  const steps = isRTL ? [
+    { title: 'القراءة', text: 'جزء يومي نظرًا من المصحف' },
+    { title: 'التحضير', text: 'سماع صفحة الغد وفهمها' },
+    { title: 'الحفظ الجديد', text: 'تكرار متقن لصفحة اليوم' },
+    { title: 'المراجعة القريبة', text: 'آخر ٢٠ صفحة حفظتها' },
+    { title: 'المراجعة البعيدة', text: 'المحفوظ القديم بالتدوير' }
+  ] : [
+    { title: 'Reading', text: 'A daily portion from the Mushaf' },
+    { title: 'Preparation', text: "Listen to tomorrow's page" },
+    { title: 'New memorization', text: "Repeat today's page" },
+    { title: 'Near review', text: 'Your last 20 pages' },
+    { title: 'Far review', text: 'Older pages in rotation' }
   ];
 
   return (
-    <section id="features" style={{
-      padding: '90px 0',
-      background: 'var(--bg-color)',
-      position: 'relative',
-      overflow: 'hidden',
-      width: '100%'
-    }}>
-      <div className="container">
-        
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-          <div className="badge-modern" style={{ marginBottom: '14px' }}>
-            <Sparkles size={14} />
-            <span>{isRTL ? 'لماذا يختار الحفاظ محفظ AI؟' : 'Why Memorizers Choose Ma7fath AI?'}</span>
+    <>
+      <section id="features" className="lp-section">
+        <div className="container">
+          <h2 className="lp-heading">{isRTL ? 'كل ما تحتاجه لحفظ متقن' : 'Everything you need to memorize well'}</h2>
+          <div className="lp-cards">
+            {features.map(({ icon: Icon, title, text }) => (
+              <article key={title} className="lp-card">
+                <span className="lp-card__icon"><Icon size={22} /></span>
+                <h3 style={{ margin: 0, fontSize: '19px', fontWeight: 800, color: 'var(--text-primary)' }}>{title}</h3>
+                <p style={{ margin: 0, fontSize: '15px', lineHeight: 1.8, color: 'var(--text-secondary)' }}>{text}</p>
+              </article>
+            ))}
           </div>
+        </div>
+      </section>
 
-          <h2 style={{
-            fontSize: 'clamp(26px, 3.5vw, 38px)',
-            fontWeight: 800,
-            color: 'var(--text-primary)',
-            marginBottom: '14px'
-          }}>
-            {isRTL ? 'أدوات متكاملة تجعل الحفظ' : 'Integrated Tools That Make Memorization'}{' '}
-            <span className="text-gradient">{isRTL ? 'أسهل، أمتع، وأكثر رسوخاً' : 'Easier, Inspiring, and Permanent'}</span>
-          </h2>
+      {children}
 
-          <p style={{
-            fontSize: '16px',
-            color: 'var(--text-secondary)',
-            maxWidth: '620px',
-            margin: '0 auto',
-            lineHeight: 1.6
-          }}>
-            {isRTL 
-              ? 'صُممت كل ميزة في المنصة بعناية فائقة لتلبي الاحتياجات الحقيقية لطالب القرآن ومعلم الحلقات.'
-              : 'Every single feature is meticulously crafted to meet the actual daily needs of Quran students and teachers.'}
+      <section id="method" className="lp-section lp-section--tinted">
+        <div className="container">
+          <h2 className="lp-heading">{isRTL ? 'الحصون الخمسة في يومك' : 'The Five Fortresses in your day'}</h2>
+          <p className="lp-subheading">
+            {isRTL ? 'منهجية د. سعيد أبو العلا حمزة لتثبيت الحفظ ومنع التفلّت.' : 'The method of Dr. Saeed Abu Al-Ala Hamza for lasting memorization.'}
           </p>
+          <ol className="lp-steps">
+            {steps.map((step, index) => (
+              <li key={step.title} className="lp-step">
+                <span className="lp-step__number">{(index + 1).toLocaleString(isRTL ? 'ar-EG' : 'en-US')}</span>
+                <strong style={{ fontSize: '16px', color: 'var(--text-primary)' }}>{step.title}</strong>
+                <span style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{step.text}</span>
+              </li>
+            ))}
+          </ol>
         </div>
-
-        {/* Features Bento Grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-          gap: '24px'
-        }}>
-          {features.map((feature, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 15 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: idx * 0.08, duration: 0.4 }}
-              style={{
-                padding: '28px',
-                borderRadius: '20px',
-                background: 'var(--bg-surface)',
-                border: '1px solid var(--glass-border)',
-                boxShadow: 'var(--shadow-soft)',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'space-between',
-                transition: 'all 0.25s ease'
-              }}
-              onMouseOver={e => {
-                e.currentTarget.style.borderColor = 'var(--primary-border)';
-                e.currentTarget.style.transform = 'translateY(-3px)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-hover)';
-              }}
-              onMouseOut={e => {
-                e.currentTarget.style.borderColor = 'var(--glass-border)';
-                e.currentTarget.style.transform = 'translateY(0)';
-                e.currentTarget.style.boxShadow = 'var(--shadow-soft)';
-              }}
-            >
-              <div>
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  marginBottom: '20px'
-                }}>
-                  <div style={{
-                    width: '48px',
-                    height: '48px',
-                    borderRadius: '14px',
-                    background: 'var(--primary-light)',
-                    color: feature.color,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    <feature.icon size={24} />
-                  </div>
-
-                  <span style={{
-                    fontSize: '11.5px',
-                    fontWeight: 700,
-                    padding: '3px 10px',
-                    borderRadius: '8px',
-                    background: 'var(--bg-color)',
-                    border: '1px solid var(--glass-border)',
-                    color: 'var(--text-muted)'
-                  }}>
-                    {feature.tag}
-                  </span>
-                </div>
-
-                <h3 style={{
-                  fontSize: '18.5px',
-                  fontWeight: 800,
-                  color: 'var(--text-primary)',
-                  marginBottom: '12px',
-                  lineHeight: 1.35
-                }}>
-                  {feature.title}
-                </h3>
-
-                <p style={{
-                  fontSize: '14.5px',
-                  color: 'var(--text-secondary)',
-                  lineHeight: 1.65,
-                  margin: 0
-                }}>
-                  {feature.desc}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-
-      </div>
-    </section>
+      </section>
+    </>
   );
 };

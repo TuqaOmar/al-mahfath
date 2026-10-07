@@ -97,7 +97,7 @@ export const PostSessionDhikr = () => {
       }}>
         <p style={{
           fontSize: '22px',
-          fontFamily: 'serif',
+          fontFamily: 'var(--font-quran)',
           fontWeight: 'bold',
           color: 'var(--text-primary)',
           lineHeight: 1.6,

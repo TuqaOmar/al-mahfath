@@ -1,7 +1,7 @@
 import React from 'react';
 import { BookOpen, Sparkles, Compass, ShieldCheck, ArrowLeft, LogIn } from 'lucide-react';
 
-export const MobileWelcomeView = ({ onOpenAuth, onDemoLogin }) => {
+export const MobileWelcomeView = ({ onOpenAuth }) => {
   return (
     <div
       style={{

@@ -20,8 +20,6 @@ import {
   Sparkles,
   Play,
   Mic,
-  Volume2,
-  VolumeX,
   Presentation,
   Check,
   Brain,
@@ -34,18 +32,13 @@ import {
   Clock,
   Heart,
   BookMarked,
-  Compass,
   Star,
-  Menu,
-  Globe,
-  RefreshCw,
   Users,
   Plus
 } from 'lucide-react';
 import { Card } from '../components/ui/Card';
 import { Sidebar } from '../components/Sidebar';
-import { ThemeProvider, useTheme } from '../context/ThemeContext';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { ThemeProvider } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 import { PullToRefresh } from '../components/PullToRefresh';
 import { useLanguage } from '../context/LanguageContext';
@@ -71,7 +64,6 @@ import { MoreToolsModal } from '../components/MoreToolsModal';
 import { UserProfileModal } from '../components/UserProfileModal';
 import { PresentationModal } from '../components/PresentationModal';
 import { DocumentationModal } from '../components/DocumentationModal';
-import { FloatingAiButton } from '../components/FloatingAiButton';
 import { QuickSettingsMenu } from '../components/QuickSettingsMenu';
 import { SimilaritiesView } from '../components/SimilaritiesView';
 import { MindMapsView } from '../components/MindMapsView';
@@ -220,7 +212,6 @@ const Dashboard = () => {
       setSavingHomeFortress(null);
     }
   };
-  const { isDark, toggleTheme } = useTheme();
   const [isRecording, setIsRecording] = useState(false);
   const [hadithIdx, setHadithIdx] = useState(0);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
@@ -228,47 +219,29 @@ const Dashboard = () => {
   });
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth <= 768);
   const [isLaptop, setIsLaptop] = useState(typeof window !== 'undefined' && window.innerWidth < 1340);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showMoreToolsModal, setShowMoreToolsModal] = useState(false);
   const roleSwitcher = availableRoles.length > 1 ? (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: isMobile ? 'space-between' : 'flex-start',
-      gap: '8px',
-      minHeight: isMobile ? '44px' : '36px',
-      width: isMobile ? '100%' : 'auto',
-      flexShrink: 0,
-      padding: isMobile ? '4px 10px' : '3px 8px',
-      borderRadius: '10px',
-      border: '1px solid var(--glass-border)',
-      background: 'var(--bg-color)',
-      boxSizing: 'border-box'
-    }}>
-      <label htmlFor="active-role-switcher" style={{ fontSize: '12px', color: 'var(--text-secondary)', whiteSpace: 'nowrap' }}>
-        {isRTL ? 'الدور' : 'Role'}
-      </label>
-      <select
-        id="active-role-switcher"
-        aria-label={isRTL ? 'اختيار الدور النشط' : 'Choose active role'}
-        value={activeRole}
-        onChange={event => setActiveRole(event.target.value)}
-        style={{
-          minWidth: isMobile ? '120px' : '104px',
-          maxWidth: isMobile ? '160px' : '140px',
-          height: '36px',
-          padding: '0 8px',
-          borderRadius: '8px',
-          border: '1px solid var(--glass-border)',
-          background: 'var(--bg-surface)',
-          color: 'var(--text-primary)',
-          fontSize: '12px',
-          fontWeight: 700
-        }}
-      >
-        {availableRoles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}
-      </select>
-    </div>
+    <select
+      id="active-role-switcher"
+      aria-label={isRTL ? 'اختيار الدور النشط' : 'Choose active role'}
+      value={activeRole}
+      onChange={event => setActiveRole(event.target.value)}
+      style={{
+        height: '40px',
+        maxWidth: '120px',
+        padding: '0 10px',
+        borderRadius: '12px',
+        border: '1px solid var(--glass-border)',
+        background: 'var(--bg-color)',
+        color: 'var(--text-primary)',
+        fontSize: '13px',
+        fontWeight: 700,
+        flexShrink: 0,
+        cursor: 'pointer'
+      }}
+    >
+      {availableRoles.map(role => <option key={role} value={role}>{roleLabels[role]}</option>)}
+    </select>
   ) : null;
 
   // Set default tab only when user logs in or user role changes
@@ -287,6 +260,14 @@ const Dashboard = () => {
       setActiveTab(getUserDefaultTab(activeRole));
     }
   }, [user?.uid, activeRole]);
+
+  // Leave a student section the admin has hidden.
+  useEffect(() => {
+    if ((activeRole || 'user') === 'user' && ['community', 'achievements'].includes(activeTab)
+      && uiConfiguration.sections[activeTab]?.visible === false) {
+      setActiveTab('home');
+    }
+  }, [activeTab, uiConfiguration, activeRole]);
 
   // Track screen size changes for responsiveness (Laptop & Mobile)
   useEffect(() => {
@@ -601,7 +582,7 @@ const Dashboard = () => {
             {/* 2. Key Metrics Row (Compact & Touch-Friendly on Mobile) */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: isMobile ? 'repeat(3, 1fr)' : 'repeat(auto-fit, minmax(160px, 1fr))',
+              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
               gap: isMobile ? '8px' : '16px'
             }}>
               
@@ -618,22 +599,6 @@ const Dashboard = () => {
                 </div>
                 <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: 'var(--primary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   {'تصريح الطالب؛ ليس اعتمادًا'}
-                </span>
-              </Card>
-
-              {/* Memory Stability Score */}
-              <Card style={{ padding: isMobile ? '12px 10px' : '20px', textAlign: isMobile ? 'center' : 'right' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '8px' }}>
-                  {!isMobile && <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>ثبات الحفظ</span>}
-                  <div style={{ width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Brain size={isMobile ? 15 : 18} />
-                  </div>
-                </div>
-                <div style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
-                  <span data-testid="home-memory-score">غير متاح</span>
-                </div>
-                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {'لا يوجد تقييم حفظ معتمد'}
                 </span>
               </Card>
 
@@ -778,101 +743,6 @@ const Dashboard = () => {
               </div>
             </div>
 
-            {/* 4. Quick Access Hub (3 Core Navigation Cards) */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-              
-              <div 
-                onClick={() => setActiveTab('quran-map')}
-                style={{
-                  padding: '20px',
-                  borderRadius: '18px',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--glass-border)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-soft)'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Compass size={22} />
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 2px 0', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                    خريطة القرآن (604)
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    تصفح صفحات المصحف ومتابعة الإنجاز
-                  </p>
-                </div>
-              </div>
-
-              <div 
-                onClick={() => setActiveTab('five-fortresses')}
-                style={{
-                  padding: '20px',
-                  borderRadius: '18px',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--glass-border)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-soft)'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.1)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <ShieldCheck size={22} />
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 2px 0', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                    الحصون الخمسة
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    منهجية التحضير والحفظ والمراجعة
-                  </p>
-                </div>
-              </div>
-
-              <div 
-                onClick={() => setActiveTab('ai-assistant')}
-                style={{
-                  padding: '20px',
-                  borderRadius: '18px',
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--glass-border)',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  transition: 'all 0.2s ease',
-                  boxShadow: 'var(--shadow-soft)'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-                onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-              >
-                <div style={{ width: '44px', height: '44px', borderRadius: '12px', background: 'rgba(139, 92, 246, 0.1)', color: '#8B5CF6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <Sparkles size={22} />
-                </div>
-                <div>
-                  <h4 style={{ margin: '0 0 2px 0', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 700 }}>
-                    المعلم الإيماني الذكي
-                  </h4>
-                  <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)' }}>
-                    إجابات فورية وتفسير ومتشابهات
-                  </p>
-                </div>
-              </div>
-
-            </div>
-
             {/* 4. Spiritual Calm: Hadith of the Day */}
             <div style={{
               padding: '18px 24px',
@@ -887,7 +757,7 @@ const Dashboard = () => {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <span style={{ fontSize: '20px' }}>📖</span>
-                <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'serif' }}>
+                <p style={{ margin: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font-quran)' }}>
                   « {quranHadiths[hadithIdx].text} »
                 </p>
               </div>
@@ -919,7 +789,7 @@ const Dashboard = () => {
               <span style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 'bold', display: 'block', marginBottom: '6px' }}>
                 🤲 دعاء الافتتاح وتيسير الفهم والحفظ
               </span>
-              <p style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)', fontFamily: 'serif', lineHeight: 1.6 }}>
+              <p style={{ margin: 0, fontSize: '16px', color: 'var(--text-primary)', fontFamily: 'var(--font-quran)', lineHeight: 1.6 }}>
                 «اللَّهُمَّ افْتَحْ عَلَيَّ فُتُوحَ الْعَارِفِينَ بِحِكْمَتِكَ، وَانْشُرْ عَلَيَّ رَحْمَتَكَ، وَذَكِّرْنِي مَا نَسِيتُ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ»
               </p>
             </div>
@@ -1039,21 +909,23 @@ const Dashboard = () => {
     }
   };
 
-  const mainPaneMargin = isMobile ? '0px' : (sidebarCollapsed ? '76px' : '260px');
+  const mainPaneMargin = isMobile ? '0px' : (sidebarCollapsed ? '76px' : '248px');
   const mainPaneStyles = isRTL 
     ? { marginRight: mainPaneMargin, marginLeft: 0, transition: 'margin-right 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }
     : { marginLeft: mainPaneMargin, marginRight: 0, transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)' };
 
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-color)', width: '100%', maxWidth: '100vw', overflowX: 'hidden', boxSizing: 'border-box' }}>
-      {/* Primary Navigation Sidebar / Mobile Slide-out Drawer */}
-      <Sidebar 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab} 
-        collapsed={sidebarCollapsed} 
-        setCollapsed={setSidebarCollapsed} 
-        onOpenProfile={() => setShowProfileModal(true)}
-      />
+      {/* Desktop sidebar; mobile navigates with the bottom bar + "More" sheet */}
+      {!isMobile && (
+        <Sidebar
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          collapsed={sidebarCollapsed}
+          setCollapsed={setSidebarCollapsed}
+          onOpenProfile={() => setShowProfileModal(true)}
+        />
+      )}
 
       {/* Main Content Pane */}
       <div style={{ 
@@ -1069,452 +941,81 @@ const Dashboard = () => {
         ...mainPaneStyles
       }}>
         
-        {/* Header / Top App Bar */}
-        <header style={{ 
-          minHeight: isMobile ? '56px' : '64px',
-          height: 'auto',
-          borderBottom: '1px solid var(--glass-border)', 
-          display: isMobile && roleSwitcher ? 'grid' : 'flex',
-          gridTemplateColumns: isMobile && roleSwitcher ? 'minmax(0, 1fr) auto' : undefined,
-          alignItems: 'center', 
-          justifyContent: 'space-between', 
-          padding: isMobile 
-            ? 'max(8px, env(safe-area-inset-top)) 16px 8px 16px' 
-            : (isLaptop ? '10px 20px' : '0 32px'), 
-          background: 'var(--bg-surface)', 
-          position: 'sticky', 
-          top: 0, 
-          zIndex: isMobile ? 100 : 30,
-          flexWrap: 'nowrap',
-          gap: '8px'
+        {/* Top bar — same layout on web and mobile: who you are on one side, two controls on the other */}
+        <header style={{
+          minHeight: '60px',
+          borderBottom: '1px solid var(--glass-border)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '8px',
+          padding: isMobile
+            ? 'max(8px, env(safe-area-inset-top)) 12px 8px'
+            : (isLaptop ? '10px 20px' : '10px 32px'),
+          background: 'var(--bg-surface)',
+          position: 'sticky',
+          top: 0,
+          zIndex: isMobile ? 100 : 30
         }}>
-          {isMobile ? (
-            /* Mobile View: Drawer toggle + Compact profile card + Quick Settings */
-            <>
-              {/* Left / Start: Drawer Toggle & Compact Profile Card */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: '1 1 auto' }}>
-                <button
-                  id="mobile-drawer-toggle-btn"
-                  onClick={() => {
-                    if (navigator?.vibrate) {
-                      try { navigator.vibrate(10); } catch (e) {}
-                    }
-                    setSidebarCollapsed(!sidebarCollapsed);
-                  }}
-                  style={{
-                    width: '36px',
-                    height: '36px',
-                    borderRadius: '10px',
-                    border: '1px solid var(--glass-border)',
-                    background: 'var(--bg-color)',
-                    color: 'var(--text-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    cursor: 'pointer',
-                    flexShrink: 0
-                  }}
-                  title={isRTL ? 'فتح القائمة الجانبية (الدروار)' : 'Open Drawer Menu'}
-                  aria-label={isRTL ? 'فتح قائمة الأقسام' : 'Open section navigation'}
-                  aria-controls="app-main-sidebar"
-                  aria-expanded={!sidebarCollapsed}
-                >
-                  <Menu size={19} />
-                </button>
+          <button
+            type="button"
+            id="header-user-profile-card"
+            onClick={() => setShowProfileModal(true)}
+            title={isRTL ? 'الملف الشخصي' : 'Profile'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              minWidth: 0,
+              flex: '1 1 auto',
+              padding: '2px',
+              border: 'none',
+              background: 'transparent',
+              color: 'inherit',
+              cursor: 'pointer',
+              textAlign: 'start'
+            }}
+          >
+            {isMobile && (
+              <img
+                data-testid="header-profile-photo"
+                src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'}
+                alt=""
+                style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--primary)', flexShrink: 0 }}
+              />
+            )}
+            <span className="mobile-profile-details" style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+              <span style={{
+                fontSize: isMobile ? '15px' : '18px',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {isMobile ? (user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')) : `${isRTL ? 'مرحباً،' : 'Welcome,'} ${user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')}`}
+              </span>
+              <span className="mobile-profile-streak" style={{ fontSize: '12px', color: '#D97706', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                🔥 {user?.streak ?? 0} {isRTL ? 'أيام صحبة القرآن' : 'day streak'}
+              </span>
+            </span>
+          </button>
 
-                <div 
-                  id="header-user-profile-card"
-                onClick={() => {
-                  if (navigator?.vibrate) {
-                    try { navigator.vibrate(12); } catch (e) {}
-                  }
-                  setShowProfileModal(true);
-                }}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px',
-                  cursor: 'pointer',
-                  padding: '4px 6px',
-                  borderRadius: '16px',
-                  userSelect: 'none',
-                  minWidth: 0,
-                  flex: '1 1 auto',
-                  overflow: 'hidden'
-                }}
-                title={isRTL ? 'عرض وتعديل الملف الشخصي' : 'View & edit profile'}
-              >
-                <div style={{ position: 'relative', flexShrink: 0 }}>
-                  <img
-                    data-testid="header-profile-photo"
-                    src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
-                    alt="Profile" 
-                    style={{ 
-                      width: '36px', 
-                      height: '36px', 
-                      borderRadius: '50%', 
-                      background: 'var(--primary)', 
-                      border: '2px solid var(--primary)',
-                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
-                      objectFit: 'cover'
-                    }} 
-                  />
-                  <span style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    [isRTL ? 'left' : 'right']: 0,
-                    width: '10px',
-                    height: '10px',
-                    borderRadius: '50%',
-                    backgroundColor: '#10B981',
-                    border: '2px solid var(--bg-surface)'
-                  }} />
-                </div>
-
-                <div className="mobile-profile-details" style={{ display: 'flex', flexDirection: 'column', minWidth: 0, flex: '1 1 auto' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
-                    <span style={{ 
-                      fontSize: '14px', 
-                      fontWeight: 800, 
-                      color: 'var(--text-primary)', 
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      maxWidth: '120px',
-                      minWidth: 0
-                    }}>
-                      {user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')}
-                    </span>
-                    <span
-                      className="mobile-profile-streak"
-                      style={{ 
-                        padding: '2px 7px', 
-                        borderRadius: '12px', 
-                        background: 'rgba(245, 158, 11, 0.15)', 
-                        color: '#F59E0B', 
-                        fontWeight: 800, 
-                        fontSize: '11px', 
-                        display: 'inline-flex', 
-                        alignItems: 'center', 
-                        gap: '3px',
-                        whiteSpace: 'nowrap'
-                      }}
-                      title={isRTL ? 'أيام صحبة القرآن' : 'Quran Companion Days'}
-                    >
-                      🔥 {user?.streak ?? 0} {isRTL ? 'صحبة القرآن' : 'd'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-              {/* Right / End: RoleSwitcher, Notification, Theme & Quick Settings */}
-              <div id="mobile-header-controls" className="flex-center" style={{ gap: '6px', flexWrap: 'nowrap', flexShrink: 0 }}>
-                <NotificationCenter />
-                <ThemeToggle variant="pill" size="small" className="mobile-theme-toggle" touchTarget />
-                <QuickSettingsMenu
-                  soundEnabled={soundEnabled}
-                  toggleSound={toggleSound}
-                  isSyncing={isSyncing}
-                  handleRefresh={handleRefreshDashboard}
-                  onOpenProfile={() => setShowProfileModal(true)}
-                  onOpenDocs={() => setShowDocsModal(true)}
-                  onOpenPresentation={() => setShowPresentationModal(true)}
-                  isMobile={true}
-                />
-              </div>
-              {roleSwitcher && <div style={{ gridColumn: '1 / -1', minWidth: 0 }}>{roleSwitcher}</div>}
-            </>
-          ) : (
-            /* Laptop / Desktop View: Original full desktop bar */
-            <>
-              {/* Left / Start: Greeting, Edit Name & Quran Companion Badge */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: isLaptop ? '6px' : '10px', minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                  <h2 style={{ 
-                    fontSize: isLaptop ? '16px' : '20px', 
-                    fontWeight: 700, 
-                    color: 'var(--text-primary)', 
-                    margin: 0,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: isLaptop ? '160px' : '260px'
-                  }}>
-                    مرحباً، {user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')} 👋
-                  </h2>
-                  {!isLaptop && (
-                    <button
-                      type="button"
-                      id="header-edit-name-btn"
-                      onClick={() => setShowProfileModal(true)}
-                      style={{
-                        background: 'var(--primary-light)',
-                        border: '1px solid var(--glass-border)',
-                        borderRadius: '8px',
-                        padding: '3px 8px',
-                        fontSize: '12px',
-                        fontWeight: 600,
-                        color: 'var(--primary)',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}
-                      title={isRTL ? 'تعديل اسمك وملفك الشخصي' : 'Edit name & profile'}
-                    >
-                      ✏️ <span>{isRTL ? 'تعديل الاسم' : 'Edit Name'}</span>
-                    </button>
-                  )}
-                </div>
-                <span style={{ 
-                  padding: '4px 10px', 
-                  borderRadius: '20px', 
-                  background: 'rgba(245, 158, 11, 0.15)', 
-                  color: '#F59E0B', 
-                  fontWeight: 'bold', 
-                  fontSize: '12px', 
-                  display: 'inline-flex', 
-                  alignItems: 'center', 
-                  gap: '4px',
-                  whiteSpace: 'nowrap'
-                }}>
-                  🔥 {user?.streak ?? 0} {isRTL ? 'أيام صحبة القرآن' : 'd'}
-                </span>
-              </div>
-
-              {/* Right / End: Desktop Tools & Actions */}
-              <div className="flex-center" style={{ gap: isLaptop ? '6px' : '10px', flexWrap: 'nowrap' }}>                {/* On wider screens without drawer constraints, display direct quick buttons */}
-                {roleSwitcher}
-                {!isLaptop && (
-                  <>
-                    {/* Sync & Refresh Button */}
-                    <button
-                      id="header-sync-refresh-btn"
-                      data-testid="dashboard-refresh"
-                      onClick={() => { handleRefreshDashboard().catch(() => {}); }}
-                      disabled={isSyncing}
-                      style={{
-                        height: '36px',
-                        padding: '0 12px',
-                        borderRadius: '12px',
-                        background: isSyncing ? 'rgba(16, 185, 129, 0.2)' : 'var(--primary-light)',
-                        color: 'var(--primary)',
-                        border: '1px solid var(--primary-border)',
-                        fontWeight: 700,
-                        fontSize: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px',
-                        cursor: isSyncing ? 'wait' : 'pointer',
-                        transition: 'all 0.2s ease',
-                        flexShrink: 0
-                      }}
-                      title={isRTL ? 'تحديث ملف الحساب من Firestore' : 'Refresh account profile from Firestore'}
-                    >
-                      <RefreshCw
-                        size={14}
-                        style={{
-                          animation: isSyncing ? 'spin 0.75s linear infinite' : 'none'
-                        }}
-                      />
-                      <span>{isSyncing ? (isRTL ? 'جاري التحديث...' : 'Refreshing...') : (isRTL ? 'تحديث الحساب' : 'Refresh account')}</span>
-                    </button>
-
-                    {/* Language Switcher */}
-                    <button
-                      id="header-lang-btn"
-                      onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: '12px',
-                        background: 'var(--primary-light)',
-                        color: 'var(--primary)',
-                        border: '1px solid var(--primary)',
-                        fontWeight: 'bold',
-                        fontSize: '12px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        transition: 'all 0.2s ease',
-                        height: '36px'
-                      }}
-                      title={t('lang_select')}
-                    >
-                      <Globe size={13} />
-                      <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
-                    </button>
-
-
-
-                    {/* Sound Toggle */}
-                    <button
-                      id="header-sound-mute-btn"
-                      onClick={toggleSound}
-                      style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        background: soundEnabled ? 'var(--primary-light)' : 'rgba(239, 68, 68, 0.12)',
-                        color: soundEnabled ? 'var(--primary)' : '#EF4444',
-                        border: `1px solid ${soundEnabled ? 'var(--glass-border)' : 'rgba(239, 68, 68, 0.3)'}`,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      title={soundEnabled ? (isRTL ? 'كتم النغمات والأصوات' : 'Mute sound') : (isRTL ? 'تشغيل النغمات والأصوات' : 'Unmute sound')}
-                    >
-                      {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                    </button>
-                  </>
-                )}
-
-                {/* On laptop / when drawer is open, QuickSettingsMenu neatly bundles Sync, Sound, Lang, Deck, Docs */}
-                {isLaptop && (
-                  <QuickSettingsMenu
-                    soundEnabled={soundEnabled}
-                    toggleSound={toggleSound}
-                    isSyncing={isSyncing}
-                    handleRefresh={handleRefreshDashboard}
-                    onOpenProfile={() => setShowProfileModal(true)}
-                    onOpenDocs={() => setShowDocsModal(true)}
-                    onOpenPresentation={() => setShowPresentationModal(true)}
-                    isMobile={false}
-                  />
-                )}
-
-                {/* Notification Center */}
-                <NotificationCenter />
-
-                {/* Theme Toggle */}
-                <ThemeToggle variant="pill" size="medium" />
-
-                {/* Profile Avatar with Dropdown Menu */}
-                <div style={{ position: 'relative' }}>
-                  <img 
-                    src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'} 
-                    alt="Profile" 
-                    onClick={() => setShowProfileMenu(!showProfileMenu)} 
-                    style={{ 
-                      width: '38px', 
-                      height: '38px', 
-                      borderRadius: '50%', 
-                      cursor: 'pointer', 
-                      background: 'var(--primary)', 
-                      border: '2px solid var(--primary)',
-                      boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
-                      objectFit: 'cover'
-                    }} 
-                    title="خيارات الحساب" 
-                  />
-                  {showProfileMenu && (
-                    <>
-                      <div 
-                        style={{ position: 'fixed', inset: 0, zIndex: 99 }} 
-                        onClick={() => setShowProfileMenu(false)} 
-                      />
-                      <div style={{
-                        position: 'absolute',
-                        top: '46px',
-                        left: isRTL ? 0 : 'auto',
-                        right: isRTL ? 'auto' : 0,
-                        background: 'var(--bg-surface)',
-                        border: '1px solid var(--glass-border)',
-                        borderRadius: '16px',
-                        boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)',
-                        padding: '8px',
-                        minWidth: '180px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px',
-                        zIndex: 100
-                      }}>
-                        <button 
-                          onClick={() => {
-                            setShowProfileMenu(false);
-                            setShowProfileModal(true);
-                          }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            padding: '10px 14px',
-                            color: 'var(--text-primary)',
-                            textAlign: isRTL ? 'right' : 'left',
-                            cursor: 'pointer',
-                            borderRadius: '10px',
-                            fontSize: '13px',
-                            fontWeight: 600,
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}
-                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--glass-border)'}
-                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                          👤 {isRTL ? 'تعديل الملف الشخصي' : 'Edit Profile'}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            logout();
-                            setShowProfileMenu(false);
-                            navigate('/');
-                          }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            padding: '10px 14px',
-                            color: 'var(--text-primary)',
-                            textAlign: isRTL ? 'right' : 'left',
-                            cursor: 'pointer',
-                            borderRadius: '10px',
-                            fontSize: '13px',
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}
-                          onMouseOver={(e) => e.currentTarget.style.background = 'var(--glass-border)'}
-                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                          🚪 {isRTL ? 'تسجيل الخروج' : 'Logout'}
-                        </button>
-                        <button 
-                          onClick={() => {
-                            setShowProfileMenu(false);
-                            setShowDeleteConfirm(true);
-                          }}
-                          style={{
-                            background: 'transparent',
-                            border: 'none',
-                            padding: '10px 14px',
-                            color: '#EF4444',
-                            textAlign: isRTL ? 'right' : 'left',
-                            cursor: 'pointer',
-                            borderRadius: '10px',
-                            fontSize: '13px',
-                            fontWeight: 'bold',
-                            width: '100%',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px'
-                          }}
-                          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}
-                          onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
-                        >
-                          🗑️ {isRTL ? 'حذف الحساب' : 'Delete Account'}
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            </>
-          )}
+          <div id="mobile-header-controls" style={{ display: 'flex', alignItems: 'center', gap: '4px', flexShrink: 0 }}>
+            {roleSwitcher}
+            <NotificationCenter />
+            <QuickSettingsMenu
+              soundEnabled={soundEnabled}
+              toggleSound={toggleSound}
+              isSyncing={isSyncing}
+              handleRefresh={handleRefreshDashboard}
+              onOpenProfile={() => setShowProfileModal(true)}
+              onOpenDocs={() => setShowDocsModal(true)}
+              onOpenPresentation={() => setShowPresentationModal(true)}
+              onDeleteAccount={() => setShowDeleteConfirm(true)}
+              isMobile={isMobile}
+            />
+          </div>
         </header>
 
         {/* Custom Delete Account Confirmation Modal */}
@@ -1648,17 +1149,13 @@ const Dashboard = () => {
 
         {/* Mobile Bottom Navigation Bar */}
         {isMobile && (
-          <BottomNavBar 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            onOpenMore={() => setShowMoreToolsModal(true)} 
-            onOpenProfile={() => setShowProfileModal(true)}
-            isProfileOpen={showProfileModal}
+          <BottomNavBar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            onOpenMore={() => setShowMoreToolsModal(true)}
+            isMoreOpen={showMoreToolsModal}
           />
         )}
-
-        {/* Global Floating Action Button & Assistant for "المعلم الذكي" (Mobile Only) */}
-        {isMobile && <FloatingAiButton activeTab={activeTab} />}
 
         {/* More Tools Modal Sheet */}
         <MoreToolsModal 

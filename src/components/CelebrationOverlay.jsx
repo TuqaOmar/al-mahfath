@@ -258,7 +258,7 @@ export const CelebrationOverlay = () => {
             borderRadius: '12px',
             background: 'rgba(16, 185, 129, 0.08)',
             color: 'var(--text-primary)',
-            fontFamily: 'Amiri, serif',
+            fontFamily: 'var(--font-quran)',
             fontSize: '15px',
             marginBottom: '28px',
             lineHeight: 1.6

@@ -7,7 +7,7 @@ This repository is the Ma7fath AI Quran memorization platform. It is a bilingual
 - Frontend: Vite + React in `src/` with routes managed by `src/App.jsx`.
 - Backend: Express server in `server/index.js`, with database logic in `server/database.js` and recitation logic in `server/recitationEngine.js`.
 - Data services: Firebase Auth/Firestore/Storage via `src/lib/firebase.js`.
-- AI: Gemini API usage is handled through the client-side engine in `src/utils/quranAiEngine.js` and server-side access in `server/index.js`.
+- AI: Gemini API usage is server-side in `server/index.js` (`/api/ai/chat`) and `server/recitationEngine.js`. `src/utils/quranAiEngine.js` is legacy and no longer imported.
 - Mobile packaging: Capacitor config in `capacitor.config.ts` with Android/iOS projects under `android/` and `ios/`.
 
 ## Core commands
@@ -29,6 +29,11 @@ This repository is the Ma7fath AI Quran memorization platform. It is a bilingual
 - Authentication and user state rely on Firebase; do not bypass the existing `AuthContext`/`firebase` abstraction unless the task truly requires it.
 - The server exposes REST endpoints under `/api`; keep new backend endpoints consistent with the Express pattern used in `server/index.js`.
 - For AI features, prefer reusing the existing internal Quran engine and API key storage flow instead of creating a parallel integration path.
+
+## Code map (required)
+
+- Read `CODE_MAP.md` before opening code; it usually tells you which file to edit, what depends on it, and known bugs/dead code.
+- After any code change, update `CODE_MAP.md` in the same change: the file's entry (يفعل/انتبه/يستخدم/يستخدمه), new or deleted files, and the bug/duplicate/dead lists (remove items that were fixed).
 
 ## Practical guidance for agents
 
