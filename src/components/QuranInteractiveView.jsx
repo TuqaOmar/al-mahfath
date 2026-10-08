@@ -45,6 +45,17 @@ const recitersList = [
   { id: 'ar.saoodshuraym', name: 'سعود الشريم', sub: 'إمام الحرم المكي' }
 ];
 
+const toArabicDigits = (n) => String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]);
+
+// The reference text prefixes ayah 1 of every surah (except Al-Fatiha and At-Tawbah) with the
+// basmala; a printed mushaf shows it on its own line under the surah title.
+const splitBasmala = (ayah) => {
+  if (ayah.numberInSurah !== 1 || [1, 9].includes(ayah.surah?.number)) return [null, ayah.text];
+  const words = ayah.text.split(/\s+/);
+  if (words.length <= 4 || words[0].replace(/[^ء-ي]/g, '') !== 'بسم') return [null, ayah.text];
+  return [words.slice(0, 4).join(' '), words.slice(4).join(' ')];
+};
+
 export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) => {
   const { t, isRTL } = useLanguage();
   const { user, updateUserData } = useAuth();
@@ -375,6 +386,13 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
     }
   }, [activeAyahNum, selectedReciter]);
 
+  // Follow the reciter: keep the ayah being played in view while listening continuously.
+  useEffect(() => {
+    if (!isPlaying || !activeAyahNum) return;
+    const el = document.querySelector(`[data-testid="quran-display-${activeAyahNum}"]`);
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [activeAyahNum, isPlaying, ayahs]);
+
   const togglePlay = () => {
     if (!audioRef.current) return;
     if (isPlayingRef.current) {
@@ -423,6 +441,11 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       if (currentIndex >= 0 && currentIndex < ayahs.length - 1 && ayahs[currentIndex + 1]) {
         isChangingTrackRef.current = true;
         setActiveAyahNum(ayahs[currentIndex + 1].number);
+      } else if (pageNumber < 604) {
+        // Keep listening across the page turn; the page loader selects the first ayah and the
+        // track-change effect plays it because isPlayingRef is still true.
+        isChangingTrackRef.current = true;
+        handlePageChange(pageNumber + 1);
       } else {
         setIsPlaying(false);
         isPlayingRef.current = false;
@@ -455,7 +478,9 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
         src={currentAudioUrl}
         onEnded={handleAudioEnded}
         onPause={() => {
-          if (!isChangingTrackRef.current) {
+          // Browsers fire 'pause' right before 'ended'; treating that as a user pause stopped
+          // playback after one ayah instead of moving on to the next.
+          if (!isChangingTrackRef.current && !audioRef.current?.ended) {
             setIsPlaying(false);
             isPlayingRef.current = false;
           }
@@ -1218,7 +1243,9 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                     fontFamily: 'var(--font-quran)',
                     lineHeight: 2.2,
                     color: 'var(--text-primary)',
-                    fontWeight: 700
+                    fontWeight: 700,
+                    textAlign: 'justify',
+                    textAlignLast: 'center'
                   }}>
                     {ayahs.map((a) => (
                       <span key={a.number} data-testid={`quran-ayah-${a.number}`} data-quran-text={a.text} style={{ margin: '0 4px' }}>
@@ -1236,7 +1263,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                           fontWeight: 800,
                           margin: '0 2px'
                         }}>
-                          {a.numberInSurah}
+                          {toArabicDigits(a.numberInSurah)}
                         </span>
                       </span>
                     ))}
@@ -2147,170 +2174,195 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
           <span style={{ fontSize: isMobile ? '12px' : '13px', color: 'var(--text-secondary)', fontWeight: 'bold' }}>
-            {isMobile ? '💡 المس أي آية للاستماع أو التسميع:' : '💡 انقر على أي آية للاستماع إليها أو اضغط أيقونة الميكروفون للتسميع والتصحيح:'}
+            {isMobile ? '💡 المس أي آية ليبدأ الاستماع منها ويستمر لما بعدها:' : '💡 انقر على أي آية ليبدأ الاستماع منها ويستمر تلقائياً للآيات التالية، أو استخدم زر التسميع:'}
           </span>
           <span style={{ fontSize: '12px', color: 'var(--primary)', fontWeight: 'bold' }}>
             {surahName} (صفحة {pageNumber})
           </span>
         </div>
 
-        {/* Verses List */}
+        {/* Mushaf Page (continuous text like a printed mushaf page, ayahs inline) */}
         {loading ? (
           <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-secondary)' }}>
             جاري تحميل آيات الصفحة من المصحف الشريف...
           </div>
         ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: isMobile ? '10px' : '14px' }}>
-            {ayahs.map((ayah) => {
-              const isActive = activeAyahNum === ayah.number;
-              const isRecited = recitedAyahs[ayah.number];
-              const ayahScore = ayahRecitationScores[ayah.number];
-
-              return (
-                <div
-                  key={ayah.number}
-                  onClick={() => handleAyahClick(ayah.number)}
-                  style={{
-                    padding: isMobile ? '14px 12px' : '20px 24px',
-                    borderRadius: isMobile ? '14px' : '16px',
-                    background: isActive 
-                      ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.08) 100%)' 
-                      : 'var(--bg-color)',
-                    border: `2px solid ${isActive ? 'var(--primary)' : 'var(--glass-border)'}`,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: isMobile ? '10px' : '16px',
-                    boxShadow: isActive ? '0 4px 16px rgba(16, 185, 129, 0.15)' : 'none',
-                    touchAction: 'manipulation'
-                  }}
-                >
-                  {/* Verse Text */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+          <>
+            {/* Active Ayah Action Bar */}
+            {activeAyahObj && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px',
+                padding: isMobile ? '8px 10px' : '10px 14px',
+                borderRadius: '12px',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)'
+              }}>
+                <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {isPlaying && <Sparkles size={13} />}
+                  الآية {toArabicDigits(activeAyahObj.numberInSurah)} · {activeAyahObj.surah?.name}
+                  {isPlaying && <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>(يجري الاستماع)</span>}
+                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {ayahRecitationScores[activeAyahObj.number] && (
                     <span style={{
-                      width: '32px',
-                      height: '32px',
-                      borderRadius: '50%',
-                      background: isActive ? 'var(--primary)' : 'var(--glass-border)',
-                      color: isActive ? 'white' : 'var(--text-secondary)',
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      background: ayahRecitationScores[activeAyahObj.number].accuracy >= 90 ? 'var(--primary-light)' : 'rgba(245, 158, 11, 0.15)',
+                      color: ayahRecitationScores[activeAyahObj.number].accuracy >= 90 ? 'var(--primary, #10B981)' : '#D97706',
+                      fontSize: '12px',
+                      fontWeight: 800,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '13px',
-                      fontWeight: 'bold',
-                      flexShrink: 0
-                    }}>
-                      {ayah.numberInSurah}
+                      gap: '4px',
+                      whiteSpace: 'nowrap'
+                    }} title={`آخر دقة تسميع: ${ayahRecitationScores[activeAyahObj.number].accuracy}%`}>
+                      <Award size={12} /> {ayahRecitationScores[activeAyahObj.number].accuracy}%
                     </span>
+                  )}
 
-                    <p
+                  {/* Quick Recite Ayah Button */}
+                  <button
+                    onClick={() => {
+                      setRecitationScope('ayah');
+                      setShowRecitationModal(true);
+                      if (isPlaying) {
+                        setIsPlaying(false);
+                        isPlayingRef.current = false;
+                        if (audioRef.current) audioRef.current.pause();
+                      }
+                    }}
+                    style={{
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      color: 'var(--primary)',
+                      padding: '6px 10px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '12px',
+                      fontWeight: 700
+                    }}
+                    title="تسميع هذه الآية وتصحيحها"
+                  >
+                    <Mic size={15} />
+                    <span>تسميع الآية</span>
+                  </button>
+
+                  <button
+                    onClick={() => markAyahRecited(activeAyahObj.number)}
+                    style={{
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      color: recitedAyahs[activeAyahObj.number] ? '#10B981' : 'var(--text-secondary)'
+                    }}
+                    title="تحديد كـ تم التسميع يدوياً"
+                  >
+                    <CheckCircle2 size={22} fill={recitedAyahs[activeAyahObj.number] ? '#10B981' : 'none'} color={recitedAyahs[activeAyahObj.number] ? 'white' : 'currentColor'} />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div
+              dir="rtl"
+              lang="ar"
+              style={{
+                padding: isMobile ? '18px 12px' : '28px 36px',
+                borderRadius: '14px',
+                background: 'var(--bg-color)',
+                border: '3px double var(--primary)',
+                fontFamily: 'var(--font-quran)',
+                fontSize: isMobile ? '21px' : '25px',
+                lineHeight: isMobile ? 2.2 : 2.4,
+                color: 'var(--text-primary)',
+                textAlign: 'justify',
+                textAlignLast: 'center'
+              }}
+            >
+              {ayahs.map((ayah) => {
+                const isActive = activeAyahNum === ayah.number;
+                const isRecited = recitedAyahs[ayah.number];
+                const isSurahStart = ayah.numberInSurah === 1;
+                const [basmalaLine, displayText] = splitBasmala(ayah);
+
+                return (
+                  <React.Fragment key={ayah.number}>
+                    {isSurahStart && (
+                      <span style={{ display: 'block', textAlign: 'center', margin: '6px 0 4px' }}>
+                        <span style={{
+                          display: 'inline-block',
+                          minWidth: isMobile ? '70%' : '55%',
+                          padding: '2px 18px',
+                          borderRadius: '10px',
+                          border: '2px solid var(--primary)',
+                          background: 'rgba(16, 185, 129, 0.08)',
+                          color: 'var(--primary)',
+                          fontWeight: 800,
+                          fontSize: isMobile ? '19px' : '22px'
+                        }}>
+                          {ayah.surah?.name}
+                        </span>
+                        {basmalaLine && (
+                          <span style={{ display: 'block', fontSize: isMobile ? '20px' : '23px' }}>{basmalaLine}</span>
+                        )}
+                      </span>
+                    )}
+                    <span
                       data-testid={`quran-display-${ayah.number}`}
                       data-quran-text={ayah.text}
                       dir="rtl"
                       lang="ar"
+                      onClick={() => handleAyahClick(ayah.number)}
+                      title={isRecited ? 'تم تسميعها' : undefined}
                       style={{
-                      margin: 0,
-                      fontSize: '22px',
-                      fontFamily: 'var(--font-quran)',
-                      lineHeight: 1.8,
-                      color: isActive ? 'var(--primary)' : 'var(--text-primary)',
-                      fontWeight: isActive ? 'bold' : 'normal',
-                      direction: 'rtl',
-                      textAlign: 'right',
-                      width: '100%'
-                    }}>
-                      ﴿ {ayah.text} ﴾
-                    </p>
-                  </div>
-
-                  {/* Status Indicator & Quick Recite */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    {/* Saved Recitation Accuracy Score Badge */}
-                    {ayahScore && (
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        padding: '2px 0',
+                        background: isActive ? 'rgba(16, 185, 129, 0.18)' : 'transparent',
+                        color: isActive ? 'var(--primary)' : 'inherit',
+                        textDecoration: isRecited ? 'underline' : 'none',
+                        textDecorationColor: '#10B981',
+                        textUnderlineOffset: '8px',
+                        boxDecorationBreak: 'clone',
+                        WebkitBoxDecorationBreak: 'clone',
+                        transition: 'background 0.2s ease',
+                        touchAction: 'manipulation'
+                      }}
+                    >
+                      {displayText}
                       <span style={{
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        background: ayahScore.accuracy >= 90 ? 'var(--primary-light)' : 'rgba(245, 158, 11, 0.15)',
-                        color: ayahScore.accuracy >= 90 ? 'var(--primary, #10B981)' : '#D97706',
-                        fontSize: '12px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        minWidth: '1.25em',
+                        height: '1.25em',
+                        padding: '0 2px',
+                        margin: '0 4px',
+                        borderRadius: '50%',
+                        border: '1.5px solid var(--primary)',
+                        color: isActive ? 'white' : 'var(--primary)',
+                        background: isActive ? 'var(--primary)' : 'transparent',
+                        fontSize: '0.55em',
                         fontWeight: 800,
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        whiteSpace: 'nowrap'
-                      }} title={`آخر دقة تسميع: ${ayahScore.accuracy}%`}>
-                        <Award size={12} /> {ayahScore.accuracy}%
-                      </span>
-                    )}
-
-                    {isActive && isPlaying && (
-                      <span style={{
-                        padding: '4px 10px',
-                        borderRadius: '20px',
-                        background: 'var(--primary)',
-                        color: 'white',
-                        fontSize: '11px',
-                        fontWeight: 'bold',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        whiteSpace: 'nowrap'
+                        lineHeight: 1,
+                        verticalAlign: 'middle'
                       }}>
-                        <Sparkles size={12} /> يجري الاستماع
+                        {toArabicDigits(ayah.numberInSurah)}
                       </span>
-                    )}
-
-                    {/* Quick Recite Ayah Button */}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setActiveAyahNum(ayah.number);
-                        setShowRecitationModal(true);
-                        if (isPlaying) {
-                          setIsPlaying(false);
-                          isPlayingRef.current = false;
-                          if (audioRef.current) audioRef.current.pause();
-                        }
-                      }}
-                      style={{
-                        background: 'rgba(16, 185, 129, 0.1)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
-                        borderRadius: '8px',
-                        cursor: 'pointer',
-                        color: 'var(--primary)',
-                        padding: '6px 10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        fontSize: '12px',
-                        fontWeight: 700
-                      }}
-                      title="تسميع هذه الآية وتصحيحها"
-                    >
-                      <Mic size={15} />
-                      <span>تسميع</span>
-                    </button>
-
-                    <button
-                      onClick={(e) => { e.stopPropagation(); markAyahRecited(ayah.number); }}
-                      style={{
-                        background: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: isRecited ? '#10B981' : 'var(--text-secondary)'
-                      }}
-                      title="تحديد كـ تم التسميع يدوياً"
-                    >
-                      <CheckCircle2 size={22} fill={isRecited ? '#10B981' : 'none'} color={isRecited ? 'white' : 'currentColor'} />
-                    </button>
-                  </div>
-
-                </div>
-              );
-            })}
-          </div>
+                    </span>{' '}
+                  </React.Fragment>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Bottom Page Navigation Bar */}
