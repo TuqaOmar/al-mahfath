@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Trophy, Sparkles, Star, Award, CheckCircle2, X, Share2, Shield, Heart } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useDialogDismiss } from '../hooks/useDialogDismiss';
 
 // Simple lightweight particle confetti canvas
 const ConfettiCanvas = () => {
@@ -76,6 +77,7 @@ export const CelebrationOverlay = () => {
   const { activeCelebration, closeCelebration } = useNotifications();
   const { lang, isRTL } = useLanguage();
   const [copied, setCopied] = useState(false);
+  useDialogDismiss(Boolean(activeCelebration), closeCelebration);
 
   if (!activeCelebration) return null;
 

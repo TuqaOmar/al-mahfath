@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Save, CheckCircle2, Sparkles, Trophy, Flame, Shield, Camera } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
+import { useDialogDismiss } from '../hooks/useDialogDismiss';
 import { storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 export const UserProfileModal = ({ isOpen, onClose }) => {
@@ -30,6 +31,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
       setErrorMsg('');
     }
   }, [user?.uid, isOpen]);
+  useDialogDismiss(isOpen, onClose);
 
   if (!isOpen) return null;
 
