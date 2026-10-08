@@ -59,10 +59,10 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
   const users = useMemo(() => {
     let filtered = allUsers;
-    if (searchQuery) {
-      filtered = filtered.filter(u => 
-        (u.name && u.name.includes(searchQuery)) || 
-        (u.email && u.email.includes(searchQuery))
+    const query = searchQuery.trim().toLowerCase();
+    if (query) {
+      filtered = filtered.filter(u =>
+        `${u.name || ''} ${u.email || ''}`.toLowerCase().includes(query)
       );
     }
     

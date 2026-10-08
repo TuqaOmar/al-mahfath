@@ -214,7 +214,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0, 0, 0, 0.2)', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
             <Cloud size={15} color="#34D399" />
             <span data-testid="simplified-fortress-status" style={{ fontSize: '12px', color: '#E2E8F0', fontWeight: 'bold' }}>
-              {syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ في Firestore...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم الحفظ في Firestore ✓' : 'خطة محفوظة في Firestore'}
+              {syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم الحفظ ✓' : 'الخطة محفوظة'}
             </span>
           </div>
         </div>

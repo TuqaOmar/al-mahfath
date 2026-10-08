@@ -31,10 +31,10 @@ export const AnalyticsView = () => {
   return <div data-testid="student-analytics" style={{ display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 1100, margin: '0 auto' }}>
     <div>
       <h2 style={{ margin: 0, color: 'var(--text-primary)' }}>تحليلات الطالب</h2>
-      <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>بيانات Firestore الخاصة بالحساب الحالي. تقدم الآيات المصرّح به، ومحاولات التدريب، ومراجعات المعلم مقاييس مستقلة.</p>
+      <p style={{ color: 'var(--text-secondary)', lineHeight: 1.7 }}>تقدمك الفعلي: الآيات التي سجّلتها، ومحاولات التدريب، ومراجعات المعلم — كل منها مقياس مستقل.</p>
     </div>
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(190px,1fr))', gap: 14 }}>
-      <Metric testId="analytics-declared-ayahs" icon={BookOpen} label="آيات مسجلة ذاتيًا" value={declaredProgress.totalAyahs} detail="كل سجلات ayah_progress؛ ليست حفظًا معتمدًا من المعلم." />
+      <Metric testId="analytics-declared-ayahs" icon={BookOpen} label="آيات مسجلة ذاتيًا" value={declaredProgress.totalAyahs} detail="الآيات التي سجّلت تقدمها بنفسك؛ ليست حفظًا معتمدًا من المعلم." />
       <Metric testId="analytics-practice-week" icon={Activity} label="محاولات آخر 7 أيام" value={practice.attemptsLast7Days} detail="محاولات تدريب محفوظة خلال سبعة أيام تقويمية بتوقيت عمّان." />
       <Metric testId="analytics-practice-accuracy" icon={Target} label="متوسط دقة التدريب" value={practice.averageAccuracy == null ? 'غير متاح' : `${practice.averageAccuracy}%`} detail="متوسط كل محاولات التدريب ذات الدرجة؛ لا يمثل اعتماد الحفظ." />
       <Metric testId="analytics-approved-pages" icon={CheckCircle2} label="صفحات الحفظ المعتمد" value="غير متاح" detail="لا يوجد مسار مكتمل لاعتماد صفحات الحفظ. تقدم الطالب وقرارات مراجعة التدريب ليست اعتمادًا للحفظ." />

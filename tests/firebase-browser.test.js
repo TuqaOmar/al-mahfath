@@ -450,7 +450,7 @@ test('browser roles, Firestore community notifications, and Storage profile phot
   const content = 'منشور تكامل حقيقي من واجهة Chrome';
   await owner.getByLabel('نص المنشور الجديد').fill(content);
   await owner.getByRole('button', { name: 'نشر المشاركة', exact: true }).click();
-  await expect(owner.getByTestId('community-feedback')).toContainText('Firestore');
+  await expect(owner.getByTestId('community-feedback')).toContainText('تم نشر مشاركتك');
   const postSnapshot = await db.collection('community_posts').where('content', '==', content).get();
   assert.equal(postSnapshot.size, 1);
   const postId = postSnapshot.docs[0].id;
@@ -561,7 +561,7 @@ test('student plan and recorded ayah progress persist and reach teacher and admi
   await student.getByLabel('رقم الآية للتقدم').fill('5');
   await student.getByLabel('حالة تقدم الآية').selectOption('review');
   await student.getByTestId('save-ayah-progress').click();
-  await expect(student.getByTestId('ayah-progress-feedback')).toContainText('Firestore');
+  await expect(student.getByTestId('ayah-progress-feedback')).toContainText('تم حفظ تقدم الآية');
   await expect(student.getByTestId('ayah-progress-count')).toContainText('1');
   const ayahPath = `users/${uids.applicant}/ayah_progress/2_5`;
   await expect.poll(async () => (await db.doc(ayahPath).get()).data()?.status).toBe('review');
@@ -1250,7 +1250,7 @@ test('Chrome quiz saves, profile refresh failures and dismiss-only reminders rep
   await profileRef.update({ 'preferences.studentDeclaredPages': [9, 10, 11] });
   await refreshAccount(student);
   await expect(student.getByTestId('dashboard-refresh-feedback')).toHaveAttribute('data-status', 'success');
-  await expect(student.getByTestId('dashboard-refresh-feedback')).toContainText('ملف الحساب من Firestore');
+  await expect(student.getByTestId('dashboard-refresh-feedback')).toContainText('تم تحديث بيانات حسابك');
   await expect(student.getByTestId('home-declared-pages')).toHaveText('3');
   const confirmedProfile = (await profileRef.get()).data();
   // Inject a missing synthetic profile; the real getDocFromServer must fail instead of reusing cache.
@@ -1279,7 +1279,7 @@ test('Chrome quiz saves, profile refresh failures and dismiss-only reminders rep
     await expect(student.getByTestId('home-declared-pages')).toHaveText('3');
   } finally { await profileRef.set(confirmedProfile); }
   await student.getByTestId('pull-refresh-retry').click();
-  await expect(student.getByTestId('pull-refresh-success')).toContainText('ملف الحساب من Firestore');
+  await expect(student.getByTestId('pull-refresh-success')).toContainText('تم تحديث بيانات حسابك');
   await expect(student.getByTestId('pull-refresh-error')).toHaveCount(0);
   assert.deepEqual((await profileRef.get()).data(), confirmedProfile);
   await checkpoint(student, '26-quiz-and-refresh-confirmation');

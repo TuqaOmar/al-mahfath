@@ -13,7 +13,8 @@ import {
   GraduationCap,
   Layers,
   FileText,
-  TrendingUp
+  TrendingUp,
+  FlaskConical
 } from 'lucide-react';
 
 /**
@@ -41,6 +42,13 @@ export const getNavigation = (role, lang, configuration) => {
             item('admin-teachers', ar ? 'المعلمات المعتمدات' : 'Teachers', ar ? 'المعلمات' : 'Teachers', GraduationCap),
             item('admin-groups', ar ? 'الحلقات والمجموعات' : 'Groups', ar ? 'الحلقات' : 'Groups', Layers),
             item('admin-analytics', ar ? 'التحليلات ومعدلات النمو' : 'Analytics', ar ? 'التحليلات' : 'Analytics', TrendingUp)
+          ]
+        },
+        {
+          // Modules under review, not yet visible to teachers or students.
+          title: ar ? 'قيد التطوير' : 'In Development',
+          items: [
+            item('admin-tajweed', ar ? 'مخارج الحروف وصفاتها' : 'Makharij & Sifat', ar ? 'المخارج' : 'Makharij', FlaskConical)
           ]
         }
       ]

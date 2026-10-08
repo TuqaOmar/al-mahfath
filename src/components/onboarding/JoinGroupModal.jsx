@@ -17,6 +17,7 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { fetchWithAuth } from '../../lib/api';
 import { useLanguage } from '../../context/LanguageContext';
+import { useDialogDismiss } from '../../hooks/useDialogDismiss';
 
 export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
   const { user, refreshUserData } = useAuth();
@@ -37,9 +38,12 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
     }
   }, [isOpen]);
 
+  // Escape and the phone back button close the dialog, except while a request is running.
+  useDialogDismiss(isOpen, () => { if (!loading) onClose(); });
+
   if (!isOpen) return null;
 
-
+  const isMember = Boolean(user?.isSafarMember);
 
   const handleLookup = async (codeToSearch) => {
     const code = (codeToSearch || groupCode).trim().toUpperCase();
@@ -190,12 +194,16 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
             <Sparkles size={14} /> سَفَر للقرآن الكريم
           </div>
           <h2 style={{ margin: '0 0 6px 0', fontSize: '22px', fontWeight: 800 }}>
-            {lang === 'ar' ? 'مرحباً بك في سَفَر 🌿' : 'Welcome to Safar 🌿'}
+            {isMember
+              ? (lang === 'ar' ? 'حلقتك القرآنية 🌿' : 'Your Quran circle 🌿')
+              : (lang === 'ar' ? 'مرحباً بك في سَفَر 🌿' : 'Welcome to Safar 🌿')}
           </h2>
           <p style={{ margin: 0, fontSize: '13.5px', color: '#D1FAE5', lineHeight: 1.5 }}>
-            {lang === 'ar' 
-              ? 'رحلتك المباركة في إتقان حفظ كتاب الله ومراجعته بوعي ومنهجية رصينة'
-              : 'Your blessed journey in mastering Quran memorization and structured revision'}
+            {isMember
+              ? (lang === 'ar' ? 'عضويتك الحالية، والانتقال لحلقة أخرى أو الخروج منها' : 'Your membership, switching circles or leaving')
+              : (lang === 'ar'
+                ? 'رحلتك المباركة في إتقان حفظ كتاب الله ومراجعته بوعي ومنهجية رصينة'
+                : 'Your blessed journey in mastering Quran memorization and structured revision')}
           </p>
         </div>
 
@@ -236,14 +244,32 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                 <Users size={32} />
               </div>
 
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
-                {lang === 'ar' ? 'هل لديك رمز دعوة للانضمام إلى حلقة؟' : 'Do you have an invitation code to join a group?'}
-              </h3>
-              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 24px 0' }}>
-                {lang === 'ar'
-                  ? 'يمكنك الانضمام لحلقة مع معلمتك ومتابعة وردك مع مجموعتك، أو يمكنك المتابعة بحرية كاملة كحافظ مستقل.'
-                  : 'You can join a group to learn with your teacher, or continue as an independent learner.'}
-              </p>
+              {isMember ? (
+                <div data-testid="join-modal-current-group" style={{ padding: '14px 16px', borderRadius: '16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', margin: '0 0 24px 0' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                    {lang === 'ar' ? 'أنتِ عضوة في' : 'You are a member of'}
+                  </div>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {user?.groupName || (lang === 'ar' ? 'حلقتك' : 'your circle')}
+                  </div>
+                  {user?.teacherName && (
+                    <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                      {lang === 'ar' ? `المعلمة: ${user.teacherName}` : `Teacher: ${user.teacherName}`}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 8px 0' }}>
+                    {lang === 'ar' ? 'هل لديك رمز دعوة للانضمام إلى حلقة؟' : 'Do you have an invitation code to join a group?'}
+                  </h3>
+                  <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+                    {lang === 'ar'
+                      ? 'يمكنك الانضمام لحلقة مع معلمتك ومتابعة وردك مع مجموعتك، أو يمكنك المتابعة بحرية كاملة كحافظ مستقل.'
+                      : 'You can join a group to learn with your teacher, or continue as an independent learner.'}
+                  </p>
+                </>
+              )}
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {/* Option 1: Join a Group */}
@@ -267,7 +293,9 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                   }}
                 >
                   <Key size={18} />
-                  <span>{lang === 'ar' ? 'انضم إلى حلقة (رمز دعوة)' : 'Join a Group (with Code)'}</span>
+                  <span>{isMember
+                    ? (lang === 'ar' ? 'الانتقال إلى حلقة أخرى (رمز دعوة)' : 'Switch to Another Group (Code)')
+                    : (lang === 'ar' ? 'انضم إلى حلقة (رمز دعوة)' : 'Join a Group (with Code)')}</span>
                 </button>
 
                 {/* Option 2: Continue Without a Group */}

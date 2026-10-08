@@ -341,7 +341,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               color: '#D1FAE5'
             }}>
               <Cloud size={14} color="#34D399" />
-              <span data-testid="visual-fortress-status">{syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ بقي آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم حفظ الخطة في Firestore ✓' : 'خطة محفوظة في Firestore'}</span>
+              <span data-testid="visual-fortress-status">{syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ بقي آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم حفظ الخطة ✓' : 'الخطة محفوظة'}</span>
             </div>
 
             <div style={{

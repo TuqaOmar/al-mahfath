@@ -26,7 +26,7 @@ export const TeacherReportsView = () => {
   useEffect(() => () => { requestVersion.current += 1; }, []);
   const totals = report?.totals;
   return <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-    <div><h2>{lang === 'en' ? 'Teacher reports' : 'تقارير المعلم'}</h2><p style={{ color: 'var(--text-secondary)' }}>{lang === 'en' ? 'Live Firestore data for your assigned students.' : 'بيانات Firestore الفعلية للطلاب المعيّنين لك.'}</p></div>
+    <div><h2>{lang === 'en' ? 'Teacher reports' : 'تقارير المعلم'}</h2><p style={{ color: 'var(--text-secondary)' }}>{lang === 'en' ? 'Live data for your assigned students.' : 'بيانات طلابك الفعلية.'}</p></div>
     <button data-testid="teacher-report-refresh" onClick={load}>تحديث التقرير</button>
     {error && <div role="alert">{error} <button onClick={load}><RefreshCw size={14}/> إعادة المحاولة</button></div>}
     {totals && <>

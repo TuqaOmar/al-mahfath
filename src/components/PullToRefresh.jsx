@@ -229,7 +229,7 @@ export const PullToRefresh = ({
                 >
                   <Check size={13} strokeWidth={3} />
                 </div>
-                <span data-testid="pull-refresh-success">{lang === 'ar' ? 'تم تحديث ملف الحساب من Firestore' : 'Account profile refreshed from Firestore'}</span>
+                <span data-testid="pull-refresh-success">{lang === 'ar' ? 'تم تحديث بيانات حسابك' : 'Your account data was refreshed'}</span>
               </>
             ) : isRefreshing ? (
               <>
@@ -240,7 +240,7 @@ export const PullToRefresh = ({
                     animation: 'spin 0.75s linear infinite'
                   }}
                 />
-                <span>{lang === 'ar' ? 'جاري قراءة ملف الحساب من Firestore...' : 'Reading the account profile from Firestore...'}</span>
+                <span>{lang === 'ar' ? 'جاري تحديث بيانات حسابك...' : 'Refreshing your account data...'}</span>
               </>
             ) : (
               <>

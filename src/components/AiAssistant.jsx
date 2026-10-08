@@ -1,6 +1,7 @@
 import { declaredPages, nextDeclaredPage } from '../lib/memorization';
 import { fetchWithAuth } from '../lib/api';
 import React, { useState, useRef, useEffect } from 'react';
+import { useDialogDismiss } from '../hooks/useDialogDismiss';
 import { 
   Send, 
   Bot, 
@@ -68,6 +69,8 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
   const [keyInput, setKeyInput] = useState(apiKey);
   const [showKeySecret, setShowKeySecret] = useState(false);
   const [keySaveMessage, setKeySaveMessage] = useState('');
+  // Escape and the phone back button close the key dialog.
+  useDialogDismiss(showKeyModal, () => setShowKeyModal(false));
 
   const currentPage = nextDeclaredPage(user);
   const currentSurah = getSurahNameForPage(currentPage);

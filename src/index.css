@@ -762,3 +762,30 @@ body.is-native-mobile textarea {
   font-weight: 700;
   font-display: swap;
 }
+
+/* Default look for plain buttons that carry no inline style or class (status/retry/refresh actions),
+   so they match the app instead of the browser's grey default and do not stretch across flex columns. */
+button:not([style]):not([class]) {
+  align-self: flex-start;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+button:not([style]):not([class]):hover:not(:disabled) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+button:not([style]):not([class]):disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

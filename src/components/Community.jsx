@@ -111,7 +111,7 @@ export const Community = ({ setActiveTab }) => {
       setPosts(prev => [data.post, ...prev]);
       setPostText('');
       setIsAnonymous(false);
-      setPostFeedback('تم نشر المشاركة وحفظها في Firestore');
+      setPostFeedback('تم نشر مشاركتك');
     } catch (error) {
       setPostFeedback(error.message || 'تعذر نشر المشاركة');
     } finally {
@@ -229,7 +229,7 @@ export const Community = ({ setActiveTab }) => {
                 </h2>
                 <span style={{ fontSize: '11px', background: 'rgba(52, 211, 153, 0.2)', color: '#34D399', padding: '3px 10px', borderRadius: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '4px' }}>
                   <Cloud size={13} />
-                  مربوط بقاعدة البيانات و Firestore
+                  محفوظ سحابيًا
                 </span>
               </div>
               <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#94A3B8' }}>
@@ -511,7 +511,7 @@ export const Community = ({ setActiveTab }) => {
 
           {/* Posts Feed */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {posts.length === 0 && <div data-testid="community-empty" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>لا توجد منشورات حقيقية بعد.</div>}
+            {posts.length === 0 && <div data-testid="community-empty" style={{ padding: '24px', textAlign: 'center', color: 'var(--text-secondary)' }}>لا توجد مشاركات بعد — كن أول من يشارك فائدة أو تدبرًا.</div>}
             {posts.map((post) => (
               <div 
                 key={post.id}

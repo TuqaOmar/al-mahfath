@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BookOpen, GraduationCap, ShieldCheck, ChevronDown, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
-import { useBackHandler } from '../hooks/useBackHandler';
+import { useDialogDismiss } from '../hooks/useDialogDismiss';
 
 const roleIcons = { user: BookOpen, teacher: GraduationCap, admin: ShieldCheck };
 
@@ -15,21 +15,18 @@ export const RoleSwitcherMenu = ({ isMobile = false }) => {
   const { lang } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef(null);
-  useBackHandler(isOpen, () => setIsOpen(false));
+  useDialogDismiss(isOpen, () => setIsOpen(false));
 
   useEffect(() => {
     if (!isOpen) return undefined;
     const handleClickOutside = (e) => {
       if (menuRef.current && !menuRef.current.contains(e.target)) setIsOpen(false);
     };
-    const handleEscape = (e) => { if (e.key === 'Escape') setIsOpen(false); };
     document.addEventListener('mousedown', handleClickOutside);
     document.addEventListener('touchstart', handleClickOutside);
-    document.addEventListener('keydown', handleEscape);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
-      document.removeEventListener('keydown', handleEscape);
     };
   }, [isOpen]);
 

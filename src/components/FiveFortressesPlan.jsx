@@ -347,7 +347,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
       
-      <div role="status" data-testid="fortress-plan-status">{planStatus === 'loading' ? 'جاري تحميل الخطة...' : planStatus === 'saving' ? 'جاري حفظ الخطة...' : planStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : planStatus === 'draft' ? 'مسودة خطة غير محفوظة' : planStatus === 'saved' ? 'تم حفظ الخطة في Firestore' : 'خطة محفوظة في Firestore'}</div>
+      <div role="status" data-testid="fortress-plan-status">{planStatus === 'loading' ? 'جاري تحميل الخطة...' : planStatus === 'saving' ? 'جاري حفظ الخطة...' : planStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : planStatus === 'draft' ? 'مسودة خطة غير محفوظة' : planStatus === 'saved' ? 'تم حفظ الخطة' : 'الخطة محفوظة'}</div>
       {actionError && <div role="alert" data-testid="fortress-action-error">{actionError}</div>}
       {planStatus === 'failed' && <button data-testid="fortress-plan-reload" onClick={() => setLoadAttempt(n => n + 1)}>إعادة تحميل الخطة</button>}
       <p>موقع البداية مبني على تصريحات الطالب وخيارات الخطة، وليس حفظًا معتمدًا.</p>

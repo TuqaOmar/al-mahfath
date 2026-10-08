@@ -466,7 +466,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                         {student.name}
                       </h4>
                       <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
-                        {student.currentSurah || 'غير متاح'}
+                        {student.currentSurah ? `السورة الحالية: ${student.currentSurah}` : 'لم تبدأ التسميع بعد'}
                       </span>
                     </div>
                   </div>

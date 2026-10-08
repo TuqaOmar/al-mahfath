@@ -23,6 +23,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNotifications } from '../context/NotificationContext';
 import { useLanguage } from '../context/LanguageContext';
 import { fetchWithAuth } from '../lib/api';
+import { useDialogDismiss } from '../hooks/useDialogDismiss';
 import { fetchUserPortfolio, saveAyahToPortfolio, makeAyahKey } from '../lib/portfolioService';
 
 // Helper to construct initial 604 pages accurately based on user's portfolio
@@ -77,6 +78,8 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
   const [activeJuzTab, setActiveJuzTab] = useState('all'); // 'all' | 1 to 30
   const [showLevelModal, setShowLevelModal] = useState(false);
   const [quickPagesInput, setQuickPagesInput] = useState('0');
+  // Escape and the phone back button close the declared-pages dialog.
+  useDialogDismiss(showLevelModal, () => setShowLevelModal(false));
   const [statusMessage, setStatusMessage] = useState('');
   const [ayahPortfolio, setAyahPortfolio] = useState({});
   const [ayahSurah, setAyahSurah] = useState('1');
@@ -118,7 +121,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
     try {
       const saved = await saveAyahToPortfolio(user.uid, { surahNumber, ayahNumber: verseNumber, status: ayahStatus, source: 'student_recorded' });
       setAyahPortfolio(previous => ({ ...previous, [makeAyahKey(surahNumber, verseNumber)]: saved }));
-      setAyahFeedback('تم حفظ تقدم الآية في Firestore.');
+      setAyahFeedback('تم حفظ تقدم الآية.');
     } catch (error) {
       console.error('Failed to save ayah progress:', error);
       setAyahFeedback('تعذر حفظ تقدم الآية؛ بقي السجل السابق.');
@@ -502,19 +505,6 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
       {/* Main Grid View */}
       <div style={{ flex: 1, minWidth: 0, maxWidth: '100%', width: '100%', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <p data-testid="self-reported-page-disclaimer" style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>حالات الصفحات تصريحات ذاتية؛ ليست حفظًا معتمدًا أو درجات تسميع.</p>
-        <div data-testid="ayah-progress-editor" style={{ padding: '18px', borderRadius: '18px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
-          <h3 style={{ margin: '0 0 6px', color: 'var(--text-primary)' }}>تقدم الآيات المسجل</h3>
-          <p style={{ margin: '0 0 14px', color: 'var(--text-secondary)', fontSize: '13px' }}>سجل الطالب الذاتي في المحفظة؛ لا يعتمد الحفظ ولا يمنح XP.</p>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'end' }}>
-            <label>رقم السورة<input aria-label="رقم السورة للتقدم" type="number" min="1" max="114" value={ayahSurah} onChange={event => setAyahSurah(event.target.value)} style={{ display: 'block', padding: '8px', width: '110px' }} /></label>
-            <label>رقم الآية<input aria-label="رقم الآية للتقدم" type="number" min="1" max="286" value={ayahNumber} onChange={event => setAyahNumber(event.target.value)} style={{ display: 'block', padding: '8px', width: '110px' }} /></label>
-            <label>الحالة<select aria-label="حالة تقدم الآية" value={ayahStatus} onChange={event => setAyahStatus(event.target.value)} style={{ display: 'block', padding: '8px' }}><option value="learning">قيد الحفظ</option><option value="review">مراجعة</option><option value="memorized">مصرّح بحفظها ذاتيًا</option><option value="unmemorized">غير محفوظ</option></select></label>
-            <button type="button" data-testid="save-ayah-progress" disabled={ayahSaving} onClick={saveRecordedAyahProgress} style={{ padding: '9px 16px' }}>{ayahSaving ? 'جاري الحفظ...' : 'حفظ تقدم الآية'}</button>
-          </div>
-          <div data-testid="ayah-progress-count" style={{ marginTop: '12px', color: 'var(--text-secondary)' }}>الآيات ذات السجل: {Object.keys(ayahPortfolio).length}</div>
-          {ayahFeedback && <div role={ayahFeedback.startsWith('تعذر') ? 'alert' : 'status'} data-testid="ayah-progress-feedback" style={{ marginTop: '8px', color: ayahFeedback.startsWith('تعذر') ? '#B91C1C' : '#047857' }}>{ayahFeedback}</div>}
-        </div>
-        
         {/* KPI Portfolio Header Banner */}
         <div style={{
           padding: isMobile ? '16px' : '24px',
@@ -855,6 +845,20 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
               );
             })}
           </div>
+        </div>
+
+        {/* Recorded ayah progress (secondary tool, below the map) */}
+        <div data-testid="ayah-progress-editor" style={{ padding: isMobile ? '16px' : '20px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)' }}>
+          <h3 style={{ margin: '0 0 4px', fontSize: '16px', color: 'var(--text-primary)' }}>تسجيل تقدم آية</h3>
+          <p style={{ margin: '0 0 14px', color: 'var(--text-secondary)', fontSize: '12.5px' }}>سجلك الذاتي في المحفظة؛ لا يعتمد الحفظ ولا يمنح XP.</p>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+            <label style={{ display: 'flex', flexDirection: 'column', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>رقم السورة<input aria-label="رقم السورة للتقدم" type="number" min="1" max="114" value={ayahSurah} onChange={event => setAyahSurah(event.target.value)} style={{ ...{ display: 'block', marginTop: '6px', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }, width: '96px' }} /></label>
+            <label style={{ display: 'flex', flexDirection: 'column', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>رقم الآية<input aria-label="رقم الآية للتقدم" type="number" min="1" max="286" value={ayahNumber} onChange={event => setAyahNumber(event.target.value)} style={{ ...{ display: 'block', marginTop: '6px', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }, width: '96px' }} /></label>
+            <label style={{ display: 'flex', flexDirection: 'column', fontSize: '12.5px', fontWeight: 700, color: 'var(--text-secondary)' }}>الحالة<select aria-label="حالة تقدم الآية" value={ayahStatus} onChange={event => setAyahStatus(event.target.value)} style={{ display: 'block', marginTop: '6px', padding: '10px 12px', borderRadius: '10px', border: '1px solid var(--glass-border)', background: 'var(--bg-color)', color: 'var(--text-primary)', fontSize: '14px', boxSizing: 'border-box' }}><option value="learning">قيد الحفظ</option><option value="review">مراجعة</option><option value="memorized">مصرّح بحفظها ذاتيًا</option><option value="unmemorized">غير محفوظ</option></select></label>
+            <button type="button" data-testid="save-ayah-progress" disabled={ayahSaving} onClick={saveRecordedAyahProgress} style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: '#FFFFFF', fontWeight: 700, fontSize: '13.5px', cursor: ayahSaving ? 'wait' : 'pointer', opacity: ayahSaving ? 0.7 : 1 }}>{ayahSaving ? 'جاري الحفظ...' : 'حفظ تقدم الآية'}</button>
+          </div>
+          <div data-testid="ayah-progress-count" style={{ marginTop: '12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>الآيات ذات السجل: {Object.keys(ayahPortfolio).length}</div>
+          {ayahFeedback && <div role={ayahFeedback.startsWith('تعذر') ? 'alert' : 'status'} data-testid="ayah-progress-feedback" style={{ marginTop: '10px', fontSize: '13px', color: ayahFeedback.startsWith('تعذر') ? '#B91C1C' : '#047857' }}>{ayahFeedback}</div>}
         </div>
 
       </div>

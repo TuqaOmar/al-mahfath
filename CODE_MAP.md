@@ -181,7 +181,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **لماذا:** مصدر واحد للتنقل بدل ثلاث قوائم مكررة — إضافة تبويب = تعديل هذا الملف فقط.
 - **متى:** عند كل عرض لـ Sidebar وBottomNavBar وMoreToolsModal.
 - **إن تعطّل:** كل التنقل على سطح المكتب والجوال.
-- **انتبه:** تبويب جديد يجب أن يكون له case في switch داخل Dashboard وإلا يظهر 'قيد التفعيل'. | كل دور يعرض أقسامه فقط: قائمتا المعلم والمشرف لا تحويان صفحات الطالب (home/quran-map/five-fortresses) — الحساب متعدد الأدوار يصل إليها بالتبديل لدور الطالب من RoleSwitcherMenu.
+- **انتبه:** قائمة المشرف فيها قسم «قيد التطوير» (admin-tajweed) للميزات التي لم تُفتح للمعلم أو الطالب بعد. | تبويب جديد يجب أن يكون له case في switch داخل Dashboard وإلا يظهر 'قيد التفعيل'. | كل دور يعرض أقسامه فقط: قائمتا المعلم والمشرف لا تحويان صفحات الطالب (home/quran-map/five-fortresses) — الحساب متعدد الأدوار يصل إليها بالتبديل لدور الطالب من RoleSwitcherMenu.
 - **يستخدمه:** Sidebar.jsx, BottomNavBar.jsx, MoreToolsModal.jsx
 
 ### `src/utils/platform.js`
@@ -387,12 +387,12 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/pages/Dashboard.jsx`
-- **يفعل:** الحاوية المركزية بعد الدخول. activeTab (حالة، لا URL) يختار المحتوى: للطالب home (بطاقة الحلقة، ورد اليوم، الصفحات المصرّح بها، الـ streak، الحصون الخمسة بنقرة، حديث متغير كل 6 ثوانٍ)، quran-map، daily-session (المصحف التفاعلي + أذكار)، my-plan، five-fortresses، ai-assistant، community، achievements (شارات من uiConfiguration)، analytics، mind-maps، similarities؛ للمعلم teacher-*؛ للمشرف admin-*. يدير الشريط العلوي نفسه للويب والجوال (#header-user-profile-card: الصورة على الجوال + الاسم + streak يفتح الملف؛ ثم RoleSwitcherMenu إن تعدّدت الأدوار، الجرس، وQuickSettingsMenu)، Sidebar على سطح المكتب فقط وBottomNavBar على الجوال وكل النوافذ (الملف، العرض، التوثيق، الحلقة، ملف الطالب، التذكير، الاحتفال). التبويب النشط يُحفظ في sessionStorage (ma7fath_active_tab:{uid}:{role}) ويُسترجع إن كان موجودًا في navigation؛ لكل تبويب موضع تمرير محفوظ؛ تلاشٍ قصير بين التبويبات (opacity فقط، يحترم reducedMotion). زر الرجوع (useBackHandler) يغلق النافذة العليا ثم يعيد للتبويب الرئيسي للدور. الشريط السفلي يختفي أثناء الكيبورد (useSoftKeyboard). الأوسمة المخصصة تُفتح حسب criterion.
+- **يفعل:** الحاوية المركزية بعد الدخول. activeTab (حالة، لا URL) يختار المحتوى: للطالب home (بطاقة الحلقة، ورد اليوم، الصفحات المصرّح بها، الـ streak، الحصون الخمسة بنقرة، حديث متغير كل 6 ثوانٍ)، quran-map، daily-session (المصحف التفاعلي + أذكار)، my-plan، five-fortresses، ai-assistant، community، achievements (شارات من uiConfiguration)، analytics، mind-maps، similarities؛ للمعلم teacher-*؛ للمشرف admin-* (ومنها admin-tajweed ← TajweedLab، يُعرض للمشرف فقط). يدير الشريط العلوي نفسه للويب والجوال (#header-user-profile-card: الصورة على الجوال + الاسم + streak يفتح الملف؛ ثم RoleSwitcherMenu إن تعدّدت الأدوار، الجرس، وQuickSettingsMenu)، Sidebar على سطح المكتب فقط وBottomNavBar على الجوال وكل النوافذ (الملف، العرض، التوثيق، الحلقة، ملف الطالب، التذكير، الاحتفال). التبويب النشط يُحفظ في sessionStorage (ma7fath_active_tab:{uid}:{role}) ويُسترجع إن كان موجودًا في navigation؛ لكل تبويب موضع تمرير محفوظ؛ تلاشٍ قصير بين التبويبات (opacity فقط، يحترم reducedMotion). زر الرجوع (useBackHandler) يغلق النافذة العليا ثم يعيد للتبويب الرئيسي للدور. الشريط السفلي يختفي أثناء الكيبورد (useSoftKeyboard). الأوسمة المخصصة تُفتح حسب criterion.
 - **لماذا:** تبديل التبويب الافتراضي حسب الدور النشط عند تغيّر المستخدم أو الدور. تعليم الحصن من الرئيسية يقرأ الخطة المحفوظة أولًا ثم يعدّل علامة واحدة (لا يستبدل الخطة).
 - **متى:** طوال جلسة المستخدم بعد المعالج.
 - **إن تعطّل:** كل شيء بعد تسجيل الدخول.
 - **انتبه:** كل تبويب داخلي في AdminDashboard يستدعي onNavigateTab ← setActiveTab('admin-' + id)، فأي تبويب جديد هناك يحتاج case 'admin-<id>' هنا وإلا يظهر 'قسم … قيد التفعيل' (community وbadges كانا ناقصين). | case 'admin-panel' مكرر في switch؛ الثاني (AdminPanel) لا يُصل إليه أبدًا. | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
-- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, RoleSwitcherMenu.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
+- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, RoleSwitcherMenu.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, TajweedLab.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
 - **يستخدمه:** App.jsx
 
 ### `src/pages/LandingPage.jsx`
@@ -700,7 +700,7 @@ _لوحات المعلم والإدارة_
 - **لماذا:** دور المعلم يمر عبر الخادم (لأنه يتحقق من ملكية الحلقات)، بينما دور المشرف يُكتب مباشرة (قواعد Firestore تسمح للمشرف).
 - **متى:** التبويب الافتراضي للدور 'مشرف'.
 - **إن تعطّل:** لا إدارة.
-- **انتبه:** إنشاء الحلقة موجود في تبويب التوزيع (AdminDistributionView) فقط؛ تبويب المجموعات فيه زر 'إنشاء حلقة جديدة' (admin-groups-create) ينقل إليه. | تبويب 'التحليلات والنمو' نص فقط بلا بيانات. | حالة المستخدم 'نشط' = تدريب مؤكد خلال آخر 7 أيام بتوقيت عمّان (status من /api/admin/users، نفس تعريف 'النشطون هذا الأسبوع')، وعليها يعمل فلترا 'نشطون/غير نشطين'. | البيانات تُجلب عند تغيير التبويب فقط؛ البحث والفلاتر محلية (useMemo). | لا يمكن إلغاء صلاحية الإدارة عن الحساب نفسه أو عن آخر مشرف (فحص في الواجهة فقط — قواعد Firestore تسمح للمشرف).
+- **انتبه:** إنشاء الحلقة موجود في تبويب التوزيع (AdminDistributionView) فقط؛ تبويب المجموعات فيه زر 'إنشاء حلقة جديدة' (admin-groups-create) ينقل إليه. | تبويب 'التحليلات والنمو' نص فقط بلا بيانات. | حالة المستخدم 'نشط' = تدريب مؤكد خلال آخر 7 أيام بتوقيت عمّان (status من /api/admin/users، نفس تعريف 'النشطون هذا الأسبوع')، وعليها يعمل فلترا 'نشطون/غير نشطين'. | البيانات تُجلب عند تغيير التبويب فقط؛ البحث والفلاتر محلية (useMemo)، والبحث في الاسم والبريد لا يميّز حالة الأحرف ويتجاهل المسافات الطرفية. | لا يمكن إلغاء صلاحية الإدارة عن الحساب نفسه أو عن آخر مشرف (فحص في الواجهة فقط — قواعد Firestore تسمح للمشرف).
 - **يستخدم:** memorization.js, LanguageContext.jsx, AdminPerformanceDashboard.jsx, AdminDistributionView.jsx, firebase.js, api.js, AdminExperienceSettings.jsx, AdminCommunityView.jsx, groups.js
 - **يستخدمه:** AdminPanel.jsx, Dashboard.jsx
 
@@ -729,6 +729,21 @@ _لوحات المعلم والإدارة_
 - **إن تعطّل:** لا تقرير أداء.
 - **يستخدم:** LanguageContext.jsx, api.js, groups.js, server/index.js
 - **يستخدمه:** AdminDashboard.jsx
+
+### `src/components/tajweed/TajweedLab.jsx`
+- **يفعل:** مختبر مخارج الحروف وصفاتها (معاينة للمشرف فقط). شبكة الحروف بترتيب النورانية (+ الغنة) مع فلتر بالمخارج الخمسة. لكل حرف يعرض: رسم ArticulationDiagram، اسم المخرج، خطوات وضع اللسان، تدريب «أَ + الحرف ساكنًا»، الصفات (قوية أحمر، ضعيفة أزرق، بلا ضد أخضر)، حروف نفس المخرج، والحروف التي يُخلط بها. يمكن مقارنة الحرف بالسابق (خط متقطع).
+- **لماذا:** لتجربة التصميم قبل فتحه للطلاب. المحتوى ينتظر مراجعة معلم تجويد مُجاز.
+- **متى:** تبويب admin-tajweed (قسم «قيد التطوير» في قائمة المشرف).
+- **إن تعطّل:** يختفي المختبر فقط.
+- **انتبه:** لا يوجد صوت بعد، والتسجيلات يجب أن تكون بصوت قارئ مُجاز لا صوتًا مولّدًا. | Dashboard يتحقق من activeRole === 'admin' قبل العرض.
+- **يستخدم:** LanguageContext.jsx, tajweedLetters.js, ArticulationDiagram.jsx
+- **يستخدمه:** Dashboard.jsx
+
+### `src/components/tajweed/ArticulationDiagram.jsx`
+- **يفعل:** SVG لمقطع جانبي للرأس (الوجه لليسار). يرسم اللسان والشفتين واللهاة من نقاط، وframer-motion يحرّكها بين الأوضاع. POSES تحدد لكل مخرج: نقاط اللسان، حالة الشفتين، اللهاة (مرفوعة/منخفضة)، مجرى الهواء (فم/أنف)، ونقطة التماس. resolvePose يرفع مؤخرة اللسان لحروف الإطباق الأمامية (ص ض ط ظ) ويخفض اللهاة للحروف الأنفية. مجرى الهواء الفموي يُحسب بين ظهر اللسان والحنك.
+- **انتبه:** يجب أن يبقى عدد النقاط وبنية الأوامر في tonguePath وupperLipPath وlowerLipPath وVELUM ثابتًا، وإلا لا يتحرك الشكل بل يقفز. | الإحداثيات تقريبية تعليمية وليست تشريحية دقيقة. | الضاد جانبية فلا تظهر في المقطع الجانبي إلا بعلامة «الأضراس العليا».
+- **يستخدم:** framer-motion
+- **يستخدمه:** TajweedLab.jsx
 
 ### `src/components/teacher/TeacherDashboard.jsx`
 - **يفعل:** يجلب /api/teacher/:uid/dashboard ويعرض: ملخص الحلقات، 6 مؤشرات (الطلاب النشطون، من تدرب آخر 7 أيام، نسبة النشاط، محاولات الأسبوع، مراجعات معلقة، بحاجة لمتابعة)، قائمة 'بحاجة لمتابعة' (تفتح ملف الطالب)، وآخر 8 نشاطات. يتحدث تلقائيًا كل 30 ثانية.
@@ -791,6 +806,14 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **متى:** عند فتح تبويب المتشابهات.
 - **إن تعطّل:** SimilaritiesView فارغ.
 - **يستخدمه:** SimilaritiesView.jsx
+
+### `src/data/tajweedLetters.js`
+- **يفعل:** REGIONS (المخارج العامة الخمسة)، MAKHARIJ (المخارج الـ17 لابن الجزري: الاسم، المنطقة، pose، وخطوات وضع اللسان)، LETTERS (29 حرفًا بترتيب النورانية + الغنة، مع المخرج وكلمة التدريب والحروف التي يُخلط بها)، getSifat (الصفات المتضادة الخمس + الصفات التي لا ضد لها)، isEmphatic (حروف الاستعلاء).
+- **لماذا:** مصدر واحد لمحتوى المخارج والصفات تقرأ منه كل الشاشات.
+- **متى:** عند فتح تبويب admin-tajweed.
+- **إن تعطّل:** TajweedLab فارغ أو يتعطل.
+- **انتبه:** الهاء مخزّنة 'هـ' (بالتطويل) وgetSifat يزيل التطويل قبل المطابقة. | المحتوى لم يراجعه مختص بعد.
+- **يستخدمه:** TajweedLab.jsx
 
 ### `src/lib/fortressService.js`
 - **يفعل:** generateFiveFortressesPlan(juz, page, target): يبني محليًا خطة الحصون الخمسة (الختمة = قراءة الجزء، التحضير الثلاثي لصفحة اليوم والغد، الحفظ الجديد 20×/40×، المراجعة القريبة = آخر 20 صفحة، البعيدة = الأجزاء السابقة بالتدوير). أدوات الإنجاز اليومي (fortressDay بتوقيت عمّان، تطبيع المفاتيح النصية↔الرقمية 1..5). saveFortressPlanToFirestore وgetFortressPlanFromFirestore عبر /api/user/fortress-plan (404 ← مسودة مولّدة محليًا). subscribeToFortressPlan يستمع لـ users/{uid}/five_fortresses_plans/current متجاهلًا الكاش والكتابات المعلقة.

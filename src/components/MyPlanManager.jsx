@@ -158,7 +158,7 @@ export const MyPlanManager = () => {
           }
         </button>
       </div>
-      {isSaved && <div role="status" data-testid="plan-save-success" style={{ color: '#047857', fontWeight: 700 }}>{lang === 'ar' ? 'تم حفظ الخطة في Firestore.' : 'Plan saved in Firestore.'}</div>}
+      {isSaved && <div role="status" data-testid="plan-save-success" style={{ color: '#047857', fontWeight: 700 }}>{lang === 'ar' ? 'تم حفظ الخطة.' : 'Plan saved.'}</div>}
       {saveError && <div role="alert" data-testid="plan-save-error" style={{ color: '#B91C1C', fontWeight: 700 }}>{saveError}</div>}
 
       {/* 1. Unit Type Selector */}

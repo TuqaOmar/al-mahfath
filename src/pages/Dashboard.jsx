@@ -76,6 +76,7 @@ import { TeacherStudentProfileModal } from '../components/teacher/TeacherStudent
 import { TeacherGroupsView } from '../components/teacher/TeacherGroupsView';
 import { TeacherReportsView } from '../components/teacher/TeacherReportsView';
 import { AdminDashboard } from '../components/admin/AdminDashboard';
+import { TajweedLab } from '../components/tajweed/TajweedLab';
 import { useUiConfiguration } from '../lib/uiConfiguration';
 import { getNavigation } from '../lib/navigation';
 import { useBackHandler } from '../hooks/useBackHandler';
@@ -145,7 +146,7 @@ const Dashboard = () => {
       if (typeof refreshUserData !== 'function') throw new Error('Profile refresh is unavailable');
       const result = await refreshUserData();
       if (result?.success !== true) throw new Error(result?.message || 'Profile refresh was not confirmed');
-      setSyncToast(isRTL ? 'تم تحديث ملف الحساب من Firestore؛ لا يشمل إعادة تحميل بقية الصفحات.' : 'Account profile refreshed from Firestore; other screens were not reloaded.');
+      setSyncToast(isRTL ? 'تم تحديث بيانات حسابك.' : 'Your account data was refreshed.');
       syncTimerRef.current = setTimeout(() => setSyncToast(''), 3500);
       return result;
     } catch (err) {
@@ -382,6 +383,9 @@ const Dashboard = () => {
 
       case 'admin-badges':
         return <AdminDashboard activeAdminTab="badges" onNavigateTab={(t) => setActiveTab('admin-' + t)} />;
+
+      case 'admin-tajweed':
+        return activeRole === 'admin' ? <TajweedLab /> : null;
 
       case 'home':
         return (

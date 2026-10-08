@@ -153,7 +153,6 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
           maxHeight: '92vh'
         }}
       >
-        <button data-testid="teacher-profile-refresh" onClick={fetchStudentProfile}>تحديث صلاحية ملف الطالب</button>
         {/* Modal Header */}
         <div style={{
           padding: '20px 24px',
@@ -170,6 +169,16 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
             </h3>
           </div>
 
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+          <button
+            data-testid="teacher-profile-refresh"
+            onClick={fetchStudentProfile}
+            title={text('تحديث ملف الطالب', 'Refresh profile')}
+            aria-label={text('تحديث ملف الطالب', 'Refresh profile')}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <RefreshCw size={18} />
+          </button>
           <button
             data-testid="teacher-profile-close"
             onClick={onClose}
@@ -187,6 +196,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
           >
             <X size={20} />
           </button>
+          </div>
         </div>
 
         {/* Modal Content */}
@@ -408,8 +418,8 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                         </span>
                         {sess.reviewStatus === 'pending' && isAssignedTeacher && (
                           <div style={{ display: 'flex', gap: '6px' }}>
-                            <button data-testid={`approve-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'approved')}>قبول مراجعة التدريب</button>
-                            <button data-testid={`reject-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'rejected')}>رفض الجلسة</button>
+                            <button data-testid={`approve-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'approved')} style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', border: 'none', background: 'var(--primary)', color: '#FFFFFF' }}>قبول مراجعة التدريب</button>
+                            <button data-testid={`reject-session-${sess.id}`} onClick={() => reviewSession(sess.id, 'rejected')} style={{ padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', border: '1px solid rgba(239, 68, 68, 0.4)', background: 'transparent', color: '#EF4444' }}>رفض الجلسة</button>
                           </div>
                         )}
                         {sess.reviewStatus && sess.reviewStatus !== 'pending' && <span data-testid={`session-review-${sess.id}`}>{sess.reviewStatus === 'approved' ? 'مراجعة تدريب مقبولة من المعلم' : 'مرفوضة'}</span>}
@@ -467,7 +477,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                 </h4>
 
                 <p style={{ margin: '0 0 12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>{isAssignedTeacher
-                  ? text('تُحفظ الملاحظة في Firestore ويصل إشعار داخل التطبيق للطالب.', 'The note is stored in Firestore and creates an in-app notification.')
+                  ? text('تُحفظ الملاحظة ويصل للطالب إشعار بها.', 'The note is saved and the student gets a notification.')
                   : text('الملاحظات ومراجعة الجلسات متاحة لمعلمة الطالبة المعيّنة فقط.', "Notes and session reviews are available only to the student's assigned teacher.")}</p>
 
                 {isAssignedTeacher && <div style={{ display: 'flex', gap: '8px' }}>
