@@ -530,6 +530,7 @@ test('browser roles, Firestore community notifications, and Storage profile phot
 
   await owner.locator('#sidebar-nav-community').click();
   await owner.getByTestId(`community-post-${postId}`).getByRole('button', { name: 'حذف المنشور' }).click();
+  await owner.getByTestId(`community-post-${postId}`).getByRole('button', { name: 'تأكيد حذف المنشور' }).click();
   await expect(owner.getByTestId(`community-post-${postId}`)).toHaveCount(0);
   assert.equal((await db.doc(`community_posts/${postId}`).get()).exists, false);
   await expect.poll(async () => (await db.collection(`users/${uids.applicant}/notifications`).where('postId', '==', postId).get()).size).toBe(0);
@@ -611,7 +612,7 @@ test('admin controls Community and achievements visibility, order, and badge dis
   await admin.getByLabel('ترتيب المجتمع').fill('20');
   await admin.getByLabel('ترتيب الأوسمة والثمار').fill('10');
   await admin.getByTestId('save-experience-settings').click();
-  await expect(admin.getByTestId('experience-settings-status')).toContainText('Firestore');
+  await expect(admin.getByTestId('experience-settings-status')).toContainText('تم حفظ الإعدادات');
 
   await refresh(student);
   const configuredSections = student.locator('#sidebar-nav-achievements, #sidebar-nav-community');
@@ -620,10 +621,13 @@ test('admin controls Community and achievements visibility, order, and badge dis
     .toEqual(['sidebar-nav-achievements', 'sidebar-nav-community']);
 
   await admin.getByTestId('section-setting-community').getByRole('checkbox').uncheck();
+  await admin.getByTestId('save-experience-settings').click();
+  await expect(admin.getByTestId('experience-settings-status')).toContainText('تم حفظ الإعدادات');
+  await admin.getByRole('button', { name: 'الأوسمة والمكافآت', exact: true }).click();
   await admin.getByTestId('badge-setting-xp_500').getByRole('checkbox').uncheck();
   await admin.getByLabel('عنوان streak_7').fill('وسام الصحبة المتجددة');
   await admin.getByTestId('save-experience-settings').click();
-  await expect(admin.getByTestId('experience-settings-status')).toContainText('Firestore');
+  await expect(admin.getByTestId('experience-settings-status')).toContainText('تم حفظ الإعدادات');
   await expect.poll(async () => (await db.doc('app_config/navigation').get()).data()?.sections?.community?.visible).toBe(false);
 
   await refresh(student);

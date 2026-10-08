@@ -1,5 +1,5 @@
 import { declaredPages, nextDeclaredPage } from '../../lib/memorization';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Users, 
   BookOpen, 
@@ -38,7 +38,13 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
   const [currentTab, setCurrentTab] = useState(activeAdminTab);
   const [overview, setOverview] = useState(null);
-  const [allUsers, setAllUsers] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [usersPage, setUsersPage] = useState({ page: 1, total: 0, totalPages: 1, pageSize: 10, adminCount: 0 });
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [requestedPage, setRequestedPage] = useState(1);
+  const usersRequestRef = useRef(0);
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -57,54 +63,69 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
     fetchAdminData();
   }, [currentTab]);
 
-  const users = useMemo(() => {
-    let filtered = allUsers;
-    const query = searchQuery.trim().toLowerCase();
-    if (query) {
-      filtered = filtered.filter(u =>
-        `${u.name || ''} ${u.email || ''}`.toLowerCase().includes(query)
-      );
-    }
-    
-    if (userFilter === 'teacher') {
-      // Multi-role support: check both role field and roles map
-      filtered = filtered.filter(u => u.role === 'teacher' || (u.roles && u.roles.teacher === true));
-    } else if (userFilter === 'independent') {
-      filtered = filtered.filter(u => !u.isSafarMember && !u.groupId && u.role !== 'teacher' && u.role !== 'admin' && !(u.roles && (u.roles.teacher || u.roles.admin)));
-    } else if (userFilter === 'safar_member') {
-      filtered = filtered.filter(u => u.isSafarMember || u.groupId);
-    } else if (userFilter === 'active' || userFilter === 'inactive') {
-      // status comes from the server: practiced within the last 7 days (same as 'active this week').
-      filtered = filtered.filter(u => u.status === userFilter);
-    }
+  const isUsersTab = currentTab === 'users' || currentTab === 'teachers';
+  // The teachers tab hides the filter chips and always lists teachers only.
+  const effectiveFilter = currentTab === 'teachers' ? 'teacher' : userFilter;
 
-    return filtered;
-  }, [allUsers, searchQuery, userFilter]);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(searchQuery.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // A new search, filter or tab starts again from the first page.
+  useEffect(() => { setRequestedPage(1); }, [debouncedSearch, effectiveFilter, currentTab]);
+
+  // Each request returns one page of 10 users; search and filters run on the server.
+  const fetchUsersPage = useCallback(async () => {
+    // Only the latest request may update the list (a slower older response is dropped).
+    const requestId = ++usersRequestRef.current;
+    setUsersLoading(true);
+    setUsersError('');
+    try {
+      const params = new URLSearchParams({ page: String(requestedPage), filter: effectiveFilter });
+      if (debouncedSearch) params.set('search', debouncedSearch);
+      const response = await fetchWithAuth(`/api/admin/users?${params}`);
+      const payload = await response.json();
+      if (!response.ok || !payload.success) throw new Error(payload.message || 'Failed to load users');
+      if (requestId !== usersRequestRef.current) return;
+      setUsers(payload.users || []);
+      setUsersPage({ page: payload.page, total: payload.total, totalPages: payload.totalPages,
+        pageSize: payload.pageSize, adminCount: payload.adminCount });
+    } catch (e) {
+      if (requestId !== usersRequestRef.current) return;
+      console.error('Error loading users page:', e);
+      setUsers([]);
+      setUsersPage(prev => ({ ...prev, total: 0, totalPages: 1 }));
+      setUsersError('تعذر تحميل المستخدمين، حاول مرة أخرى.');
+    } finally {
+      if (requestId === usersRequestRef.current) setUsersLoading(false);
+    }
+  }, [requestedPage, effectiveFilter, debouncedSearch]);
+
+  useEffect(() => {
+    if (isUsersTab) fetchUsersPage();
+  }, [isUsersTab, fetchUsersPage]);
 
   const fetchAdminData = async () => {
     setLoading(true);
     try {
-      const [usersResponse, groupsResponse, overviewResponse] = await Promise.all([
-        fetchWithAuth('/api/admin/users'),
+      const [groupsResponse, overviewResponse] = await Promise.all([
         fetchWithAuth('/api/groups'),
         fetchWithAuth('/api/admin/overview')
       ]);
-      const [usersPayload, groupsPayload, overviewPayload] = await Promise.all([
-        usersResponse.json(), groupsResponse.json(), overviewResponse.json()
+      const [groupsPayload, overviewPayload] = await Promise.all([
+        groupsResponse.json(), overviewResponse.json()
       ]);
-      if (!usersResponse.ok || !groupsResponse.ok || !overviewResponse.ok ||
-          !usersPayload.success || !groupsPayload.success || !overviewPayload.success) {
-        throw new Error(usersPayload.message || groupsPayload.message || overviewPayload.message || 'Failed to load administration data');
+      if (!groupsResponse.ok || !overviewResponse.ok || !groupsPayload.success || !overviewPayload.success) {
+        throw new Error(groupsPayload.message || overviewPayload.message || 'Failed to load administration data');
       }
       const allGroups = groupsPayload.groups || [];
       setGroups(allGroups);
-      setAllUsers(usersPayload.users || []);
       setOverview({ stats: overviewPayload.stats, realTimeActivity: overviewPayload.realTimeActivity });
 
     } catch (e) {
       console.error('Error loading admin data:', e);
       setOverview(null);
-      setAllUsers([]);
       setGroups([]);
     } finally {
       setLoading(false);
@@ -117,10 +138,10 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
     // Never leave the platform without an administrator, and never demote yourself by accident.
     if (action === 'remove_admin') {
-      const admins = allUsers.filter(u => u.role === 'admin' || u.roles?.admin === true);
+      // adminCount comes from the server, so it counts admins on every page, not just this one.
       const blocked = user.uid === auth.currentUser?.uid
         ? 'لا يمكنك إلغاء صلاحية الإدارة عن حسابك أنت؛ اطلب ذلك من مشرف آخر.'
-        : (admins.length <= 1 ? 'لا يمكن إلغاء صلاحية آخر مشرف في المنصة؛ رقِّ مشرفًا آخر أولًا.' : '');
+        : (usersPage.adminCount <= 1 ? 'لا يمكن إلغاء صلاحية آخر مشرف في المنصة؛ رقِّ مشرفًا آخر أولًا.' : '');
       if (blocked) {
         setActionFeedback({ type: 'error', text: blocked });
         setConfirmTeacherModal(null);
@@ -172,6 +193,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
       setActionFeedback({ type: 'success', text: msg });
       setConfirmTeacherModal(null);
       fetchAdminData();
+      fetchUsersPage();
     } catch (e) {
       console.error(e);
       setActionFeedback({ type: 'error', text: '\u062d\u062f\u062b \u062e\u0637\u0623 \u0623\u062b\u0646\u0627\u0621 \u062a\u0646\u0641\u064a\u0630 \u0627\u0644\u0625\u062c\u0631\u0627\u0621\u060c \u0642\u062f \u0644\u0627 \u062a\u0645\u0644\u0643 \u0627\u0644\u0635\u0644\u0627\u062d\u064a\u0627\u062a' });
@@ -278,7 +300,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
         </div>
 
         <button
-          onClick={fetchAdminData}
+          onClick={() => { fetchAdminData(); if (isUsersTab) fetchUsersPage(); }}
           disabled={loading}
           style={{
             padding: '8px 14px',
@@ -543,9 +565,13 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
           </div>
 
           {/* Users List Table / Cards */}
-          {loading ? (
+          {usersLoading && users.length === 0 ? (
             <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
               جاري جلب البيانات...
+            </div>
+          ) : usersError ? (
+            <div data-testid="admin-users-error" style={{ padding: '24px', textAlign: 'center', color: '#EF4444', background: 'var(--bg-surface)', borderRadius: '18px', border: '1px solid var(--glass-border)' }}>
+              {usersError}
             </div>
           ) : users.length === 0 ? (
             <div style={{ padding: '40px', textAlign: 'center', background: 'var(--bg-surface)', borderRadius: '18px', border: '1px solid var(--glass-border)' }}>
@@ -737,6 +763,46 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
               })}
             </div>
           )}
+
+          {/* Pagination: 10 users per request, with the total that matches the search and filter */}
+          {!usersError && usersPage.total > 0 && (
+            <div data-testid="admin-users-pagination" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+              <span data-testid="admin-users-total">
+                عرض {(usersPage.page - 1) * usersPage.pageSize + 1}–{Math.min(usersPage.page * usersPage.pageSize, usersPage.total)} من أصل <strong style={{ color: 'var(--text-primary)' }}>{usersPage.total}</strong> مستخدم
+              </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {[
+                  { id: 'prev', label: 'السابق', target: usersPage.page - 1, disabled: usersPage.page <= 1 },
+                  { id: 'next', label: 'التالي', target: usersPage.page + 1, disabled: usersPage.page >= usersPage.totalPages }
+                ].map(button => (
+                  <React.Fragment key={button.id}>
+                    {button.id === 'next' && (
+                      <span>صفحة {usersPage.page} من {usersPage.totalPages}</span>
+                    )}
+                    <button
+                      data-testid={`admin-users-${button.id}`}
+                      onClick={() => setRequestedPage(button.target)}
+                      disabled={button.disabled || usersLoading}
+                      style={{
+                        padding: '8px 14px',
+                        borderRadius: '10px',
+                        background: 'var(--bg-surface)',
+                        color: 'var(--text-primary)',
+                        border: '1px solid var(--glass-border)',
+                        fontSize: '12.5px',
+                        fontWeight: 600,
+                        minHeight: '40px',
+                        cursor: button.disabled || usersLoading ? 'not-allowed' : 'pointer',
+                        opacity: button.disabled ? 0.5 : 1
+                      }}
+                    >
+                      {button.label}
+                    </button>
+                  </React.Fragment>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -854,8 +920,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
       {/* VIEW 5: COMMUNITY MODERATION */}
       {currentTab === 'community' && <AdminCommunityView />}
 
-      {/* Badge display and section settings share the persisted administration screen. */}
-      {(currentTab === 'badges' || currentTab === 'experience') && <AdminExperienceSettings />}
+      {/* Badges and section visibility are two views of the same persisted settings. */}
+      {currentTab === 'badges' && <AdminExperienceSettings view="badges" />}
+      {currentTab === 'experience' && <AdminExperienceSettings view="sections" />}
 
       {/* MODAL: ASSIGN / REMOVE TEACHER ROLE CONFIRMATION */}
       {confirmTeacherModal && (

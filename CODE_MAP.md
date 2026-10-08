@@ -396,12 +396,12 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/pages/Dashboard.jsx`
-- **يفعل:** الحاوية المركزية بعد الدخول. activeTab (حالة، لا URL) يختار المحتوى: للطالب home (بطاقة الحلقة، ورد اليوم، الصفحات المصرّح بها، الـ streak، الحصون الخمسة بنقرة، حديث متغير كل 6 ثوانٍ)، quran-map، daily-session (المصحف التفاعلي + أذكار)، my-plan، five-fortresses، ai-assistant، community، achievements (شارات من uiConfiguration)، analytics، mind-maps، similarities؛ للمعلم teacher-*؛ للمشرف admin-* (ومنها admin-tajweed ← TajweedLab، يُعرض للمشرف فقط). يدير الشريط العلوي نفسه للويب والجوال (#header-user-profile-card: الصورة على الجوال + الاسم + streak يفتح الملف؛ ثم RoleSwitcherMenu إن تعدّدت الأدوار، الجرس، وQuickSettingsMenu)، Sidebar على سطح المكتب فقط وBottomNavBar على الجوال وكل النوافذ (الملف، العرض، التوثيق، الحلقة، ملف الطالب، التذكير، الاحتفال). التبويب النشط يُحفظ في sessionStorage (ma7fath_active_tab:{uid}:{role}) ويُسترجع إن كان موجودًا في navigation؛ لكل تبويب موضع تمرير محفوظ؛ تلاشٍ قصير بين التبويبات (opacity فقط، يحترم reducedMotion). زر الرجوع (useBackHandler) يغلق النافذة العليا ثم يعيد للتبويب الرئيسي للدور. الشريط السفلي يختفي أثناء الكيبورد (useSoftKeyboard). الأوسمة المخصصة تُفتح حسب criterion.
+- **يفعل:** الحاوية المركزية بعد الدخول. activeTab (حالة، لا URL) يختار المحتوى: للطالب home (بطاقة الحلقة، ورد اليوم، الصفحات المصرّح بها، الـ streak، الحصون الخمسة بنقرة، حديث متغير كل 6 ثوانٍ)، quran-map، daily-session (المصحف التفاعلي + أذكار)، my-plan، five-fortresses، ai-assistant، community، achievements (AchievementsView بشارات uiConfiguration)، analytics، mind-maps، similarities؛ للمعلم teacher-*؛ للمشرف admin-* (ومنها admin-tajweed ← TajweedLab، يُعرض للمشرف فقط). يدير الشريط العلوي نفسه للويب والجوال (#header-user-profile-card: الصورة على الجوال + الاسم + streak يفتح الملف؛ ثم RoleSwitcherMenu إن تعدّدت الأدوار، الجرس، وQuickSettingsMenu)، Sidebar على سطح المكتب فقط وBottomNavBar على الجوال وكل النوافذ (الملف، العرض، التوثيق، الحلقة، ملف الطالب، التذكير، الاحتفال). التبويب النشط يُحفظ في sessionStorage (ma7fath_active_tab:{uid}:{role}) ويُسترجع إن كان موجودًا في navigation؛ لكل تبويب موضع تمرير محفوظ؛ تلاشٍ قصير بين التبويبات (opacity فقط، يحترم reducedMotion). زر الرجوع (useBackHandler) يغلق النافذة العليا ثم يعيد للتبويب الرئيسي للدور. الشريط السفلي يختفي أثناء الكيبورد (useSoftKeyboard). الأوسمة المخصصة تُفتح حسب criterion.
 - **لماذا:** تبديل التبويب الافتراضي حسب الدور النشط عند تغيّر المستخدم أو الدور. تعليم الحصن من الرئيسية يقرأ الخطة المحفوظة أولًا ثم يعدّل علامة واحدة (لا يستبدل الخطة).
 - **متى:** طوال جلسة المستخدم بعد المعالج.
 - **إن تعطّل:** كل شيء بعد تسجيل الدخول.
 - **انتبه:** كل تبويب داخلي في AdminDashboard يستدعي onNavigateTab ← setActiveTab('admin-' + id)، فأي تبويب جديد هناك يحتاج case 'admin-<id>' هنا وإلا يظهر 'قسم … قيد التفعيل' (community وbadges كانا ناقصين). | case 'admin-panel' مكرر في switch؛ الثاني (AdminPanel) لا يُصل إليه أبدًا. | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
-- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, RoleSwitcherMenu.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, TajweedLab.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
+- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, AchievementsView.jsx, RoleSwitcherMenu.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, TajweedLab.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
 - **يستخدمه:** App.jsx
 
 ### `src/pages/LandingPage.jsx`
@@ -479,6 +479,15 @@ _أقسام Landing للزوار — صفحة واحدة بسيطة: Navbar ← 
 ## طبقة: ميزات الحافظ
 _المصحف والتسميع، الحصون الخمسة، الخريطة، المتشابهات، المساعد، المجتمع_
 
+### `src/components/AchievementsView.jsx`
+- **يفعل:** شاشة الأوسمة: ملخص (حصلت على X من Y + شريط تقدم + 'الأقرب إليك' مع المتبقي)، ثم قسم 'أوسمتك' (المكتسبة) وقسم 'في الطريق إليها' (المقفلة بقفل وشريط تقدم '4 من 7 أيام'). الأوسمة الست الثابتة لها أيقونة وهدف (streak 7، xp 500، حصون اليوم 3، level 5)؛ baqarah وstability_95 تُفتح فقط من earnedBadges بلا شريط؛ الأوسمة المخصصة تستخدم criterion (streak/xp/level/pages).
+- **لماذا:** فصلها من Dashboard وإظهار التقدم نحو كل وسام بدل بطاقات متشابهة لا يُعرف المكتسب منها.
+- **متى:** تبويب achievements (إن لم يخفه المشرف).
+- **إن تعطّل:** تبويب الأوسمة فقط.
+- **انتبه:** شروط الأوسمة الست في lib/badgeRules.js (مشتركة مع شاشة المشرف). | data-testid=achievement-{id} مستخدم في اختبار المتصفح.
+- **يستخدم:** memorization.js, badgeRules.js
+- **يستخدمه:** Dashboard.jsx
+
 ### `src/components/AiAssistant.jsx`
 - **يفعل:** يحمّل سجل المحادثة من GET /api/ai/chat عند تغير المستخدم، يرسل الرسائل إلى POST /api/ai/chat مع userContext (الصفحة/السورة/الجزء من التصريح الذاتي، النمط، الحصون اليوم، الهدف) ومهلة 12 ثانية، يمسح عبر DELETE. 6 أسئلة جاهزة حسب موقع المستخدم. نافذة لإدخال مفتاح Gemini شخصي يُحفظ في localStorage ويُرسل للخادم مع كل رسالة. يعرض Markdown بسيط (**عريض** وأسطر).
 - **لماذا:** الخادم هو المرجع للسجل (تعليق: لا يُعرض كاش حساب آخر). المفتاح الشخصي يسمح بـ Gemini حقيقي إن لم يكن للخادم مفتاح؛ وإلا يرد الخادم بقوالب جاهزة.
@@ -513,11 +522,11 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/components/Community.jsx`
-- **يفعل:** تبويبان: (1) المنشورات: نشر (فئات: تثبيت وتدبر، متشابهات، تجويد، نصيحة؛ مع إخفاء الهوية)، تعديل/حذف للمالك أو المشرف، إعجاب، تعليق — كله عبر /api/community/*؛ زر 'مشاركة إنجازي' ينشر نصًا تلقائيًا بالصفحة والحصون. (2) 'الالتزام والتنافس': يجلب /api/community/leaderboard عند كل فتح للتبويب ويعرض أعلى 10 طلاب بالـ XP مع الـ streak، ويضيف صف المستخدم في الأسفل بترتيب '—' إن لم يكن ضمنهم.
+- **يفعل:** رأس مختصر (العنوان + زر 'شارك إنجازك' الذي يملأ صندوق النشر بنص الإنجاز للمراجعة بدل النشر فورًا) وتبويبان (role=tab): (1) المنشورات: صندوق نشر بتصنيفات (أزرار aria-pressed، ومنها 'إنجاز الحصون') وخيار 'انشر بدون اسمي'، فلتر تصنيفات فوق المنشورات، بطاقة منشور بوقت نسبي (منذ…)، تعديل بـ textarea وحذف بتأكيد داخلي (زر 'تأكيد حذف المنشور')، إعجاب، تعليقات مع حذف التعليق لصاحبه/المشرف (DELETE /api/community/posts/:id/comments/:cid) — كله عبر /api/community/*. رسالة التغذية الراجعة تميّز الخطأ (يبدأ بـ'تعذر') وتختفي رسائل النجاح بعد 5 ثوانٍ. (2) 'لوحة الالتزام': يجلب /api/community/leaderboard عند كل فتح، يعرض الثلاثة الأوائل كمنصة ثم البقية، ويضيف صف المستخدم بترتيب '—' إن لم يكن ضمنهم. الصور الرمزية: photoURL أو الحرف الأول (لا خدمة خارجية).
 - **لماذا:** المجتمع للتحفيز وتبادل الفوائد بين الحفاظ.
 - **متى:** تبويب المجتمع (إن لم يخفه المشرف).
 - **إن تعطّل:** المجتمع فارغ.
-- **انتبه:** الترتيب يُظهر أسماء الطلاب الحقيقية لكل المستخدمين المسجلين (لا يوجد خيار إخفاء من الترتيب). | شارة 'مربوط بقاعدة البيانات' ثابتة لا تعكس حالة الاتصال.
+- **انتبه:** الترتيب يُظهر أسماء الطلاب الحقيقية لكل المستخدمين المسجلين (لا يوجد خيار إخفاء من الترتيب). | Dashboard ما زال يمرّر setActiveTab لكن المكوّن لم يعد يستخدمه. | اختبار المتصفح يضغط 'حذف المنشور' ثم 'تأكيد حذف المنشور'.
 - **يستخدم:** memorization.js, AuthContext.jsx, api.js, quranData.js, community.js
 - **يستخدمه:** Dashboard.jsx
 
@@ -599,13 +608,22 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **انتبه:** قائمة القراء وروابط الصوت منسوخة حرفيًا في QuranInteractiveView. | يبني رابط cdn.islamic.network برقم الآية داخل السورة بدل الرقم العام — كان سيشغّل آية خاطئة لغير الفاتحة.
 - **يستخدم:** LanguageContext.jsx
 
+### `src/components/MushafPage.jsx`
+- **يفعل:** يرسم صفحة مصحف المدينة سطرًا سطرًا بخط صفحة مجمع الملك فهد (QPC V2) من mushafLayout: رأس (السورة والجزء)، أشرطة أسماء السور والبسملة، كلمات كل سطر موزعة على العرض (الأسطر القصيرة < 80% من أعرض سطر تُوسَّط، وصفحتا 1-2 موسطتان)، ورقم الصفحة. حجم الخط يُحسب بقياس أعرض سطر عبر canvas ليملأ الإطار (حد أقصى 34px) ويُعاد عند تغيّر العرض. النقر على أي كلمة يستدعي onAyahClick برقم الآية العام، وكلمات الآية النشطة تُظلَّل. يحمّل الصفحتين المجاورتين مسبقًا.
+- **لماذا:** الحافظ يثبّت الحفظ بصورة الصفحة المطبوعة نفسها (مواضع الأسطر والآيات).
+- **متى:** داخل QuranInteractiveView بدل قائمة الآيات.
+- **إن تعطّل:** يُعرض fallback (النص المتصل) — مثلًا بلا إنترنت أو إن تعطّل quran.com.
+- **انتبه:** أول كلمة من كل آية تحمل data-testid=quran-display-{رقم الآية} وdata-quran-text بالنص المرجعي من الخادم (اختبار المتصفح يتحقق منها ومن أن font-family يحوي Noto Naskh كبديل). | العرض فقط من quran.com؛ التصحيح ما زال على النص المرجعي المحلي. | أشرطة السور والبسملة نص بخط --font-quran لا خط QPC.
+- **يستخدم:** mushafLayout.js, quranData.js
+- **يستخدمه:** QuranInteractiveView.jsx
+
 ### `src/components/QuranInteractiveView.jsx`
-- **يفعل:** المصحف التفاعلي: يجلب آيات الصفحة من /api/quran/reference/page/:n (نفس النص العثماني المستخدم في التصحيح) مع كاش داخلي. تنقل بالسورة/الجزء/رقم الصفحة/الأسهم/روابط سريعة. الصفحة تُعرض كصفحة مصحف: نص متصل مضبوط (justify) والآيات متتابعة داخله بعلامة رقم الآية، وعنوان السورة والبسملة في سطر مستقل عند بداية السورة (splitBasmala يفصل البسملة للعرض فقط؛ data-quran-text يبقى النص الكامل)، وشريط فوق الصفحة للآية النشطة (الدقة، تسميع الآية، تم التسميع). مشغّل صوت لكل آية من 7 قراء (cdn.islamic.network، والدوسري من everyayah.com) مع تكرار 1/3/5/∞ واستمرار تلقائي للآية التالية ثم للصفحة التالية، مع تمرير الآية المسموعة إلى مجال الرؤية. التفسير الميسر لكل آية من api.alquran.cloud. المفضلة (favorites عبر updateUserData). مساحة التسميع: صفحة كاملة أو آية، صوتي أو كتابي، إخفاء النص للتسميع غيبًا، ثم عرض النتيجة: الدقة، تقرير الأخطاء (المنطوق مقابل الصواب ونصيحة)، تلوين كل كلمة، تفصيل دقة كل آية، وزر 'إرسال الجلسة للمعلم'. بطاقة إحصاءات الصفحة وسجل المحاولات من /api/recitation/*.
+- **يفعل:** المصحف التفاعلي: يجلب آيات الصفحة من /api/quran/reference/page/:n (نفس النص العثماني المستخدم في التصحيح) مع كاش داخلي. تنقل بالسورة/الجزء/رقم الصفحة/الأسهم/روابط سريعة. الصفحة تُعرض بـ MushafPage كصفحة مصحف المدينة الحقيقية (15 سطرًا بنفس توزيع المطبوع)؛ إن تعذّر تحميلها يُعرض البديل: نص متصل مضبوط بعلامات أرقام الآيات وعنوان السورة والبسملة (splitBasmala للعرض فقط؛ data-quran-text يبقى النص الكامل)، وشريط فوق الصفحة للآية النشطة (الدقة، تسميع الآية، تم التسميع). مشغّل صوت لكل آية من 7 قراء (cdn.islamic.network، والدوسري من everyayah.com) مع تكرار 1/3/5/∞ واستمرار تلقائي للآية التالية ثم للصفحة التالية، مع تمرير الآية المسموعة إلى مجال الرؤية. التفسير الميسر لكل آية من api.alquran.cloud. المفضلة (favorites عبر updateUserData). مساحة التسميع: صفحة كاملة أو آية، صوتي أو كتابي، إخفاء النص للتسميع غيبًا، ثم عرض النتيجة: الدقة، تقرير الأخطاء (المنطوق مقابل الصواب ونصيحة)، تلوين كل كلمة، تفصيل دقة كل آية، وزر 'إرسال الجلسة للمعلم'. بطاقة إحصاءات الصفحة وسجل المحاولات من /api/recitation/*.
 - **لماذا:** التسميع يرسل userId فيصبح autoSave=true فيحفظ الخادم المحاولة (idempotent بـ sessionId). أمثلة جاهزة للصفحة 2 (صحيحة وبخطأ 'للمتقون') لعرض كشف اللحن الجلي.
 - **متى:** تبويب daily-session/mushaf، أو من الخريطة والخرائط الذهنية والمتشابهات عبر onSelectPageForRecitation.
 - **إن تعطّل:** الميزة الأساسية للتطبيق تتوقف.
-- **انتبه:** الآيات المعلّمة 'تم التسميع' يدويًا (recitedAyahs) محلية فقط وتضيع عند التنقل. | شارة دقة كل آية تُبنى من السجل بمفتاح ayahNumber — محاولات الصفحة الكاملة لها ayahNumber=null فلا تظهر على الآيات. | يعتمد على 3 خدمات خارجية (التفسير والصوت) بلا بديل عند تعطلها. | activeAyahNum يبدأ بـ 8 قبل تحميل الصفحة. | المتصفح يطلق pause قبل ended؛ onPause يتجاهله إن كان audio.ended وإلا يتوقف التشغيل بعد آية واحدة.
-- **يستخدم:** LanguageContext.jsx, AuthContext.jsx, useRecitationRecorder.js, api.js, quranData.js, server/index.js
+- **انتبه:** الآيات المعلّمة 'تم التسميع' يدويًا (recitedAyahs) محلية فقط وتضيع عند التنقل. | شارة دقة كل آية تُبنى من السجل بمفتاح ayahNumber — محاولات الصفحة الكاملة لها ayahNumber=null فلا تظهر على الآيات. | يعتمد على خدمات خارجية: التفسير والصوت بلا بديل عند تعطلها، وشكل الصفحة من quran.com (له بديل نصي). | activeAyahNum يبدأ بـ 8 قبل تحميل الصفحة. | المتصفح يطلق pause قبل ended؛ onPause يتجاهله إن كان audio.ended وإلا يتوقف التشغيل بعد آية واحدة.
+- **يستخدم:** LanguageContext.jsx, AuthContext.jsx, useRecitationRecorder.js, api.js, quranData.js, MushafPage.jsx, server/index.js
 - **يستخدمه:** Dashboard.jsx
 
 ### `src/components/QuranMapPage.jsx`
@@ -696,7 +714,7 @@ _لوحات المعلم والإدارة_
 - **إن تعطّل:** لا شيء.
 
 ### `src/components/admin/AdminCommunityView.jsx`
-- **يفعل:** تبويب 'إدارة المنتدى': يجلب منشورات المجتمع الحقيقية (/api/community/posts) مع إحصاءات (منشورات/تعليقات/إعجابات) وبحث محلي، وحذف منشور (DELETE /api/community/posts/:id) أو تعليق (DELETE /api/community/posts/:id/comments/:commentId).
+- **يفعل:** تبويب 'إدارة المنتدى': يجلب منشورات المجتمع (/api/community/posts) ويعرض 4 بطاقات إحصاء (المنشورات، هذا الأسبوع، التعليقات، الإعجابات)، بحثًا محليًا في النص/الكاتب/التعليقات، فلتر تصنيفات، وترتيبًا (الأحدث/الأكثر تفاعلًا). التعليقات مطوية خلف 'عرض التعليقات (n)'. حذف منشور أو تعليق بخطوتين داخل الصفحة (حذف ← تأكيد الحذف، بلا window.confirm) عبر DELETE /api/community/posts/:id و/comments/:commentId.
 - **لماذا:** المنشورات تُنشر فورًا بلا موافقة، فالإشراف يكون بالمراجعة والحذف اللاحق.
 - **متى:** تبويب admin-community.
 - **إن تعطّل:** لا إشراف على المجتمع.
@@ -705,11 +723,11 @@ _لوحات المعلم والإدارة_
 - **يستخدمه:** AdminDashboard.jsx
 
 ### `src/components/admin/AdminDashboard.jsx`
-- **يفعل:** عشرة تبويبات: لوحة القيادة (إحصاءات /api/admin/overview)، تحليلات الحفظ (AdminPerformanceDashboard)، التوزيع (AdminDistributionView)، المستخدمون/المعلمات (بحث وفلاتر، ترقية/إلغاء مشرف بكتابة Firestore مباشرة، تعيين/إلغاء معلم عبر /api/admin/assign|remove-teacher)، المجموعات، التحليلات، المنتدى (AdminCommunityView)، الأوسمة/الظهور (AdminExperienceSettings).
+- **يفعل:** عشرة تبويبات: لوحة القيادة (إحصاءات /api/admin/overview)، تحليلات الحفظ (AdminPerformanceDashboard)، التوزيع (AdminDistributionView)، المستخدمون/المعلمات (بحث وفلاتر في الخادم، 10 مستخدمين لكل طلب مع السابق/التالي والإجمالي، ترقية/إلغاء مشرف بكتابة Firestore مباشرة، تعيين/إلغاء معلم عبر /api/admin/assign|remove-teacher)، المجموعات، التحليلات، المنتدى (AdminCommunityView)، الأوسمة (AdminExperienceSettings view=badges)، ظهور الأقسام (AdminExperienceSettings view=sections).
 - **لماذا:** دور المعلم يمر عبر الخادم (لأنه يتحقق من ملكية الحلقات)، بينما دور المشرف يُكتب مباشرة (قواعد Firestore تسمح للمشرف).
 - **متى:** التبويب الافتراضي للدور 'مشرف'.
 - **إن تعطّل:** لا إدارة.
-- **انتبه:** إنشاء الحلقة موجود في تبويب التوزيع (AdminDistributionView) فقط؛ تبويب المجموعات فيه زر 'إنشاء حلقة جديدة' (admin-groups-create) ينقل إليه. | تبويب 'التحليلات والنمو' نص فقط بلا بيانات. | حالة المستخدم 'نشط' = تدريب مؤكد خلال آخر 7 أيام بتوقيت عمّان (status من /api/admin/users، نفس تعريف 'النشطون هذا الأسبوع')، وعليها يعمل فلترا 'نشطون/غير نشطين'. | البيانات تُجلب عند تغيير التبويب فقط؛ البحث والفلاتر محلية (useMemo)، والبحث في الاسم والبريد لا يميّز حالة الأحرف ويتجاهل المسافات الطرفية. | لا يمكن إلغاء صلاحية الإدارة عن الحساب نفسه أو عن آخر مشرف (فحص في الواجهة فقط — قواعد Firestore تسمح للمشرف).
+- **انتبه:** إنشاء الحلقة موجود في تبويب التوزيع (AdminDistributionView) فقط؛ تبويب المجموعات فيه زر 'إنشاء حلقة جديدة' (admin-groups-create) ينقل إليه. | تبويب 'التحليلات والنمو' نص فقط بلا بيانات. | حالة المستخدم 'نشط' = تدريب مؤكد خلال آخر 7 أيام بتوقيت عمّان (status من /api/admin/users، نفس تعريف 'النشطون هذا الأسبوع')، وعليها يعمل فلترا 'نشطون/غير نشطين'. | الإحصاءات والحلقات تُجلب عند تغيير التبويب؛ قائمة المستخدمين تُجلب صفحة صفحة من /api/admin/users?page&search&filter (البحث بعد 300ms، وأي بحث/فلتر/تبويب جديد يعود للصفحة 1، ورد الطلب الأقدم يُهمل). تبويب المعلمات يفرض filter=teacher. فحص 'آخر مشرف' يعتمد adminCount من الخادم لا الصفحة المعروضة. | لا يمكن إلغاء صلاحية الإدارة عن الحساب نفسه أو عن آخر مشرف (فحص في الواجهة فقط — قواعد Firestore تسمح للمشرف).
 - **يستخدم:** memorization.js, LanguageContext.jsx, AdminPerformanceDashboard.jsx, AdminDistributionView.jsx, firebase.js, api.js, AdminExperienceSettings.jsx, AdminCommunityView.jsx, groups.js
 - **يستخدمه:** AdminPanel.jsx, Dashboard.jsx
 
@@ -723,12 +741,12 @@ _لوحات المعلم والإدارة_
 - **يستخدمه:** AdminDashboard.jsx
 
 ### `src/components/admin/AdminExperienceSettings.jsx`
-- **يفعل:** يحمّل uiConfiguration ويسمح بتعديل ظهور وترتيب قسمي المجتمع والأوسمة، وتفعيل/عنوان/وصف/ترتيب كل شارة، ثم saveUiConfiguration. نموذج 'إضافة وسام جديد' (اسم، وصف، شرط من badgeCriteria، حد أدنى) يحفظ فورًا وسامًا مخصصًا (custom_*)، وزر حذف للأوسمة المخصصة فقط.
+- **يفعل:** يحمّل uiConfiguration ويعرض أحد وجهين حسب prop view: 'sections' (تبويب ظهور المجتمع والأوسمة: لكل قسم مفتاح ظاهر/مخفي ورقم ترتيب) أو 'badges' (تبويب الأوسمة والمكافآت: قائمة بطاقات فيها معاينة الأيقونة، العنوان والوصف للتعديل، شرط الفتح من badgeRuleText، مفتاح الظهور، أسهم أعلى/أسفل تعيد ترقيم order بـ10/20/30، وحذف بتأكيد للأوسمة المخصصة فقط؛ ونموذج 'وسام جديد' قابل للطي مع معاينة). شريط حفظ لاصق يظهر عند وجود تعديلات غير محفوظة (حفظ/تراجع)، ثم saveUiConfiguration.
 - **لماذا:** تحكم المشرف بالواجهة لكل المستخدمين دون نشر جديد.
 - **متى:** تبويب admin-badges أو admin-experience.
 - **إن تعطّل:** لا تحكم بالظهور ولا إضافة أوسمة.
-- **انتبه:** الأوسمة الست الأصلية لا تُحذف (تُخفى فقط) وشروطها مكتوبة في Dashboard. | الإضافة/الحذف تحفظ كل المسودة، بما فيها تعديلات لم يُضغط لها 'حفظ'.
-- **يستخدم:** uiConfiguration.js
+- **انتبه:** الأوسمة الست الأصلية لا تُحذف (تُخفى فقط) وشروطها في lib/badgeRules.js. | الإضافة/الحذف تحفظ كل المسودة، بما فيها تعديلات لم يُضغط لها 'حفظ' (الرسالة تذكر ذلك). | زر الحفظ معطّل ما لم توجد تعديلات. | مفتاح Switch هو checkbox حقيقي شفاف فوق المسار (الاختبارات تستخدم getByRole('checkbox') داخل section-setting-*/badge-setting-*).
+- **يستخدم:** uiConfiguration.js, badgeRules.js
 - **يستخدمه:** AdminDashboard.jsx
 
 ### `src/components/admin/AdminPerformanceDashboard.jsx`
@@ -857,13 +875,30 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **يستخدم:** firebase.js
 - **يستخدمه:** QuranMapPage.jsx, QuranMapSurahCard.jsx, QuranSurahAyahsModal.jsx
 
+### `src/lib/badgeRules.js`
+- **يفعل:** BUILT_IN_BADGE_RULES (أيقونة ومقياس وهدف لكل من الأوسمة الست؛ baqarah وstability_95 بلا مقياس = تُمنح فقط من earnedBadges)، badgeRule(badge) لأي وسام (المخصص من criterion)، badgeRuleText للعرض للمشرف.
+- **لماذا:** مصدر واحد لشروط الأوسمة بين شاشة الطالب وشاشة المشرف.
+- **متى:** عند عرض تبويب الأوسمة أو إدارة الأوسمة.
+- **إن تعطّل:** الشاشتان لا تعرفان الأيقونات ولا التقدم.
+- **انتبه:** تعديل هدف هنا يغيّر متى يُفتح الوسام للطلاب فورًا؛ الوصف الظاهر في uiConfiguration لا يتغير تلقائيًا.
+- **يستخدم:** uiConfiguration.js
+- **يستخدمه:** AchievementsView.jsx, AdminExperienceSettings.jsx
+
+### `src/lib/mushafLayout.js`
+- **يفعل:** loadMushafPage(page): يجلب كلمات الصفحة مع رقم سطر كل كلمة ورمز خطها (api.quran.com v4 verses/by_page, code_v2) ويحمّل خط الصفحة (verses.quran.com woff2 عبر FontFace)، ثم يبني الأسطر: words أو surah (عنوان) أو basmala — الأسطر الخالية قبل الآية الأولى = عنوان ثم بسملة (عنوان فقط للفاتحة والتوبة)، وفي أسفل الصفحة للسورة التالية. كاش بالذاكرة؛ prefetchMushafPage للصفحات المجاورة.
+- **لماذا:** بيانات مجمع الملك فهد هي الوحيدة التي تعطي توزيع الأسطر المطابق للمطبوع.
+- **متى:** عند فتح أي صفحة في المصحف التفاعلي.
+- **إن تعطّل:** MushafPage يعرض البديل النصي.
+- **انتبه:** الصفحات 1-2 فيها 8 أسطر والباقي 15. | per_page=50 يكفي لأي صفحة. | لا يمر عبر الخادم ولا يعمل دون إنترنت.
+- **يستخدمه:** MushafPage.jsx
+
 ### `src/lib/uiConfiguration.js`
 - **يفعل:** defaultUiConfiguration: ظهور/ترتيب قسمي المجتمع والإنجازات و6 شارات ثابتة. badgeCriteria: شروط الأوسمة المخصصة (streak، xp، level، pages) — normalize يضيف الأوسمة المخصصة (custom:true مع criterion) بعد الست ويتجاهل غير الصالح منها، وDashboard يفتحها تلقائيًا عند بلوغ الحد. useUiConfiguration يستمع لـ app_config/navigation ويدمجها مع الافتراضي. saveUiConfiguration يكتبها (القواعد: المشرف فقط).
 - **لماذا:** يسمح للمشرف بإخفاء أقسام أو شارات لكل المستخدمين فورًا دون نشر جديد.
 - **متى:** عند تحميل اللوحة (قراءة حية)، وعند الحفظ من إعدادات المشرف.
 - **إن تعطّل:** يرجع للافتراضي (كل شيء ظاهر).
 - **يستخدم:** firebase.js
-- **يستخدمه:** Sidebar.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, AdminExperienceSettings.jsx, Dashboard.jsx
+- **يستخدمه:** Sidebar.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, AdminExperienceSettings.jsx, Dashboard.jsx, badgeRules.js
 
 ### `src/utils/NotificationManager.js`
 - **يفعل:** طلب إذن الإشعارات ثم requestFcmToken، إرسال إشعار محلي عبر Service Worker أو Notification، scheduleNotification بـ setTimeout، والاستماع لرسائل FCM أثناء فتح التطبيق.
@@ -957,11 +992,11 @@ _Express index، routes، middleware، صلاحيات_
 - **يستخدمه:** server/index.js, Community.jsx, NotificationContext.jsx, firebase.js, AdminCommunityView.jsx
 
 ### `server/routes/groups.js`
-- **يفعل:** مسارات الحلقات والمعلم والمشرف وتحليلات الطالب: /groups (قائمة/lookup عام/join/leave)، /admin/* (إنشاء حلقة، users مع status نشط/غير نشط من daysSinceQuranActivity، safar-users، overview بإحصاءات الأسبوع بتوقيت عمّان، assign/remove-teacher، create-teacher لحساب موجود فقط، distribute-student، enrollment-requests)، /teacher/:teacherId/* (students، student/:id مع إحصاءات وتقدم وjoinedDate، مراجعة جلسة، ملاحظات + إشعار للطالب + إشعار دفع، reports، dashboard، enroll/add-student)، /student/analytics، /safar/enrollment-request.
+- **يفعل:** مسارات الحلقات والمعلم والمشرف وتحليلات الطالب: /groups (قائمة/lookup عام/join/leave)، /admin/* (إنشاء حلقة، users مع status نشط/غير نشط من daysSinceQuranActivity (مع ?page: بحث/فلتر/ترتيب الأحدث أولًا و10 لكل صفحة + total/totalPages/adminCount؛ بدون page: القائمة كاملة لـ AdminDistributionView)، safar-users، overview بإحصاءات الأسبوع بتوقيت عمّان، assign/remove-teacher، create-teacher لحساب موجود فقط، distribute-student، enrollment-requests)، /teacher/:teacherId/* (students، student/:id مع إحصاءات وتقدم وjoinedDate، مراجعة جلسة، ملاحظات + إشعار للطالب + إشعار دفع، reports، dashboard، enroll/add-student)، /student/analytics، /safar/enrollment-request.
 - **لماذا:** استبدل منطق safarEcosystem.js (JSON وهمي) بمنطق Firestore حقيقي عبر firestoreGroups.js. كل مسار محمي بـ requireAuth + requireAdmin أو teacherScope (canActAsTeacher).
 - **متى:** عند فتح لوحات المعلم/المشرف، الانضمام لحلقة من المعالج أو JoinGroupModal، وفتح شاشة التحليلات.
 - **إن تعطّل:** TeacherDashboard وTeacherStudents/Groups/Reports وAdminDashboard وAdminDistributionView وJoinGroupModal وOnboardingWizard (خطوة الحلقة) وAnalyticsView.
-- **انتبه:** مراجعة الجلسة وكتابة الملاحظات تشترط أن يكون المستخدم هو المعلم نفسه — المشرف (admin) لا يستطيع رغم أن teacherScope يسمح له بالقراءة. GET /teacher/:id/student/:id يعيد canManage بنفس هذا الشرط لتقرر الواجهة إظهار الأزرار. | /teacher/:id/dashboard و/reports تقرأ كل جلسات كل طالب بلا ترقيم — بطيء مع كثرة البيانات. | GET /groups/lookup عام بلا مصادقة (مقصود: يعرض بيانات الحلقة فقط).
+- **انتبه:** مراجعة الجلسة وكتابة الملاحظات تشترط أن يكون المستخدم هو المعلم نفسه — المشرف (admin) لا يستطيع رغم أن teacherScope يسمح له بالقراءة. GET /teacher/:id/student/:id يعيد canManage بنفس هذا الشرط لتقرر الواجهة إظهار الأزرار. | /teacher/:id/dashboard و/reports تقرأ كل جلسات كل طالب بلا ترقيم — بطيء مع كثرة البيانات. | GET /groups/lookup عام بلا مصادقة (مقصود: يعرض بيانات الحلقة فقط). | ترقيم /admin/users يقلل حجم الرد فقط: الخادم ما زال يقرأ كل مستندات users من Firestore في كل طلب (البحث الجزئي غير مدعوم في Firestore).
 - **يستخدم:** auth.js, accessControl.js, firestoreRecitation.js, quranActivityStreak.js, firestoreGroups.js, teacherScope.js, pushNotifications.js
 - **يستخدمه:** server/index.js, AnalyticsView.jsx, AdminDashboard.jsx, AdminDistributionView.jsx, AdminPerformanceDashboard.jsx, JoinGroupModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, OnboardingWizard.jsx
 

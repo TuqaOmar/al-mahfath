@@ -56,7 +56,27 @@ router.get('/admin/users', requireAuth, requireAdmin, route(async (req, res) => 
     const days = daysSinceQuranActivity(user, now);
     return { ...user, status: days !== null && days < 7 ? 'active' : 'inactive' };
   });
-  success(res, { users });
+  // Without ?page the full list is returned (AdminDistributionView needs every user).
+  if (req.query.page === undefined) return success(res, { users });
+  const pageSize = 10;
+  const search = String(req.query.search || '').trim().toLowerCase();
+  const filter = String(req.query.filter || 'all');
+  const isStaff = u => hasRole(u, 'teacher') || isAdmin(u);
+  const filters = {
+    teacher: u => hasRole(u, 'teacher'),
+    independent: u => !u.isSafarMember && !u.groupId && !isStaff(u),
+    safar_member: u => Boolean(u.isSafarMember || u.groupId),
+    active: u => u.status === 'active',
+    inactive: u => u.status === 'inactive'
+  };
+  const matches = users
+    .filter(u => !search || `${u.name || ''} ${u.email || ''}`.toLowerCase().includes(search))
+    .filter(filters[filter] || (() => true))
+    .sort((a, b) => String(b.createdAt || '').localeCompare(String(a.createdAt || '')) || String(a.name || '').localeCompare(String(b.name || '')));
+  const totalPages = Math.max(1, Math.ceil(matches.length / pageSize));
+  const page = Math.min(Math.max(1, Number.parseInt(req.query.page, 10) || 1), totalPages);
+  success(res, { users: matches.slice((page - 1) * pageSize, page * pageSize), total: matches.length,
+    page, pageSize, totalPages, adminCount: users.filter(isAdmin).length });
 }));
 router.get('/admin/safar-users', requireAuth, requireAdmin, route(async (req, res) => {
   let users = await listUsers();

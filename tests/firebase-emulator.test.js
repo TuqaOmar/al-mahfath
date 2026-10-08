@@ -261,6 +261,15 @@ test('Firestore group lifecycle persists join, transfer, leave, and approval acr
   assert.equal((await api('new-teacher', '/api/teacher/new-teacher/students', 200)).students.length, 1);
   const adminUsers = await api('admin-1', '/api/admin/users', 200);
   assert.equal(adminUsers.users.find(u => u.uid === 'new-student').groupId, group.id);
+  const firstPage = await api('admin-1', '/api/admin/users?page=1', 200);
+  assert.equal(firstPage.total, adminUsers.users.length);
+  assert.equal(firstPage.users.length, Math.min(10, adminUsers.users.length));
+  assert.equal(firstPage.totalPages, Math.max(1, Math.ceil(adminUsers.users.length / 10)));
+  const searched = await api('admin-1', '/api/admin/users?page=1&search=%20NEW-STUDENT%20', 200);
+  assert.ok(searched.users.some(u => u.uid === 'new-student'));
+  const teachers = await api('admin-1', '/api/admin/users?page=1&filter=teacher', 200);
+  assert.ok(teachers.users.length > 0 && teachers.users.every(u => u.role === 'teacher' || u.roles?.teacher === true));
+  assert.equal((await api('admin-1', '/api/admin/users?page=999', 200)).page, firstPage.totalPages);
 });
 
 test('membership and request writes cannot bypass the server transaction', async () => {

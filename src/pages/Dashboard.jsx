@@ -44,6 +44,7 @@ import { PullToRefresh } from '../components/PullToRefresh';
 import { useLanguage } from '../context/LanguageContext';
 import AiAssistant from '../components/AiAssistant';
 import { Community } from '../components/Community';
+import { AchievementsView } from '../components/AchievementsView';
 import { QuranMapPage } from '../components/QuranMapPage';
 import { PostSessionDhikr } from '../components/PostSessionDhikr';
 import { AnalyticsView } from '../components/AnalyticsView';
@@ -875,42 +876,9 @@ const Dashboard = () => {
         if (!uiConfiguration.sections.community.visible) return null;
         return <Community setActiveTab={setActiveTab} />;
 
-      case 'achievements': {
+      case 'achievements':
         if (!uiConfiguration.sections.achievements.visible) return null;
-        const badgeState = {
-          streak_7: { unlocked: user?.streak >= 7, icon: Flame },
-          baqarah: { unlocked: user?.earnedBadges?.includes('baqarah') === true, icon: Award },
-          xp_500: { unlocked: user?.xp >= 500, icon: Sparkles },
-          fortresses_3: { unlocked: Object.values(fortressesToday).filter(Boolean).length >= 3, icon: Shield },
-          stability_95: { unlocked: user?.earnedBadges?.includes('stability_95') === true, icon: Brain },
-          level_5: { unlocked: user?.level >= 5, icon: Trophy }
-        };
-        return (
-          <Card style={{ padding: isMobile ? '20px 16px' : '32px' }}>
-            <h2 style={{ fontSize: '26px', color: 'var(--text-primary)', marginBottom: '8px' }}>🏆 أوسمة وثمار صحبة القرآن</h2>
-            <p style={{ color: 'var(--text-secondary)', marginBottom: '32px' }}>محطات إيمانية وتشجيعية في رحلتك مع كتاب الله.</p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px' }}>
-              {[...uiConfiguration.badges].filter(badge => badge.visible).sort((a, b) => a.order - b.order).map((badge) => {
-                const state = badgeState[badge.id] || {
-                  unlocked: user?.earnedBadges?.includes(badge.id) === true || (badge.criterion && Number({
-                    streak: user?.streak, xp: user?.xp, level: user?.level, pages: declaredPages(user).length
-                  }[badge.criterion.type] || 0) >= badge.criterion.value),
-                  icon: Award
-                };
-                const Icon = state.icon;
-                return <div key={badge.id} data-testid={`achievement-${badge.id}`} style={{ padding: '28px 20px', borderRadius: '20px', background: state.unlocked ? 'var(--primary-light)' : 'var(--bg-color)', border: `1px solid ${state.unlocked ? 'var(--primary)' : 'var(--glass-border)'}`, textAlign: 'center' }}>
-                  <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: state.unlocked ? 'var(--primary)' : 'var(--glass-border)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                    <Icon size={28} />
-                  </div>
-                  <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: 'var(--text-primary)' }}>{badge.title}</h3>
-                  <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>{badge.description}</p>
-                </div>
-              })}
-            </div>
-          </Card>
-        );
-      }
+        return <AchievementsView user={user} badges={uiConfiguration.badges} fortressesToday={fortressesToday} />;
 
       case 'analytics':
         return <AnalyticsView />;

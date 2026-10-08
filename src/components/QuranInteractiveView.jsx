@@ -34,6 +34,7 @@ import { useAuth } from '../context/AuthContext';
 import { useRecitationRecorder } from '../hooks/useRecitationRecorder';
 import { fetchWithAuth } from '../lib/api';
 import { surahs, getJuzForPage, getJuzStartPage } from '../utils/quranData';
+import { MushafPage } from './MushafPage';
 
 const recitersList = [
   { id: 'ar.dossari', name: 'ياسر الدوسري', sub: 'إمام الحرم المكي (تلاوة خاشعة مميزة)' },
@@ -2271,97 +2272,107 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
               </div>
             )}
 
-            <div
-              dir="rtl"
-              lang="ar"
-              style={{
-                padding: isMobile ? '18px 12px' : '28px 36px',
-                borderRadius: '14px',
-                background: 'var(--bg-color)',
-                border: '3px double var(--primary)',
-                fontFamily: 'var(--font-quran)',
-                fontSize: isMobile ? '21px' : '25px',
-                lineHeight: isMobile ? 2.2 : 2.4,
-                color: 'var(--text-primary)',
-                textAlign: 'justify',
-                textAlignLast: 'center'
-              }}
-            >
-              {ayahs.map((ayah) => {
-                const isActive = activeAyahNum === ayah.number;
-                const isRecited = recitedAyahs[ayah.number];
-                const isSurahStart = ayah.numberInSurah === 1;
-                const [basmalaLine, displayText] = splitBasmala(ayah);
+            <MushafPage
+              pageNumber={pageNumber}
+              ayahs={ayahs}
+              activeAyahNum={activeAyahNum}
+              isPlaying={isPlaying}
+              recitedAyahs={recitedAyahs}
+              onAyahClick={handleAyahClick}
+              fallback={(
+                <div
+                  dir="rtl"
+                  lang="ar"
+                  style={{
+                    padding: isMobile ? '18px 12px' : '28px 36px',
+                    borderRadius: '14px',
+                    background: 'var(--bg-color)',
+                    border: '3px double var(--primary)',
+                    fontFamily: 'var(--font-quran)',
+                    fontSize: isMobile ? '21px' : '25px',
+                    lineHeight: isMobile ? 2.2 : 2.4,
+                    color: 'var(--text-primary)',
+                    textAlign: 'justify',
+                    textAlignLast: 'center'
+                  }}
+                >
+                  {ayahs.map((ayah) => {
+                    const isActive = activeAyahNum === ayah.number;
+                    const isRecited = recitedAyahs[ayah.number];
+                    const isSurahStart = ayah.numberInSurah === 1;
+                    const [basmalaLine, displayText] = splitBasmala(ayah);
 
-                return (
-                  <React.Fragment key={ayah.number}>
-                    {isSurahStart && (
-                      <span style={{ display: 'block', textAlign: 'center', margin: '6px 0 4px' }}>
-                        <span style={{
-                          display: 'inline-block',
-                          minWidth: isMobile ? '70%' : '55%',
-                          padding: '2px 18px',
-                          borderRadius: '10px',
-                          border: '2px solid var(--primary)',
-                          background: 'rgba(16, 185, 129, 0.08)',
-                          color: 'var(--primary)',
-                          fontWeight: 800,
-                          fontSize: isMobile ? '19px' : '22px'
-                        }}>
-                          {ayah.surah?.name}
-                        </span>
-                        {basmalaLine && (
-                          <span style={{ display: 'block', fontSize: isMobile ? '20px' : '23px' }}>{basmalaLine}</span>
+                    return (
+                      <React.Fragment key={ayah.number}>
+                        {isSurahStart && (
+                          <span style={{ display: 'block', textAlign: 'center', margin: '6px 0 4px' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              minWidth: isMobile ? '70%' : '55%',
+                              padding: '2px 18px',
+                              borderRadius: '10px',
+                              border: '2px solid var(--primary)',
+                              background: 'rgba(16, 185, 129, 0.08)',
+                              color: 'var(--primary)',
+                              fontWeight: 800,
+                              fontSize: isMobile ? '19px' : '22px'
+                            }}>
+                              {ayah.surah?.name}
+                            </span>
+                            {basmalaLine && (
+                              <span style={{ display: 'block', fontSize: isMobile ? '20px' : '23px' }}>{basmalaLine}</span>
+                            )}
+                          </span>
                         )}
-                      </span>
-                    )}
-                    <span
-                      data-testid={`quran-display-${ayah.number}`}
-                      data-quran-text={ayah.text}
-                      dir="rtl"
-                      lang="ar"
-                      onClick={() => handleAyahClick(ayah.number)}
-                      title={isRecited ? 'تم تسميعها' : undefined}
-                      style={{
-                        cursor: 'pointer',
-                        borderRadius: '6px',
-                        padding: '2px 0',
-                        background: isActive ? 'rgba(16, 185, 129, 0.18)' : 'transparent',
-                        color: isActive ? 'var(--primary)' : 'inherit',
-                        textDecoration: isRecited ? 'underline' : 'none',
-                        textDecorationColor: '#10B981',
-                        textUnderlineOffset: '8px',
-                        boxDecorationBreak: 'clone',
-                        WebkitBoxDecorationBreak: 'clone',
-                        transition: 'background 0.2s ease',
-                        touchAction: 'manipulation'
-                      }}
-                    >
-                      {displayText}
-                      <span style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        minWidth: '1.25em',
-                        height: '1.25em',
-                        padding: '0 2px',
-                        margin: '0 4px',
-                        borderRadius: '50%',
-                        border: '1.5px solid var(--primary)',
-                        color: isActive ? 'white' : 'var(--primary)',
-                        background: isActive ? 'var(--primary)' : 'transparent',
-                        fontSize: '0.55em',
-                        fontWeight: 800,
-                        lineHeight: 1,
-                        verticalAlign: 'middle'
-                      }}>
-                        {toArabicDigits(ayah.numberInSurah)}
-                      </span>
-                    </span>{' '}
-                  </React.Fragment>
-                );
-              })}
-            </div>
+                        <span
+                          data-testid={`quran-display-${ayah.number}`}
+                          data-quran-text={ayah.text}
+                          dir="rtl"
+                          lang="ar"
+                          onClick={() => handleAyahClick(ayah.number)}
+                          title={isRecited ? 'تم تسميعها' : undefined}
+                          style={{
+                            cursor: 'pointer',
+                            borderRadius: '6px',
+                            padding: '2px 0',
+                            background: isActive ? 'rgba(16, 185, 129, 0.18)' : 'transparent',
+                            color: isActive ? 'var(--primary)' : 'inherit',
+                            textDecoration: isRecited ? 'underline' : 'none',
+                            textDecorationColor: '#10B981',
+                            textUnderlineOffset: '8px',
+                            boxDecorationBreak: 'clone',
+                            WebkitBoxDecorationBreak: 'clone',
+                            transition: 'background 0.2s ease',
+                            touchAction: 'manipulation'
+                          }}
+                        >
+                          {displayText}
+                          <span style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '1.25em',
+                            height: '1.25em',
+                            padding: '0 2px',
+                            margin: '0 4px',
+                            borderRadius: '50%',
+                            border: '1.5px solid var(--primary)',
+                            color: isActive ? 'white' : 'var(--primary)',
+                            background: isActive ? 'var(--primary)' : 'transparent',
+                            fontSize: '0.55em',
+                            fontWeight: 800,
+                            lineHeight: 1,
+                            verticalAlign: 'middle'
+                          }}>
+                            {toArabicDigits(ayah.numberInSurah)}
+                          </span>
+                        </span>{' '}
+                      </React.Fragment>
+                    );
+                  })}
+                </div>
+              )}
+            />
           </>
         )}
 
