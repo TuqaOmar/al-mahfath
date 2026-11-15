@@ -1,0 +1,97 @@
+# run: 2026-11-15T19:54:16Z commit 6194861 node v22.23.4
+# env: npm registry unreachable -> firebase-admin/express/dotenv/cors/@google/genai stubbed via node --import (qa/stub.mjs)
+✔ account deletion removes all of the user data, keeps other users, then deletes Auth (3.558841ms)
+✔ account deletion rejects an invalid uid before touching data (1.538273ms)
+file:///home/claude/verify/server/routes/groups.js:1
+import { Router } from 'express';
+         ^^^^^^
+SyntaxError: The requested module 'express' does not provide an export named 'Router'
+    at ModuleJob._instantiate (node:internal/modules/esm/module_job:226:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:335:5)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async file:///home/claude/verify/tests/api-security.test.js:5:26
+
+Node.js v22.23.4
+✖ tests/api-security.test.js (124.632617ms)
+✔ emulator configuration fails closed outside isolated tests (1.342708ms)
+✖ production server initialization rejects emulator hosts (39.524074ms)
+✔ frontend emulator switch requires local emulator mode and excludes production config (0.333806ms)
+✔ rate limit blocks a user after max requests and keeps users separate (0.801539ms)
+✔ reference: 604 pages and 114 surahs load (2.127504ms)
+✔ perfect recitation of al-Fatiha scores 100 (5.173617ms)
+✔ same words without diacritics (speech-to-text style) still pass (5.06586ms)
+✔ empty / unrelated recitation scores low (1.000656ms)
+✔ missing half of the text lowers the score (1.307261ms)
+✔ full-page comparison works on page 1 (4.685743ms)
+✔ repeating the same ayah twice is not rewarded as extra correct words (4.33187ms)
+✔ streak: same day keeps, next day +1, gap resets (Amman time) (58.529145ms)
+✔ Al-Fatiha: skipping ayah 1 (the Basmalah) must NOT give 100% (2.571969ms)
+✔ empty recitation gives 0, not a crash or NaN (0.440156ms)
+✔ words in shuffled order are penalised (3.461566ms)
+✔ full page: reading only first ayah of page 2 is not near-perfect (1.966345ms)
+✔ At-Tawbah (no Basmalah) perfect recitation = 100 (6.10813ms)
+✔ Muqattaat spelled out (ألف لام ميم) are accepted (0.731516ms)
+✔ every one of the 604 pages self-compares to >=99 (16339.003926ms)
+✔ every page passes when read as plain (no tashkeel) text, as speech-to-text returns (14134.717243ms)
+✔ missing ffmpeg is reported as an error instead of crashing the server (7.522039ms)
+⚠️ No Firebase Admin credentials found. Protected API authentication requires credentials or the Firebase Auth emulator.
+✔ student has no teacher or admin authority (0.824657ms)
+✔ teacher can act only as their own teacher identity (0.123113ms)
+✔ admin can administer any teacher scope (0.080772ms)
+✔ multi-role account receives every role from roles map (0.078975ms)
+✔ teacher group and student relationship is enforced (1.046408ms)
+✔ recitation page statistics are isolated per user (0.876465ms)
+✔ Firestore rules keep roles and system counters outside self-editable fields (5.755925ms)
+✔ Quran activity streak uses the Amman calendar boundary (12.74819ms)
+✔ teacher relationship requires canonical active membership and current group ownership (0.28825ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 31
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 31411.998252
+
+✖ failing tests:
+
+test at tests/api-security.test.js:1:1
+✖ tests/api-security.test.js (124.632617ms)
+  'test failed'
+
+test at tests/emulator-safety.test.js:21:1
+✖ production server initialization rejects emulator hosts (39.524074ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Firebase emulators require explicit test mode/. Input:
+  
+  'node:internal/modules/package_json_reader:314\n' +
+    '  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);\n' +
+    '        ^\n' +
+    '\n' +
+    "Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'firebase-admin' imported from /home/claude/verify/server/middleware/auth.js\n" +
+    '    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9)\n' +
+    '    at packageResolve (node:internal/modules/esm/resolve:772:81)\n' +
+    '    at moduleResolve (node:internal/modules/esm/resolve:859:18)\n' +
+    '    at defaultResolve (node:internal/modules/esm/resolve:989:11)\n' +
+    '    at #cachedDefaultResolve (node:internal/modules/esm/loader:747:20)\n' +
+    '    at ModuleLoader.resolve (node:internal/modules/esm/loader:724:38)\n' +
+    '    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:320:38)\n' +
+    '    at ModuleJob._link (node:internal/modules/esm/module_job:182:49) {\n' +
+    "  code: 'ERR_MODULE_NOT_FOUND'\n" +
+    '}\n' +
+    '\n' +
+    'Node.js v22.23.4\n'
+  
+      at TestContext.<anonymous> (file:///home/claude/verify/tests/emulator-safety.test.js:26:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:296:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: "node:internal/modules/package_json_reader:314\n  throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);\n        ^\n\nError [ERR_MODULE_NOT_FOUND]: Cannot find package 'firebase-admin' imported from /home/claude/verify/server/middleware/auth.js\n    at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9)\n    at packageResolve (node:internal/modules/esm/resolve:772:81)\n    at moduleResolve (node:internal/modules/esm/resolve:859:18)\n    at defaultResolve (node:internal/modules/esm/resolve:989:11)\n    at #cachedDefaultResolve (node:internal/modules/esm/loader:747:20)\n    at ModuleLoader.resolve (node:internal/modules/esm/loader:724:38)\n    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:320:38)\n    at ModuleJob._link (node:internal/modules/esm/module_job:182:49) {\n  code: 'ERR_MODULE_NOT_FOUND'\n}\n\nNode.js v22.23.4\n",
+    expected: /Firebase emulators require explicit test mode/,
+    operator: 'match',
+    diff: 'simple'
+  }

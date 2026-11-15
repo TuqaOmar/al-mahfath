@@ -1,0 +1,25 @@
+OK src/main.jsx 97 files
+OK server/index.js 18 files
+OK api/index.js 19 files
+--- unreferenced source files
+server/data/quran-uthmani.json
+--- client API calls without server route
+MOUNTS [('/api', 'groupsRouter'), ('/api', 'communityRouter'), ('/api/admin', 'requireAuth')]
+CLIENT CALLS WITHOUT SERVER ROUTE:
+  ('/api/teacher/X/add-student', 'src/components/teacher/TeacherStudentsView.jsx', 138)
+total server routes 170 client calls 61
+--- server routes with no client caller
+GET /api/ai/recitation-status
+POST /api/auth/admin
+POST /api/auth/demo
+POST /api/auth/google
+POST /api/auth/login
+POST /api/auth/signup
+GET /api/health
+GET /api/quran/pages
+POST /api/quran/pages/:pageNumber/review
+GET /api/quran/reference/surah/:surahNumber
+POST /api/safar/enrollment-request
+GET /api/teacher/:teacherId/dashboard
+POST /api/teacher/:teacherId/enroll-student
+GET /api/teacher/:teacherId/students
