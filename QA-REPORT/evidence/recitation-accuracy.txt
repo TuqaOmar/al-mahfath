@@ -1,0 +1,60 @@
+TC-REC-10: accuracy=38 statuses=["correct","correct","missing_word","correct","missing_word","missing_word","missing_word","missing_word"]
+TC-REC-11: accuracy=96 statuses=["correct","correct","correct","correct","correct","correct","correct","correct","extra_word"]
+TC-REC-12: accuracy=80 statuses=["correct","correct","correct","word_error","correct"]
+TC-REC-12b: accuracy=75 statuses=["grammar_error","correct","correct","correct"]
+TC-REC-12b message: grammar_error حذف أداة التعريف (الـ): المتوقع [ٱلْحَمْدُ] ونطقت نكرة [شكرا]
+TC-REC-13: accuracy=81 statuses=["missing_word","correct","extra_word","correct","correct","correct","correct","correct"]
+TC-REC-14: accuracy=96 statuses=["correct","extra_word","correct","correct","correct","correct","correct","correct"]
+TC-REC-15: accuracy=95 statuses=["correct","correct","correct","correct","correct","correct","correct","diacritic_error"]
+TC-REC-16: accuracy=100 statuses=["correct","correct","correct","correct","correct","correct","correct"]
+TC-REC-17: accuracy=43 statuses=["correct","correct","correct","missing_word","missing_word","missing_word","missing_word"]
+TC-REC-18: accuracy=0 statuses=["missing_word","missing_word","missing_word","missing_word","missing_word","missing_word","word_error","extra_word","extra_word","extra_word","extra_word","extra_word","extra_word","extra_word"]
+TC-REC-19: accuracy=100 statuses=["correct","correct","correct","correct","correct","correct","correct","correct","correct","correct","correct","correct","correct","correct","correct"]
+TC-REC-20: accuracy=100 statuses=["correct","correct","correct","correct"]
+✔ TC-REC-10 missing word is flagged as missing_word and lowers score (3.222075ms)
+✔ TC-REC-11 extra word is flagged as extra_word (0.978178ms)
+✔ TC-REC-12 substituted word is flagged on that exact word (0.565535ms)
+✖ TC-REC-12b a different word replacing an «ال» word is reported as a different word, not as «حذف أداة التعريف» (1.251967ms)
+✔ TC-REC-13 swapped word order is penalised (0.714308ms)
+✔ TC-REC-14 repeated word (stutter) is penalised only lightly (0.67203ms)
+✔ TC-REC-15 wrong final harakah (i‘rab) with diacritics is detected (0.557708ms)
+✔ TC-REC-16 plain text without tashkeel (speech-to-text) is not punished (0.57916ms)
+✔ TC-REC-17 stopping mid-ayah gives a partial score, not success (0.466862ms)
+✔ TC-REC-18 reading a different ayah scores low (0.61687ms)
+✔ TC-REC-19 two consecutive ayahs read together match the two-ayah reference (1.222797ms)
+✔ TC-REC-20 accepted spelling variants (alif wasla / hamza forms) are not errors (0.422518ms)
+✔ TC-REC-21 accuracy is always within 0..100 and never NaN (2.567936ms)
+✔ TC-REC-22 Quran reference text is untouched (al-Fatiha matches the bundled Uthmani source) (17.64868ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 156.872368
+
+✖ failing tests:
+
+test at QA-REPORT/automation/recitation-accuracy.qa.test.js:33:1
+✖ TC-REC-12b a different word replacing an «ال» word is reported as a different word, not as «حذف أداة التعريف» (1.251967ms)
+  AssertionError [ERR_ASSERTION]: got grammar_error: حذف أداة التعريف (الـ): المتوقع [ٱلْحَمْدُ] ونطقت نكرة [شكرا]
+  + actual - expected
+  
+  + 'grammar_error'
+  - 'word_error'
+  
+      at TestContext.<anonymous> (file:///home/claude/verify/QA-REPORT/automation/recitation-accuracy.qa.test.js:37:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1047:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:744:18)
+      at Test.postRun (node:internal/test_runner/test:1173:19)
+      at Test.run (node:internal/test_runner/test:1101:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:744:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'grammar_error',
+    expected: 'word_error',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
