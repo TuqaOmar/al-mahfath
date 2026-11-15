@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
+import { useLanguage } from './LanguageContext';
 import { fetchWithAuth } from '../lib/api';
 import { requestFcmToken } from '../lib/firebase';
 
@@ -23,6 +24,11 @@ const DEFAULT_REMINDER_SETTINGS = {
 
 export const NotificationProvider = ({ children }) => {
   const { user } = useAuth();
+  const { lang } = useLanguage();
+  // Read through a ref so long-lived callbacks/timers always use the current language.
+  const langRef = useRef(lang);
+  langRef.current = lang;
+  const L = (arText, enText) => (langRef.current === 'en' ? enText : arText);
   const [notifications, setNotifications] = useState([]);
 
   const [reminderSettings, setReminderSettings] = useState(() => {
@@ -65,7 +71,7 @@ export const NotificationProvider = ({ children }) => {
     try {
       const response = await fetchWithAuth('/api/notifications');
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل الإشعارات');
+      if (!response.ok || !data.success) throw new Error(data.message || L('تعذر تحميل الإشعارات', 'Could not load notifications'));
       setNotifications(previous => [
         ...(data.notifications || []).map(item => ({ ...item, source: 'server' })),
         ...previous.filter(item => item.source !== 'server')
@@ -196,8 +202,8 @@ export const NotificationProvider = ({ children }) => {
   const requestBrowserPermission = async () => {
     if (typeof window === 'undefined' || !('Notification' in window)) {
       setToast({
-        title: 'إشعارات المتصفح غير مدعومة',
-        message: 'متصفحك الحالي لا يدعم إشعارات النظام الخارجية. التنبيهات الصوتية والداخلية تعمل بنجاح.',
+        title: L('إشعارات المتصفح غير مدعومة', 'Browser notifications not supported'),
+        message: L('متصفحك الحالي لا يدعم إشعارات النظام الخارجية. التنبيهات الصوتية والداخلية تعمل بنجاح.', 'Your browser does not support system notifications. In-app and sound alerts still work.'),
         icon: 'ℹ️'
       });
       setTimeout(() => setToast(null), 4500);
@@ -211,18 +217,18 @@ export const NotificationProvider = ({ children }) => {
       if (isGranted) {
         if (user?.uid) requestFcmToken(user.uid);
         setToast({
-          title: 'تم تفعيل إشعارات المتصفح بنجاح! 🔔',
-          message: 'ستصلك التنبيهات على جهازك ومكتملة بالصوت.',
+          title: L('تم تفعيل إشعارات المتصفح بنجاح! 🔔', 'Browser notifications enabled! 🔔'),
+          message: L('ستصلك التنبيهات على جهازك ومكتملة بالصوت.', 'You will get alerts on your device with sound.'),
           icon: '✅'
         });
         dispatchNativeNotification(
-          'الْمَحْفَظَة AI — تفعيل التنبيهات بنجاح',
-          'تم تفعيل إشعارات وتذكير المراجعة اليومية على جهازك المبارك بنجاح.'
+          L('الْمَحْفَظَة AI — تفعيل التنبيهات بنجاح', 'Ma7fath AI — notifications enabled'),
+          L('تم تفعيل إشعارات وتذكير المراجعة اليومية على جهازك المبارك بنجاح.', 'Daily review reminders are now enabled on your device.')
         );
       } else if (permission === 'denied') {
         setToast({
-          title: 'تم حظر إذن الإشعارات',
-          message: 'يرجى السماح بالإشعارات من إعدادات المتصفح أو أيقونة القفل بجانب شريط الرابط.',
+          title: L('تم حظر إذن الإشعارات', 'Notification permission blocked'),
+          message: L('يرجى السماح بالإشعارات من إعدادات المتصفح أو أيقونة القفل بجانب شريط الرابط.', 'Please allow notifications from browser settings or the lock icon next to the address bar.'),
           icon: '⚠️'
         });
       }
@@ -240,13 +246,16 @@ export const NotificationProvider = ({ children }) => {
 
     // Focus Area Labels
     const focusLabels = {
-      five_fortresses: 'خطة الحصون الخمسة اليومية 🛡️',
-      near_review: 'المراجعة القريبة (آخر 20 صفحة) ⚡',
-      old_review: 'مراجعة الماضي البعيد 📚',
-      hadr_reading: 'ورد قراءة الحدر والتحضير 📖'
+      five_fortresses: L('خطة الحصون الخمسة اليومية 🛡️', 'Daily Five Fortresses plan 🛡️'),
+      near_review: L('المراجعة القريبة (آخر 20 صفحة) ⚡', 'Near review (last 20 pages) ⚡'),
+      old_review: L('مراجعة الماضي البعيد 📚', 'Far review 📚'),
+      hadr_reading: L('ورد قراءة الحدر والتحضير 📖', 'Fast reading and preparation 📖')
     };
 
-    const focusTitle = focusLabels[reminderSettings.focusArea] || 'جلسة المراجعة اليومية 📖';
+    const focusTitle = focusLabels[reminderSettings.focusArea] || L('جلسة المراجعة اليومية 📖', 'Daily review session 📖');
+    // Default texts are stored in Arabic; show them translated, keep anything the user customised.
+    const reminderTitle = reminderSettings.title && reminderSettings.title !== DEFAULT_REMINDER_SETTINGS.title ? reminderSettings.title : L('حان موعد جلسة المراجعة اليومية 📖', 'Time for your daily review session 📖');
+    const reminderMessage = reminderSettings.message && reminderSettings.message !== DEFAULT_REMINDER_SETTINGS.message ? reminderSettings.message : L('تثبيت المحفوظ سر إتقان القرآن الكريم. خُصص لك هذا الوقت لإنجاز ورد المراجعة والحصون الخمسة.', 'Steady review is the secret of mastering the Quran. This time is set aside for your review and Five Fortresses.');
 
     // Play tone if sound enabled
     if (reminderSettings.soundEnabled) {
@@ -256,16 +265,16 @@ export const NotificationProvider = ({ children }) => {
     // Fire browser native notification if permitted (Laptop / Android / PWA)
     if (reminderSettings.browserPushEnabled) {
       dispatchNativeNotification(
-        'الْمَحْفَظَة AI — تذكير المراجعة اليومية',
-        customMsg || `${focusTitle}: حان وقت تثبيت حفظك والوفاء بوردك اليومي المبارك!`
+        L('الْمَحْفَظَة AI — تذكير المراجعة اليومية', 'Ma7fath AI — daily review reminder'),
+        customMsg || (langRef.current === 'en' ? `${focusTitle}: time to strengthen your memorization and complete today\'s portion!` : `${focusTitle}: حان وقت تثبيت حفظك والوفاء بوردك اليومي المبارك!`)
       );
     }
 
     // Set simulated in-app push alert popup
     setActiveReminderAlert({
       id: `alert_${Date.now()}`,
-      title: reminderSettings.title || 'حان موعد جلسة المراجعة اليومية 📖',
-      message: customMsg || reminderSettings.message || 'تثبيت المحفوظ سر إتقان القرآن الكريم. خُصص لك هذا الوقت لإنجاز ورد المراجعة والحصون الخمسة.',
+      title: reminderTitle,
+      message: customMsg || reminderMessage,
       focusLabel: focusTitle,
       focusArea: reminderSettings.focusArea,
       scheduledTime: reminderSettings.time,
@@ -276,11 +285,11 @@ export const NotificationProvider = ({ children }) => {
     // Add to notification list
     const newNotif = {
       id: `reminder_notif_${Date.now()}`,
-      title: '⏰ تذكير: موعد جلسة المراجعة',
-      message: `حان وقت جلسة: ${focusTitle}. تم تفعيل التنبيه لضمان استمرار وردك وتثبيت حفظك.`,
+      title: L('⏰ تذكير: موعد جلسة المراجعة', '⏰ Reminder: review session'),
+      message: langRef.current === 'en' ? `Time for: ${focusTitle}. Keep your portion going and your memorization firm.` : `حان وقت جلسة: ${focusTitle}. تم تفعيل التنبيه لضمان استمرار وردك وتثبيت حفظك.`,
       type: 'reminder',
-      category: 'تذكير المراجعة',
-      timestamp: 'الآن',
+      category: L('تذكير المراجعة', 'Review reminder'),
+      timestamp: L('الآن', 'Now'),
       read: false,
       icon: '⏰',
       source: 'local-reminder'
@@ -296,7 +305,7 @@ export const NotificationProvider = ({ children }) => {
 
   // Test push notification immediately
   const testReminderNow = () => {
-    triggerReviewReminder('تجربة الإشعار اليومي: تم تفعيل تنبيه جلسة المراجعة بنجاح! 🔔', true);
+    triggerReviewReminder(L('تجربة الإشعار اليومي: تم تفعيل تنبيه جلسة المراجعة بنجاح! 🔔', 'Test notification: your daily review reminder works! 🔔'), true);
   };
 
   // Dismiss in-app reminder alert
@@ -310,8 +319,8 @@ export const NotificationProvider = ({ children }) => {
     updateReminderSettings({ snoozeUntil: snoozeTime });
     setActiveReminderAlert(null);
     setToast({
-      title: `تم تأجيل التذكير ⏳`,
-      message: `سنذكرك مرة أخرى بعد ${minutes} دقيقة من الآن بإذن الله.`,
+      title: L('تم تأجيل التذكير ⏳', 'Reminder snoozed ⏳'),
+      message: langRef.current === 'en' ? `We will remind you again in ${minutes} minutes.` : `سنذكرك مرة أخرى بعد ${minutes} دقيقة من الآن بإذن الله.`,
       icon: '⏰'
     });
     setTimeout(() => setToast(null), 4000);
@@ -331,7 +340,7 @@ export const NotificationProvider = ({ children }) => {
       // Check if snoozed
       if (reminderSettings.snoozeUntil) {
         if (Date.now() >= reminderSettings.snoozeUntil) {
-          triggerReviewReminder('انتهى وقت التأجيل: حان وقت بدء جلسة المراجعة الآن ⚡', false);
+          triggerReviewReminder(L('انتهى وقت التأجيل: حان وقت بدء جلسة المراجعة الآن ⚡', 'Snooze over: time to start your review session ⚡'), false);
           return;
         }
       }
@@ -413,7 +422,7 @@ export const NotificationProvider = ({ children }) => {
     setActiveCelebration({
       title,
       message,
-      badgeTitle: badgeTitle || (type === 'wird' ? 'فارس الحصون' : 'بطل الخرائط الذهنية'),
+      badgeTitle: badgeTitle || (type === 'wird' ? L('فارس الحصون', 'Fortress Knight') : L('بطل الخرائط الذهنية', 'Mind-map Champion')),
       type,
       xpBonus,
       categoryName
@@ -456,8 +465,8 @@ export const NotificationProvider = ({ children }) => {
       title,
       message,
       type,
-      category: type === 'wird' ? 'ورد الحفظ' : (type === 'mindmap' ? 'خريطة ذهنية' : 'إنجاز'),
-      timestamp: 'الآن',
+      category: type === 'wird' ? L('ورد الحفظ', 'Memorization portion') : (type === 'mindmap' ? L('خريطة ذهنية', 'Mind map') : L('إنجاز', 'Achievement')),
+      timestamp: L('الآن', 'Now'),
       read: false,
       icon,
       xpBonus,
@@ -490,8 +499,8 @@ export const NotificationProvider = ({ children }) => {
     const nextState = !soundEnabled;
     updateReminderSettings({ soundEnabled: nextState });
     showToast({
-      title: nextState ? 'تم تفعيل الصوت' : 'تم كتم الصوت',
-      message: nextState ? 'أصوات النغمات والتنبيهات التفاعلية قيد التشغيل' : 'تم كتم جميع النغمات والأصوات التفاعلية',
+      title: nextState ? L('تم تفعيل الصوت', 'Sound on') : L('تم كتم الصوت', 'Sound muted'),
+      message: nextState ? L('أصوات النغمات والتنبيهات التفاعلية قيد التشغيل', 'Tones and interactive sounds are on') : L('تم كتم جميع النغمات والأصوات التفاعلية', 'All tones and interactive sounds are muted'),
       icon: nextState ? '🔊' : '🔇'
     }, 2800);
   };

@@ -5,9 +5,9 @@ This repository is the Ma7fath AI Quran memorization platform. It is a bilingual
 ## Project overview
 
 - Frontend: Vite + React in `src/` with routes managed by `src/App.jsx`.
-- Backend: Express server in `server/index.js`, with database logic in `server/database.js` and recitation logic in `server/recitationEngine.js`.
+- Backend: Express server in `server/index.js`, with Firestore data logic in `server/firestore*.js` / `server/routes/`, account deletion in `server/accountDeletion.js`, and recitation logic in `server/recitationEngine.js`.
 - Data services: Firebase Auth/Firestore/Storage via `src/lib/firebase.js`.
-- AI: Gemini API usage is server-side in `server/index.js` (`/api/ai/chat`) and `server/recitationEngine.js`. `src/utils/quranAiEngine.js` is legacy and no longer imported.
+- AI: Gemini API usage is server-side in `server/index.js` (`/api/ai/chat`) and `server/recitationEngine.js` (model list: `GEMINI_MODELS`). AI routes are rate-limited by `server/middleware/rateLimit.js`.
 - Mobile packaging: Capacitor config in `capacitor.config.ts` with Android/iOS projects under `android/` and `ios/`.
 
 ## Core commands
@@ -55,4 +55,4 @@ This repository is the Ma7fath AI Quran memorization platform. It is a bilingual
 - Frontend app entry: `src/App.jsx`
 - Server entry: `server/index.js`
 - Firebase setup: `src/lib/firebase.js`
-- AI engine: `src/utils/quranAiEngine.js`
+- Recitation engine: `server/recitationEngine.js` (tests: `npm run test:engine`)

@@ -5,6 +5,11 @@ import { GoogleGenAI } from '@google/genai';
 /**
  * Strips verse numbers, parenthesis, brackets, pause symbols and extra punctuation
  */
+// One list for every Gemini call (chat, direct evaluation, transcription) and for
+// /api/ai/recitation-status, so the status endpoint reports what is really used.
+export const GEMINI_MODELS = Object.freeze(['gemini-flash-latest', 'gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.1-flash-lite']);
+export const WHISPER_MODELS = Object.freeze(['tarteel-ai/whisper-base-ar-quran', 'openai/whisper-large-v3-turbo', 'openai/whisper-large-v3']);
+
 export function cleanQuranText(text) {
   if (!text) return '';
   return text
@@ -381,7 +386,11 @@ export function compareRecitation(expectedText, spokenText) {
   const basmalahPattern = /^بِسْمِ\s+ٱللَّهِ\s+ٱلرَّحْمَٰنِ\s+ٱلرَّحِيمِ\s+/;
   const spokenHasBasmalah = /^(?:بِسْمِ|بسم|باسم)\s+(?:ٱللَّهِ|الله|الاه)/.test(processedSpoken.trim());
   let cleanExp = cleanQuranText(expectedText);
-  if (basmalahPattern.test(cleanExp) && !spokenHasBasmalah) {
+  // In al-Fatiha the Basmalah is ayah 1 itself (followed by «ٱلْحَمْدُ لِلَّهِ رَبِّ ٱلْعَٰلَمِينَ»),
+  // so skipping it is a real mistake there; only other surahs get the optional-opening pass.
+  const isFatihaOpening = cleanExp.replace(basmalahPattern, '').split(/\s+/).slice(0, 4).map(normalizeQuran).join(' ') ===
+    'الحمد لله رب العلمين'; // normalizeQuran drops the dagger alif of ٱلْعَٰلَمِينَ
+  if (basmalahPattern.test(cleanExp) && !spokenHasBasmalah && !isFatihaOpening) {
     cleanExp = cleanExp.replace(basmalahPattern, '');
   }
 
@@ -763,6 +772,10 @@ export async function convertTo16kHzWav(audioBuffer) {
     const chunks = [];
     const errors = [];
 
+    // Without these handlers a missing ffmpeg binary (ENOENT, e.g. on Vercel) or a
+    // closed pipe (EPIPE) is an unhandled 'error' event that crashes the whole server.
+    ffmpeg.on('error', reject);
+    ffmpeg.stdin.on('error', () => {});
     ffmpeg.stdout.on('data', chunk => chunks.push(chunk));
     ffmpeg.stderr.on('data', err => errors.push(err));
 
@@ -788,7 +801,7 @@ export async function evaluateRecitationAudioDirect(audioBuffer, expectedText, a
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const candidateModels = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.1-flash-lite'];
+  const candidateModels = GEMINI_MODELS;
   const base64Audio = audioBuffer.toString('base64');
 
   const prompt = `أنت شيخ ومقرئ قرآن مجاز ومحكّم متقن في مسابقات القرآن الكريم العالمية.
@@ -875,7 +888,7 @@ export async function transcribeWithGemini(audioBuffer, expectedHint, isFullPage
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return null;
 
-  const candidateModels = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.1-flash-lite'];
+  const candidateModels = GEMINI_MODELS;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -929,11 +942,7 @@ ${expectedHint || ''}`;
 export async function transcribeWithHuggingFace(wavBuffer, token) {
   const hfToken = token || process.env.HUGGINGFACE_TOKEN || '';
 
-  const models = [
-    'tarteel-ai/whisper-base-ar-quran',
-    'openai/whisper-large-v3-turbo',
-    'openai/whisper-large-v3'
-  ];
+  const models = WHISPER_MODELS;
 
   let lastError = null;
 
@@ -1009,11 +1018,17 @@ export async function analyzeRecitation({ audioBuffer, expectedText, ayahs = [],
           ? directEval.mistakes
           : (comparison.mistakes || []);
 
-        const ratingInfo = getRatingColor(directEval.accuracy);
+        // The score shown to the student is the same algorithm that colours the
+        // words, so the number and the highlighted mistakes always agree. The
+        // model's own estimate is kept separately for reference only.
+        const algorithmicAccuracy = Number.isFinite(comparison.accuracy) ? comparison.accuracy
+          : (Number.isFinite(comparison.pageAccuracy) ? comparison.pageAccuracy : directEval.accuracy);
+        const ratingInfo = getRatingColor(algorithmicAccuracy);
 
         return {
-          accuracy: directEval.accuracy,
-          pageAccuracy: directEval.accuracy,
+          accuracy: algorithmicAccuracy,
+          pageAccuracy: algorithmicAccuracy,
+          modelAccuracy: directEval.accuracy,
           rating: ratingInfo.rating,
           ratingColor: ratingInfo.color,
           ratingIcon: ratingInfo.icon,

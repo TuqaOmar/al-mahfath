@@ -1,3 +1,4 @@
+import { DEFAULT_DAILY_TARGET, DEFAULT_OLD_REVIEW_TARGET } from '../lib/planDefaults';
 import { declaredPages, nextDeclaredPage } from '../lib/memorization';
 import React, { useState, useEffect, useRef } from 'react';
 import { 
@@ -65,10 +66,10 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
   const [aiPlanDraft, setAiPlanDraft] = useState(false);
 
   // Customizer preferences
-  const [customDailyTarget, setCustomDailyTarget] = useState(user?.preferences?.dailyTarget || 'صفحة واحدة يومياً');
+  const [customDailyTarget, setCustomDailyTarget] = useState(user?.preferences?.dailyTarget || DEFAULT_DAILY_TARGET);
   const [customReadingWird, setCustomReadingWird] = useState(user?.preferences?.readingWirdTarget || 'جزء كامل يومياً (20 صفحة)');
   const [customNearReview, setCustomNearReview] = useState(user?.preferences?.nearReviewTarget || 'آخر 20 صفحة تم حفظها');
-  const [customOldReview, setCustomOldReview] = useState(user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً (10 صفحات)');
+  const [customOldReview, setCustomOldReview] = useState(user?.preferences?.oldReviewDailyTarget || DEFAULT_OLD_REVIEW_TARGET);
   const [customRestDay, setCustomRestDay] = useState(user?.preferences?.restDay || 'يوم الجمعة (مراجعة وتثبيت + سورة الكهف)');
   const [isPlanSaved, setIsPlanSaved] = useState(false);
   const [isCustomSaving, setIsCustomSaving] = useState(false);
@@ -214,10 +215,10 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
       setCustomDraft(false);
     } catch (error) {
       setActionError(error.message);
-      setCustomDailyTarget(user?.preferences?.dailyTarget || 'صفحة واحدة يومياً');
+      setCustomDailyTarget(user?.preferences?.dailyTarget || DEFAULT_DAILY_TARGET);
       setCustomReadingWird(user?.preferences?.readingWirdTarget || 'جزء كامل يومياً (20 صفحة)');
       setCustomNearReview(user?.preferences?.nearReviewTarget || 'آخر 20 صفحة تم حفظها');
-      setCustomOldReview(user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً (10 صفحات)');
+      setCustomOldReview(user?.preferences?.oldReviewDailyTarget || DEFAULT_OLD_REVIEW_TARGET);
       setCustomRestDay(user?.preferences?.restDay || 'يوم الجمعة (مراجعة وتثبيت + سورة الكهف)');
       setCustomDraft(false);
     } finally {

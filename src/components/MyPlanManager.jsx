@@ -1,3 +1,4 @@
+import { DEFAULT_DAILY_TARGET, DEFAULT_OLD_REVIEW_TARGET } from '../lib/planDefaults';
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -29,7 +30,7 @@ export const MyPlanManager = () => {
   const preferences = user?.preferences || {};
 
   const [unitType, setUnitType] = useState(preferences.unitType || 'juzs'); // 'pages' | 'juzs' | 'surahs'
-  const [oldReviewDailyTarget, setOldReviewDailyTarget] = useState(preferences.oldReviewDailyTarget || 'نصف جزء يومياً (10 صفحات)');
+  const [oldReviewDailyTarget, setOldReviewDailyTarget] = useState(preferences.oldReviewDailyTarget || DEFAULT_OLD_REVIEW_TARGET);
   const [selectedSurahRange, setSelectedSurahRange] = useState(preferences.selectedSurahRange || 'سورة البقرة وآل عمران');
   
   // Array of selected individual Juz numbers (e.g. [1, 30])
@@ -47,7 +48,7 @@ export const MyPlanManager = () => {
   const juzLabel = list => list.length === 0 ? 'لا يوجد أجزاء مسبقة' : list.map(n => `الجزء ${n}`).join('، ');
   const [juzsMemorized, setJuzsMemorized] = useState(() => preferences.juzsMemorized || juzLabel(selectedJuzList));
   const [planCreatorMode, setPlanCreatorMode] = useState(preferences.planCreatorMode || 'ai'); // 'ai' | 'manual'
-  const [dailyTarget, setDailyTarget] = useState(preferences.dailyTarget || 'صفحة واحدة يومياً');
+  const [dailyTarget, setDailyTarget] = useState(preferences.dailyTarget || DEFAULT_DAILY_TARGET);
   const [manualNewTarget, setManualNewTarget] = useState(preferences.manualNewTarget || '1');
   const [manualOldReviewTarget, setManualOldReviewTarget] = useState(preferences.manualOldReviewTarget || '10');
 

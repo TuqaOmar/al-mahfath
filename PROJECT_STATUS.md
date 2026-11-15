@@ -1,5 +1,23 @@
 # Ma7fath AI — current status and teacher-scope follow-up
 
+## Audit fixes — 2026-11-15, Asia/Amman
+
+Fixed every issue from the 2026-11-15 feature-by-feature audit except where noted. Older sections below are historical; where they mention `database.js`, `safarEcosystem.js`, `AdminPanel`, `QuranSurahAyahsModal`, `FloatingAiButton` or the duplicate `admin-panel` case, those files/cases are now deleted.
+
+| Area | Change |
+|---|---|
+| Server crash | `convertTo16kHzWav` handles a missing `ffmpeg` (ENOENT) and EPIPE instead of crashing the process. Covered by `npm run test:engine`. |
+| Private data in public repo | Removed `server/db.json` and `server/safar_data.json` (emails, admin password hash/salt, chat history) and added them to `.gitignore`. **They remain in git history** until the history is rewritten or the repository is made private. |
+| Account deletion | New `DELETE /api/user/me` (`server/accountDeletion.js`) removes profile + subcollections, community posts/comments/likes, membership, enrollment request, avatars, then the Auth user. No recent-login popup, so it works on mobile and for email accounts. |
+| Al-Fatiha | Skipping the Basmalah (ayah 1) is now counted as missing in ayah/surah mode (was 100%). |
+| AI assistant | `/api/ai/chat` returns `fallback`/`fallbackReason`; the UI shows a notice when the built-in engine answered instead of Gemini. |
+| Rate limiting | Per-user in-memory limits on `/api/ai/chat` (20/min) and `/api/ai/recitation-check` (15/min). |
+| English mode | Student/public screens translated: AiAssistant, SimplifiedFortressPlan, NotificationContext, PWAInstallButton, AnalyticsView, VisualProgressTracker, PostSessionDhikr, MobileWelcomeView. Teacher/admin portals remain mostly Arabic. |
+| Cleanup | Deleted 16 dead files + AdminPanel, NotificationManager, legacy audit script, corrupted `TRACKING.md`, stray `test-auth.js`/`testStreak.cjs`, unreferenced `public/mock-google-login.html`; removed the duplicate `admin-panel` case; one `defaultUserFields()`; shared plan defaults; single Gemini/Whisper model list; README rewritten. |
+
+**Checks run here (no npm registry access in this environment):** esbuild bundle of `src/main.jsx`, `server/index.js`, `api/index.js` (no errors/warnings); client→server API route match; `node --test tests/recitation-engine.test.js` and the pure tests of `tests/security.test.js` / `tests/emulator-safety.test.js` with Firebase/Express stubbed. **Not run here:** `npm run build`, `test:emulator`, browser suite, real Firebase account deletion — run them locally before deploying.
+
+
 ## Mobile responsive layout — verified 2026-10-05, local Chrome
 
 Updated the dashboard section navigation, mobile header controls, drawer sizing, theme switch target, and safe-area handling. Desktop layouts remain on their existing styles. The browser test uses Chrome 154.0.8037.93 with mobile emulation, touch input, and Arabic locale; it does not connect to production.

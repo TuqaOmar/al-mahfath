@@ -46,3 +46,9 @@ ios/App/Pods
 reports/browser-groups/*.png
 reports/mobile-responsive/
 server/*.backup.json
+
+# Never commit local/legacy data dumps or service-account keys
+server/db.json
+server/safar_data.json
+server/serviceAccountKey.json
+*serviceAccount*.json

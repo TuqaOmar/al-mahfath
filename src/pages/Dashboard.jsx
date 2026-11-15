@@ -59,7 +59,6 @@ import { NotificationCenter } from '../components/NotificationCenter';
 import { useNotifications } from '../context/NotificationContext';
 import { ReviewReminderAlert } from '../components/ReviewReminderAlert';
 import { CelebrationOverlay } from '../components/CelebrationOverlay';
-import { AdminPanel } from '../components/AdminPanel';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { MoreToolsModal } from '../components/MoreToolsModal';
 import { UserProfileModal } from '../components/UserProfileModal';
@@ -883,9 +882,6 @@ const Dashboard = () => {
       case 'analytics':
         return <AnalyticsView />;
 
-      case 'admin-panel':
-        return <AdminPanel />;
-
       case 'mind-maps':
         return (
           <MindMapsView 
@@ -1086,9 +1082,7 @@ const Dashboard = () => {
                     }
                     // Without this the landing page saw the still-signed-in user and bounced back here.
                     const code = result?.code ? ` (${result.code})` : '';
-                    window.alert(result?.code === 'auth/requires-recent-login'
-                      ? 'لحماية حسابك، سجّلي الخروج ثم ادخلي مرة أخرى، واحذفي الحساب مباشرة بعد الدخول.'
-                      : 'تعذر حذف الحساب، ولم يُحذف شيء. حاولي مرة أخرى.' + code);
+                    window.alert((result?.message || 'تعذر حذف الحساب، لم يكتمل الحذف. حاولي مرة أخرى.') + code);
                   }}
                   style={{
                     flex: 1,

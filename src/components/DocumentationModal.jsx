@@ -479,11 +479,11 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                       1. الربط المباشر مع نماذج Google Gemini الرسمية
                     </h4>
                     <p style={{ margin: '0 0 10px 0', fontSize: '13.5px', color: 'var(--text-secondary)' }}>
-                      يدعم التطبيق رسمياً نموذج <code>gemini-2.5-flash</code> و <code>gemini-2.0-flash</code>. تتيح المنصة للمستخدم خيار إدخال مفتاح Gemini API مجاني خاص به يتم حفظه بأمان تام في متصفحه (LocalStorage) للحصول على إجابات مباشرة غير محدودة.
+                      يستخدم التطبيق نماذج <code>gemini-flash-latest</code> و<code>gemini-3.7-flash</code> و<code>gemini-3.6-flash</code> و<code>gemini-3.1-flash-lite</code> بالترتيب. تتيح المنصة للمستخدم خيار إدخال مفتاح Gemini API مجاني خاص به يتم حفظه بأمان تام في متصفحه (LocalStorage) للحصول على إجابات مباشرة غير محدودة.
                     </p>
                     <div style={{ padding: '10px 14px', borderRadius: '8px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', fontSize: '12.5px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <code>https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent</code>
-                      <button onClick={() => copyToClipboard('gemini-2.5-flash', 'gemini-model')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--primary)' }}>
+                      <code>https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent</code>
+                      <button onClick={() => copyToClipboard('gemini-flash-latest', 'gemini-model')} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: 'var(--primary)' }}>
                         {copiedCode === 'gemini-model' ? <Check size={16} /> : <Copy size={16} />}
                       </button>
                     </div>
@@ -494,7 +494,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                       2. محرك المعرفة القرآنية الداخلي (Offline Dynamic Engine)
                     </h4>
                     <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)' }}>
-                      في حال عدم وجود اتصال أو غياب مفتاح API، يقوم ملف <code>src/utils/quranAiEngine.js</code> بتوليد إجابات ديناميكية متخصصة تغطي سور القرآن الكريم، المتشابهات اللفظية، وأحكام التجويد، مع تخصيص النصائح تلقائياً لنمط الحفظ الدماغي للمستخدم (سمعي أم بصري).
+                      في حال عدم وجود اتصال أو غياب مفتاح API، يقوم الخادم (<code>getSmartFallbackResponse</code> في <code>server/index.js</code>) بتوليد إجابات ديناميكية متخصصة تغطي سور القرآن الكريم، المتشابهات اللفظية، وأحكام التجويد، مع تخصيص النصائح تلقائياً لنمط الحفظ الدماغي للمستخدم (سمعي أم بصري).
                     </p>
                   </div>
                 </div>

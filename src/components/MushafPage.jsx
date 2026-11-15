@@ -79,7 +79,7 @@ export const MushafPage = ({ pageNumber, ayahs, activeAyahNum, isPlaying, recite
 
         <div ref={frameRef} style={{ minHeight: lines ? undefined : '420px', display: 'flex', flexDirection: 'column', justifyContent: lines ? 'flex-start' : 'center' }}>
           {!lines ? (
-            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>جاري تحميل صفحة المصحف...</div>
+            <div style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '14px' }}>{document.documentElement.lang === 'en' ? 'Loading Mushaf page...' : 'جاري تحميل صفحة المصحف...'}</div>
           ) : lines.map(line => {
             if (line.type === 'surah') {
               return (

@@ -23,6 +23,7 @@ import {
   Volume2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { useNotifications } from '../context/NotificationContext';
 import { 
   generateFiveFortressesPlan, 
@@ -35,6 +36,8 @@ import { getSurahNameForPage, getJuzForPage, getPageRangeForJuz, getJuzStartPage
 
 export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved }) => {
   const { user, applyConfirmedUser } = useAuth();
+  const { lang } = useLanguage();
+  const ar = lang !== 'en';
   const { 
     reminderSettings, 
     updateReminderSettings, 
@@ -181,8 +184,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '1000px', margin: '0 auto' }}>
       
       {saveError && <div role="alert" data-testid="fortress-save-error">{saveError}</div>}
-      {!hasLoaded && syncStatus === 'failed' && <button data-testid="simplified-fortress-reload" onClick={() => setLoadAttempt(n => n + 1)}>إعادة تحميل الخطة المحفوظة</button>}
-      <p>موقع البداية مبني على تصريحات الطالب وخيارات الخطة، وليس حفظًا معتمدًا.</p>
+      {!hasLoaded && syncStatus === 'failed' && <button data-testid="simplified-fortress-reload" onClick={() => setLoadAttempt(n => n + 1)}>{ar ? 'إعادة تحميل الخطة المحفوظة' : 'Reload saved plan'}</button>}
+      <p>{ar ? 'موقع البداية مبني على تصريحات الطالب وخيارات الخطة، وليس حفظًا معتمدًا.' : 'The starting point comes from your own entries and plan choices, not approved memorization.'}</p>
       {/* 🌟 Header Card with Juz Selector & Sync Indicator */}
       <div style={{
         padding: '24px',
@@ -202,11 +205,11 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 <Shield size={24} color="#6EE7B7" />
               </div>
               <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: 'white' }}>
-                خطة مراجعة الحصون الخمسة 🏰
+                {ar ? <>خطة مراجعة الحصون الخمسة 🏰</> : <>Five Fortresses review plan 🏰</>}
               </h2>
             </div>
             <p style={{ margin: 0, fontSize: '13.5px', color: '#D1FAE5', lineHeight: 1.6 }}>
-              منهجية علمية متكاملة لربط الحفظ والمراجعة بآخر جزء وصلت إليه، لتثبيت القرآن في صدرك كالفاتحة.
+              {ar ? <>منهجية علمية متكاملة لربط الحفظ والمراجعة بآخر جزء وصلت إليه، لتثبيت القرآن في صدرك كالفاتحة.</> : <>A complete method linking memorization and review to the last juz you reached, so the Quran stays firm like al-Fatiha.</>}
             </p>
           </div>
 
@@ -214,7 +217,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0, 0, 0, 0.2)', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
             <Cloud size={15} color="#34D399" />
             <span data-testid="simplified-fortress-status" style={{ fontSize: '12px', color: '#E2E8F0', fontWeight: 'bold' }}>
-              {syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم الحفظ ✓' : 'الخطة محفوظة'}
+              {ar ? (syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم الحفظ ✓' : 'الخطة محفوظة') : (syncStatus === 'failed' ? 'Could not load or save the plan; last confirmed record unchanged' : syncStatus === 'loading' ? 'Loading plan...' : syncStatus === 'saving' ? 'Saving...' : syncStatus === 'draft' ? 'Unsaved draft; save the juz or a first completion' : syncStatus === 'saved' ? 'Saved ✓' : 'Plan saved')}
             </span>
           </div>
         </div>
@@ -234,15 +237,15 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <Compass size={22} color="#34D399" />
             <div>
-              <span style={{ fontSize: '12px', color: '#A7F3D0', display: 'block' }}>آخر جزء وصلت إليه في الحفظ والمراجعة:</span>
+              <span style={{ fontSize: '12px', color: '#A7F3D0', display: 'block' }}>{ar ? 'آخر جزء وصلت إليه في الحفظ والمراجعة:' : 'Last juz you reached:'}</span>
               <strong style={{ fontSize: '16px', color: 'white' }}>
-                الجزء {selectedJuz} (سورة {currentSurah} — الصفحات {currentJuzRange.startPage} إلى {currentJuzRange.endPage})
+                {ar ? <>الجزء {selectedJuz} (سورة {currentSurah} — الصفحات {currentJuzRange.startPage} إلى {currentJuzRange.endPage})</> : <>Juz {selectedJuz} (Surah {currentSurah} — pages {currentJuzRange.startPage} to {currentJuzRange.endPage})</>}
               </strong>
             </div>
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label style={{ fontSize: '13px', color: '#E2E8F0' }}>تغيير الجزء:</label>
+            <label style={{ fontSize: '13px', color: '#E2E8F0' }}>{ar ? 'تغيير الجزء:' : 'Change juz:'}</label>
             <select
               data-testid="simplified-fortress-juz"
               disabled={!hasLoaded || syncStatus === 'saving'}
@@ -262,7 +265,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             >
               {Array.from({ length: 30 }, (_, i) => i + 1).map((juzNum) => (
                 <option key={juzNum} value={juzNum}>
-                  الجزء {juzNum} ({getPageRangeForJuz(juzNum).startPage} - {getPageRangeForJuz(juzNum).endPage})
+                  {`${ar ? 'الجزء' : 'Juz'} ${juzNum} (${getPageRangeForJuz(juzNum).startPage} - ${getPageRangeForJuz(juzNum).endPage})`}
                 </option>
               ))}
             </select>
@@ -274,9 +277,9 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px' }}>
             <span style={{ color: '#D1FAE5', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <Flame size={16} color="#FBBF24" />
-              إنجاز الحصون المصرّح به لليوم: <strong data-testid="simplified-fortress-count">{completedCount} من أصل 5 حصون</strong>
+              {ar ? <>إنجاز الحصون المصرّح به لليوم: <strong data-testid="simplified-fortress-count">{completedCount} من أصل 5 حصون</strong></> : <>Fortresses you marked today: <strong data-testid="simplified-fortress-count">{completedCount} of 5</strong></>}
             </span>
-            <span style={{ color: '#6EE7B7', fontWeight: 'bold' }}>{progressPercent}% مكتمل</span>
+            <span style={{ color: '#6EE7B7', fontWeight: 'bold' }}>{progressPercent}% {ar ? 'مكتمل' : 'done'}</span>
           </div>
 
           <div style={{ width: '100%', height: '10px', borderRadius: '10px', background: 'rgba(0, 0, 0, 0.3)', overflow: 'hidden' }}>
@@ -320,7 +323,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '13.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                ⏰ التنبيه اليومي لمراجعة الحصون:
+                {ar ? <>⏰ التنبيه اليومي لمراجعة الحصون:</> : <>⏰ Daily fortress review reminder:</>}
               </span>
               <span style={{
                 fontSize: '11px',
@@ -330,11 +333,11 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 color: reminderSettings?.enabled ? '#10B981' : '#EF4444',
                 fontWeight: 'bold'
               }}>
-                {reminderSettings?.enabled ? `مفعل الساعة ${reminderSettings?.time}` : 'معطل'}
+                {reminderSettings?.enabled ? (ar ? `مفعل الساعة ${reminderSettings?.time}` : `On at ${reminderSettings?.time}`) : (ar ? 'معطل' : 'Off')}
               </span>
             </div>
             <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-              يتم إرسال إشعار تفاعلي وتنبيه صوتي يومي في الموعد المحدد لتثبيت المحفوظ دون انقطاع.
+              {ar ? <>يتم إرسال إشعار تفاعلي وتنبيه صوتي يومي في الموعد المحدد لتثبيت المحفوظ دون انقطاع.</> : <>A daily notification and sound are sent at the chosen time so you keep your memorization steady.</>}
             </p>
           </div>
         </div>
@@ -353,7 +356,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               cursor: 'pointer'
             }}
           >
-            {reminderSettings?.enabled ? 'إيقاف التنبيه' : 'تفعيل التنبيه 🔔'}
+            {reminderSettings?.enabled ? (ar ? 'إيقاف التنبيه' : 'Turn off reminder') : (ar ? 'تفعيل التنبيه 🔔' : 'Turn on reminder 🔔')}
           </button>
 
           <button
@@ -374,7 +377,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             }}
           >
             <Volume2 size={14} />
-            تجربة التنبيه الفوري 🚀
+            {ar ? <>تجربة التنبيه الفوري 🚀</> : <>Test the reminder now 🚀</>}
           </button>
         </div>
       </div>
@@ -414,14 +417,14 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                  1. الحصن الأول: قراءة الختمة والاستماع بالحدر
+                  {ar ? <>1. الحصن الأول: قراءة الختمة والاستماع بالحدر</> : <>1. First fortress: reading the khatmah and listening (hadr)</>}
                 </h3>
                 <span style={{ fontSize: '11px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                  الجزء {selectedJuz}
+                  {ar ? <>الجزء {selectedJuz}</> : <>Juz {selectedJuz}</>}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                قراءة الجزء {selectedJuz} (ص {currentJuzRange.startPage} - {currentJuzRange.endPage}) نظراً لتعهد المصحف كاملاً شهرياً، مع الاستماع للورد بالحدر.
+                {ar ? <>قراءة الجزء {selectedJuz} (ص {currentJuzRange.startPage} - {currentJuzRange.endPage}) نظراً لتعهد المصحف كاملاً شهرياً، مع الاستماع للورد بالحدر.</> : <>Read juz {selectedJuz} (p. {currentJuzRange.startPage} - {currentJuzRange.endPage}) to go through the whole Mushaf monthly, while listening to the portion.</>}
               </p>
             </div>
           </div>
@@ -447,7 +450,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             }}
           >
             {completion.khatmah ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-            {completion.khatmah ? 'تم إنجاز القراءة' : 'تحديد كمكتمل'}
+            {completion.khatmah ? (ar ? 'تم إنجاز القراءة' : 'Reading done') : (ar ? 'تحديد كمكتمل' : 'Mark as done')}
           </button>
         </div>
 
@@ -483,16 +486,16 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                  2. الحصن الثاني: التحضير الثلاثي (الليلي والقبلي)
+                  {ar ? <>2. الحصن الثاني: التحضير الثلاثي (الليلي والقبلي)</> : <>2. Second fortress: preparation (night before and before memorizing)</>}
                 </h3>
                 <span style={{ fontSize: '11px', background: 'rgba(147, 51, 234, 0.12)', color: '#9333EA', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                  ص {selectedPage} و ص {Math.min(604, selectedPage + 1)}
+                  {ar ? <>ص {selectedPage} و ص {Math.min(604, selectedPage + 1)}</> : <>p. {selectedPage} and p. {Math.min(604, selectedPage + 1)}</>}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                🌙 <strong>التحضير الليلي:</strong> تلاوة صفحة الغد (ص {Math.min(604, selectedPage + 1)}) 15 مرة قبل النوم مباشرة.  
+                {ar ? <>🌙 <strong>التحضير الليلي:</strong> تلاوة صفحة الغد (ص {Math.min(604, selectedPage + 1)}) 15 مرة قبل النوم مباشرة.</> : <>🌙 <strong>Night before:</strong> recite tomorrow's page (p. {Math.min(604, selectedPage + 1)}) 15 times right before sleep.</>}
                 <br />
-                ☀️ <strong>التحضير القبلي:</strong> قراءة صفحة اليوم (ص {selectedPage}) 15 دقيقة قبل الحفظ مع فهم الكلمات الغريبة.
+                {ar ? <>☀️ <strong>التحضير القبلي:</strong> قراءة صفحة اليوم (ص {selectedPage}) 15 دقيقة قبل الحفظ مع فهم الكلمات الغريبة.</> : <>☀️ <strong>Before memorizing:</strong> read today's page (p. {selectedPage}) for 15 minutes and understand unusual words.</>}
               </p>
             </div>
           </div>
@@ -518,7 +521,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             }}
           >
             {completion.preparation ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-            {completion.preparation ? 'تم التحضير' : 'تحديد كمكتمل'}
+            {completion.preparation ? (ar ? 'تم التحضير' : 'Prepared') : (ar ? 'تحديد كمكتمل' : 'Mark as done')}
           </button>
         </div>
 
@@ -554,14 +557,14 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                  3. الحصن الثالث: الحفظ الجديد وتكرار 20x و 40x
+                  {ar ? <>3. الحصن الثالث: الحفظ الجديد وتكرار 20x و 40x</> : <>3. Third fortress: new memorization with 20x and 40x repetition</>}
                 </h3>
                 <span style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                  صفحة {selectedPage} ({currentSurah})
+                  {ar ? <>صفحة {selectedPage} ({currentSurah})</> : <>Page {selectedPage} ({currentSurah})</>}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                حفظ الصفحة {selectedPage} من سورة {currentSurah} مع تطبيق قاعدة التكرار: 20 مرة لكل آية غيباً، و40 مرة للصفحة كاملة متصلة.
+                {ar ? <>حفظ الصفحة {selectedPage} من سورة {currentSurah} مع تطبيق قاعدة التكرار: 20 مرة لكل آية غيباً، و40 مرة للصفحة كاملة متصلة.</> : <>Memorize page {selectedPage} of Surah {currentSurah} using the repetition rule: 20 times per ayah by heart, and 40 times for the whole page connected.</>}
               </p>
             </div>
           </div>
@@ -586,7 +589,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 }}
               >
                 <BookOpen size={15} color="var(--primary)" />
-                فتح الصفحة
+                {ar ? <>فتح الصفحة</> : <>Open page</>}
               </button>
             )}
 
@@ -611,7 +614,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               }}
             >
               {completion.newMemorization ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-              {completion.newMemorization ? 'تم الحفظ' : 'تحديد كمكتمل'}
+              {completion.newMemorization ? (ar ? 'تم الحفظ' : 'Memorized') : (ar ? 'تحديد كمكتمل' : 'Mark as done')}
             </button>
           </div>
         </div>
@@ -648,14 +651,14 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                  4. الحصن الرابع: المراجعة القريبة (آخر 20 صفحة)
+                  {ar ? <>4. الحصن الرابع: المراجعة القريبة (آخر 20 صفحة)</> : <>4. Fourth fortress: near review (last 20 pages)</>}
                 </h3>
                 <span style={{ fontSize: '11px', background: 'rgba(217, 119, 6, 0.12)', color: '#D97706', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                  ص {Math.max(1, selectedPage - 20)} إلى {Math.max(1, selectedPage - 1)}
+                  {ar ? <>ص {Math.max(1, selectedPage - 20)} إلى {Math.max(1, selectedPage - 1)}</> : <>p. {Math.max(1, selectedPage - 20)} to {Math.max(1, selectedPage - 1)}</>}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
-                تسميع الصفحات من {Math.max(1, selectedPage - 20)} إلى {Math.max(1, selectedPage - 1)} غيباً كل يوم لتثبيت المحفوظ في الذاكرة المتوسطة ومنع تفلته.
+                {ar ? <>تسميع الصفحات من {Math.max(1, selectedPage - 20)} إلى {Math.max(1, selectedPage - 1)} غيباً كل يوم لتثبيت المحفوظ في الذاكرة المتوسطة ومنع تفلته.</> : <>Recite pages {Math.max(1, selectedPage - 20)} to {Math.max(1, selectedPage - 1)} by heart every day to fix them in medium-term memory.</>}
               </p>
             </div>
           </div>
@@ -681,7 +684,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             }}
           >
             {completion.nearRevision ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-            {completion.nearRevision ? 'تمت المراجعة القريبة' : 'تحديد كمكتمل'}
+            {completion.nearRevision ? (ar ? 'تمت المراجعة القريبة' : 'Near review done') : (ar ? 'تحديد كمكتمل' : 'Mark as done')}
           </button>
         </div>
 
@@ -717,16 +720,16 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                  5. الحصن الخامس: المراجعة البعيدة والصلاة بالمحفوظ
+                  {ar ? <>5. الحصن الخامس: المراجعة البعيدة والصلاة بالمحفوظ</> : <>5. Fifth fortress: far review and praying with what you memorized</>}
                 </h3>
                 <span style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary, #10B981)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
-                  {selectedJuz > 1 ? `الأجزاء 1 إلى ${selectedJuz - 1}` : 'ينشط بعد الجزء 1'}
+                  {selectedJuz > 1 ? (ar ? `الأجزاء 1 إلى ${selectedJuz - 1}` : `Juz 1 to ${selectedJuz - 1}`) : (ar ? 'ينشط بعد الجزء 1' : 'Starts after juz 1')}
                 </span>
               </div>
               <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 {selectedJuz > 1 
-                  ? `تدوير مراجعة الأجزاء القديمة (من الجزء 1 إلى الجزء ${selectedJuz - 1}) بمعدل جزء أسبوعياً، والقراءة بها في صلاة النوافل وقيام الليل.`
-                  : `عند إتمامك حفظ الجزء الأول، سيبدأ نظام تدوير المحفوظ القديم والصلاة به يومياً.`
+                  ? (ar ? `تدوير مراجعة الأجزاء القديمة (من الجزء 1 إلى الجزء ${selectedJuz - 1}) بمعدل جزء أسبوعياً، والقراءة بها في صلاة النوافل وقيام الليل.` : `Rotate review of older juz (1 to ${selectedJuz - 1}) at one juz per week, and recite them in voluntary and night prayers.`)
+                  : (ar ? `عند إتمامك حفظ الجزء الأول، سيبدأ نظام تدوير المحفوظ القديم والصلاة به يومياً.` : `Once you finish juz 1, rotating review and praying with it will start.`)
                 }
               </p>
             </div>
@@ -753,7 +756,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
             }}
           >
             {completion.farRevision ? <CheckCircle2 size={18} /> : <Circle size={18} />}
-            {completion.farRevision ? 'تمت المراجعة البعيدة' : 'تحديد كمكتمل'}
+            {completion.farRevision ? (ar ? 'تمت المراجعة البعيدة' : 'Far review done') : (ar ? 'تحديد كمكتمل' : 'Mark as done')}
           </button>
         </div>
 
@@ -774,7 +777,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <Sparkles size={20} color="var(--primary)" />
           <span style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: '600' }}>
-            هل تواجه صعوبة في تثبيت ورد اليوم أو ضبط المتشابهات في الجزء {selectedJuz}؟
+            {ar ? <>هل تواجه صعوبة في تثبيت ورد اليوم أو ضبط المتشابهات في الجزء {selectedJuz}؟</> : <>Struggling to fix today's portion or similar verses in juz {selectedJuz}?</>}
           </span>
         </div>
 
@@ -796,7 +799,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               gap: '6px'
             }}
           >
-            استشر المعلم الذكي 🤖
+            {ar ? <>استشر المعلم الذكي 🤖</> : <>Ask the AI tutor 🤖</>}
           </button>
         )}
       </div>

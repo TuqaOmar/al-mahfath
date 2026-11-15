@@ -1,7 +1,10 @@
 import React from 'react';
 import { BookOpen, Sparkles, Compass, ShieldCheck, ArrowLeft, LogIn } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const MobileWelcomeView = ({ onOpenAuth }) => {
+  const { lang } = useLanguage();
+  const ar = lang !== 'en';
   return (
     <div
       style={{
@@ -62,7 +65,7 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
               fontFamily: 'var(--font-heading)'
             }}
           >
-            مُحَفِّظ AI
+            {ar ? 'مُحَفِّظ AI' : 'Ma7fath AI'}
           </h1>
           <div
             style={{
@@ -78,7 +81,7 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
             }}
           >
             <Sparkles size={14} />
-            <span>رفيقك المتقن في تحفيظ القرآن الكريم</span>
+            <span>{ar ? 'رفيقك المتقن في تحفيظ القرآن الكريم' : 'Your companion for memorizing the Quran'}</span>
           </div>
         </div>
       </div>
@@ -125,10 +128,10 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
           </div>
           <div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              منهجية الحصون الخمسة
+              {ar ? 'منهجية الحصون الخمسة' : 'The Five Fortresses method'}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-              حفظ متين، مراجعة قريبة وبعيدة، وتلاوة يومية
+              {ar ? 'حفظ متين، مراجعة قريبة وبعيدة، وتلاوة يومية' : 'Solid memorization, near and far review, daily recitation'}
             </div>
           </div>
         </div>
@@ -163,10 +166,10 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
           </div>
           <div>
             <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
-              تسميع ذكي وتصحيح فوري
+              {ar ? 'تسميع ذكي وتصحيح فوري' : 'Smart recitation check, instant feedback'}
             </div>
             <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-              كشف اللحن الجلي وتظليل الآيات مباشرة بصوتك
+              {ar ? 'كشف اللحن الجلي وتظليل الآيات مباشرة بصوتك' : 'Detects clear mistakes and highlights verses as you recite'}
             </div>
           </div>
         </div>
@@ -203,7 +206,7 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
             boxShadow: '0 8px 20px var(--primary-glow)'
           }}
         >
-          <span>ابدأ رحلة الحفظ الآن</span>
+          <span>{ar ? 'ابدأ رحلة الحفظ الآن' : 'Start memorizing now'}</span>
           <ArrowLeft size={18} />
         </button>
 
@@ -226,7 +229,7 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
           }}
         >
           <LogIn size={16} />
-          <span>لدي حساب بالفعل (تسجيل الدخول)</span>
+          <span>{ar ? 'لدي حساب بالفعل (تسجيل الدخول)' : 'I already have an account (sign in)'}</span>
         </button>
 
 
