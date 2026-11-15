@@ -34,7 +34,7 @@ npm run dev               # http://localhost:3000 (الخادم + Vite)
 |---|---|
 | `npm run dev` / `npm start` | تشغيل الخادم والواجهة |
 | `npm run build` | بناء الواجهة إلى `dist/` |
-| `npm run test:engine` | اختبارات محرك التسميع (604 صفحة، الفاتحة، المقطعات، ffmpeg) — بدون إنترنت |
+| `npm run test:engine` | اختبارات محرك التسميع (604 صفحة، الفاتحة، المقطعات، ffmpeg) وحذف الحساب وحد الطلبات — بدون إنترنت |
 | `npm run test:security` | اختبارات الصلاحيات والأمان |
 | `npm run test:emulator` / `test:emulator:browser` | اختبارات Firebase Emulator و Chrome (لا تلمس الإنتاج) — انظري [`tests/EMULATOR.md`](./tests/EMULATOR.md) |
 | `npm run cap:sync` / `cap:android` / `cap:ios` | مزامنة وفتح تطبيقات الجوال |

@@ -1,5 +1,4 @@
 import { getAuth } from 'firebase-admin/auth';
-import { getStorage } from 'firebase-admin/storage';
 import { readFileSync } from 'node:fs';
 
 const firebaseConfig = JSON.parse(readFileSync(new URL('../firebase-applet-config.json', import.meta.url), 'utf8'));
@@ -47,8 +46,14 @@ export async function deleteAccountData(db, uid, { auth = getAuth(), storage = n
   await db.doc(`enrollmentRequests/${uid}`).delete();
   await db.recursiveDelete(db.doc(`users/${uid}`));
 
-  // 4. Uploaded avatars.
+  // 4. Uploaded avatars. firebase-admin/storage is loaded lazily: its
+  // @google-cloud/storage dependency is optional, and a missing copy must not
+  // stop the whole server from starting. In emulator tests, never reach the
+  // production bucket unless a Storage emulator is configured.
   try {
+    const emulatorWithoutStorage = process.env.MA7FATH_EMULATOR_TEST === '1' && !process.env.FIREBASE_STORAGE_EMULATOR_HOST;
+    if (!storage && emulatorWithoutStorage) throw new Error('storage cleanup skipped in emulator test');
+    const { getStorage } = storage ? {} : await import('firebase-admin/storage');
     const bucket = (storage || getStorage()).bucket(firebaseConfig.storageBucket);
     const [files] = await bucket.getFiles({ prefix: `avatars/${uid}/` });
     await Promise.all(files.map(file => file.delete()));

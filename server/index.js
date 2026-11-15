@@ -21,6 +21,9 @@ import { rateLimit } from './middleware/rateLimit.js';
 dotenv.config();
 
 const app = express();
+// Behind Vercel's proxy: use the client address from X-Forwarded-For (one hop) so the
+// per-IP rate limit for signed-out requests does not lump every visitor together.
+app.set('trust proxy', 1);
 const PORT = 3000;
 
 app.use(cors());

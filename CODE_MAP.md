@@ -872,7 +872,7 @@ _Express index، routes، middleware، صلاحيات_
 - **لماذا:** يمنع استهلاك مفتاح GEMINI_API_KEY الخاص بالخادم بلا حد من أي حساب.
 - **متى:** على /api/ai/chat و/api/ai/recitation-check.
 - **إن تعطّل:** الطلبات تمر بلا حد (لا يكسر الميزة).
-- **انتبه:** على Vercel لكل نسخة دافئة عدادها — يحد الدفعات لا حصة عالمية دقيقة.
+- **انتبه:** على Vercel لكل نسخة دافئة عدادها — يحد الدفعات لا حصة عالمية دقيقة. | للزائر غير المسجل المفتاح هو req.ip، ويعتمد على app.set('trust proxy', 1) في index.js وإلا يتشارك كل الزوار عدادًا واحدًا. | اختبار: tests/rate-limit.test.js.
 - **يستخدمه:** server/index.js
 
 ### `server/middleware/auth.js`
@@ -975,7 +975,7 @@ _safarEcosystem، database، Firestore، محرك التسميع_
 - **لماذا:** قواعد Firestore تمنع المستخدم من حذف مستنده، وحذف Auth وحده كان يترك البيانات الشخصية؛ متاجر التطبيقات تشترط حذف البيانات فعليًا.
 - **متى:** DELETE /api/user/me.
 - **إن تعطّل:** حذف الحساب يفشل برسالة ولا يُحذف حساب الدخول (البيانات أولًا ثم Auth، فيمكن إعادة المحاولة).
-- **انتبه:** التعليقات والإعجابات تُمسح بالمرور على كل community_posts (بدون فهرس collectionGroup) — إن كبر المجتمع كثيرًا استبدله باستعلام collectionGroup مع فهرس. | طلاب حلقات المعلمة المحذوفة يبقون بعضوية لحلقة معطلة حتى يعيد المشرف توزيعهم.
+- **انتبه:** التعليقات والإعجابات تُمسح بالمرور على كل community_posts (بدون فهرس collectionGroup) — إن كبر المجتمع كثيرًا استبدله باستعلام collectionGroup مع فهرس. | طلاب حلقات المعلمة المحذوفة يبقون بعضوية لحلقة معطلة حتى يعيد المشرف توزيعهم. | firebase-admin/storage يُحمَّل داخل الدالة (اعتماده @google-cloud/storage اختياري)، وفي اختبارات المحاكي لا يُلمس Storage إلا مع FIREBASE_STORAGE_EMULATOR_HOST. | اختبار: tests/account-deletion.test.js.
 - **يستخدم:** firebase-admin (auth, storage), firebase-applet-config.json
 - **يستخدمه:** server/index.js
 

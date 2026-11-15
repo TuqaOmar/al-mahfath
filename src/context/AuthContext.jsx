@@ -27,11 +27,11 @@ const initialActiveRole = (profile) => {
   return available.includes(profile?.role) ? profile.role : available[0];
 };
 
-// Single source for a new account's default profile fields (signup and first
-// sign-in both use it). Firestore rule isSafeInitialUser must accept exactly these.
 // Auth error messages follow the saved UI language (AuthProvider sits outside hooks' reach here).
 const authText = (arText, enText) => (localStorage.getItem('ma7fath_lang') === 'en' ? enText : arText);
 
+// Single source for a new account's default profile fields (signup and first
+// sign-in both use it). Firestore rule isSafeInitialUser must accept exactly these.
 const defaultUserFields = () => ({
   hasCompletedWizard: false,
   role: 'user',
