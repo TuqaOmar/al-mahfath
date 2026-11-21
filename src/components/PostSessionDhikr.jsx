@@ -83,7 +83,7 @@ export const PostSessionDhikr = () => {
                 gap: '6px'
               }}
             >
-              {isDone && <CheckCircle2 size={14} color="#10B981" />}
+              {isDone && <CheckCircle2 size={14} color="#377D71" />}
               {ar ? item.title : item.titleEn}
             </button>
           );
@@ -118,8 +118,8 @@ export const PostSessionDhikr = () => {
             height: '130px',
             borderRadius: '50%',
             background: isCurrentCompleted 
-              ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
-              : 'linear-gradient(135deg, var(--primary) 0%, #064E3B 100%)',
+              ? 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)' 
+              : 'linear-gradient(135deg, var(--primary) 0%, #1A3F39 100%)',
             color: 'white',
             border: 'none',
             cursor: 'pointer',
@@ -141,7 +141,7 @@ export const PostSessionDhikr = () => {
         </motion.button>
 
         {isCurrentCompleted && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '16px', color: '#10B981', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '16px', color: '#377D71', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
             <Award size={18} /> {ar ? 'تم إتمام هذا الذكر بحمد الله!' : 'Completed, alhamdulillah!'}
           </motion.div>
         )}

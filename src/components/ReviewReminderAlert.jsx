@@ -63,10 +63,10 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
           exit={{ opacity: 0, y: -30, scale: 0.92 }}
           transition={{ type: 'spring', damping: 24, stiffness: 300 }}
           style={{
-            background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
-            border: '2px solid #10B981',
+            background: 'linear-gradient(135deg, #1F1220 0%, #1A3F39 100%)',
+            border: '2px solid #377D71',
             borderRadius: '24px',
-            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(16, 185, 129, 0.3)',
+            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(55, 125, 113, 0.3)',
             padding: '24px',
             color: 'white',
             position: 'relative',
@@ -80,7 +80,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
             right: 0,
             width: '180px',
             height: '180px',
-            background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(55, 125, 113, 0.2) 0%, transparent 70%)',
             borderRadius: '50%',
             pointerEvents: 'none'
           }} />
@@ -92,9 +92,9 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                 width: '46px',
                 height: '46px',
                 borderRadius: '14px',
-                background: 'rgba(16, 185, 129, 0.25)',
-                border: '1px solid rgba(52, 211, 153, 0.4)',
-                color: '#34D399',
+                background: 'rgba(55, 125, 113, 0.25)',
+                border: '1px solid rgba(79, 168, 153, 0.4)',
+                color: '#4FA899',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -109,7 +109,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                   height: '12px',
                   borderRadius: '50%',
                   background: '#EF4444',
-                  border: '2px solid #0F172A'
+                  border: '2px solid #1F1220'
                 }} />
               </div>
               <div>
@@ -120,9 +120,9 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                   {activeReminderAlert.isTest && (
                     <span style={{
                       fontSize: '11px',
-                      background: 'rgba(56, 189, 248, 0.2)',
-                      color: '#38BDF8',
-                      border: '1px solid rgba(56, 189, 248, 0.4)',
+                      background: 'rgba(76, 184, 230, 0.2)',
+                      color: '#4CB8E6',
+                      border: '1px solid rgba(76, 184, 230, 0.4)',
                       padding: '2px 8px',
                       borderRadius: '10px',
                       fontWeight: 'bold'
@@ -131,9 +131,9 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                     </span>
                   )}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', color: '#94A3B8', fontSize: '12.5px' }}>
-                  <Clock size={13} color="#34D399" />
-                  <span>الموعد المجدول: <strong style={{ color: '#34D399' }}>{activeReminderAlert.scheduledTime || '20:30'}</strong></span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px', color: '#9C8D98', fontSize: '12.5px' }}>
+                  <Clock size={13} color="#4FA899" />
+                  <span>الموعد المجدول: <strong style={{ color: '#4FA899' }}>{activeReminderAlert.scheduledTime || '20:30'}</strong></span>
                   <span>•</span>
                   <span>{activeReminderAlert.timestamp}</span>
                 </div>
@@ -146,7 +146,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
               style={{
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: 'none',
-                color: '#94A3B8',
+                color: '#9C8D98',
                 cursor: 'pointer',
                 width: '32px',
                 height: '32px',
@@ -157,7 +157,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => { e.currentTarget.style.color = 'white'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.2)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.color = '#94A3B8'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = '#9C8D98'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'; }}
             >
               <X size={16} />
             </button>
@@ -172,12 +172,12 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
             marginBottom: '18px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-              <Shield size={16} color="#34D399" />
-              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#34D399' }}>
+              <Shield size={16} color="#4FA899" />
+              <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#4FA899' }}>
                 {activeReminderAlert.focusLabel || 'جلسة تثبيت المحفوظ والمراجعة اليومية'}
               </span>
             </div>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#E2E8F0', lineHeight: 1.6 }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#EDE6EA', lineHeight: 1.6 }}>
               {activeReminderAlert.message}
             </p>
           </div>
@@ -190,7 +190,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                 flex: '1 1 180px',
                 padding: '12px 18px',
                 borderRadius: '14px',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
                 color: 'white',
                 border: 'none',
                 fontWeight: 'bold',
@@ -200,7 +200,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)',
+                boxShadow: '0 4px 15px rgba(55, 125, 113, 0.4)',
                 transition: 'all 0.2s ease'
               }}
               onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
@@ -217,7 +217,7 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                 borderRadius: '14px',
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#E2E8F0',
+                color: '#EDE6EA',
                 fontWeight: 'bold',
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -239,9 +239,9 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
               style={{
                 padding: '12px 16px',
                 borderRadius: '14px',
-                background: 'rgba(52, 211, 153, 0.15)',
-                border: '1px solid rgba(52, 211, 153, 0.35)',
-                color: '#34D399',
+                background: 'rgba(79, 168, 153, 0.15)',
+                border: '1px solid rgba(79, 168, 153, 0.35)',
+                color: '#4FA899',
                 fontWeight: 'bold',
                 fontSize: '13px',
                 cursor: 'pointer',
@@ -250,8 +250,8 @@ export const ReviewReminderAlert = ({ onNavigateToReview }) => {
                 gap: '6px',
                 transition: 'all 0.2s ease'
               }}
-              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(52, 211, 153, 0.25)'}
-              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(52, 211, 153, 0.15)'}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(79, 168, 153, 0.25)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(79, 168, 153, 0.15)'}
             >
               <CheckCircle size={15} />
               {isRTL ? 'إغلاق التذكير فقط' : 'Dismiss reminder only'}

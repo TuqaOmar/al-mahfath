@@ -130,7 +130,7 @@ export const TajweedLab = () => {
                     title={`ضدها: ${p.opposite}`}
                     style={{
                       padding: '5px 10px', borderRadius: '10px', fontSize: '12.5px', fontWeight: 700,
-                      background: p.strong === true ? 'rgba(220, 38, 38, 0.1)' : p.strong === false ? 'rgba(2, 132, 199, 0.1)' : 'var(--bg-surface-elevated)',
+                      background: p.strong === true ? 'rgba(220, 38, 38, 0.1)' : p.strong === false ? 'rgba(31, 110, 140, 0.1)' : 'var(--bg-surface-elevated)',
                       color: p.strong === true ? '#dc2626' : p.strong === false ? 'var(--accent)' : 'var(--text-secondary)'
                     }}
                   >

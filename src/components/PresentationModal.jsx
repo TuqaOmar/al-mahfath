@@ -60,7 +60,7 @@ export const PresentationModal = ({ isOpen, onClose }) => {
         ? 'المنظومة الرقمية الرائدة لإتقان وتثبيت القرآن الكريم بمنهجية الحصون الخمسة والذكاء الاصطناعي'
         : 'The Premier Digital Ecosystem for Quran Memorization & Retention via the Five Fortresses and AI',
       icon: Sparkles,
-      color: '#10B981',
+      color: '#377D71',
       highlights: [
         { label: isRTL ? 'المنهجية العلمية' : 'Scientific Methodology', value: isRTL ? 'الحصون الخمسة للشيخ د. سعيد أبو العلا حمزة' : 'Five Fortresses Methodology' },
         { label: isRTL ? 'التقنية المعتمدة' : 'Core Technology', value: isRTL ? 'الذكاء الاصطناعي الصوتي والمصحف التفاعلي' : 'Voice AI & Interactive Mus-haf' },
@@ -107,7 +107,7 @@ export const PresentationModal = ({ isOpen, onClose }) => {
         ? 'ابتكار فضيلة الشيخ د. سعيد أبو العلا حمزة محولاً إلى خوارزمية ذكية'
         : 'Dr. Saeed Abu Al-Ola Hamza’s acclaimed framework automated into an intelligent guide',
       icon: Shield,
-      color: '#3B82F6',
+      color: '#2A6F8F',
       highlights: [
         { label: isRTL ? 'مؤسس المنهجية' : 'Method Founder', value: isRTL ? 'د. سعيد أبو العلا حمزة' : 'Dr. Saeed Abu Al-Ola' },
         { label: isRTL ? 'طبيعة الحصون' : 'Core Architecture', value: isRTL ? '٥ حصون دفاعية متكاملة' : '5 Interconnected Defense Fortresses' },
@@ -130,7 +130,7 @@ export const PresentationModal = ({ isOpen, onClose }) => {
         ? 'منظومة الأوراد اليومية الشاملة لرسوخ كتاب الله في الصدر'
         : 'The comprehensive daily assignments ensuring rock-solid retention',
       icon: BookOpen,
-      color: '#8B5CF6',
+      color: '#9C4F84',
       highlights: [
         { label: isRTL ? 'الحصن ١' : 'Fortress 1', value: isRTL ? 'قراءة الختمة والحدر (جزء يومياً)' : 'Hadr Khatmah (1 Juz/day)' },
         { label: isRTL ? 'الحصن ٢' : 'Fortress 2', value: isRTL ? 'التحضير الثلاثي (أسبوعي/ليلي/قبلي)' : 'Triple Preparation' },
@@ -155,7 +155,7 @@ export const PresentationModal = ({ isOpen, onClose }) => {
         ? 'تقنيات متقدمة تجعل رحلة الحفظ سهلة وممتعة ودقيقة'
         : 'Advanced tools making the Quran journey effortless, enjoyable, and accurate',
       icon: Mic,
-      color: '#EC4899',
+      color: '#C774A9',
       highlights: [
         { label: isRTL ? 'التسميع الصوتي' : 'Voice Recitation', value: isRTL ? 'تحليل ومزامنة صوتية فورية' : 'Real-time verse sync & audio' },
         { label: isRTL ? 'الخرائط الموضوعية' : 'Mind Maps', value: isRTL ? 'ربط السور بالمعاني البصرية' : 'Thematic Surah breakdown' },
@@ -179,7 +179,7 @@ export const PresentationModal = ({ isOpen, onClose }) => {
         ? 'بناء عادات قرآنية يومية راسخة لا تنقطع بإذن الله'
         : 'Building unbreakable daily Quran habits through positive behavioral design',
       icon: Trophy,
-      color: '#F59E0B',
+      color: '#E39A2D',
       highlights: [
         { label: isRTL ? 'سلاسل الالتزام' : 'Streaks', value: isRTL ? 'حماية العهد اليومي 🔥' : 'Daily Streak Guard 🔥' },
         { label: isRTL ? 'نقاط الإتقان' : 'XP Points', value: isRTL ? 'ارتقاء في مدارج الحفاظ' : 'Levels & Badges' },
@@ -203,7 +203,7 @@ export const PresentationModal = ({ isOpen, onClose }) => {
         ? 'سرعة فائقة، أمان متكامل، وتجربة سلسة على جميع الأجهزة'
         : 'Blazing speed, rock-solid security, and responsive cross-platform support',
       icon: Layers,
-      color: '#06B6D4',
+      color: '#4CB8E6',
       highlights: [
         { label: isRTL ? 'الواجهة' : 'Frontend', value: 'React 18 + Vite + Tailwind' },
         { label: isRTL ? 'السحابة وقاعدة البيانات' : 'Cloud & DB', value: 'Google Cloud & Firestore' },
@@ -227,7 +227,7 @@ export const PresentationModal = ({ isOpen, onClose }) => {
         ? 'رسالتنا نشر نور القرآن في كل بيت وتحقيق الإتقان لكل راغب'
         : 'Empowering every Muslim to memorize, understand, and retain the Quran with certainty',
       icon: Flame,
-      color: '#10B981',
+      color: '#377D71',
       highlights: [
         { label: isRTL ? 'الرؤية الاستراتيجية' : 'Core Vision', value: isRTL ? 'تخريج مليون حافظ متقن' : 'Empower 1M steadfast Hufadh' },
         { label: isRTL ? 'الشراكات المستهدفة' : 'Partnerships', value: isRTL ? 'حلقات ودور التحفيظ والمدارس' : 'Quranic academies & institutes' },
@@ -382,8 +382,8 @@ ${s.speakerNotes}
                 style={{
                   padding: '6px 12px',
                   borderRadius: '10px',
-                  background: copied ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                  color: copied ? '#10B981' : 'var(--text-secondary)',
+                  background: copied ? 'rgba(55, 125, 113, 0.15)' : 'transparent',
+                  color: copied ? '#377D71' : 'var(--text-secondary)',
                   border: '1px solid var(--glass-border)',
                   cursor: 'pointer',
                   fontSize: '12px',
@@ -607,14 +607,14 @@ ${s.speakerNotes}
                     style={{
                       padding: '14px 18px',
                       borderRadius: '14px',
-                      background: 'rgba(245, 158, 11, 0.08)',
-                      border: '1px solid rgba(245, 158, 11, 0.25)',
+                      background: 'rgba(227, 154, 45, 0.08)',
+                      border: '1px solid rgba(227, 154, 45, 0.25)',
                       marginTop: '16px'
                     }}
                   >
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
                       <span>🎙️</span>
-                      <strong style={{ fontSize: '13px', color: '#F59E0B' }}>
+                      <strong style={{ fontSize: '13px', color: '#E39A2D' }}>
                         {isRTL ? 'إرشادات المتحدث للإلقاء (Speaker Notes):' : 'Speaker Delivery Notes:'}
                       </strong>
                     </div>

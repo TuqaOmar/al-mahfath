@@ -31,7 +31,7 @@ const Switch = ({ checked, onChange, label }) => (
 const BadgePreview = ({ badge, size = 52 }) => {
   const Icon = badgeRule(badge).icon;
   return (
-    <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: badge.visible ? 'var(--primary)' : 'var(--glass-border)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: badge.visible ? '0 6px 14px rgba(16, 185, 129, 0.25)' : 'none' }}>
+    <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: badge.visible ? 'var(--primary)' : 'var(--glass-border)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: badge.visible ? '0 6px 14px rgba(55, 125, 113, 0.25)' : 'none' }}>
       <Icon size={Math.round(size * 0.46)} />
     </div>
   );

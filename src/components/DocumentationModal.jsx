@@ -151,7 +151,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
         <div style={{
           padding: '18px 24px',
           borderBottom: '1px solid var(--glass-border)',
-          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, transparent 100%)',
+          background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.08) 0%, transparent 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -163,12 +163,12 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
               width: '42px',
               height: '42px',
               borderRadius: '12px',
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
               color: 'white',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+              boxShadow: '0 4px 14px rgba(55, 125, 113, 0.35)'
             }}>
               <BookOpen size={22} />
             </div>
@@ -395,7 +395,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
             {activeSection === 'five-fortresses' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#3B82F6', background: 'rgba(59, 130, 246, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#2A6F8F', background: 'rgba(42, 111, 143, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
                     🏰 التأصيل العلمي
                   </span>
                 </div>
@@ -407,8 +407,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(59, 130, 246, 0.3)', background: 'rgba(59, 130, 246, 0.05)' }}>
-                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#3B82F6' }}>
+                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(42, 111, 143, 0.3)', background: 'rgba(42, 111, 143, 0.05)' }}>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#2A6F8F' }}>
                       1️⃣ الحصن الأول: قراءة الاستماع والورد نظراً (الختمة المستمرة)
                     </h3>
                     <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)' }}>
@@ -417,8 +417,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                     </p>
                   </div>
 
-                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(139, 92, 246, 0.3)', background: 'rgba(139, 92, 246, 0.05)' }}>
-                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#8B5CF6' }}>
+                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(156, 79, 132, 0.3)', background: 'rgba(156, 79, 132, 0.05)' }}>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#9C4F84' }}>
                       2️⃣ الحصن الثاني: التحضير الثلاثي (الأسبوعي، الليلي، القريب)
                     </h3>
                     <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)' }}>
@@ -428,8 +428,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                     </p>
                   </div>
 
-                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.05)' }}>
-                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#10B981' }}>
+                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(55, 125, 113, 0.3)', background: 'rgba(55, 125, 113, 0.05)' }}>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#377D71' }}>
                       3️⃣ الحصن الثالث: الحفظ الجديد المتقن (قاعدة 20x و 40x)
                     </h3>
                     <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)' }}>
@@ -437,8 +437,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                     </p>
                   </div>
 
-                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(236, 72, 153, 0.3)', background: 'rgba(236, 72, 153, 0.05)' }}>
-                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#EC4899' }}>
+                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(199, 116, 169, 0.3)', background: 'rgba(199, 116, 169, 0.05)' }}>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#C774A9' }}>
                       4️⃣ الحصن الرابع: المراجعة القريبة اليومية (آخر 20 صفحة)
                     </h3>
                     <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)' }}>
@@ -446,8 +446,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                     </p>
                   </div>
 
-                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(245, 158, 11, 0.3)', background: 'rgba(245, 158, 11, 0.05)' }}>
-                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#F59E0B' }}>
+                  <div style={{ padding: '16px', borderRadius: '14px', border: '1px solid rgba(227, 154, 45, 0.3)', background: 'rgba(227, 154, 45, 0.05)' }}>
+                    <h3 style={{ margin: '0 0 6px 0', fontSize: '16px', color: '#E39A2D' }}>
                       5️⃣ الحصن الخامس: المراجعة البعيدة والصلاة بالمحفوظ
                     </h3>
                     <p style={{ margin: 0, fontSize: '13.5px', color: 'var(--text-secondary)' }}>
@@ -505,7 +505,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
             {activeSection === 'learning-styles' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#8B5CF6', background: 'rgba(139, 92, 246, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#9C4F84', background: 'rgba(156, 79, 132, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
                     🧠 علم النفس المعرفي
                   </span>
                 </div>
@@ -519,8 +519,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
                   <div style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <Volume2 size={18} color="#3B82F6" />
-                      <strong style={{ color: '#3B82F6' }}>النمط السمعي (Auditory)</strong>
+                      <Volume2 size={18} color="#2A6F8F" />
+                      <strong style={{ color: '#2A6F8F' }}>النمط السمعي (Auditory)</strong>
                     </div>
                     <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
                       يثبت الآيات بنغمة القارئ وصوته. ننصحه بتكرار الاستماع لتلاوة الشيخ ياسر الدوسري أو الشيخ الحصري بالحدر 5 مرات والتسميع بصوت مسموع.
@@ -529,8 +529,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                   <div style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <Compass size={18} color="#10B981" />
-                      <strong style={{ color: '#10B981' }}>النمط البصري (Visual)</strong>
+                      <Compass size={18} color="#377D71" />
+                      <strong style={{ color: '#377D71' }}>النمط البصري (Visual)</strong>
                     </div>
                     <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
                       يتذكر موقع الآية في أعلى الصفحة أو أسفلها. ننصحه بالاعتماد على مصحف واحد لا يغيره أبداً، وتلوين المتشابهات في الهامش.
@@ -539,8 +539,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                   <div style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <Zap size={18} color="#F59E0B" />
-                      <strong style={{ color: '#F59E0B' }}>النمط الحركي والكتابي</strong>
+                      <Zap size={18} color="#E39A2D" />
+                      <strong style={{ color: '#E39A2D' }}>النمط الحركي والكتابي</strong>
                     </div>
                     <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
                       يثبت الحفظ بالحركة والكتابة والمسبحة. ننصحه باستخدام استوديو التكرار الرقمي وكتابة الآيات على لوح أو دفتر خاص.
@@ -549,8 +549,8 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                   <div style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                      <BookOpen size={18} color="#EC4899" />
-                      <strong style={{ color: '#EC4899' }}>النمط التحليلي والتدبري</strong>
+                      <BookOpen size={18} color="#C774A9" />
+                      <strong style={{ color: '#C774A9' }}>النمط التحليلي والتدبري</strong>
                     </div>
                     <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary)' }}>
                       يحفظ عبر ربط المعاني وأسباب النزول. يقرأ التفسير الميسر أولاً لفهم السياق ثم ينتقل للحفظ السريع.
@@ -577,12 +577,12 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: '#10B981' }} />
+                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: '#377D71' }} />
                     <span style={{ fontSize: '14px' }}><strong>أخضر (حفظ ممتاز):</strong> درجات استقرار تفوق 85% مع إتقان الحدر والتسميع.</span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: '#F59E0B' }} />
+                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: '#E39A2D' }} />
                     <span style={{ fontSize: '14px' }}><strong>أصفر (يحتاج مراجعة):</strong> صفحات مضى على مراجعتها أكثر من 3 أيام وتحتاج تدعيماً بالحدر.</span>
                   </div>
 
@@ -592,7 +592,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: '#334155' }} />
+                    <div style={{ width: '14px', height: '14px', borderRadius: '4px', background: '#3D2F3A' }} />
                     <span style={{ fontSize: '14px' }}><strong>رمادي (غير محفوظ):</strong> صفحات لم يتم حفظها بعد في الصدر.</span>
                   </div>
                 </div>
@@ -608,7 +608,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
             {activeSection === 'recitation-audio' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#EC4899', background: 'rgba(236, 72, 153, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#C774A9', background: 'rgba(199, 116, 169, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
                     🎙️ التسميع والصوتيات
                   </span>
                 </div>
@@ -674,7 +674,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                   </div>
 
                   <div style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <strong style={{ fontSize: '15px', color: '#3B82F6', display: 'block', marginBottom: '6px' }}>
+                    <strong style={{ fontSize: '15px', color: '#2A6F8F', display: 'block', marginBottom: '6px' }}>
                       الخادم والـ Backend
                     </strong>
                     <ul style={{ margin: 0, paddingRight: '18px', fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -686,7 +686,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                   </div>
 
                   <div style={{ padding: '16px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-                    <strong style={{ fontSize: '15px', color: '#F59E0B', display: 'block', marginBottom: '6px' }}>
+                    <strong style={{ fontSize: '15px', color: '#E39A2D', display: 'block', marginBottom: '6px' }}>
                       قاعدة البيانات (Database)
                     </strong>
                     <ul style={{ margin: 0, paddingRight: '18px', fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -714,7 +714,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#10B981', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#377D71', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
                       <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>Firebase Auth: createUserWithEmailAndPassword</code>
                     </div>
                     <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>إنشاء الحساب عبر Firebase Authentication. مسار JSON القديم معطّل.</span>
@@ -722,7 +722,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#3B82F6', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#2A6F8F', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
                       <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>Firebase Auth: signInWithEmailAndPassword</code>
                     </div>
                     <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>تسجيل الدخول عبر Firebase Authentication؛ طلبات API الخاصة تتطلب ID token.</span>
@@ -730,7 +730,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#10B981', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#377D71', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>POST</span>
                       <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>/api/ai/chat</code>
                     </div>
                     <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>إرسال رسالة للمعلم القرآني الذكي واستلام إجابة فورية وحفظها في التاريخ.</span>
@@ -738,7 +738,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#F59E0B', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>PUT</span>
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#E39A2D', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>PUT</span>
                       <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>/api/user/:uid</code>
                     </div>
                     <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>تحديث تفضيلات الحافظ (الحصون، نمط الدماغ، الأهداف اليومية).</span>
@@ -746,7 +746,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
 
                   <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#3B82F6', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>GET</span>
+                      <span style={{ padding: '2px 6px', borderRadius: '4px', background: '#2A6F8F', color: 'white', fontSize: '11px', fontWeight: 'bold' }}>GET</span>
                       <code style={{ fontSize: '13.5px', color: 'var(--text-primary)' }}>/api/quran/pages</code>
                     </div>
                     <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)' }}>جلب مصفوفة صفحات المصحف وتفاصيل حالة التقييم وتاريخ المراجعة.</span>
@@ -759,7 +759,7 @@ export const DocumentationModal = ({ isOpen, onClose }) => {
             {activeSection === 'responsive-design' && (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#3B82F6', background: 'rgba(59, 130, 246, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
+                  <span style={{ fontSize: '12px', fontWeight: 800, color: '#2A6F8F', background: 'rgba(42, 111, 143, 0.12)', padding: '3px 10px', borderRadius: '12px' }}>
                     💻 هندسة التجاوب
                   </span>
                 </div>

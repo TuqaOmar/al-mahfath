@@ -31,7 +31,7 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
           width: '300px',
           height: '300px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(55, 125, 113, 0.2) 0%, transparent 70%)',
           filter: 'blur(40px)',
           pointerEvents: 'none'
         }}
@@ -44,11 +44,11 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
             width: '84px',
             height: '84px',
             borderRadius: '26px',
-            background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+            background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 12px 30px rgba(16, 185, 129, 0.35)',
+            boxShadow: '0 12px 30px rgba(55, 125, 113, 0.35)',
             border: '2px solid rgba(255, 255, 255, 0.2)'
           }}
         >
@@ -117,7 +117,7 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
               height: '40px',
               borderRadius: '12px',
               background: 'var(--primary-light)',
-              color: 'var(--primary, #10B981)',
+              color: 'var(--primary, #377D71)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -154,8 +154,8 @@ export const MobileWelcomeView = ({ onOpenAuth }) => {
               width: '40px',
               height: '40px',
               borderRadius: '12px',
-              background: 'rgba(59, 130, 246, 0.12)',
-              color: '#3B82F6',
+              background: 'rgba(42, 111, 143, 0.12)',
+              color: '#2A6F8F',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

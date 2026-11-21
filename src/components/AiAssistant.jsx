@@ -251,7 +251,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
       
       {chatError && <div role="alert" data-testid="chat-error">{chatError}</div>}
       {fallbackNotice && (
-        <div role="status" data-testid="ai-fallback-notice" style={{ padding: '10px 14px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.4)', color: 'var(--text-primary)', fontSize: '13px' }}>
+        <div role="status" data-testid="ai-fallback-notice" style={{ padding: '10px 14px', borderRadius: '12px', background: 'rgba(227, 154, 45, 0.12)', border: '1px solid rgba(227, 154, 45, 0.4)', color: 'var(--text-primary)', fontSize: '13px' }}>
           ⚠️ {fallbackNotice}
         </div>
       )}
@@ -259,7 +259,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
       <div style={{
         padding: '14px 18px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%)',
+        background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.12) 0%, rgba(47, 107, 97, 0.05) 100%)',
         border: '1px solid var(--primary-border)',
         display: 'flex',
         justifyContent: 'space-between',
@@ -305,7 +305,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
               gap: '6px',
               padding: '6px 12px',
               borderRadius: '20px',
-              background: apiKey ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-surface)',
+              background: apiKey ? 'rgba(55, 125, 113, 0.15)' : 'var(--bg-surface)',
               border: `1px solid ${apiKey ? 'var(--primary)' : 'var(--glass-border)'}`,
               color: apiKey ? 'var(--primary)' : 'var(--text-secondary)',
               fontSize: '12px',
@@ -394,13 +394,13 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 width: '38px',
                 height: '38px',
                 borderRadius: '12px',
-                background: isAi ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : 'var(--primary-light)',
+                background: isAi ? 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)' : 'var(--primary-light)',
                 color: isAi ? 'white' : 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                boxShadow: isAi ? '0 4px 10px rgba(16, 185, 129, 0.35)' : 'none'
+                boxShadow: isAi ? '0 4px 10px rgba(55, 125, 113, 0.35)' : 'none'
               }}>
                 {isAi ? <Bot size={20} /> : <User size={20} />}
               </div>
@@ -414,7 +414,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 border: isAi ? '1px solid var(--glass-border)' : 'none',
                 lineHeight: 1.8,
                 fontSize: '14.5px',
-                boxShadow: isAi ? 'var(--shadow-soft)' : '0 4px 14px rgba(16, 185, 129, 0.25)',
+                boxShadow: isAi ? 'var(--shadow-soft)' : '0 4px 14px rgba(55, 125, 113, 0.25)',
                 wordBreak: 'break-word'
               }}>
                 {renderText(m.text)}
@@ -523,7 +523,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
             justifyContent: 'center',
             gap: '8px',
             opacity: isTyping || !input.trim() ? 0.6 : 1,
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+            boxShadow: '0 4px 14px rgba(55, 125, 113, 0.25)',
             transition: 'all 0.15s ease',
             flexShrink: 0,
             touchAction: 'manipulation'
@@ -582,7 +582,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 width: '44px',
                 height: '44px',
                 borderRadius: '14px',
-                background: 'rgba(16, 185, 129, 0.15)',
+                background: 'rgba(55, 125, 113, 0.15)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
@@ -667,7 +667,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
               <div style={{
                 padding: '10px 14px',
                 borderRadius: '10px',
-                background: 'rgba(16, 185, 129, 0.15)',
+                background: 'rgba(55, 125, 113, 0.15)',
                 color: 'var(--primary)',
                 fontSize: '13px',
                 fontWeight: 700,
@@ -717,7 +717,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                  boxShadow: '0 4px 12px rgba(55, 125, 113, 0.3)'
                 }}
               >
                 <Check size={16} />

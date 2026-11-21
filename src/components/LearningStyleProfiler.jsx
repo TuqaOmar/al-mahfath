@@ -106,13 +106,13 @@ export const LearningStyleProfiler = () => {
           top: '-16px',
           left: '50%',
           transform: 'translateX(-50%)',
-          background: '#10B981',
+          background: '#377D71',
           color: 'white',
           padding: '8px 18px',
           borderRadius: '12px',
           fontSize: '13px',
           fontWeight: 'bold',
-          boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4)',
+          boxShadow: '0 8px 20px rgba(55, 125, 113, 0.4)',
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
@@ -166,7 +166,7 @@ export const LearningStyleProfiler = () => {
       <div style={{
         padding: '20px 24px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%)',
+        background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.12) 0%, rgba(47, 107, 97, 0.05) 100%)',
         border: '1.5px solid var(--primary)',
         marginBottom: '24px',
         display: 'flex',
@@ -197,7 +197,7 @@ export const LearningStyleProfiler = () => {
             <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.auditory)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.auditory ?? 0}%`, height: '100%', background: '#10B981' }} />
+            <div style={{ width: `${percentages.auditory ?? 0}%`, height: '100%', background: '#377D71' }} />
           </div>
         </div>
 
@@ -207,7 +207,7 @@ export const LearningStyleProfiler = () => {
             <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.visual)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.visual ?? 0}%`, height: '100%', background: '#3B82F6' }} />
+            <div style={{ width: `${percentages.visual ?? 0}%`, height: '100%', background: '#2A6F8F' }} />
           </div>
         </div>
 
@@ -217,7 +217,7 @@ export const LearningStyleProfiler = () => {
             <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.kinesthetic)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.kinesthetic ?? 0}%`, height: '100%', background: '#8B5CF6' }} />
+            <div style={{ width: `${percentages.kinesthetic ?? 0}%`, height: '100%', background: '#9C4F84' }} />
           </div>
         </div>
 
@@ -227,7 +227,7 @@ export const LearningStyleProfiler = () => {
             <strong style={{ color: 'var(--primary)' }}>{percentageLabel(percentages.analytical)}</strong>
           </div>
           <div style={{ width: '100%', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', overflow: 'hidden' }}>
-            <div style={{ width: `${percentages.analytical ?? 0}%`, height: '100%', background: '#F59E0B' }} />
+            <div style={{ width: `${percentages.analytical ?? 0}%`, height: '100%', background: '#E39A2D' }} />
           </div>
         </div>
       </div>
@@ -239,25 +239,25 @@ export const LearningStyleProfiler = () => {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
         <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#10B981', display: 'block', marginBottom: '4px' }}>🎧 للنمط الصوتي (السمعي):</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#377D71', display: 'block', marginBottom: '4px' }}>🎧 للنمط الصوتي (السمعي):</span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             تفعيل مشغل القارئ التلقائي، جلسات التسميع الصوتي المباشر، وتكرار الحدر.
           </span>
         </div>
         <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#3B82F6', display: 'block', marginBottom: '4px' }}>👁️ للنمط المرئي (البصري):</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#2A6F8F', display: 'block', marginBottom: '4px' }}>👁️ للنمط المرئي (البصري):</span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             إبراز مواضع الآيات في صفحة المصحف، خريطة القرآن التفاعلية، والخرائط الذهنية.
           </span>
         </div>
         <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#8B5CF6', display: 'block', marginBottom: '4px' }}>✍️ للنمط الحركي والكتابي:</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#9C4F84', display: 'block', marginBottom: '4px' }}>✍️ للنمط الحركي والكتابي:</span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             تفعيل عداد التكرار باللمس والمسبحة، واختبارات سحب الكلمات وإكمال الفراغات.
           </span>
         </div>
         <div style={{ padding: '14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
-          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#F59E0B', display: 'block', marginBottom: '4px' }}>📖 للنمط التحليلي والتدبري:</span>
+          <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#E39A2D', display: 'block', marginBottom: '4px' }}>📖 للنمط التحليلي والتدبري:</span>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
             عرض شجرة المتشابهات اللفظية، أسباب النزول، ولطائف التفسير قبل الحفظ.
           </span>

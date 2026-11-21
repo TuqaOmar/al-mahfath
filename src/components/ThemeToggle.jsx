@@ -23,10 +23,10 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '',
           width: size === 'small' ? '54px' : '64px',
           height: `${pillHeight}px`,
           borderRadius: '20px',
-          border: '1px solid var(--glass-border, #e5e7eb)',
+          border: '1px solid var(--glass-border, #ECE6EA)',
           background: isDark 
-            ? 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)' 
-            : 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
+            ? 'linear-gradient(135deg, #1F1220 0%, #2D1B2A 100%)' 
+            : 'linear-gradient(135deg, #EEF8F6 0%, #DDF1ED 100%)',
           cursor: 'pointer',
           padding: '3px',
           display: 'flex',
@@ -34,8 +34,8 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '',
           justifyContent: 'space-between',
           overflow: 'hidden',
           boxShadow: isDark 
-            ? 'inset 0 2px 4px rgba(0,0,0,0.4), 0 0 12px rgba(16, 185, 129, 0.2)' 
-            : 'inset 0 2px 4px rgba(0,0,0,0.06), 0 0 12px rgba(245, 158, 11, 0.25)',
+            ? 'inset 0 2px 4px rgba(0,0,0,0.4), 0 0 12px rgba(55, 125, 113, 0.2)' 
+            : 'inset 0 2px 4px rgba(0,0,0,0.06), 0 0 12px rgba(227, 154, 45, 0.25)',
           transition: 'background 0.4s ease, border-color 0.4s ease, box-shadow 0.4s ease',
           outline: 'none'
         }}
@@ -50,7 +50,7 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '',
           transition: 'opacity 0.3s ease',
           zIndex: 1
         }}>
-          <Sun size={size === 'small' ? 14 : 16} color="#F59E0B" />
+          <Sun size={size === 'small' ? 14 : 16} color="#E39A2D" />
         </span>
 
         {/* Moon Icon Background */}
@@ -63,7 +63,7 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '',
           transition: 'opacity 0.3s ease',
           zIndex: 1
         }}>
-          <Moon size={size === 'small' ? 14 : 16} color="#10B981" />
+          <Moon size={size === 'small' ? 14 : 16} color="#377D71" />
         </span>
 
         {/* Sliding Knob */}
@@ -83,11 +83,11 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '',
             height: size === 'small' ? '22px' : '26px',
             borderRadius: '50%',
             background: isDark 
-              ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
-              : 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+              ? 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)' 
+              : 'linear-gradient(135deg, #E39A2D 0%, #C27F17 100%)',
             boxShadow: isDark 
-              ? '0 2px 8px rgba(16, 185, 129, 0.5)' 
-              : '0 2px 8px rgba(245, 158, 11, 0.5)',
+              ? '0 2px 8px rgba(55, 125, 113, 0.5)' 
+              : '0 2px 8px rgba(227, 154, 45, 0.5)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -131,12 +131,12 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '',
         borderRadius: '50%',
         cursor: 'pointer',
         background: isDark 
-          ? 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)' 
-          : 'linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%)',
-        border: '1px solid var(--glass-border, #e5e7eb)',
+          ? 'linear-gradient(135deg, #2D1B2A 0%, #1F1220 100%)' 
+          : 'linear-gradient(135deg, #EEF8F6 0%, #DDF1ED 100%)',
+        border: '1px solid var(--glass-border, #ECE6EA)',
         boxShadow: isDark 
           ? '0 2px 8px rgba(0,0,0,0.3)' 
-          : '0 2px 8px rgba(16, 185, 129, 0.2)',
+          : '0 2px 8px rgba(55, 125, 113, 0.2)',
         transition: 'background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease',
         outline: 'none',
         position: 'relative',
@@ -153,9 +153,9 @@ export const ThemeToggle = ({ variant = 'pill', size = 'medium', className = '',
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
         >
           {isDark ? (
-            <Sun size={size === 'small' ? 18 : 20} color="#F59E0B" />
+            <Sun size={size === 'small' ? 18 : 20} color="#E39A2D" />
           ) : (
-            <Moon size={size === 'small' ? 18 : 20} color="#10B981" />
+            <Moon size={size === 'small' ? 18 : 20} color="#377D71" />
           )}
         </motion.div>
       </AnimatePresence>

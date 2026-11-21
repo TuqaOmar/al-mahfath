@@ -14,7 +14,7 @@ const ConfettiCanvas = () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    const colors = ['#10B981', '#3B82F6', '#F59E0B', '#8B5CF6', '#EC4899', '#14B8A6'];
+    const colors = ['#377D71', '#2A6F8F', '#E39A2D', '#9C4F84', '#C774A9', '#14B8A6'];
     const particles = Array.from({ length: 90 }).map(() => ({
       x: Math.random() * canvas.width,
       y: Math.random() * canvas.height - canvas.height,
@@ -86,13 +86,13 @@ export const CelebrationOverlay = () => {
   const getIcon = () => {
     switch (type) {
       case 'wird':
-        return <Shield size={48} color="#10B981" />;
+        return <Shield size={48} color="#377D71" />;
       case 'mindmap':
-        return <Sparkles size={48} color="#8B5CF6" />;
+        return <Sparkles size={48} color="#9C4F84" />;
       case 'badge':
-        return <Award size={48} color="#F59E0B" />;
+        return <Award size={48} color="#E39A2D" />;
       default:
-        return <Trophy size={48} color="#3B82F6" />;
+        return <Trophy size={48} color="#2A6F8F" />;
     }
   };
 
@@ -135,7 +135,7 @@ export const CelebrationOverlay = () => {
             padding: '36px 28px',
             maxWidth: '460px',
             width: '100%',
-            boxShadow: '0 20px 50px rgba(16, 185, 129, 0.25)',
+            boxShadow: '0 20px 50px rgba(55, 125, 113, 0.25)',
             textAlign: 'center',
             position: 'relative',
             overflow: 'hidden'
@@ -173,13 +173,13 @@ export const CelebrationOverlay = () => {
               width: '90px',
               height: '90px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(59, 130, 246, 0.2))',
+              background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.2), rgba(42, 111, 143, 0.2))',
               border: '2px solid var(--primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               margin: '0 auto 20px',
-              boxShadow: '0 0 30px rgba(16, 185, 129, 0.4)'
+              boxShadow: '0 0 30px rgba(55, 125, 113, 0.4)'
             }}
           >
             {getIcon()}
@@ -237,7 +237,7 @@ export const CelebrationOverlay = () => {
               <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>
                 {lang === 'ar' ? 'مكافأة الخبرة' : 'XP Reward'}
               </span>
-              <strong style={{ fontSize: '18px', color: '#F59E0B', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <strong style={{ fontSize: '18px', color: '#E39A2D', display: 'flex', alignItems: 'center', gap: '4px' }}>
                 <Sparkles size={16} /> +{xpBonus} XP
               </strong>
             </div>
@@ -258,7 +258,7 @@ export const CelebrationOverlay = () => {
           <div style={{
             padding: '12px 16px',
             borderRadius: '12px',
-            background: 'rgba(16, 185, 129, 0.08)',
+            background: 'rgba(55, 125, 113, 0.08)',
             color: 'var(--text-primary)',
             fontFamily: 'var(--font-quran)',
             fontSize: '15px',
@@ -308,7 +308,7 @@ export const CelebrationOverlay = () => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)'
+                boxShadow: '0 4px 14px rgba(55, 125, 113, 0.4)'
               }}
             >
               <CheckCircle2 size={18} />

@@ -221,10 +221,10 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
       <div style={{
         padding: '24px 28px',
         borderRadius: '24px',
-        background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
+        background: 'linear-gradient(135deg, #1F1220 0%, #1A3F39 100%)',
         color: 'white',
         boxShadow: '0 10px 30px rgba(0, 0, 0, 0.15)',
-        border: '1px solid rgba(16, 185, 129, 0.3)',
+        border: '1px solid rgba(55, 125, 113, 0.3)',
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
@@ -237,8 +237,8 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
               <div style={{
                 padding: '8px',
                 borderRadius: '12px',
-                background: 'rgba(16, 185, 129, 0.25)',
-                color: '#34D399',
+                background: 'rgba(55, 125, 113, 0.25)',
+                color: '#4FA899',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -249,7 +249,7 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
                 <h1 style={{ fontSize: '24px', fontWeight: 800, margin: 0, color: '#FFFFFF' }}>
                   الخرائط الذهنية لكامل سور القرآن الكريم (114 سورة)
                 </h1>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#94A3B8' }}>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#9C8D98' }}>
                   تقسيم شجري بصري للمقاصد الكبرى والمحاور الموضوعية لضبط الحفظ والربط الذهني بين الآيات.
                 </p>
               </div>
@@ -266,9 +266,9 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
                 gap: '8px',
                 padding: '7px 14px',
                 borderRadius: '14px',
-                background: 'rgba(16, 185, 129, 0.18)',
-                border: '1px solid rgba(52, 211, 153, 0.4)',
-                color: '#34D399',
+                background: 'rgba(55, 125, 113, 0.18)',
+                border: '1px solid rgba(79, 168, 153, 0.4)',
+                color: '#4FA899',
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -288,19 +288,19 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
           <div style={{
             padding: '16px 20px',
             borderRadius: '16px',
-            background: 'rgba(15, 23, 42, 0.75)',
-            border: '1px solid rgba(52, 211, 153, 0.25)',
+            background: 'rgba(31, 18, 32, 0.75)',
+            border: '1px solid rgba(79, 168, 153, 0.25)',
             fontSize: '13px',
             lineHeight: 1.7,
-            color: '#E2E8F0'
+            color: '#EDE6EA'
           }}>
-            <div style={{ fontWeight: 800, color: '#34D399', marginBottom: '6px' }}>
+            <div style={{ fontWeight: 800, color: '#4FA899', marginBottom: '6px' }}>
               📜 منهجية التوثيق والاعتماد العلمي للخرائط الذهنية:
             </div>
             <div>
               تم استخراج المقاصد العامة والمحاور الموضوعية لكافة سور القرآن الكريم الـ 114 وفق أحدث المراجع القرآنية المعتمدة:
             </div>
-            <ul style={{ margin: '6px 0 0 0', paddingRight: '20px', color: '#CBD5E1' }}>
+            <ul style={{ margin: '6px 0 0 0', paddingRight: '20px', color: '#DCCFD7' }}>
               <li><strong>المصدر الرئيس:</strong> «المختصر في التفسير» الصادر عن مركز تفسير للدراسات القرآنية (بإشراف نخبة من علماء التفسير).</li>
               <li><strong>التقسيم الموضوعي الشجري:</strong> «أطلس سور القرآن الكريم (الخرائط الذهنية)» لفضيلة د. صفوة برهان الشوادفي.</li>
               <li><strong>الترابط ومفاتيح الربط الذهني:</strong> «مقاصد سور القرآن الكريم» و«نظم الدرر في تناسب الآيات والسور» للإمام البقاعي.</li>
@@ -317,7 +317,7 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
           paddingBottom: '4px',
           scrollbarWidth: 'none'
         }}>
-          <span style={{ fontSize: '12px', color: '#94A3B8', whiteSpace: 'nowrap', fontWeight: 600 }}>
+          <span style={{ fontSize: '12px', color: '#9C8D98', whiteSpace: 'nowrap', fontWeight: 600 }}>
             وصول سريع:
           </span>
           {quickSurahs.map(qs => (
@@ -327,9 +327,9 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
               style={{
                 padding: '4px 12px',
                 borderRadius: '12px',
-                border: selectedSurahNumber === qs.num ? '1px solid #34D399' : '1px solid rgba(255,255,255,0.12)',
-                background: selectedSurahNumber === qs.num ? 'rgba(16, 185, 129, 0.35)' : 'rgba(255,255,255,0.06)',
-                color: selectedSurahNumber === qs.num ? '#34D399' : '#E2E8F0',
+                border: selectedSurahNumber === qs.num ? '1px solid #4FA899' : '1px solid rgba(255,255,255,0.12)',
+                background: selectedSurahNumber === qs.num ? 'rgba(55, 125, 113, 0.35)' : 'rgba(255,255,255,0.06)',
+                color: selectedSurahNumber === qs.num ? '#4FA899' : '#EDE6EA',
                 fontSize: '12px',
                 fontWeight: selectedSurahNumber === qs.num ? 800 : 500,
                 cursor: 'pointer',
@@ -589,8 +589,8 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
                 <span style={{
                   padding: '3px 8px',
                   borderRadius: '8px',
-                  background: currentMindMap.revelationType === 'مكية' ? 'rgba(59, 130, 246, 0.12)' : 'rgba(16, 185, 129, 0.12)',
-                  color: currentMindMap.revelationType === 'مكية' ? '#3B82F6' : '#10B981',
+                  background: currentMindMap.revelationType === 'مكية' ? 'rgba(42, 111, 143, 0.12)' : 'rgba(55, 125, 113, 0.12)',
+                  color: currentMindMap.revelationType === 'مكية' ? '#2A6F8F' : '#377D71',
                   fontSize: '11.5px',
                   fontWeight: 700
                 }}>
@@ -643,16 +643,16 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
                 gap: '6px',
                 padding: '8px 14px',
                 borderRadius: '12px',
-                border: `1px solid ${isCurrentSurahFavorited ? '#F59E0B' : 'var(--glass-border)'}`,
-                background: isCurrentSurahFavorited ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
-                color: isCurrentSurahFavorited ? '#D97706' : 'var(--text-secondary)',
+                border: `1px solid ${isCurrentSurahFavorited ? '#E39A2D' : 'var(--glass-border)'}`,
+                background: isCurrentSurahFavorited ? 'rgba(227, 154, 45, 0.15)' : 'var(--bg-color)',
+                color: isCurrentSurahFavorited ? '#C27F17' : 'var(--text-secondary)',
                 fontSize: '12.5px',
                 fontWeight: 700,
                 cursor: 'pointer',
                 transition: 'all 0.2s ease'
               }}
             >
-              <Star size={16} fill={isCurrentSurahFavorited ? '#F59E0B' : 'none'} color={isCurrentSurahFavorited ? '#F59E0B' : 'currentColor'} />
+              <Star size={16} fill={isCurrentSurahFavorited ? '#E39A2D' : 'none'} color={isCurrentSurahFavorited ? '#E39A2D' : 'currentColor'} />
               <span>{isCurrentSurahFavorited ? 'في المفضلة' : 'حفظ بالمفضلة'}</span>
             </button>
           </div>
@@ -695,7 +695,7 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
             fontSize: '13px',
             color: 'var(--text-secondary)'
           }}>
-            <Sparkles size={16} style={{ color: '#F59E0B', flexShrink: 0, marginTop: '2px' }} />
+            <Sparkles size={16} style={{ color: '#E39A2D', flexShrink: 0, marginTop: '2px' }} />
             <div>
               <strong style={{ color: 'var(--text-primary)' }}>مفتاح الربط الذهني للحافظ: </strong>
               <span>{currentMindMap.memorizationKey}</span>
@@ -763,7 +763,7 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
                   alignItems: 'flex-start',
                   position: 'relative',
                   background: isDone 
-                    ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)' 
+                    ? 'linear-gradient(135deg, rgba(55, 125, 113, 0.08) 0%, rgba(47, 107, 97, 0.02) 100%)' 
                     : 'var(--bg-surface)',
                   padding: '22px',
                   borderRadius: '18px',
@@ -785,7 +785,7 @@ export const MindMapsView = ({ onSelectPageForRecitation }) => {
                     justifyContent: 'center',
                     fontWeight: 800,
                     fontSize: '15px',
-                    boxShadow: `0 3px 10px ${isDone ? 'rgba(16, 185, 129, 0.4)' : `${currentMindMap.color}40`}`
+                    boxShadow: `0 3px 10px ${isDone ? 'rgba(55, 125, 113, 0.4)' : `${currentMindMap.color}40`}`
                   }}>
                     {isDone ? <Check size={18} strokeWidth={3} /> : index + 1}
                   </div>
