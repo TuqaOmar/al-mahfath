@@ -67,15 +67,15 @@ export const NotificationCenter = () => {
     if (n.icon) return <span style={{ fontSize: '18px' }}>{n.icon}</span>;
     switch (n.type) {
       case 'reminder':
-        return <Clock size={18} color="#E39A2D" />;
+        return <Clock size={18} color="#F59E0B" />;
       case 'wird':
-        return <Shield size={18} color="#377D71" />;
+        return <Shield size={18} color="#10B981" />;
       case 'mindmap':
-        return <Sparkles size={18} color="#9C4F84" />;
+        return <Sparkles size={18} color="#8B5CF6" />;
       case 'badge':
-        return <Trophy size={18} color="#E39A2D" />;
+        return <Trophy size={18} color="#F59E0B" />;
       default:
-        return <Award size={18} color="#2A6F8F" />;
+        return <Award size={18} color="#3B82F6" />;
     }
   };
 
@@ -114,7 +114,7 @@ export const NotificationCenter = () => {
               border: '2px solid var(--primary)',
               borderRadius: '16px',
               padding: '12px 18px',
-              boxShadow: '0 10px 30px rgba(55, 125, 113, 0.35)',
+              boxShadow: '0 10px 30px rgba(16, 185, 129, 0.35)',
               zIndex: 99999,
               display: 'flex',
               alignItems: 'center',
@@ -314,7 +314,7 @@ export const NotificationCenter = () => {
                 <div style={{
                   padding: '14px',
                   borderRadius: '14px',
-                  background: reminderSettings.enabled ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-color)',
+                  background: reminderSettings.enabled ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-color)',
                   border: `1px solid ${reminderSettings.enabled ? 'var(--primary)' : 'var(--glass-border)'}`,
                   display: 'flex',
                   alignItems: 'center',
@@ -488,7 +488,7 @@ export const NotificationCenter = () => {
                       padding: '8px',
                       borderRadius: '10px',
                       border: `1px solid ${reminderSettings.soundEnabled ? 'var(--primary)' : 'var(--glass-border)'}`,
-                      background: reminderSettings.soundEnabled ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-color)',
+                      background: reminderSettings.soundEnabled ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-color)',
                       color: reminderSettings.soundEnabled ? 'var(--primary)' : 'var(--text-secondary)',
                       fontSize: '11px',
                       fontWeight: 'bold',
@@ -510,7 +510,7 @@ export const NotificationCenter = () => {
                       padding: '8px',
                       borderRadius: '10px',
                       border: `1px solid ${reminderSettings.browserPushEnabled ? 'var(--primary)' : 'var(--glass-border)'}`,
-                      background: reminderSettings.browserPushEnabled ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-color)',
+                      background: reminderSettings.browserPushEnabled ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-color)',
                       color: reminderSettings.browserPushEnabled ? 'var(--primary)' : 'var(--text-secondary)',
                       fontSize: '11px',
                       fontWeight: 'bold',
@@ -533,7 +533,7 @@ export const NotificationCenter = () => {
                   style={{
                     padding: '11px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                     color: 'white',
                     border: 'none',
                     fontWeight: 'bold',
@@ -543,7 +543,7 @@ export const NotificationCenter = () => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(55, 125, 113, 0.35)',
+                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)',
                     transition: 'transform 0.15s ease'
                   }}
                   onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
@@ -608,7 +608,7 @@ export const NotificationCenter = () => {
                       style={{
                         padding: '12px',
                         borderRadius: '12px',
-                        background: n.read ? 'transparent' : 'rgba(55, 125, 113, 0.06)',
+                        background: n.read ? 'transparent' : 'rgba(16, 185, 129, 0.06)',
                         border: `1px solid ${n.read ? 'transparent' : 'var(--primary-light)'}`,
                         marginBottom: '6px',
                         cursor: 'pointer',
@@ -643,7 +643,7 @@ export const NotificationCenter = () => {
                         <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
                           {n.message}
                         </p>
-                        {n.source?.startsWith('local-') && <span style={{ fontSize: '10px', color: '#C27F17' }}>{lang === 'ar' ? 'تنبيه محلي على هذا الجهاز' : 'Local device alert'}</span>}
+                        {n.source?.startsWith('local-') && <span style={{ fontSize: '10px', color: '#D97706' }}>{lang === 'ar' ? 'تنبيه محلي على هذا الجهاز' : 'Local device alert'}</span>}
                       </div>
 
                       <button

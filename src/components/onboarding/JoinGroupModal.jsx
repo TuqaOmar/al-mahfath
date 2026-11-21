@@ -134,7 +134,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(31, 18, 32, 0.75)',
+      backgroundColor: 'rgba(15, 23, 42, 0.75)',
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       zIndex: 100,
@@ -163,7 +163,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
         {/* Top Header Banner */}
         <div style={{
           padding: '24px 24px 18px 24px',
-          background: 'linear-gradient(135deg, #1A3F39 0%, #0F766E 50%, #1F4A43 100%)',
+          background: 'linear-gradient(135deg, #064E3B 0%, #0F766E 50%, #065F46 100%)',
           color: '#FFFFFF',
           position: 'relative'
         }}>
@@ -198,7 +198,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
               ? (lang === 'ar' ? 'حلقتك القرآنية 🌿' : 'Your Quran circle 🌿')
               : (lang === 'ar' ? 'مرحباً بك في سَفَر 🌿' : 'Welcome to Safar 🌿')}
           </h2>
-          <p style={{ margin: 0, fontSize: '13.5px', color: '#DDF1ED', lineHeight: 1.5 }}>
+          <p style={{ margin: 0, fontSize: '13.5px', color: '#D1FAE5', lineHeight: 1.5 }}>
             {isMember
               ? (lang === 'ar' ? 'عضويتك الحالية، والانتقال لحلقة أخرى أو الخروج منها' : 'Your membership, switching circles or leaving')
               : (lang === 'ar'
@@ -234,7 +234,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                 width: '64px',
                 height: '64px',
                 borderRadius: '20px',
-                background: 'rgba(55, 125, 113, 0.12)',
+                background: 'rgba(16, 185, 129, 0.12)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
@@ -288,7 +288,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '10px',
-                    boxShadow: '0 4px 15px rgba(55, 125, 113, 0.3)',
+                    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)',
                     transition: 'all 0.2s ease'
                   }}
                 >
@@ -420,8 +420,8 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
               <div style={{
                 padding: '16px',
                 borderRadius: '18px',
-                background: 'rgba(55, 125, 113, 0.08)',
-                border: '1px solid rgba(55, 125, 113, 0.25)',
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)',
                 marginBottom: '20px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontSize: '13px', fontWeight: 700, marginBottom: '12px' }}>
@@ -440,7 +440,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
 
                 {/* The public lookup returns no roster data (no member count or avatars). */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '10px', background: 'var(--bg-surface)', borderRadius: '12px', marginBottom: foundGroup.targetJuz ? '12px' : 0 }}>
-                  <div aria-hidden="true" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--primary)', background: 'rgba(55, 125, 113, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
+                  <div aria-hidden="true" style={{ width: '40px', height: '40px', borderRadius: '50%', border: '2px solid var(--primary)', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '16px', flexShrink: 0 }}>
                     {(foundGroup.teacherName || '؟').trim().charAt(0)}
                   </div>
                   <div>
@@ -497,7 +497,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 15px rgba(55, 125, 113, 0.3)'
+                    boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
                   }}
                 >
                   <UserCheck size={18} />
@@ -584,7 +584,7 @@ export const JoinGroupModal = ({ isOpen, onClose, onJoined }) => {
                 width: '64px',
                 height: '64px',
                 borderRadius: '50%',
-                background: 'rgba(55, 125, 113, 0.15)',
+                background: 'rgba(16, 185, 129, 0.15)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',

@@ -429,7 +429,7 @@ const OnboardingWizard = () => {
                   {/* 4 Value Proposition Cards */}
                   <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: '10px', textAlign: isRTL ? 'right' : 'left', marginBottom: '24px' }}>
                     <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(55, 125, 113, 0.15)', color: 'var(--primary)' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
                         <Target size={18} />
                       </div>
                       <div>
@@ -443,7 +443,7 @@ const OnboardingWizard = () => {
                     </div>
 
                     <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(55, 125, 113, 0.15)', color: 'var(--primary)' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
                         <Volume2 size={18} />
                       </div>
                       <div>
@@ -457,7 +457,7 @@ const OnboardingWizard = () => {
                     </div>
 
                     <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(55, 125, 113, 0.15)', color: 'var(--primary)' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
                         <Users size={18} />
                       </div>
                       <div>
@@ -471,7 +471,7 @@ const OnboardingWizard = () => {
                     </div>
 
                     <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(55, 125, 113, 0.15)', color: 'var(--primary)' }}>
+                      <div style={{ padding: '6px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)' }}>
                         <ShieldCheck size={18} />
                       </div>
                       <div>
@@ -510,7 +510,7 @@ const OnboardingWizard = () => {
                           padding: '12px',
                           borderRadius: '12px',
                           border: groupInfo.choice === 'group' ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
-                          background: groupInfo.choice === 'group' ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-surface)',
+                          background: groupInfo.choice === 'group' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -543,7 +543,7 @@ const OnboardingWizard = () => {
                           padding: '12px',
                           borderRadius: '12px',
                           border: groupInfo.choice === 'independent' ? '2px solid var(--primary)' : '1px solid var(--glass-border)',
-                          background: groupInfo.choice === 'independent' ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-surface)',
+                          background: groupInfo.choice === 'independent' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
                           cursor: 'pointer',
                           display: 'flex',
                           alignItems: 'center',
@@ -615,7 +615,7 @@ const OnboardingWizard = () => {
                         )}
 
                         {groupInfo.successMessage && (
-                          <div style={{ marginTop: '8px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(55, 125, 113, 0.15)', border: '1px solid rgba(55, 125, 113, 0.3)', color: 'var(--primary)', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ marginTop: '8px', padding: '8px 12px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)', color: 'var(--primary)', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
                             <Check size={14} />
                             <span>{groupInfo.successMessage}</span>
                           </div>

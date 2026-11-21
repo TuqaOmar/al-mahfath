@@ -132,7 +132,7 @@ export const JuzMultiSelector = ({ selectedJuzs = [1, 30], onChange }) => {
       <div style={{
         padding: '12px 16px',
         borderRadius: '14px',
-        background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.12), rgba(42, 111, 143, 0.08))',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.08))',
         border: '1px solid var(--primary)',
         display: 'flex',
         alignItems: 'center',

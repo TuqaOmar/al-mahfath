@@ -190,10 +190,10 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
       <div style={{
         padding: '24px',
         borderRadius: '24px',
-        background: 'linear-gradient(135deg, #1A3F39 0%, #1F4A43 50%, #285C53 100%)',
+        background: 'linear-gradient(135deg, #064E3B 0%, #065F46 50%, #047857 100%)',
         color: 'white',
-        boxShadow: '0 12px 30px rgba(26, 63, 57, 0.25)',
-        border: '1px solid rgba(79, 168, 153, 0.3)',
+        boxShadow: '0 12px 30px rgba(6, 78, 59, 0.25)',
+        border: '1px solid rgba(52, 211, 153, 0.3)',
         display: 'flex',
         flexDirection: 'column',
         gap: '18px'
@@ -202,21 +202,21 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(255, 255, 255, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Shield size={24} color="#8FD3C8" />
+                <Shield size={24} color="#6EE7B7" />
               </div>
               <h2 style={{ margin: 0, fontSize: '22px', fontWeight: 'bold', color: 'white' }}>
                 {ar ? <>خطة مراجعة الحصون الخمسة 🏰</> : <>Five Fortresses review plan 🏰</>}
               </h2>
             </div>
-            <p style={{ margin: 0, fontSize: '13.5px', color: '#DDF1ED', lineHeight: 1.6 }}>
+            <p style={{ margin: 0, fontSize: '13.5px', color: '#D1FAE5', lineHeight: 1.6 }}>
               {ar ? <>منهجية علمية متكاملة لربط الحفظ والمراجعة بآخر جزء وصلت إليه، لتثبيت القرآن في صدرك كالفاتحة.</> : <>A complete method linking memorization and review to the last juz you reached, so the Quran stays firm like al-Fatiha.</>}
             </p>
           </div>
 
           {/* Firestore Sync Badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0, 0, 0, 0.2)', padding: '6px 14px', borderRadius: '20px', border: '1px solid rgba(255, 255, 255, 0.15)' }}>
-            <Cloud size={15} color="#4FA899" />
-            <span data-testid="simplified-fortress-status" style={{ fontSize: '12px', color: '#EDE6EA', fontWeight: 'bold' }}>
+            <Cloud size={15} color="#34D399" />
+            <span data-testid="simplified-fortress-status" style={{ fontSize: '12px', color: '#E2E8F0', fontWeight: 'bold' }}>
               {ar ? (syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ لم يتغير آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم الحفظ ✓' : 'الخطة محفوظة') : (syncStatus === 'failed' ? 'Could not load or save the plan; last confirmed record unchanged' : syncStatus === 'loading' ? 'Loading plan...' : syncStatus === 'saving' ? 'Saving...' : syncStatus === 'draft' ? 'Unsaved draft; save the juz or a first completion' : syncStatus === 'saved' ? 'Saved ✓' : 'Plan saved')}
             </span>
           </div>
@@ -235,9 +235,9 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           border: '1px solid rgba(255, 255, 255, 0.1)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <Compass size={22} color="#4FA899" />
+            <Compass size={22} color="#34D399" />
             <div>
-              <span style={{ fontSize: '12px', color: '#BFE5DE', display: 'block' }}>{ar ? 'آخر جزء وصلت إليه في الحفظ والمراجعة:' : 'Last juz you reached:'}</span>
+              <span style={{ fontSize: '12px', color: '#A7F3D0', display: 'block' }}>{ar ? 'آخر جزء وصلت إليه في الحفظ والمراجعة:' : 'Last juz you reached:'}</span>
               <strong style={{ fontSize: '16px', color: 'white' }}>
                 {ar ? <>الجزء {selectedJuz} (سورة {currentSurah} — الصفحات {currentJuzRange.startPage} إلى {currentJuzRange.endPage})</> : <>Juz {selectedJuz} (Surah {currentSurah} — pages {currentJuzRange.startPage} to {currentJuzRange.endPage})</>}
               </strong>
@@ -245,16 +245,16 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <label style={{ fontSize: '13px', color: '#EDE6EA' }}>{ar ? 'تغيير الجزء:' : 'Change juz:'}</label>
+            <label style={{ fontSize: '13px', color: '#E2E8F0' }}>{ar ? 'تغيير الجزء:' : 'Change juz:'}</label>
             <select
               data-testid="simplified-fortress-juz"
               disabled={!hasLoaded || syncStatus === 'saving'}
               value={selectedJuz}
               onChange={(e) => handleJuzChange(e.target.value)}
               style={{
-                background: '#285C53',
+                background: '#047857',
                 color: 'white',
-                border: '1.5px solid #4FA899',
+                border: '1.5px solid #34D399',
                 padding: '8px 14px',
                 borderRadius: '10px',
                 fontSize: '14px',
@@ -275,11 +275,11 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
         {/* Progress Metric Bar */}
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', fontSize: '13px' }}>
-            <span style={{ color: '#DDF1ED', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Flame size={16} color="#F0BE5A" />
+            <span style={{ color: '#D1FAE5', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Flame size={16} color="#FBBF24" />
               {ar ? <>إنجاز الحصون المصرّح به لليوم: <strong data-testid="simplified-fortress-count">{completedCount} من أصل 5 حصون</strong></> : <>Fortresses you marked today: <strong data-testid="simplified-fortress-count">{completedCount} of 5</strong></>}
             </span>
-            <span style={{ color: '#8FD3C8', fontWeight: 'bold' }}>{progressPercent}% {ar ? 'مكتمل' : 'done'}</span>
+            <span style={{ color: '#6EE7B7', fontWeight: 'bold' }}>{progressPercent}% {ar ? 'مكتمل' : 'done'}</span>
           </div>
 
           <div style={{ width: '100%', height: '10px', borderRadius: '10px', background: 'rgba(0, 0, 0, 0.3)', overflow: 'hidden' }}>
@@ -287,7 +287,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               width: `${progressPercent}%`,
               height: '100%',
               borderRadius: '10px',
-              background: 'linear-gradient(90deg, #F0BE5A 0%, #4FA899 100%)',
+              background: 'linear-gradient(90deg, #FBBF24 0%, #34D399 100%)',
               transition: 'width 0.4s ease'
             }} />
           </div>
@@ -329,8 +329,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 fontSize: '11px',
                 padding: '2px 8px',
                 borderRadius: '8px',
-                background: reminderSettings?.enabled ? 'rgba(55, 125, 113, 0.15)' : 'rgba(239, 68, 68, 0.12)',
-                color: reminderSettings?.enabled ? '#377D71' : '#EF4444',
+                background: reminderSettings?.enabled ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.12)',
+                color: reminderSettings?.enabled ? '#10B981' : '#EF4444',
                 fontWeight: 'bold'
               }}>
                 {reminderSettings?.enabled ? (ar ? `مفعل الساعة ${reminderSettings?.time}` : `On at ${reminderSettings?.time}`) : (ar ? 'معطل' : 'Off')}
@@ -365,7 +365,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               padding: '6px 14px',
               borderRadius: '10px',
               border: 'none',
-              background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               color: 'white',
               fontSize: '12px',
               fontWeight: 'bold',
@@ -373,7 +373,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 2px 8px rgba(55, 125, 113, 0.3)'
+              boxShadow: '0 2px 8px rgba(16, 185, 129, 0.3)'
             }}
           >
             <Volume2 size={14} />
@@ -389,7 +389,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
         <div style={{
           padding: '20px 24px',
           borderRadius: '20px',
-          background: completion.khatmah ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-surface)',
+          background: completion.khatmah ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
           border: completion.khatmah ? '1.5px solid var(--primary)' : '1px solid var(--glass-border)',
           display: 'flex',
           justifyContent: 'space-between',
@@ -404,8 +404,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               width: '46px',
               height: '46px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, rgba(76, 184, 230, 0.2) 0%, rgba(47, 149, 194, 0.1) 100%)',
-              color: '#1F6E8C',
+              background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(14, 165, 233, 0.1) 100%)',
+              color: '#0284C7',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -419,7 +419,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   {ar ? <>1. الحصن الأول: قراءة الختمة والاستماع بالحدر</> : <>1. First fortress: reading the khatmah and listening (hadr)</>}
                 </h3>
-                <span style={{ fontSize: '11px', background: 'rgba(31, 110, 140, 0.12)', color: '#1F6E8C', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '11px', background: 'rgba(2, 132, 199, 0.12)', color: '#0284C7', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
                   {ar ? <>الجزء {selectedJuz}</> : <>Juz {selectedJuz}</>}
                 </span>
               </div>
@@ -458,7 +458,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
         <div style={{
           padding: '20px 24px',
           borderRadius: '20px',
-          background: completion.preparation ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-surface)',
+          background: completion.preparation ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
           border: completion.preparation ? '1.5px solid var(--primary)' : '1px solid var(--glass-border)',
           display: 'flex',
           justifyContent: 'space-between',
@@ -473,8 +473,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               width: '46px',
               height: '46px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(122, 64, 105, 0.1) 100%)',
-              color: '#7A4069',
+              background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.2) 0%, rgba(147, 51, 234, 0.1) 100%)',
+              color: '#9333EA',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -488,7 +488,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   {ar ? <>2. الحصن الثاني: التحضير الثلاثي (الليلي والقبلي)</> : <>2. Second fortress: preparation (night before and before memorizing)</>}
                 </h3>
-                <span style={{ fontSize: '11px', background: 'rgba(122, 64, 105, 0.12)', color: '#7A4069', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '11px', background: 'rgba(147, 51, 234, 0.12)', color: '#9333EA', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
                   {ar ? <>ص {selectedPage} و ص {Math.min(604, selectedPage + 1)}</> : <>p. {selectedPage} and p. {Math.min(604, selectedPage + 1)}</>}
                 </span>
               </div>
@@ -529,7 +529,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
         <div style={{
           padding: '20px 24px',
           borderRadius: '20px',
-          background: completion.newMemorization ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-surface)',
+          background: completion.newMemorization ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
           border: completion.newMemorization ? '1.5px solid var(--primary)' : '1px solid var(--glass-border)',
           display: 'flex',
           justifyContent: 'space-between',
@@ -544,7 +544,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               width: '46px',
               height: '46px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.2) 0%, rgba(47, 107, 97, 0.1) 100%)',
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%)',
               color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
@@ -623,7 +623,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
         <div style={{
           padding: '20px 24px',
           borderRadius: '20px',
-          background: completion.nearRevision ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-surface)',
+          background: completion.nearRevision ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
           border: completion.nearRevision ? '1.5px solid var(--primary)' : '1px solid var(--glass-border)',
           display: 'flex',
           justifyContent: 'space-between',
@@ -638,8 +638,8 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               width: '46px',
               height: '46px',
               borderRadius: '14px',
-              background: 'linear-gradient(135deg, rgba(227, 154, 45, 0.2) 0%, rgba(194, 127, 23, 0.1) 100%)',
-              color: '#C27F17',
+              background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.2) 0%, rgba(217, 119, 6, 0.1) 100%)',
+              color: '#D97706',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -653,7 +653,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   {ar ? <>4. الحصن الرابع: المراجعة القريبة (آخر 20 صفحة)</> : <>4. Fourth fortress: near review (last 20 pages)</>}
                 </h3>
-                <span style={{ fontSize: '11px', background: 'rgba(194, 127, 23, 0.12)', color: '#C27F17', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '11px', background: 'rgba(217, 119, 6, 0.12)', color: '#D97706', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
                   {ar ? <>ص {Math.max(1, selectedPage - 20)} إلى {Math.max(1, selectedPage - 1)}</> : <>p. {Math.max(1, selectedPage - 20)} to {Math.max(1, selectedPage - 1)}</>}
                 </span>
               </div>
@@ -692,7 +692,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
         <div style={{
           padding: '20px 24px',
           borderRadius: '20px',
-          background: completion.farRevision ? 'rgba(55, 125, 113, 0.08)' : 'var(--bg-surface)',
+          background: completion.farRevision ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-surface)',
           border: completion.farRevision ? '1.5px solid var(--primary)' : '1px solid var(--glass-border)',
           display: 'flex',
           justifyContent: 'space-between',
@@ -708,7 +708,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
               height: '46px',
               borderRadius: '14px',
               background: 'var(--primary-light)',
-              color: 'var(--primary, #377D71)',
+              color: 'var(--primary, #10B981)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -722,7 +722,7 @@ export const SimplifiedFortressPlan = ({ onNavigateToQuran, onAskAi, onPlanSaved
                 <h3 style={{ margin: 0, fontSize: '16.5px', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                   {ar ? <>5. الحصن الخامس: المراجعة البعيدة والصلاة بالمحفوظ</> : <>5. Fifth fortress: far review and praying with what you memorized</>}
                 </h3>
-                <span style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary, #377D71)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary, #10B981)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold' }}>
                   {selectedJuz > 1 ? (ar ? `الأجزاء 1 إلى ${selectedJuz - 1}` : `Juz 1 to ${selectedJuz - 1}`) : (ar ? 'ينشط بعد الجزء 1' : 'Starts after juz 1')}
                 </span>
               </div>

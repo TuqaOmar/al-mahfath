@@ -150,7 +150,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'rgba(31, 18, 32, 0.75)',
+          background: 'rgba(15, 23, 42, 0.75)',
           backdropFilter: 'blur(8px)',
           zIndex: 1000,
           display: 'flex',
@@ -331,7 +331,7 @@ export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 16px rgba(55, 125, 113, 0.3)'
+                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
                 }}
               >
                 {isLoading ? (isRTL ? 'جاري المعالجة...' : 'Processing...') : (isSignUp ? (isRTL ? 'إنشاء حساب جديد 🚀' : 'Create Account') : (isRTL ? 'تسجيل الدخول' : 'Sign In'))}

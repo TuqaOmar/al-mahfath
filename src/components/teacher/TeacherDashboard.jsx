@@ -36,7 +36,7 @@ export const TeacherDashboard = ({ onOpenStudentProfile, onViewAllStudents, onVi
   const { stats, groups = [], studentsWhoNeedAttention = [], recentActivities = [] } = data;
   const groupSummary = groups.length ? groups.map(group => `${group.name}: ${group.studentsCount ?? group.membersCount ?? 0}`).join('، ') : 'لا توجد حلقات معيّنة';
   return <div data-testid="teacher-dashboard" style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
-    <section style={{ padding: 24, borderRadius: 22, background: 'linear-gradient(135deg,#1A3F39,#285C53)', color: 'white' }}>
+    <section style={{ padding: 24, borderRadius: 22, background: 'linear-gradient(135deg,#064E3B,#047857)', color: 'white' }}>
       <h1 style={{ margin: 0 }}>{lang === 'ar' ? `مرحبًا ${user?.name || 'بالمعلم'}` : `Welcome, ${user?.name || 'teacher'}`}</h1>
       <p>البيانات التالية تخص العضويات النشطة في حلقاتك فقط.</p>
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>

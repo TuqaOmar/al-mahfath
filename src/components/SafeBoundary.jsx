@@ -27,8 +27,8 @@ export class SafeBoundary extends React.Component {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'var(--bg-color, #FAF7F9)',
-          color: 'var(--text-primary, #1F1220)',
+          background: 'var(--bg-color, #f8fafc)',
+          color: 'var(--text-primary, #0f172a)',
           padding: '24px',
           fontFamily: 'var(--font-body, system-ui, sans-serif)',
           direction: 'rtl',
@@ -40,14 +40,14 @@ export class SafeBoundary extends React.Component {
             background: 'var(--bg-surface, #ffffff)',
             padding: '36px 28px',
             borderRadius: '24px',
-            border: '1px solid var(--glass-border, rgba(31, 18, 32, 0.08))',
+            border: '1px solid var(--glass-border, rgba(15, 23, 42, 0.08))',
             boxShadow: '0 10px 30px rgba(0, 0, 0, 0.08)'
           }}>
             <div style={{ fontSize: '48px', marginBottom: '16px' }}>🌿</div>
             <h2 style={{ fontSize: '20px', fontWeight: 700, margin: '0 0 10px 0', color: 'var(--text-primary)' }}>
               حدث تنبيه في عرض الصفحة
             </h2>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary, #6E626B)', margin: '0 0 20px 0', lineHeight: 1.6 }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary, #64748b)', margin: '0 0 20px 0', lineHeight: 1.6 }}>
               لا تقلق، بياناتك ومحفوظك في أمان تام بإذن الله. يمكنك استئناف التصفح والتسميع فوراً بالضغط على الزر أدناه:
             </p>
 
@@ -78,7 +78,7 @@ export class SafeBoundary extends React.Component {
                   padding: '12px 22px',
                   borderRadius: '12px',
                   border: 'none',
-                  background: 'var(--primary, #377D71)',
+                  background: 'var(--primary, #10B981)',
                   color: '#ffffff',
                   fontWeight: 700,
                   fontSize: '14px',
@@ -99,9 +99,9 @@ export class SafeBoundary extends React.Component {
                   gap: '8px',
                   padding: '12px 20px',
                   borderRadius: '12px',
-                  border: '1px solid var(--glass-border, #DCCFD7)',
+                  border: '1px solid var(--glass-border, #cbd5e1)',
                   background: 'transparent',
-                  color: 'var(--text-primary, #1F1220)',
+                  color: 'var(--text-primary, #0f172a)',
                   fontWeight: 600,
                   fontSize: '14px',
                   cursor: 'pointer'

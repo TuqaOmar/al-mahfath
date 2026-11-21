@@ -249,7 +249,7 @@ export const PullToRefresh = ({
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: isPastThreshold ? 'rgba(55, 125, 113, 0.18)' : 'var(--bg-color)',
+                    background: isPastThreshold ? 'rgba(16, 185, 129, 0.18)' : 'var(--bg-color)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

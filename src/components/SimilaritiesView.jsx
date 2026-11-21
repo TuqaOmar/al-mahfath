@@ -353,9 +353,9 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
               gap: '8px',
               padding: '12px 20px',
               borderRadius: '14px',
-              background: showBookmarksOnly ? '#E39A2D' : 'var(--bg-color)',
+              background: showBookmarksOnly ? '#F59E0B' : 'var(--bg-color)',
               color: showBookmarksOnly ? '#FFFFFF' : 'var(--text-primary)',
-              border: showBookmarksOnly ? '1px solid #E39A2D' : '1px solid var(--glass-border)',
+              border: showBookmarksOnly ? '1px solid #F59E0B' : '1px solid var(--glass-border)',
               fontWeight: 600,
               fontSize: '14px',
               cursor: 'pointer',
@@ -450,7 +450,7 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
         <div style={{
           padding: '12px 20px',
           borderRadius: '12px',
-          background: 'rgba(55, 125, 113, 0.12)',
+          background: 'rgba(20, 184, 166, 0.12)',
           border: '1px solid var(--primary)',
           color: 'var(--primary)',
           fontSize: '13px',
@@ -509,7 +509,7 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
             fontWeight: 600,
             cursor: isAiGenerating ? 'not-allowed' : 'pointer',
             opacity: isAiGenerating ? 0.7 : 1,
-            boxShadow: '0 2px 8px rgba(55, 125, 113, 0.25)',
+            boxShadow: '0 2px 8px rgba(20, 184, 166, 0.25)',
             transition: 'all 0.2s ease'
           }}
         >
@@ -604,8 +604,8 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '18px',
-                  border: isBookmarked ? '1px solid rgba(227, 154, 45, 0.4)' : '1px solid var(--glass-border)',
-                  boxShadow: isBookmarked ? '0 4px 20px rgba(227, 154, 45, 0.08)' : 'none'
+                  border: isBookmarked ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid var(--glass-border)',
+                  boxShadow: isBookmarked ? '0 4px 20px rgba(245, 158, 11, 0.08)' : 'none'
                 }}
               >
                 {/* Item Header */}
@@ -625,8 +625,8 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                       <span style={{
                         padding: '4px 10px',
                         borderRadius: '8px',
-                        background: 'rgba(42, 111, 143, 0.12)',
-                        color: '#2A6F8F',
+                        background: 'rgba(99, 102, 241, 0.12)',
+                        color: '#6366F1',
                         fontSize: '11px',
                         fontWeight: 700,
                         display: 'flex',
@@ -650,7 +650,7 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                       style={{
                         padding: '8px',
                         borderRadius: '10px',
-                        background: isCopied ? '#377D71' : 'var(--bg-color)',
+                        background: isCopied ? '#10B981' : 'var(--bg-color)',
                         color: isCopied ? '#FFFFFF' : 'var(--text-secondary)',
                         border: '1px solid var(--glass-border)',
                         cursor: 'pointer',
@@ -672,9 +672,9 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                       style={{
                         padding: '8px 12px',
                         borderRadius: '10px',
-                        background: isBookmarked ? 'rgba(227, 154, 45, 0.15)' : 'var(--bg-color)',
-                        color: isBookmarked ? '#C27F17' : 'var(--text-secondary)',
-                        border: isBookmarked ? '1px solid #E39A2D' : '1px solid var(--glass-border)',
+                        background: isBookmarked ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
+                        color: isBookmarked ? '#D97706' : 'var(--text-secondary)',
+                        border: isBookmarked ? '1px solid #F59E0B' : '1px solid var(--glass-border)',
                         cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
@@ -684,7 +684,7 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                         transition: 'all 0.15s ease'
                       }}
                     >
-                      {isBookmarked ? <BookmarkCheck size={16} color="#C27F17" /> : <Bookmark size={16} />}
+                      {isBookmarked ? <BookmarkCheck size={16} color="#D97706" /> : <Bookmark size={16} />}
                       <span>{isBookmarked ? 'محفوظة' : 'حفظ'}</span>
                     </button>
                   </div>
@@ -763,17 +763,17 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                       <div style={{ 
                         padding: '6px 12px', 
                         borderRadius: '8px', 
-                        background: 'rgba(42, 111, 143, 0.08)', 
-                        border: '1px solid rgba(42, 111, 143, 0.2)',
+                        background: 'rgba(59, 130, 246, 0.08)', 
+                        border: '1px solid rgba(59, 130, 246, 0.2)',
                         fontSize: '12px',
-                        color: '#1F5F7A',
+                        color: '#2563EB',
                         fontWeight: 600,
                         display: 'flex',
                         alignItems: 'center',
                         gap: '6px'
                       }}>
                         <span>🎯 اللفظ المؤثر:</span>
-                        <strong style={{ color: '#1F5F7A' }}>{v.highlightWord}</strong>
+                        <strong style={{ color: '#1D4ED8' }}>{v.highlightWord}</strong>
                         {v.secondaryHighlight && (
                           <span style={{ color: 'var(--text-secondary)', fontSize: '11px', marginRight: '4px' }}>
                             ({v.secondaryHighlight})
@@ -788,15 +788,15 @@ export const SimilaritiesView = ({ onSelectPageForRecitation }) => {
                 <div style={{
                   padding: '16px 20px',
                   borderRadius: '14px',
-                  background: 'rgba(227, 154, 45, 0.08)',
-                  borderRight: '4px solid #E39A2D',
+                  background: 'rgba(245, 158, 11, 0.08)',
+                  borderRight: '4px solid #F59E0B',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '6px'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <Lightbulb size={16} color="#9A5F0C" />
-                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#9A5F0C' }}>
+                    <Lightbulb size={16} color="#B45309" />
+                    <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#B45309' }}>
                       القاعدة الذهبية للتوجيه والتذكر:
                     </span>
                   </div>

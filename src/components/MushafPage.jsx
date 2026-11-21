@@ -67,7 +67,7 @@ export const MushafPage = ({ pageNumber, ayahs, activeAyahNum, isPlaying, recite
           borderRadius: '10px',
           background: 'var(--bg-color)',
           border: '1px solid var(--glass-border)',
-          boxShadow: 'inset 0 0 0 5px var(--bg-surface), inset 0 0 0 6px rgba(55, 125, 113, 0.45)',
+          boxShadow: 'inset 0 0 0 5px var(--bg-surface), inset 0 0 0 6px rgba(16, 185, 129, 0.45)',
           color: 'var(--text-primary)'
         }}
       >
@@ -86,7 +86,7 @@ export const MushafPage = ({ pageNumber, ayahs, activeAyahNum, isPlaying, recite
                 <div key={line.number} style={{ height: `${fontSize * 1.9}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   <div style={{
                     width: '100%', height: '78%', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    border: '1.5px solid var(--primary)', background: 'rgba(55, 125, 113, 0.08)',
+                    border: '1.5px solid var(--primary)', background: 'rgba(16, 185, 129, 0.08)',
                     color: 'var(--primary)', fontFamily: 'var(--font-quran)', fontWeight: 800, fontSize: `${fontSize * 0.72}px`
                   }}>
                     سورة {surahs[line.surahNumber - 1]?.name}
@@ -134,10 +134,10 @@ export const MushafPage = ({ pageNumber, ayahs, activeAyahNum, isPlaying, recite
                         lineHeight: 1,
                         padding: `${fontSize * 0.12}px ${fontSize * 0.04}px`,
                         borderRadius: '4px',
-                        background: isActive ? (isPlaying ? 'rgba(55, 125, 113, 0.28)' : 'rgba(55, 125, 113, 0.18)') : 'transparent',
+                        background: isActive ? (isPlaying ? 'rgba(16, 185, 129, 0.28)' : 'rgba(16, 185, 129, 0.18)') : 'transparent',
                         color: word.isEnd ? 'var(--primary)' : 'inherit',
                         textDecoration: recitedAyahs[word.ayahNumber] && !word.isEnd ? 'underline' : 'none',
-                        textDecorationColor: '#377D71',
+                        textDecorationColor: '#10B981',
                         transition: 'background 0.2s ease'
                       }}
                     >
