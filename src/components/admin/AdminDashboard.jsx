@@ -229,9 +229,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
         <div style={{
           padding: '12px 18px',
           borderRadius: '14px',
-          background: actionFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-          border: `1px solid ${actionFeedback.type === 'success' ? '#10B981' : '#EF4444'}`,
-          color: actionFeedback.type === 'success' ? '#10B981' : '#EF4444',
+          background: actionFeedback.type === 'success' ? 'rgba(55, 125, 113, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+          border: `1px solid ${actionFeedback.type === 'success' ? '#377D71' : '#EF4444'}`,
+          color: actionFeedback.type === 'success' ? '#377D71' : '#EF4444',
           fontSize: '14px',
           fontWeight: 700,
           display: 'flex',
@@ -329,17 +329,17 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
           <div style={{
             padding: '24px 28px',
             borderRadius: '24px',
-            background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+            background: 'linear-gradient(135deg, #2D1B2A 0%, #1F1220 100%)',
             color: '#FFFFFF',
             border: '1px solid rgba(255, 255, 255, 0.1)'
           }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(255, 255, 255, 0.1)', padding: '4px 12px', borderRadius: '16px', fontSize: '12px', fontWeight: 600, marginBottom: '8px' }}>
-              <ShieldCheck size={14} color="#10B981" /> مركز إدارة منصة سَفَر القرآنية
+              <ShieldCheck size={14} color="#377D71" /> مركز إدارة منصة سَفَر القرآنية
             </div>
             <h1 style={{ margin: '0 0 6px 0', fontSize: '24px', fontWeight: 800 }}>
               نظرة عامة على المنصة والإحصائيات اللحظية 📊
             </h1>
-            <p style={{ margin: 0, fontSize: '14px', color: '#94A3B8', lineHeight: 1.5 }}>
+            <p style={{ margin: 0, fontSize: '14px', color: '#9C8D98', lineHeight: 1.5 }}>
               بيانات موثوقة ومحدثة لحظياً تعكس النشاط الفعلي لجميع أعضاء المنصة والمجموعات.
             </p>
           </div>
@@ -353,20 +353,20 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-soft)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>إجمالي المسجلين</span>
-                <Users size={18} color="#3B82F6" />
+                <Users size={18} color="#2A6F8F" />
               </div>
               <div style={{ fontSize: '28px', fontWeight: 800, color: 'var(--text-primary)' }}>
                 {stats.totalRegisteredUsers.toLocaleString()}
               </div>
-              <span style={{ fontSize: '11.5px', color: '#10B981', fontWeight: 600 }}>مستخدمين مسجلين بالمنصة</span>
+              <span style={{ fontSize: '11.5px', color: '#377D71', fontWeight: 600 }}>مستخدمين مسجلين بالمنصة</span>
             </div>
 
             <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-soft)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>أعضاء سَفَر (في المجموعات)</span>
-                <Sparkles size={18} color="#10B981" />
+                <Sparkles size={18} color="#377D71" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#10B981' }}>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: '#377D71' }}>
                 {stats.safarMembers.toLocaleString()}
               </div>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>منضمون لمجموعات رسمية</span>
@@ -375,9 +375,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-soft)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>المعلمات والكوادر</span>
-                <GraduationCap size={18} color="#8B5CF6" />
+                <GraduationCap size={18} color="#9C4F84" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#8B5CF6' }}>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: '#9C4F84' }}>
                 {stats.teachersCount.toLocaleString()}
               </div>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>معلمة معتمدة تشرف على المجموعات</span>
@@ -386,9 +386,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-soft)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>الحفاظ المستقلون</span>
-                <BookOpen size={18} color="#F59E0B" />
+                <BookOpen size={18} color="#E39A2D" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#F59E0B' }}>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: '#E39A2D' }}>
                 {stats.independentUsers.toLocaleString()}
               </div>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>يحفظون دون التقيد بمجموعة</span>
@@ -397,9 +397,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ padding: '20px', borderRadius: '20px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-soft)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 600 }}>المجموعات القرآنية</span>
-                <Layers size={18} color="#06B6D4" />
+                <Layers size={18} color="#4CB8E6" />
               </div>
-              <div style={{ fontSize: '28px', fontWeight: 800, color: '#06B6D4' }}>
+              <div style={{ fontSize: '28px', fontWeight: 800, color: '#4CB8E6' }}>
                 {stats.groupsCount.toLocaleString()}
               </div>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>مجموعة نشطة برمز دعوة</span>
@@ -421,19 +421,19 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px' }}>
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>النشطون اليوم</span>
-                <strong data-testid="admin-active-today" style={{ fontSize: '20px', color: '#10B981' }}>{realTime.activeToday.toLocaleString()}</strong>
+                <strong data-testid="admin-active-today" style={{ fontSize: '20px', color: '#377D71' }}>{realTime.activeToday.toLocaleString()}</strong>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>لديهم نشاط قرآني محفوظ اليوم بتوقيت عمّان</span>
               </div>
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>النشطون هذا الأسبوع</span>
-                <strong data-testid="admin-active-week" style={{ fontSize: '20px', color: '#3B82F6' }}>{realTime.activeThisWeek.toLocaleString()}</strong>
+                <strong data-testid="admin-active-week" style={{ fontSize: '20px', color: '#2A6F8F' }}>{realTime.activeThisWeek.toLocaleString()}</strong>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>لديهم نشاط قرآني محفوظ خلال 7 أيام</span>
               </div>
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>تسجيلات جديدة (7 أيام)</span>
-                <strong style={{ fontSize: '20px', color: '#8B5CF6' }}>+{realTime.newRegistrationsWeek}</strong>
+                <strong style={{ fontSize: '20px', color: '#9C4F84' }}>+{realTime.newRegistrationsWeek}</strong>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>حساب جديد تم إنشاؤه</span>
               </div>
 
@@ -445,13 +445,13 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>معلمات نشطات</span>
-                <strong style={{ fontSize: '20px', color: '#10B981' }}>{realTime.activeTeachers} / {stats.teachersCount}</strong>
+                <strong style={{ fontSize: '20px', color: '#377D71' }}>{realTime.activeTeachers} / {stats.teachersCount}</strong>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>راجعن جلسة واحدة على الأقل خلال 7 أيام</span>
               </div>
 
               <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
                 <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>حلقات نشطة</span>
-                <strong style={{ fontSize: '20px', color: '#06B6D4' }}>{realTime.activeGroups} / {stats.groupsCount}</strong>
+                <strong style={{ fontSize: '20px', color: '#4CB8E6' }}>{realTime.activeGroups} / {stats.groupsCount}</strong>
                 <span style={{ fontSize: '10.5px', color: 'var(--text-secondary)', display: 'block' }}>لها طالبة ذات نشاط قرآني خلال 7 أيام</span>
               </div>
             </div>
@@ -619,8 +619,8 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                             fontWeight: 700,
                             padding: '2px 8px',
                             borderRadius: '8px',
-                            background: isAdmin ? '#EF444415' : (isTeacher ? '#8B5CF618' : '#10B98118'),
-                            color: isAdmin ? '#EF4444' : (isTeacher ? '#8B5CF6' : '#10B981')
+                            background: isAdmin ? '#EF444415' : (isTeacher ? '#9C4F8418' : '#377D7118'),
+                            color: isAdmin ? '#EF4444' : (isTeacher ? '#9C4F84' : '#377D71')
                           }}>
                             {isAdmin ? 'مدير المنصة 👑' : (isTeacher ? 'معلمة 👩‍🏫' : (isSafar ? 'عضوة في سَفَر 🌸' : 'حافظ مستقل 📖'))}
                           </span>
@@ -644,7 +644,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                         تصريح ذاتي: <strong style={{ color: 'var(--text-primary)' }}>{declaredPages(u).length} صفحة</strong>
                       </div>
                       <div>
-                        الحالة: <span style={{ color: u.status === 'active' ? '#10B981' : '#F59E0B', fontWeight: 600 }}>{u.status === 'active' ? 'نشط 🟢' : 'غير نشط هذا الأسبوع 🟡'}</span>
+                        الحالة: <span style={{ color: u.status === 'active' ? '#377D71' : '#E39A2D', fontWeight: 600 }}>{u.status === 'active' ? 'نشط 🟢' : 'غير نشط هذا الأسبوع 🟡'}</span>
                       </div>
                     </div>
 
@@ -677,9 +677,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                           style={{
                             padding: '8px 14px',
                             borderRadius: '10px',
-                            background: 'rgba(245, 158, 11, 0.1)',
-                            color: '#F59E0B',
-                            border: '1px solid rgba(245, 158, 11, 0.25)',
+                            background: 'rgba(227, 154, 45, 0.1)',
+                            color: '#E39A2D',
+                            border: '1px solid rgba(227, 154, 45, 0.25)',
                             fontSize: '12.5px',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -741,9 +741,9 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                             style={{
                               padding: '8px 14px',
                               borderRadius: '10px',
-                              background: 'rgba(139, 92, 246, 0.12)',
-                              color: '#8B5CF6',
-                              border: '1px solid rgba(139, 92, 246, 0.3)',
+                              background: 'rgba(156, 79, 132, 0.12)',
+                              color: '#9C4F84',
+                              border: '1px solid rgba(156, 79, 132, 0.3)',
                               fontSize: '12.5px',
                               fontWeight: 700,
                               cursor: 'pointer',
@@ -865,7 +865,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>{grp.name || 'بدون اسم'}</h4>
-                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, padding: '3px 8px', borderRadius: '8px', background: 'rgba(55, 125, 113, 0.12)', color: 'var(--primary)' }}>
                       نشطة
                     </span>
                   </div>
@@ -904,12 +904,12 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
               <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>معدل إكمال الأوراد الأسبوعية</span>
-                <strong style={{ fontSize: '24px', color: '#10B981', display: 'block', margin: '4px 0' }}>غير متاح</strong>
+                <strong style={{ fontSize: '24px', color: '#377D71', display: 'block', margin: '4px 0' }}>غير متاح</strong>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>لا يوجد سجل موحد للأوراد المكتملة حاليًا</span>
               </div>
               <div style={{ padding: '16px', borderRadius: '16px', background: 'var(--bg-color)' }}>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block' }}>جلسات التسميع الصوتي شهرياً</span>
-                <strong data-testid="admin-monthly-activities" style={{ fontSize: '24px', color: '#3B82F6', display: 'block', margin: '4px 0' }}>{realTime.monthlyActivities.toLocaleString()}</strong>
+                <strong data-testid="admin-monthly-activities" style={{ fontSize: '24px', color: '#2A6F8F', display: 'block', margin: '4px 0' }}>{realTime.monthlyActivities.toLocaleString()}</strong>
                 <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>محاولة تسميع محفوظة خلال آخر 30 يومًا</span>
               </div>
             </div>
@@ -929,7 +929,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backgroundColor: 'rgba(31, 18, 32, 0.75)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
           zIndex: 100,
@@ -951,8 +951,8 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
               width: '56px',
               height: '56px',
               borderRadius: '18px',
-              background: confirmTeacherModal.action === 'assign' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-              color: confirmTeacherModal.action === 'assign' ? '#8B5CF6' : '#EF4444',
+              background: confirmTeacherModal.action === 'assign' ? 'rgba(156, 79, 132, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+              color: confirmTeacherModal.action === 'assign' ? '#9C4F84' : '#EF4444',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -1002,7 +1002,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
                   flex: 1,
                   padding: '12px',
                   borderRadius: '12px',
-                  background: confirmTeacherModal.action === 'assign' ? '#8B5CF6' : '#EF4444',
+                  background: confirmTeacherModal.action === 'assign' ? '#9C4F84' : '#EF4444',
                   color: '#FFFFFF',
                   border: 'none',
                   fontSize: '13.5px',
@@ -1022,7 +1022,7 @@ export const AdminDashboard = ({ activeAdminTab = 'dashboard', onNavigateTab }) 
         <div style={{
           position: 'fixed',
           inset: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.75)',
+          backgroundColor: 'rgba(31, 18, 32, 0.75)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
           zIndex: 100,

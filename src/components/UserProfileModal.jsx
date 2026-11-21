@@ -218,9 +218,9 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
             <div role="status" data-testid="profile-success" style={{
               padding: '12px 16px',
               borderRadius: '12px',
-              background: 'rgba(16, 185, 129, 0.12)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
-              color: '#10B981',
+              background: 'rgba(55, 125, 113, 0.12)',
+              border: '1px solid rgba(55, 125, 113, 0.3)',
+              color: '#377D71',
               fontSize: '14px',
               fontWeight: 'bold',
               display: 'flex',
@@ -271,7 +271,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                   height: '80px',
                   borderRadius: '50%',
                   border: '3px solid var(--primary)',
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+                  boxShadow: '0 4px 14px rgba(55, 125, 113, 0.25)',
                   backgroundColor: 'var(--bg-surface)',
                   objectFit: 'cover'
                 }}
@@ -420,11 +420,11 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{isRTL ? 'صحبة القرآن' : 'Quran Companion'}</div>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#F59E0B' }}>🔥 {user?.streak ?? 0} {isRTL ? 'يوم' : 'd'}</div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#E39A2D' }}>🔥 {user?.streak ?? 0} {isRTL ? 'يوم' : 'd'}</div>
               </div>
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{isRTL ? 'الحصون' : 'Fortresses'}</div>
-                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#3B82F6' }}>🛡️ 5</div>
+                <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#2A6F8F' }}>🛡️ 5</div>
               </div>
             </div>
 
@@ -447,7 +447,7 @@ export const UserProfileModal = ({ isOpen, onClose }) => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 14px rgba(16, 185, 129, 0.3)'
+                  boxShadow: '0 4px 14px rgba(55, 125, 113, 0.3)'
                 }}
               >
                 <Save size={18} />

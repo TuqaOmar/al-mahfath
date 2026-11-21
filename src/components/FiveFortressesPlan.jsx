@@ -263,7 +263,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
         'تأمل رؤوس الآيات ومواضع الأرباع وبدايات الصفحات.',
         'إذا لم يتيسر لك قراءة جزء كامل دفعة واحدة، قسّمه على الصلوات الخمس (4 صفحات بعد كل صلاة).'
       ],
-      color: '#3B82F6',
+      color: '#2A6F8F',
       badge: 'الذاكرة البصرية'
     },
     {
@@ -279,7 +279,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
         '2️⃣ التحضير الليلي: تلاوة صفحة الغد 5 إلى 10 مرات قبل النوم مباشرة لتستقر في العقل أثناء النوم.',
         '3️⃣ التحضير القريب: تلاوة الصفحة المستهدفة 15 مرة قبل جلسة الحفظ بـ 15 دقيقة وفهم الكلمات الغريبة.'
       ],
-      color: '#8B5CF6',
+      color: '#9C4F84',
       badge: 'التهيئة الذهنية'
     },
     {
@@ -297,7 +297,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
         'الخطوة 4: كرّر الآية الثانية 20 مرة، ثم اربط الأولى بالثانية وكرّرهما معاً 20 مرة.',
         'الخطوة 5: بعد إتمام الصفحة كاملة، اسردها غيباً من 20 إلى 40 مرة متتالية.'
       ],
-      color: '#10B981',
+      color: '#377D71',
       badge: 'الحفظ الراسخ',
       interactiveAction: true
     },
@@ -315,7 +315,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
         'سجّل أي موضع توقفت فيه لتكراره 10 مرات وتثبيته.',
         'يمكنك مراجعة نصفها بعد الظهر والنصف الآخر بعد العصر.'
       ],
-      color: '#EC4899',
+      color: '#C774A9',
       badge: 'حماية الجديد'
     },
     {
@@ -332,7 +332,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
         'صلِّ بسنتك الراتبة والوتر والتهجد بما حفظته هذا اليوم لتسكبه في صلاتك.',
         'شارك في جلسات التسميع مع الأصدقاء أو في منتدى المجتمع لتعزيز الاستقرار.'
       ],
-      color: '#F59E0B',
+      color: '#E39A2D',
       badge: 'المعاهدة والبركة'
     }
   ];
@@ -356,32 +356,32 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
       <div style={{
         padding: '28px',
         borderRadius: '24px',
-        background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
+        background: 'linear-gradient(135deg, #1F1220 0%, #1A3F39 100%)',
         color: 'white',
-        border: '1px solid rgba(16, 185, 129, 0.3)',
+        border: '1px solid rgba(55, 125, 113, 0.3)',
         boxShadow: '0 10px 30px rgba(0,0,0,0.15)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px', marginBottom: '16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '16px', background: 'rgba(55, 125, 113, 0.2)', color: '#4FA899', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Shield size={28} />
             </div>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold' }}>🏰 نظام ومنهجية الحصون الخمسة</h1>
-                <span style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '12px', background: 'rgba(52, 211, 153, 0.2)', color: '#34D399', fontWeight: 'bold' }}>
+                <span style={{ fontSize: '12px', padding: '3px 10px', borderRadius: '12px', background: 'rgba(79, 168, 153, 0.2)', color: '#4FA899', fontWeight: 'bold' }}>
                   طريقة د. سعيد أبو العلا حمزة
                 </span>
               </div>
-              <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#94A3B8' }}>
+              <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#9C8D98' }}>
                 المنهجية العلمية الأقوى لرسوخ القرآن الكريم ومنع التفلت والنسيان بتكامل الورد والتحضير والحفظ والمراجعة.
               </p>
             </div>
           </div>
 
           <div style={{ textAlign: isRTL ? 'left' : 'right' }}>
-            <span style={{ fontSize: '12px', color: '#94A3B8', display: 'block' }}>إنجاز حصون اليوم:</span>
-            <div data-testid="fortress-header-count" style={{ fontSize: '20px', fontWeight: 'bold', color: '#34D399' }}>
+            <span style={{ fontSize: '12px', color: '#9C8D98', display: 'block' }}>إنجاز حصون اليوم:</span>
+            <div data-testid="fortress-header-count" style={{ fontSize: '20px', fontWeight: 'bold', color: '#4FA899' }}>
               {completedCount} من 5 حصون ({progressPercent}%)
             </div>
           </div>
@@ -389,7 +389,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
 
         {/* Global Progress Bar */}
         <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-          <div style={{ width: `${progressPercent}%`, height: '100%', background: 'linear-gradient(90deg, #10B981, #34D399)', transition: 'width 0.4s ease' }} />
+          <div style={{ width: `${progressPercent}%`, height: '100%', background: 'linear-gradient(90deg, #377D71, #4FA899)', transition: 'width 0.4s ease' }} />
         </div>
       </div>
 
@@ -434,7 +434,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
                 justifyContent: 'center',
                 gap: '8px',
                 transition: 'all 0.2s ease',
-                boxShadow: isActive ? '0 4px 12px rgba(16, 185, 129, 0.2)' : 'none'
+                boxShadow: isActive ? '0 4px 12px rgba(55, 125, 113, 0.2)' : 'none'
               }}
             >
               <Icon size={16} />
@@ -500,7 +500,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
                 style={{
                   padding: '10px 18px',
                   borderRadius: '12px',
-                  background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                  background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
                   color: 'white',
                   border: 'none',
                   fontWeight: 'bold',
@@ -546,7 +546,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
             <div style={{
               padding: '24px',
               borderRadius: '20px',
-              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.04) 100%)',
+              background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.1) 0%, rgba(47, 107, 97, 0.04) 100%)',
               border: '1.5px solid var(--primary)',
               display: 'flex',
               flexDirection: 'column',
@@ -584,7 +584,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
             <h3 style={{ margin: 0, fontSize: '18px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Flame size={20} color="#F59E0B" /> قائمة مهام الحصون الخمسة لليوم ({new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })})
+              <Flame size={20} color="#E39A2D" /> قائمة مهام الحصون الخمسة لليوم ({new Date().toLocaleDateString('ar-EG', { weekday: 'long', day: 'numeric', month: 'long' })})
             </h3>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
               اضغط على أي حصن لعرض تفاصيله وخطواته العملية 👇
@@ -601,7 +601,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
                   key={fort.id}
                   style={{
                     borderRadius: '20px',
-                    background: isDone ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%)' : 'var(--bg-surface)',
+                    background: isDone ? 'linear-gradient(135deg, rgba(55, 125, 113, 0.08) 0%, rgba(47, 107, 97, 0.02) 100%)' : 'var(--bg-surface)',
                     border: `1.5px solid ${isDone ? 'var(--primary)' : 'var(--glass-border)'}`,
                     overflow: 'hidden',
                     transition: 'all 0.2s ease'
@@ -667,7 +667,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
                             display: 'flex',
                             alignItems: 'center',
                             gap: '6px',
-                            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)'
+                            boxShadow: '0 4px 12px rgba(55, 125, 113, 0.2)'
                           }}
                         >
                           <Play size={14} /> جلسة الحفظ والتسميع 🎤
@@ -790,9 +790,9 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
                             style={{
                               padding: '8px 14px',
                               borderRadius: '10px',
-                              background: 'rgba(59, 130, 246, 0.1)',
-                              color: '#3B82F6',
-                              border: '1px solid rgba(59, 130, 246, 0.3)',
+                              background: 'rgba(42, 111, 143, 0.1)',
+                              color: '#2A6F8F',
+                              border: '1px solid rgba(42, 111, 143, 0.3)',
                               fontSize: '12px',
                               fontWeight: 'bold',
                               cursor: 'pointer',
@@ -847,11 +847,11 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
               {[
                 { title: '1. الإخلاص والدعاء بالثبات', desc: 'استحضر نية التقرب إلى الله وطلب رضاه في كل آية تكررها.', icon: Heart, color: '#EF4444' },
-                { title: '2. وحدة المصحف (الذاكرة الصورية)', desc: 'استخدم طبعة واحدة من المصحف طوال رحلتك لترتسم الصفحات في خيالك.', icon: BookOpen, color: '#3B82F6' },
-                { title: '3. قانون التكرار (20x للآية)', desc: 'لا تنتقل لأي آية جديدة حتى تكرر الآية 20 مرة والمقطع 20 مرة.', icon: Repeat, color: '#10B981' },
-                { title: '4. التحضير المسبق (سرعة الحفظ)', desc: 'قراءة الصفحة وسماعها قبل الحفظ يزيل عثرات اللسان وصعوبة المعنى.', icon: Zap, color: '#8B5CF6' },
-                { title: '5. الصلاة بالمحفوظ (أعلى درجات التثبيت)', desc: 'صلِّ بما حفظت اليوم في السنن والنوافل وقيام الليل ليثبت كالفاتحة.', icon: Moon, color: '#F59E0B' },
-                { title: '6. الاستمرار وعدم الانقطاع', desc: 'قليل دائم خير من كثير منقطع. الورد اليومي التزام لا يسقط أبداً.', icon: Flame, color: '#EC4899' }
+                { title: '2. وحدة المصحف (الذاكرة الصورية)', desc: 'استخدم طبعة واحدة من المصحف طوال رحلتك لترتسم الصفحات في خيالك.', icon: BookOpen, color: '#2A6F8F' },
+                { title: '3. قانون التكرار (20x للآية)', desc: 'لا تنتقل لأي آية جديدة حتى تكرر الآية 20 مرة والمقطع 20 مرة.', icon: Repeat, color: '#377D71' },
+                { title: '4. التحضير المسبق (سرعة الحفظ)', desc: 'قراءة الصفحة وسماعها قبل الحفظ يزيل عثرات اللسان وصعوبة المعنى.', icon: Zap, color: '#9C4F84' },
+                { title: '5. الصلاة بالمحفوظ (أعلى درجات التثبيت)', desc: 'صلِّ بما حفظت اليوم في السنن والنوافل وقيام الليل ليثبت كالفاتحة.', icon: Moon, color: '#E39A2D' },
+                { title: '6. الاستمرار وعدم الانقطاع', desc: 'قليل دائم خير من كثير منقطع. الورد اليومي التزام لا يسقط أبداً.', icon: Flame, color: '#C774A9' }
               ].map((rule, idx) => {
                 const Icon = rule.icon;
                 return (
@@ -877,7 +877,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
             border: '1px solid var(--glass-border)'
           }}>
             <h4 style={{ margin: '0 0 16px 0', fontSize: '18px', color: 'var(--text-primary)', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Sun size={20} color="#F59E0B" /> الجدول اليومي النموذجي لتوزيع الحصون الخمسة:
+              <Sun size={20} color="#E39A2D" /> الجدول اليومي النموذجي لتوزيع الحصون الخمسة:
             </h4>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -968,7 +968,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
                   width: '130px',
                   height: '130px',
                   borderRadius: '50%',
-                  background: currentReps >= targetReps ? 'linear-gradient(135deg, #10B981, #059669)' : 'linear-gradient(135deg, #059669, #0F172A)',
+                  background: currentReps >= targetReps ? 'linear-gradient(135deg, #377D71, #2F6B61)' : 'linear-gradient(135deg, #2F6B61, #1F1220)',
                   color: 'white',
                   border: 'none',
                   fontSize: '42px',
@@ -991,12 +991,12 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
 
               {/* Progress visual */}
               <div style={{ width: '100%', maxWidth: '280px', height: '8px', background: 'var(--glass-border)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${Math.min(100, (currentReps / targetReps) * 100)}%`, height: '100%', background: currentReps >= targetReps ? '#10B981' : '#3B82F6', transition: 'width 0.2s ease' }} />
+                <div style={{ width: `${Math.min(100, (currentReps / targetReps) * 100)}%`, height: '100%', background: currentReps >= targetReps ? '#377D71' : '#2A6F8F', transition: 'width 0.2s ease' }} />
               </div>
 
               {/* Status Note */}
               {currentReps >= targetReps ? (
-                <div style={{ color: '#10B981', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ color: '#377D71', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <CheckCircle2 size={18} /> اكتملت جولة العداد المحلي؛ لم تُحفظ جلسة أو مكافأة. انتقل للمقطع التالي 🌿
                 </div>
               ) : (
@@ -1163,7 +1163,7 @@ export const FiveFortressesPlan = ({ setActiveTab, onSelectPageForRecitation }) 
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                  boxShadow: '0 4px 12px rgba(55, 125, 113, 0.3)'
                 }}
               >
                 {isPlanSaved ? <CheckCircle2 size={18} /> : <Check size={18} />}

@@ -93,10 +93,10 @@ export const AppUpdatePrompt = () => {
           style={{
             width: '100%',
             maxWidth: '420px',
-            background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 100%)',
-            border: '2px solid #10B981',
+            background: 'linear-gradient(135deg, #1F1220 0%, #1A3F39 100%)',
+            border: '2px solid #377D71',
             borderRadius: '24px',
-            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(16, 185, 129, 0.3)',
+            boxShadow: '0 20px 45px rgba(0, 0, 0, 0.45), 0 0 30px rgba(55, 125, 113, 0.3)',
             padding: '24px',
             color: 'white',
             position: 'relative',
@@ -112,7 +112,7 @@ export const AppUpdatePrompt = () => {
               insetInlineEnd: '14px',
               background: 'rgba(255, 255, 255, 0.1)',
               border: 'none',
-              color: '#94A3B8',
+              color: '#9C8D98',
               cursor: 'pointer',
               width: '32px',
               height: '32px',
@@ -130,9 +130,9 @@ export const AppUpdatePrompt = () => {
             height: '60px',
             margin: '4px auto 14px',
             borderRadius: '18px',
-            background: 'rgba(16, 185, 129, 0.25)',
-            border: '1px solid rgba(52, 211, 153, 0.4)',
-            color: '#34D399',
+            background: 'rgba(55, 125, 113, 0.25)',
+            border: '1px solid rgba(79, 168, 153, 0.4)',
+            color: '#4FA899',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -143,7 +143,7 @@ export const AppUpdatePrompt = () => {
           <h3 id="app-update-title" style={{ margin: '0 0 8px', fontSize: '19px', fontWeight: 'bold' }}>
             {isRTL ? 'يتوفر تحديث جديد' : 'A new update is available'}
           </h3>
-          <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#E2E8F0', lineHeight: 1.7 }}>
+          <p style={{ margin: '0 0 20px', fontSize: '14px', color: '#EDE6EA', lineHeight: 1.7 }}>
             {isRTL
               ? `حدّث تطبيق المحفظ${version ? ` إلى الإصدار ${version}` : ''} لتحصل على أحدث الميزات والإصلاحات.`
               : `Update the app${version ? ` to version ${version}` : ''} to get the latest features and fixes.`}
@@ -156,13 +156,13 @@ export const AppUpdatePrompt = () => {
                 flex: '1 1 160px',
                 padding: '12px 18px',
                 borderRadius: '14px',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
                 color: 'white',
                 border: 'none',
                 fontWeight: 'bold',
                 fontSize: '14px',
                 cursor: 'pointer',
-                boxShadow: '0 4px 15px rgba(16, 185, 129, 0.4)'
+                boxShadow: '0 4px 15px rgba(55, 125, 113, 0.4)'
               }}
             >
               {isRTL ? 'تحديث الآن' : 'Update now'}
@@ -175,7 +175,7 @@ export const AppUpdatePrompt = () => {
                 borderRadius: '14px',
                 background: 'rgba(255, 255, 255, 0.1)',
                 border: '1px solid rgba(255, 255, 255, 0.2)',
-                color: '#E2E8F0',
+                color: '#EDE6EA',
                 fontWeight: 'bold',
                 fontSize: '13px',
                 cursor: 'pointer'

@@ -265,10 +265,10 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
       <div style={{
         padding: '24px 28px',
         borderRadius: '24px',
-        background: 'linear-gradient(135deg, #064E3B 0%, #0F172A 100%)',
+        background: 'linear-gradient(135deg, #1A3F39 0%, #1F1220 100%)',
         color: 'white',
-        border: '1.5px solid rgba(52, 211, 153, 0.35)',
-        boxShadow: '0 12px 35px rgba(6, 78, 59, 0.25)',
+        border: '1.5px solid rgba(79, 168, 153, 0.35)',
+        boxShadow: '0 12px 35px rgba(26, 63, 57, 0.25)',
         position: 'relative',
         overflow: 'hidden'
       }}>
@@ -281,7 +281,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           width: '180px',
           height: '180px',
           borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(55, 125, 113, 0.25) 0%, transparent 70%)',
           pointerEvents: 'none'
         }} />
 
@@ -292,12 +292,12 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 width: '44px',
                 height: '44px',
                 borderRadius: '14px',
-                background: 'rgba(52, 211, 153, 0.2)',
-                color: '#34D399',
+                background: 'rgba(79, 168, 153, 0.2)',
+                color: '#4FA899',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(52, 211, 153, 0.2)'
+                boxShadow: '0 4px 12px rgba(79, 168, 153, 0.2)'
               }}>
                 <ShieldCheck size={26} />
               </div>
@@ -310,15 +310,15 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                     fontSize: '11.5px',
                     padding: '3px 10px',
                     borderRadius: '12px',
-                    background: 'rgba(52, 211, 153, 0.25)',
-                    color: '#6EE7B7',
+                    background: 'rgba(79, 168, 153, 0.25)',
+                    color: '#8FD3C8',
                     fontWeight: 800,
-                    border: '1px solid rgba(52, 211, 153, 0.3)'
+                    border: '1px solid rgba(79, 168, 153, 0.3)'
                   }}>
                     {isRTL ? 'المنهجية العلمية الراسخة' : 'Proven Scientific Methodology'}
                   </span>
                 </div>
-                <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#A7F3D0' }}>
+                <p style={{ margin: '4px 0 0 0', fontSize: '13.5px', color: '#BFE5DE' }}>
                   {isRTL 
                     ? 'ربط وتوزيع أورادك الخمسة بدقة على كامل صفحات المصحف (604 صفحة) لتثبيت الحفظ ومنع النسيان.'
                     : 'Real-time mapping of your 5 daily Quranic fortresses across all 604 pages to guarantee unshakable retention.'}
@@ -338,18 +338,18 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               alignItems: 'center',
               gap: '6px',
               fontSize: '12px',
-              color: '#D1FAE5'
+              color: '#DDF1ED'
             }}>
-              <Cloud size={14} color="#34D399" />
+              <Cloud size={14} color="#4FA899" />
               <span data-testid="visual-fortress-status">{syncStatus === 'failed' ? 'تعذر تحميل أو حفظ الخطة؛ بقي آخر سجل مؤكد' : syncStatus === 'loading' ? 'جاري تحميل الخطة...' : syncStatus === 'saving' ? 'جاري الحفظ...' : syncStatus === 'draft' ? 'مسودة غير محفوظة؛ احفظ الجزء أو أول إنجاز' : syncStatus === 'saved' ? 'تم حفظ الخطة ✓' : 'الخطة محفوظة'}</span>
             </div>
 
             <div style={{
-              background: 'rgba(245, 158, 11, 0.2)',
-              color: '#FBBF24',
+              background: 'rgba(227, 154, 45, 0.2)',
+              color: '#F0BE5A',
               padding: '6px 14px',
               borderRadius: '20px',
-              border: '1px solid rgba(245, 158, 11, 0.4)',
+              border: '1px solid rgba(227, 154, 45, 0.4)',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -367,7 +367,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           <div style={{
             width: `${progressPercent}%`,
             height: '100%',
-            background: 'linear-gradient(90deg, #FBBF24 0%, #10B981 100%)',
+            background: 'linear-gradient(90deg, #F0BE5A 0%, #377D71 100%)',
             transition: 'width 0.4s ease'
           }} />
         </div>
@@ -477,13 +477,13 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               let borderStyle = '1px solid var(--glass-border)';
 
               if (isCurrent) {
-                bgColor = '#10B981';
-                borderStyle = '2px solid #34D399';
+                bgColor = '#377D71';
+                borderStyle = '2px solid #4FA899';
               } else if (isPast) {
-                bgColor = 'rgba(245, 158, 11, 0.25)';
-                borderStyle = '1px solid rgba(245, 158, 11, 0.5)';
+                bgColor = 'rgba(227, 154, 45, 0.25)';
+                borderStyle = '1px solid rgba(227, 154, 45, 0.5)';
               } else if (isFort1Khatmah) {
-                bgColor = 'rgba(59, 130, 246, 0.3)';
+                bgColor = 'rgba(42, 111, 143, 0.3)';
               }
 
               return (
@@ -504,7 +504,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                     justifyContent: 'center',
                     fontSize: '10px',
                     fontWeight: isCurrent ? '900' : 'bold',
-                    color: isCurrent ? 'white' : (isPast ? '#F59E0B' : 'var(--text-secondary)'),
+                    color: isCurrent ? 'white' : (isPast ? '#E39A2D' : 'var(--text-secondary)'),
                     transition: 'all 0.2s ease'
                   }}
                 >
@@ -531,13 +531,13 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 gap: '6px',
                 padding: '6px 10px',
                 borderRadius: '10px',
-                background: activeFortressTab === 1 ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                border: activeFortressTab === 1 ? '1px solid #3B82F6' : '1px solid transparent',
+                background: activeFortressTab === 1 ? 'rgba(42, 111, 143, 0.15)' : 'transparent',
+                border: activeFortressTab === 1 ? '1px solid #2A6F8F' : '1px solid transparent',
                 cursor: 'pointer',
-                color: '#3B82F6'
+                color: '#2A6F8F'
               }}
             >
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#3B82F6' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#2A6F8F' }} />
               <strong>{isRTL ? '١. الختمة والحدر:' : '1. Hadr Khatmah:'}</strong>
               <span>{isRTL ? `الجزء ${fort1Juz}` : `Juz ${fort1Juz}`}</span>
             </div>
@@ -550,13 +550,13 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 gap: '6px',
                 padding: '6px 10px',
                 borderRadius: '10px',
-                background: activeFortressTab === 2 ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                border: activeFortressTab === 2 ? '1px solid #8B5CF6' : '1px solid transparent',
+                background: activeFortressTab === 2 ? 'rgba(156, 79, 132, 0.15)' : 'transparent',
+                border: activeFortressTab === 2 ? '1px solid #9C4F84' : '1px solid transparent',
                 cursor: 'pointer',
-                color: '#8B5CF6'
+                color: '#9C4F84'
               }}
             >
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#8B5CF6' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#9C4F84' }} />
               <strong>{isRTL ? '٢. التحضير:' : '2. Prep:'}</strong>
               <span>{isRTL ? `ص ${currentPage} و ${nextPage}` : `P. ${currentPage}, ${nextPage}`}</span>
             </div>
@@ -569,13 +569,13 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 gap: '6px',
                 padding: '6px 10px',
                 borderRadius: '10px',
-                background: activeFortressTab === 3 ? 'rgba(16, 185, 129, 0.15)' : 'transparent',
-                border: activeFortressTab === 3 ? '1px solid #10B981' : '1px solid transparent',
+                background: activeFortressTab === 3 ? 'rgba(55, 125, 113, 0.15)' : 'transparent',
+                border: activeFortressTab === 3 ? '1px solid #377D71' : '1px solid transparent',
                 cursor: 'pointer',
-                color: '#10B981'
+                color: '#377D71'
               }}
             >
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#10B981' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#377D71' }} />
               <strong>{isRTL ? '٣. الحفظ الجديد:' : '3. New Mem:'}</strong>
               <span>{isRTL ? `ص ${fort3Page} (${fort3Surah})` : `P. ${fort3Page}`}</span>
             </div>
@@ -588,13 +588,13 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 gap: '6px',
                 padding: '6px 10px',
                 borderRadius: '10px',
-                background: activeFortressTab === 4 ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
-                border: activeFortressTab === 4 ? '1px solid #EC4899' : '1px solid transparent',
+                background: activeFortressTab === 4 ? 'rgba(199, 116, 169, 0.15)' : 'transparent',
+                border: activeFortressTab === 4 ? '1px solid #C774A9' : '1px solid transparent',
                 cursor: 'pointer',
-                color: '#EC4899'
+                color: '#C774A9'
               }}
             >
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#EC4899' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#C774A9' }} />
               <strong>{isRTL ? '٤. الماضي القريب:' : '4. Near Review:'}</strong>
               <span>{fort4TotalPages > 0 ? (isRTL ? `ص ${fort4Start}-${fort4End}` : `P. ${fort4Start}-${fort4End}`) : (isRTL ? 'صفحة 1' : 'P. 1')}</span>
             </div>
@@ -607,13 +607,13 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 gap: '6px',
                 padding: '6px 10px',
                 borderRadius: '10px',
-                background: activeFortressTab === 5 ? 'rgba(245, 158, 11, 0.15)' : 'transparent',
-                border: activeFortressTab === 5 ? '1px solid #F59E0B' : '1px solid transparent',
+                background: activeFortressTab === 5 ? 'rgba(227, 154, 45, 0.15)' : 'transparent',
+                border: activeFortressTab === 5 ? '1px solid #E39A2D' : '1px solid transparent',
                 cursor: 'pointer',
-                color: '#F59E0B'
+                color: '#E39A2D'
               }}
             >
-              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#F59E0B' }} />
+              <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#E39A2D' }} />
               <strong>{isRTL ? '٥. الماضي البعيد:' : '5. Far Review:'}</strong>
               <span>{pastAjzaaCount > 0 ? (isRTL ? `الأجزاء ١-${pastAjzaaCount}` : `Juz 1-${pastAjzaaCount}`) : (isRTL ? 'ينشط بعد الجزء 1' : 'Active after Juz 1')}</span>
             </div>
@@ -631,11 +631,11 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
         maxWidth: '100%'
       }}>
         {[
-          { id: 1, title: isRTL ? 'الحصن ١: قراءة الختمة والحدر' : 'Fortress 1: Continuous Reading', color: '#3B82F6', icon: BookOpen, target: isRTL ? `الجزء ${fort1Juz}` : `Juz ${fort1Juz}` },
-          { id: 2, title: isRTL ? 'الحصن ٢: التحضير الثلاثي' : 'Fortress 2: Triple Prep', color: '#8B5CF6', icon: Moon, target: isRTL ? `ص ${currentPage} و ${nextPage}` : `P. ${currentPage} & ${nextPage}` },
-          { id: 3, title: isRTL ? 'الحصن ٣: الحفظ الجديد (20x/40x)' : 'Fortress 3: New Memorization', color: '#10B981', icon: Sparkles, target: isRTL ? `ص ${fort3Page} (${fort3Surah})` : `P. ${fort3Page}` },
-          { id: 4, title: isRTL ? 'الحصن ٤: المراجعة القريبة (آخر 20 ص)' : 'Fortress 4: Near Review', color: '#EC4899', icon: RefreshCw, target: `${fort4TotalPages} ${isRTL ? 'صفحة' : 'Pages'}` },
-          { id: 5, title: isRTL ? 'الحصن ٥: المراجعة البعيدة والصلاة' : 'Fortress 5: Distant Review', color: '#F59E0B', icon: ShieldCheck, target: isRTL ? (pastAjzaaCount > 0 ? `الأجزاء 1 إلى ${pastAjzaaCount}` : 'ينشط لاحقاً') : `Juz 1-${pastAjzaaCount}` }
+          { id: 1, title: isRTL ? 'الحصن ١: قراءة الختمة والحدر' : 'Fortress 1: Continuous Reading', color: '#2A6F8F', icon: BookOpen, target: isRTL ? `الجزء ${fort1Juz}` : `Juz ${fort1Juz}` },
+          { id: 2, title: isRTL ? 'الحصن ٢: التحضير الثلاثي' : 'Fortress 2: Triple Prep', color: '#9C4F84', icon: Moon, target: isRTL ? `ص ${currentPage} و ${nextPage}` : `P. ${currentPage} & ${nextPage}` },
+          { id: 3, title: isRTL ? 'الحصن ٣: الحفظ الجديد (20x/40x)' : 'Fortress 3: New Memorization', color: '#377D71', icon: Sparkles, target: isRTL ? `ص ${fort3Page} (${fort3Surah})` : `P. ${fort3Page}` },
+          { id: 4, title: isRTL ? 'الحصن ٤: المراجعة القريبة (آخر 20 ص)' : 'Fortress 4: Near Review', color: '#C774A9', icon: RefreshCw, target: `${fort4TotalPages} ${isRTL ? 'صفحة' : 'Pages'}` },
+          { id: 5, title: isRTL ? 'الحصن ٥: المراجعة البعيدة والصلاة' : 'Fortress 5: Distant Review', color: '#E39A2D', icon: ShieldCheck, target: isRTL ? (pastAjzaaCount > 0 ? `الأجزاء 1 إلى ${pastAjzaaCount}` : 'ينشط لاحقاً') : `Juz 1-${pastAjzaaCount}` }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeFortressTab === tab.id;
@@ -687,8 +687,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                     width: '24px',
                     height: '24px',
                     borderRadius: '50%',
-                    background: isDone ? '#10B981' : 'rgba(255, 255, 255, 0.1)',
-                    border: `1.5px solid ${isDone ? '#10B981' : (isActive ? 'white' : 'var(--glass-border)')}`,
+                    background: isDone ? '#377D71' : 'rgba(255, 255, 255, 0.1)',
+                    border: `1.5px solid ${isDone ? '#377D71' : (isActive ? 'white' : 'var(--glass-border)')}`,
                     color: 'white',
                     display: 'flex',
                     alignItems: 'center',
@@ -721,7 +721,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           padding: '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
-          border: '1.5px solid #3B82F6',
+          border: '1.5px solid #2A6F8F',
           boxShadow: 'var(--shadow-soft)',
           display: 'flex',
           flexDirection: 'column',
@@ -730,7 +730,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#3B82F6', background: 'rgba(59, 130, 246, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#2A6F8F', background: 'rgba(42, 111, 143, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
                   {isRTL ? 'الحصن الأول: الختمة الشهرية والذاكرة البصرية' : 'Fortress 1: Monthly Khatmah & Visual Retention'}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -754,7 +754,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               style={{
                 padding: '10px 20px',
                 borderRadius: '12px',
-                background: completion[1] ? '#10B981' : '#3B82F6',
+                background: completion[1] ? '#377D71' : '#2A6F8F',
                 color: 'white',
                 border: 'none',
                 fontWeight: 'bold',
@@ -763,7 +763,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 14px rgba(59, 130, 246, 0.25)'
+                boxShadow: '0 4px 14px rgba(42, 111, 143, 0.25)'
               }}
             >
               {completion[1] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
@@ -784,7 +784,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             gap: '14px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(59, 130, 246, 0.15)', color: '#3B82F6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: 'rgba(42, 111, 143, 0.15)', color: '#2A6F8F', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Volume2 size={22} />
               </div>
               <div>
@@ -827,7 +827,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 style={{
                   padding: '9px 18px',
                   borderRadius: '10px',
-                  background: '#3B82F6',
+                  background: '#2A6F8F',
                   color: 'white',
                   border: 'none',
                   fontWeight: 'bold',
@@ -836,7 +836,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  boxShadow: '0 2px 10px rgba(59, 130, 246, 0.3)'
+                  boxShadow: '0 2px 10px rgba(42, 111, 143, 0.3)'
                 }}
               >
                 {isPlayingAudio ? <Pause size={15} /> : <Play size={15} />}
@@ -851,8 +851,8 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           <div style={{
             padding: '14px 18px',
             borderRadius: '14px',
-            background: 'rgba(59, 130, 246, 0.06)',
-            border: '1px dashed rgba(59, 130, 246, 0.4)',
+            background: 'rgba(42, 111, 143, 0.06)',
+            border: '1px dashed rgba(42, 111, 143, 0.4)',
             fontSize: '13.5px',
             color: 'var(--text-primary)',
             lineHeight: 1.6
@@ -871,7 +871,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           padding: '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
-          border: '1.5px solid #8B5CF6',
+          border: '1.5px solid #9C4F84',
           boxShadow: 'var(--shadow-soft)',
           display: 'flex',
           flexDirection: 'column',
@@ -880,7 +880,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#8B5CF6', background: 'rgba(139, 92, 246, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#9C4F84', background: 'rgba(156, 79, 132, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
                   {isRTL ? 'الحصن الثاني: التحضير يختصر 70% من وقت الحفظ' : 'Fortress 2: Triple Preparation (70% Time Saver)'}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -904,7 +904,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               style={{
                 padding: '10px 20px',
                 borderRadius: '12px',
-                background: completion[2] ? '#10B981' : '#8B5CF6',
+                background: completion[2] ? '#377D71' : '#9C4F84',
                 color: 'white',
                 border: 'none',
                 fontWeight: 'bold',
@@ -913,7 +913,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 14px rgba(139, 92, 246, 0.25)'
+                boxShadow: '0 4px 14px rgba(156, 79, 132, 0.25)'
               }}
             >
               {completion[2] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
@@ -1002,7 +1002,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           padding: '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
-          border: '1.5px solid #10B981',
+          border: '1.5px solid #377D71',
           boxShadow: 'var(--shadow-soft)',
           display: 'flex',
           flexDirection: 'column',
@@ -1011,7 +1011,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#10B981', background: 'rgba(16, 185, 129, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#377D71', background: 'rgba(55, 125, 113, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
                   {isRTL ? 'الحصن الثالث: الحفظ الجديد المتين' : 'Fortress 3: Robust New Memorization'}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -1035,7 +1035,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                   style={{
                     padding: '10px 18px',
                     borderRadius: '12px',
-                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
                     color: 'white',
                     border: 'none',
                     fontWeight: 'bold',
@@ -1044,7 +1044,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.35)'
+                    boxShadow: '0 4px 14px rgba(55, 125, 113, 0.35)'
                   }}
                 >
                   <Mic size={16} />
@@ -1059,9 +1059,9 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 style={{
                   padding: '10px 18px',
                   borderRadius: '12px',
-                  background: completion[3] ? '#10B981' : 'var(--bg-color)',
+                  background: completion[3] ? '#377D71' : 'var(--bg-color)',
                   color: completion[3] ? 'white' : 'var(--text-primary)',
-                  border: `1.5px solid ${completion[3] ? '#10B981' : 'var(--glass-border)'}`,
+                  border: `1.5px solid ${completion[3] ? '#377D71' : 'var(--glass-border)'}`,
                   fontWeight: 'bold',
                   fontSize: '13.5px',
                   cursor: 'pointer',
@@ -1081,14 +1081,14 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             padding: '24px',
             borderRadius: '18px',
             background: 'var(--bg-color)',
-            border: '1.5px solid rgba(16, 185, 129, 0.3)',
+            border: '1.5px solid rgba(55, 125, 113, 0.3)',
             display: 'flex',
             flexDirection: 'column',
             gap: '18px'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Zap size={20} color="#10B981" />
+                <Zap size={20} color="#377D71" />
                 <strong style={{ fontSize: '15px', color: 'var(--text-primary)' }}>
                   {isRTL ? 'معمل التكرار التفاعلي (التكرار يصنع الرسوخ):' : 'Interactive Repetition Clicker Studio:'}
                 </strong>
@@ -1097,9 +1097,9 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                   style={{
                     padding: '3px 8px',
                     borderRadius: '8px',
-                    background: soundEnabled ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.1)',
-                    color: soundEnabled ? '#10B981' : '#EF4444',
-                    border: `1px solid ${soundEnabled ? 'rgba(16, 185, 129, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                    background: soundEnabled ? 'rgba(55, 125, 113, 0.12)' : 'rgba(239, 68, 68, 0.1)',
+                    color: soundEnabled ? '#377D71' : '#EF4444',
+                    border: `1px solid ${soundEnabled ? 'rgba(55, 125, 113, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '4px',
@@ -1132,7 +1132,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                     style={{
                       padding: '6px 12px',
                       borderRadius: '8px',
-                      background: repStep === s.step ? '#10B981' : 'var(--bg-surface)',
+                      background: repStep === s.step ? '#377D71' : 'var(--bg-surface)',
                       color: repStep === s.step ? 'white' : 'var(--text-secondary)',
                       border: '1px solid var(--glass-border)',
                       fontSize: '12px',
@@ -1157,7 +1157,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
             }}>
               {/* Progress Ring / Counter */}
               <div style={{ textAlign: 'center' }}>
-                <div style={{ fontSize: '48px', fontWeight: 900, color: '#10B981', lineHeight: 1 }}>
+                <div style={{ fontSize: '48px', fontWeight: 900, color: '#377D71', lineHeight: 1 }}>
                   {repCounter}
                 </div>
                 <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
@@ -1171,7 +1171,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 style={{
                   padding: '18px 36px',
                   borderRadius: '20px',
-                  background: repCounter >= repTarget ? '#059669' : '#10B981',
+                  background: repCounter >= repTarget ? '#2F6B61' : '#377D71',
                   color: 'white',
                   border: 'none',
                   fontSize: '18px',
@@ -1180,7 +1180,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px',
-                  boxShadow: '0 8px 24px rgba(16, 185, 129, 0.35)',
+                  boxShadow: '0 8px 24px rgba(55, 125, 113, 0.35)',
                   transform: 'scale(1)',
                   transition: 'all 0.15s ease'
                 }}
@@ -1219,7 +1219,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           padding: '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
-          border: '1.5px solid #EC4899',
+          border: '1.5px solid #C774A9',
           boxShadow: 'var(--shadow-soft)',
           display: 'flex',
           flexDirection: 'column',
@@ -1228,7 +1228,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#EC4899', background: 'rgba(236, 72, 153, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#C774A9', background: 'rgba(199, 116, 169, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
                   {isRTL ? 'الحصن الرابع: حماية المحفوظ الجديد من التفلت' : 'Fortress 4: Near Review (Shielding the New Memorization)'}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -1254,7 +1254,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               style={{
                 padding: '10px 20px',
                 borderRadius: '12px',
-                background: completion[4] ? '#10B981' : '#EC4899',
+                background: completion[4] ? '#377D71' : '#C774A9',
                 color: 'white',
                 border: 'none',
                 fontWeight: 'bold',
@@ -1263,7 +1263,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 14px rgba(236, 72, 153, 0.25)'
+                boxShadow: '0 4px 14px rgba(199, 116, 169, 0.25)'
               }}
             >
               {completion[4] ? <CheckCircle2 size={18} /> : <Circle size={18} />}
@@ -1314,7 +1314,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           padding: '24px',
           borderRadius: '20px',
           background: 'var(--bg-surface)',
-          border: '1.5px solid #F59E0B',
+          border: '1.5px solid #E39A2D',
           boxShadow: 'var(--shadow-soft)',
           display: 'flex',
           flexDirection: 'column',
@@ -1323,7 +1323,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '14px' }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#F59E0B', background: 'rgba(245, 158, 11, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
+                <span style={{ fontSize: '12px', fontWeight: 'bold', color: '#E39A2D', background: 'rgba(227, 154, 45, 0.12)', padding: '3px 10px', borderRadius: '8px' }}>
                   {isRTL ? 'الحصن الخامس: معاهدة المحفوظ القديم والصلاة به' : 'Fortress 5: Distant Review & Prayer Integration'}
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
@@ -1349,7 +1349,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
               style={{
                 padding: '10px 20px',
                 borderRadius: '12px',
-                background: completion[5] ? '#10B981' : '#F59E0B',
+                background: completion[5] ? '#377D71' : '#E39A2D',
                 color: 'white',
                 border: 'none',
                 fontWeight: 'bold',
@@ -1358,7 +1358,7 @@ export const FiveFortressesVisualMap = ({ onNavigateToVoiceRecitation, onNavigat
                 display: 'flex',
                 alignItems: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 14px rgba(245, 158, 11, 0.25)'
+                boxShadow: '0 4px 14px rgba(227, 154, 45, 0.25)'
               }}
             >
               {completion[5] ? <CheckCircle2 size={18} /> : <Circle size={18} />}

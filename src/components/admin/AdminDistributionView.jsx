@@ -218,9 +218,9 @@ export const AdminDistributionView = () => {
         <div style={{
           padding: '12px 18px',
           borderRadius: '14px',
-          background: feedback.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-          border: `1px solid ${feedback.type === 'success' ? '#10B981' : '#EF4444'}`,
-          color: feedback.type === 'success' ? '#10B981' : '#EF4444',
+          background: feedback.type === 'success' ? 'rgba(55, 125, 113, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+          border: `1px solid ${feedback.type === 'success' ? '#377D71' : '#EF4444'}`,
+          color: feedback.type === 'success' ? '#377D71' : '#EF4444',
           fontSize: '13.5px',
           fontWeight: 700,
           display: 'flex',
@@ -242,7 +242,7 @@ export const AdminDistributionView = () => {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: showCreateGroup ? '16px' : '0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', color: '#10B981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(55, 125, 113, 0.15)', color: '#377D71', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Layers size={18} />
             </div>
             <div>
@@ -303,8 +303,8 @@ export const AdminDistributionView = () => {
               width: '36px',
               height: '36px',
               borderRadius: '10px',
-              background: 'rgba(245, 158, 11, 0.15)',
-              color: '#F59E0B',
+              background: 'rgba(227, 154, 45, 0.15)',
+              color: '#E39A2D',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -337,8 +337,8 @@ export const AdminDistributionView = () => {
                   style={{
                     padding: '16px',
                     borderRadius: '16px',
-                    background: isPending ? 'var(--bg-color)' : 'rgba(16, 185, 129, 0.05)',
-                    border: `1px solid ${isPending ? 'var(--glass-border)' : 'rgba(16, 185, 129, 0.25)'}`,
+                    background: isPending ? 'var(--bg-color)' : 'rgba(55, 125, 113, 0.05)',
+                    border: `1px solid ${isPending ? 'var(--glass-border)' : 'rgba(55, 125, 113, 0.25)'}`,
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '12px'
@@ -359,8 +359,8 @@ export const AdminDistributionView = () => {
                       borderRadius: '8px',
                       fontSize: '11px',
                       fontWeight: 700,
-                      background: isPending ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                      color: isPending ? '#D97706' : '#10B981'
+                      background: isPending ? 'rgba(227, 154, 45, 0.15)' : 'rgba(55, 125, 113, 0.15)',
+                      color: isPending ? '#C27F17' : '#377D71'
                     }}>
                       {isPending ? 'بانتظار التوزيع' : 'تم التعيين ✅'}
                     </span>
@@ -434,7 +434,7 @@ export const AdminDistributionView = () => {
               width: '36px',
               height: '36px',
               borderRadius: '10px',
-              background: 'rgba(16, 185, 129, 0.12)',
+              background: 'rgba(55, 125, 113, 0.12)',
               color: 'var(--primary)',
               display: 'flex',
               alignItems: 'center',
@@ -645,7 +645,7 @@ export const AdminDistributionView = () => {
                     border: 'none',
                     fontWeight: 800,
                     cursor: isSubmitting ? 'wait' : 'pointer',
-                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
+                    boxShadow: '0 4px 12px rgba(55, 125, 113, 0.25)'
                   }}
                 >
                   {isSubmitting ? 'جاري التوزيع...' : 'تأكيد التوزيع والحفظ 🌿'}

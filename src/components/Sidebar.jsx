@@ -30,8 +30,8 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
       style={{
         width: collapsed ? '76px' : '248px',
         height: '100vh',
-        backgroundColor: '#0F172A',
-        color: '#F8FAFC',
+        backgroundColor: '#1F1220',
+        color: '#FAF7F9',
         display: 'flex',
         flexDirection: 'column',
         position: 'fixed',
@@ -60,7 +60,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
               width: '34px',
               height: '34px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+              background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -68,7 +68,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
               <BookOpen size={18} />
             </div>
             <span style={{ fontSize: '17px', fontWeight: 800 }}>
-              سَفَر <span style={{ color: '#10B981', fontSize: '12px', fontWeight: 600 }}>Safar</span>
+              سَفَر <span style={{ color: '#377D71', fontSize: '12px', fontWeight: 600 }}>Safar</span>
             </span>
           </div>
         )}
@@ -78,7 +78,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
           style={{
             background: 'transparent',
             border: 'none',
-            color: '#94A3B8',
+            color: '#9C8D98',
             cursor: 'pointer',
             padding: '8px',
             display: 'flex',
@@ -97,7 +97,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
         {sections.map(section => (
           <div key={section.title} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
             {!collapsed && sections.length > 1 && (
-              <div style={{ fontSize: '11px', fontWeight: 700, color: '#64748B', padding: '4px 12px' }}>
+              <div style={{ fontSize: '11px', fontWeight: 700, color: '#6E626B', padding: '4px 12px' }}>
                 {section.title}
               </div>
             )}
@@ -121,8 +121,8 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
                     justifyContent: collapsed ? 'center' : 'flex-start',
                     borderRadius: '10px',
                     border: 'none',
-                    background: isActive ? 'rgba(16, 185, 129, 0.18)' : 'transparent',
-                    color: isActive ? '#34D399' : '#CBD5E1',
+                    background: isActive ? 'rgba(55, 125, 113, 0.18)' : 'transparent',
+                    color: isActive ? '#4FA899' : '#DCCFD7',
                     fontWeight: isActive ? 700 : 500,
                     fontSize: '13.5px',
                     cursor: 'pointer',
@@ -156,7 +156,7 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
           padding: collapsed ? '12px 8px' : '14px 16px',
           border: 'none',
           borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          background: '#0B1120',
+          background: '#170D15',
           color: 'inherit',
           cursor: 'pointer',
           textAlign: 'start',
@@ -167,14 +167,14 @@ export const Sidebar = ({ activeTab, setActiveTab, collapsed, setCollapsed, onOp
           data-testid="sidebar-profile-photo"
           src={user?.photoURL || 'https://api.dicebear.com/7.x/avataaars/svg?seed=Ahmad'}
           alt=""
-          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #10B981', flexShrink: 0 }}
+          style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #377D71', flexShrink: 0 }}
         />
         {!collapsed && (
           <span style={{ minWidth: 0 }}>
-            <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: '#F8FAFC', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+            <span style={{ display: 'block', fontSize: '13.5px', fontWeight: 700, color: '#FAF7F9', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
               {user?.name || 'مستخدم سَفَر'}
             </span>
-            <span style={{ fontSize: '11px', color: '#94A3B8' }}>{roleLabels[userRole]}</span>
+            <span style={{ fontSize: '11px', color: '#9C8D98' }}>{roleLabels[userRole]}</span>
           </span>
         )}
       </button>
