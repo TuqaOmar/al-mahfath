@@ -205,7 +205,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              boxShadow: '0 4px 14px rgba(55, 125, 113, 0.25)',
+              boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
               transition: 'transform 0.15s ease'
             }}
           >
@@ -242,8 +242,8 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
       <div style={{
         padding: '14px 18px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.08) 0%, rgba(42, 111, 143, 0.05) 100%)',
-        border: '1px solid rgba(55, 125, 113, 0.25)',
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%)',
+        border: '1px solid rgba(16, 185, 129, 0.25)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -286,9 +286,9 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
             opacity: groupCode ? 1 : 0.5,
             padding: '8px 14px',
             borderRadius: '10px',
-            background: copiedCode ? '#377D71' : 'var(--bg-surface)',
+            background: copiedCode ? '#10B981' : 'var(--bg-surface)',
             color: copiedCode ? '#FFFFFF' : 'var(--text-primary)',
-            border: `1px solid ${copiedCode ? '#377D71' : 'var(--glass-border)'}`,
+            border: `1px solid ${copiedCode ? '#10B981' : 'var(--glass-border)'}`,
             fontSize: '12.5px',
             fontWeight: 700,
             cursor: groupCode ? 'pointer' : 'not-allowed',
@@ -418,7 +418,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
             const isNeedAttention = student.status === 'needs_attention';
             const isInactive = student.status === 'inactive';
             const isExcellent = student.status === 'excellent';
-            const statusColor = isNeedAttention ? '#E39A2D' : (isInactive ? '#EF4444' : (isExcellent ? '#377D71' : '#2A6F8F'));
+            const statusColor = isNeedAttention ? '#F59E0B' : (isInactive ? '#EF4444' : (isExcellent ? '#10B981' : '#3B82F6'));
             const statusLabel = isNeedAttention ? 'بحاجة لمتابعة' : (isInactive ? 'منقطعة' : (isExcellent ? 'متميزة' : 'نشطة'));
 
             return (
@@ -429,7 +429,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                   padding: '18px',
                   borderRadius: '20px',
                   background: 'var(--bg-surface)',
-                  border: isNeedAttention ? '1px solid rgba(227, 154, 45, 0.4)' : (isInactive ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--glass-border)'),
+                  border: isNeedAttention ? '1px solid rgba(245, 158, 11, 0.4)' : (isInactive ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid var(--glass-border)'),
                   boxShadow: 'var(--shadow-soft)',
                   cursor: 'pointer',
                   display: 'flex',
@@ -570,7 +570,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                   width: '38px',
                   height: '38px',
                   borderRadius: '12px',
-                  background: 'rgba(55, 125, 113, 0.12)',
+                  background: 'rgba(16, 185, 129, 0.12)',
                   color: 'var(--primary)',
                   display: 'flex',
                   alignItems: 'center',
@@ -608,9 +608,9 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                 marginBottom: '16px',
                 fontSize: '13px',
                 fontWeight: 600,
-                background: addFeedback.type === 'success' ? 'rgba(55, 125, 113, 0.12)' : 'rgba(239, 68, 68, 0.12)',
-                color: addFeedback.type === 'success' ? '#377D71' : '#EF4444',
-                border: `1px solid ${addFeedback.type === 'success' ? 'rgba(55, 125, 113, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+                background: addFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                color: addFeedback.type === 'success' ? '#10B981' : '#EF4444',
+                border: `1px solid ${addFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
               }}>
                 {addFeedback.text}
               </div>
@@ -684,7 +684,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                 </p>
               )}
 
-              <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(55, 125, 113, 0.08)', border: '1px solid rgba(55, 125, 113, 0.25)', fontSize: '12.5px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+              <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)', fontSize: '12.5px', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
                 لإضافة طالبة جديدة: تسجّل الطالبة حسابها ثم تدخل رمز الدعوة من 'انضمام لحلقة'.
                 {groupCode && <> رمز حلقتك: <strong style={{ color: 'var(--text-primary)', letterSpacing: '1px' }}>{groupCode}</strong></>}
               </div>
@@ -718,7 +718,7 @@ export const TeacherStudentsView = ({ initialFilter = 'all', groupId = null, onS
                     fontWeight: 800,
                     cursor: addLoading ? 'wait' : 'pointer',
                     opacity: moveForm.studentUid ? 1 : 0.6,
-                    boxShadow: '0 4px 12px rgba(55, 125, 113, 0.25)'
+                    boxShadow: '0 4px 12px rgba(16, 185, 129, 0.25)'
                   }}
                 >
                   {addLoading ? 'جاري النقل...' : 'تأكيد النقل 🌿'}

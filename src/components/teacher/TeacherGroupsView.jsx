@@ -101,7 +101,7 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
                     width: '46px',
                     height: '46px',
                     borderRadius: '14px',
-                    background: 'rgba(55, 125, 113, 0.12)',
+                    background: 'rgba(16, 185, 129, 0.12)',
                     color: 'var(--primary)',
                     display: 'flex',
                     alignItems: 'center',
@@ -119,7 +119,7 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
                   </div>
                 </div>
 
-                <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '10px', background: 'rgba(55, 125, 113, 0.12)', color: 'var(--primary)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, padding: '4px 10px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)' }}>
                   نشطة
                 </span>
               </div>
@@ -150,7 +150,7 @@ export const TeacherGroupsView = ({ onViewStudentsInGroup }) => {
                   style={{
                     padding: '8px 12px',
                     borderRadius: '10px',
-                    background: copiedCode === group.code ? '#377D71' : 'var(--bg-surface)',
+                    background: copiedCode === group.code ? '#10B981' : 'var(--bg-surface)',
                     color: copiedCode === group.code ? '#FFFFFF' : 'var(--text-primary)',
                     border: '1px solid var(--glass-border)',
                     fontSize: '12px',

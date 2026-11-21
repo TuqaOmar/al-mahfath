@@ -614,15 +614,15 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
               padding: '8px 12px',
               borderRadius: '10px',
               border: '1px solid var(--glass-border)',
-              background: isFavorited ? 'rgba(227, 154, 45, 0.15)' : 'var(--bg-color)',
-              color: isFavorited ? '#C27F17' : 'var(--text-secondary)',
+              background: isFavorited ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
+              color: isFavorited ? '#D97706' : 'var(--text-secondary)',
               cursor: 'pointer',
               fontWeight: 600,
               fontSize: '13px'
             }}
             title={isFavorited ? 'إزالة الصفحة من المفضلة' : 'حفظ الصفحة في المفضلة'}
           >
-            <Bookmark size={16} fill={isFavorited ? '#C27F17' : 'none'} />
+            <Bookmark size={16} fill={isFavorited ? '#D97706' : 'none'} />
             <span>{isFavorited ? 'محفوظة' : 'تفضيل'}</span>
           </button>
 
@@ -868,7 +868,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
               alignItems: 'center',
               justifyContent: 'center',
               cursor: 'pointer',
-              boxShadow: '0 4px 12px rgba(55, 125, 113, 0.3)',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
               transition: 'transform 0.2s ease'
             }}
             title={isPlaying ? 'إيقاف مؤقت' : 'استماع للآية الحالية'}
@@ -891,7 +891,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
               padding: '9px 18px',
               borderRadius: '12px',
               border: 'none',
-              background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               color: 'white',
               fontWeight: 800,
               fontSize: '13px',
@@ -899,7 +899,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              boxShadow: '0 3px 12px rgba(55, 125, 113, 0.35)',
+              boxShadow: '0 3px 12px rgba(16, 185, 129, 0.35)',
               transition: 'all 0.2s ease'
             }}
             title="تسميع الصفحة كاملة وتصحيح التلاوة وتخزين دقة الحفظ"
@@ -921,8 +921,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
             style={{
               padding: '9px 14px',
               borderRadius: '12px',
-              border: `1px solid ${showRecitationModal && recitationScope === 'ayah' ? 'var(--primary)' : 'rgba(55, 125, 113, 0.3)'}`,
-              background: showRecitationModal && recitationScope === 'ayah' ? 'var(--primary)' : 'rgba(55, 125, 113, 0.08)',
+              border: `1px solid ${showRecitationModal && recitationScope === 'ayah' ? 'var(--primary)' : 'rgba(16, 185, 129, 0.3)'}`,
+              background: showRecitationModal && recitationScope === 'ayah' ? 'var(--primary)' : 'rgba(16, 185, 129, 0.08)',
               color: showRecitationModal && recitationScope === 'ayah' ? 'white' : 'var(--text-primary)',
               fontWeight: 700,
               fontSize: '12px',
@@ -943,21 +943,21 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
         <div style={{
           padding: '16px 20px',
           borderRadius: '16px',
-          background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.1) 0%, rgba(47, 107, 97, 0.05) 100%)',
-          border: '1px solid rgba(55, 125, 113, 0.25)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.25)',
           display: 'flex',
           flexDirection: 'column',
           gap: '10px'
         }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#377D71', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#10B981', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Award size={18} />
               </div>
               <div>
                 <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>
                   معدل دقة تسميع الصفحة {pageNumber}:{' '}
-                  <span style={{ color: 'var(--primary, #377D71)', fontSize: '16px' }}>{pageRecitationStats.averageAccuracy}%</span>
+                  <span style={{ color: 'var(--primary, #10B981)', fontSize: '16px' }}>{pageRecitationStats.averageAccuracy}%</span>
                 </span>
                 <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginRight: '8px' }}>
                   (أعلى نتيجة: {pageRecitationStats.bestAccuracy}% • {pageRecitationStats.totalAttempts} محاولات مسجلة)
@@ -990,7 +990,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
             <div style={{
               width: `${pageRecitationStats.averageAccuracy}%`,
               height: '100%',
-              background: 'linear-gradient(90deg, #377D71 0%, #2F6B61 100%)',
+              background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)',
               borderRadius: '4px',
               transition: 'width 0.4s ease'
             }} />
@@ -1031,7 +1031,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
             background: 'var(--bg-surface)',
             border: isMobile ? '1px solid var(--glass-border)' : '2px solid var(--primary)',
             borderBottom: isMobile ? 'none' : undefined,
-            boxShadow: isMobile ? '0 -10px 40px rgba(0, 0, 0, 0.3)' : '0 10px 35px rgba(55, 125, 113, 0.15)',
+            boxShadow: isMobile ? '0 -10px 40px rgba(0, 0, 0, 0.3)' : '0 10px 35px rgba(16, 185, 129, 0.15)',
             direction: 'rtl',
             display: 'flex',
             flexDirection: 'column',
@@ -1204,13 +1204,13 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
           <div style={{
             padding: '10px 16px',
             borderRadius: '12px',
-            background: 'rgba(42, 111, 143, 0.08)',
-            border: '1px solid rgba(42, 111, 143, 0.2)',
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px solid rgba(59, 130, 246, 0.2)',
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
             fontSize: '12px',
-            color: '#1F5F7A'
+            color: '#1D4ED8'
           }}>
             <ShieldCheck size={18} style={{ flexShrink: 0 }} />
             <span>
@@ -1287,7 +1287,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
             {recitationScope === 'ayah' && activeAyahObj && ayahRecitationScores[activeAyahObj.number] && (
               <div style={{ marginTop: '10px', fontSize: '12px', color: 'var(--text-secondary)' }}>
                 آخر دقة مسجلة لهذه الآية:{' '}
-                <strong style={{ color: 'var(--primary, #377D71)' }}>
+                <strong style={{ color: 'var(--primary, #10B981)' }}>
                   {ayahRecitationScores[activeAyahObj.number].accuracy}% ({ayahRecitationScores[activeAyahObj.number].rating || 'محفوظة'})
                 </strong>
               </div>
@@ -1313,7 +1313,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                         padding: '9px 22px',
                         borderRadius: '12px',
                         border: 'none',
-                        background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
+                        background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
                         color: 'white',
                         fontWeight: 700,
                         fontSize: '14px',
@@ -1321,7 +1321,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                         display: 'flex',
                         alignItems: 'center',
                         gap: '8px',
-                        boxShadow: '0 3px 12px rgba(55, 125, 113, 0.35)'
+                        boxShadow: '0 3px 12px rgba(16, 185, 129, 0.35)'
                       }}
                     >
                       <Mic size={17} />
@@ -1379,15 +1379,15 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                 <div style={{
                   padding: '14px 18px',
                   borderRadius: '12px',
-                  background: 'rgba(55, 125, 113, 0.08)',
-                  border: '1px dashed #377D71',
+                  background: 'rgba(16, 185, 129, 0.08)',
+                  border: '1px dashed #10B981',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '12px'
                 }}>
                   <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#EF4444', animation: 'pulse 1s infinite' }} />
                   <div style={{ flex: 1 }}>
-                    <span style={{ fontSize: '12px', color: 'var(--primary, #377D71)', fontWeight: 'bold' }}>الميكروفون يستمع لتلاوتك الآن:</span>
+                    <span style={{ fontSize: '12px', color: 'var(--primary, #10B981)', fontWeight: 'bold' }}>الميكروفون يستمع لتلاوتك الآن:</span>
                     <p style={{ margin: '4px 0 0 0', fontSize: '15px', color: 'var(--text-primary)', fontWeight: 600 }}>
                       {aiLiveTranscript ? `"${aiLiveTranscript}"` : 'تفضل بالتلاوة بصوت مسموع وواضح...'}
                     </p>
@@ -1437,7 +1437,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                         borderRadius: '8px',
                         border: '1px solid rgba(55, 125, 113, 0.4)',
                         background: 'var(--primary-light)',
-                        color: 'var(--primary, #377D71)',
+                        color: 'var(--primary, #10B981)',
                         fontSize: '12px',
                         fontWeight: 700,
                         cursor: 'pointer'
@@ -1533,8 +1533,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
             <div style={{
               padding: '20px',
               borderRadius: '18px',
-              background: aiAnalysisResult.accuracy >= 75 ? 'rgba(55, 125, 113, 0.08)' : 'rgba(194, 127, 23, 0.08)',
-              border: `1px solid ${aiAnalysisResult.accuracy >= 75 ? 'rgba(55, 125, 113, 0.3)' : 'rgba(194, 127, 23, 0.3)'}`,
+              background: aiAnalysisResult.accuracy >= 75 ? 'rgba(16, 185, 129, 0.08)' : 'rgba(217, 119, 6, 0.08)',
+              border: `1px solid ${aiAnalysisResult.accuracy >= 75 ? 'rgba(16, 185, 129, 0.3)' : 'rgba(217, 119, 6, 0.3)'}`,
               display: 'flex',
               flexDirection: 'column',
               gap: '16px'
@@ -1546,7 +1546,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                     width: '68px',
                     height: '68px',
                     borderRadius: '18px',
-                    background: aiAnalysisResult.accuracy >= 90 ? '#377D71' : (aiAnalysisResult.accuracy >= 75 ? '#E39A2D' : '#EF4444'),
+                    background: aiAnalysisResult.accuracy >= 90 ? '#10B981' : (aiAnalysisResult.accuracy >= 75 ? '#F59E0B' : '#EF4444'),
                     color: 'white',
                     display: 'flex',
                     flexDirection: 'column',
@@ -1564,14 +1564,14 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                       {aiAnalysisResult.isFullPage && <span style={{ marginRight: '8px', fontSize: '13px', color: 'var(--primary)' }}>(الصفحة {pageNumber} كاملة)</span>}
                     </h5>
                     <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginTop: '6px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <span>كلمات صحيحة: <strong style={{ color: 'var(--primary, #377D71)' }}>{aiAnalysisResult.stats?.correctCount || 0}</strong></span>
+                      <span>كلمات صحيحة: <strong style={{ color: 'var(--primary, #10B981)' }}>{aiAnalysisResult.stats?.correctCount || 0}</strong></span>
                       {aiAnalysisResult.stats?.grammarCount > 0 && (
                         <span>لحن جلي (إعراب/تصريف): <strong style={{ color: '#DC2626' }}>{aiAnalysisResult.stats.grammarCount}</strong></span>
                       )}
                       <span>أخطاء استبدال: <strong style={{ color: '#DC2626' }}>{aiAnalysisResult.stats?.errorCount || 0}</strong></span>
                       <span>كلمات منسية: <strong style={{ color: '#DC2626' }}>{aiAnalysisResult.stats?.missingCount || 0}</strong></span>
                       {aiAnalysisResult.stats?.diacriticCount > 0 && (
-                        <span>حركات/تشكيل: <strong style={{ color: '#C27F17' }}>{aiAnalysisResult.stats.diacriticCount}</strong></span>
+                        <span>حركات/تشكيل: <strong style={{ color: '#D97706' }}>{aiAnalysisResult.stats.diacriticCount}</strong></span>
                       )}
                     </div>
                   </div>
@@ -1583,7 +1583,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                     padding: '6px 12px',
                     borderRadius: '8px',
                     background: 'var(--primary-light)',
-                    color: 'var(--primary, #377D71)',
+                    color: 'var(--primary, #10B981)',
                     fontSize: '12px',
                     fontWeight: 700,
                     display: 'flex',
@@ -1619,7 +1619,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                 background: 'var(--bg-surface)',
                 border: (aiAnalysisResult.mistakes && aiAnalysisResult.mistakes.length > 0)
                   ? '1.5px solid rgba(220, 38, 38, 0.4)'
-                  : '1.5px solid rgba(55, 125, 113, 0.4)',
+                  : '1.5px solid rgba(16, 185, 129, 0.4)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '14px',
@@ -1636,8 +1636,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                       </>
                     ) : (
                       <>
-                        <CheckCircle2 size={20} style={{ color: 'var(--primary, #377D71)' }} />
-                        <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--primary, #377D71)' }}>
+                        <CheckCircle2 size={20} style={{ color: 'var(--primary, #10B981)' }} />
+                        <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--primary, #10B981)' }}>
                           🌟 تبارك الرحمن! تلاوة خالية من أي أخطاء أو لحن جلي ✨
                         </h4>
                       </>
@@ -1655,8 +1655,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                   <div style={{
                     padding: '14px 18px',
                     borderRadius: '12px',
-                    background: 'rgba(55, 125, 113, 0.08)',
-                    borderRight: '4px solid #377D71',
+                    background: 'rgba(16, 185, 129, 0.08)',
+                    borderRight: '4px solid #10B981',
                     fontSize: '13px',
                     color: 'var(--text-primary)',
                     lineHeight: 1.7
@@ -1709,9 +1709,9 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                             borderRadius: '20px',
                             fontSize: '11px',
                             fontWeight: 800,
-                            background: m.type === 'grammar_error' ? 'rgba(220, 38, 38, 0.15)' : (m.type === 'missing_word' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(227, 154, 45, 0.15)'),
-                            color: m.type === 'grammar_error' ? '#B91C1C' : (m.type === 'missing_word' ? '#DC2626' : '#C27F17'),
-                            border: `1px solid ${m.type === 'grammar_error' ? 'rgba(220, 38, 38, 0.3)' : 'rgba(227, 154, 45, 0.3)'}`
+                            background: m.type === 'grammar_error' ? 'rgba(220, 38, 38, 0.15)' : (m.type === 'missing_word' ? 'rgba(239, 68, 68, 0.12)' : 'rgba(245, 158, 11, 0.15)'),
+                            color: m.type === 'grammar_error' ? '#B91C1C' : (m.type === 'missing_word' ? '#DC2626' : '#D97706'),
+                            border: `1px solid ${m.type === 'grammar_error' ? 'rgba(220, 38, 38, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`
                           }}>
                             {m.typeLabel || 'خطأ في التسميع'}
                           </span>
@@ -1751,20 +1751,20 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                           <div style={{
                             padding: '10px 14px',
                             borderRadius: '10px',
-                            background: 'rgba(55, 125, 113, 0.08)',
-                            border: '1px solid rgba(55, 125, 113, 0.3)',
+                            background: 'rgba(16, 185, 129, 0.08)',
+                            border: '1px solid rgba(16, 185, 129, 0.3)',
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '4px'
                           }}>
-                            <span style={{ fontSize: '11px', color: 'var(--primary, #377D71)', fontWeight: 'bold' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--primary, #10B981)', fontWeight: 'bold' }}>
                               ✅ الصواب في كتاب الله:
                             </span>
                             <span style={{
                               fontSize: '18px',
                               fontFamily: 'var(--font-quran)',
                               fontWeight: 800,
-                              color: 'var(--primary, #377D71)',
+                              color: 'var(--primary, #10B981)',
                               direction: 'rtl'
                             }}>
                               « {m.expected} »
@@ -1802,9 +1802,9 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                     🔍 تصحيح الكلمات ومطابقة النطق (انقر على أي كلمة لعرض سبب الخطأ وتصحيحه):
                   </span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '11px', color: 'var(--text-secondary)' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#377D71' }} /> صحيح</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }} /> صحيح</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#DC2626' }} /> لحن جلي / خطأ كلمة</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#E39A2D' }} /> حركة تشكيل / زيادة</span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#F59E0B' }} /> حركة تشكيل / زيادة</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: '8px', height: '8px', borderRadius: '50%', border: '1px dashed #DC2626' }} /> كلمة منسية</span>
                   </div>
                 </div>
@@ -1822,7 +1822,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                 }}>
                   {aiAnalysisResult.results?.map((w, idx) => {
                     let bg = 'var(--primary-light)';
-                    let color = 'var(--primary, #377D71)';
+                    let color = 'var(--primary, #10B981)';
                     let border = 'rgba(55, 125, 113, 0.3)';
 
                     if (w.status === 'grammar_error') {
@@ -1838,9 +1838,9 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                       color = '#DC2626';
                       border = '1px dashed #DC2626';
                     } else if (w.status === 'diacritic_error' || w.status === 'extra_word') {
-                      bg = 'rgba(227, 154, 45, 0.12)';
-                      color = '#C27F17';
-                      border = '1px solid rgba(227, 154, 45, 0.3)';
+                      bg = 'rgba(245, 158, 11, 0.12)';
+                      color = '#D97706';
+                      border = '1px solid rgba(245, 158, 11, 0.3)';
                     }
 
                     return (
@@ -1938,7 +1938,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                           padding: '10px 14px',
                           borderRadius: '10px',
                           background: 'var(--bg-color)',
-                          border: `1px solid ${ab.accuracy >= 90 ? 'rgba(55, 125, 113, 0.3)' : (ab.accuracy >= 75 ? 'rgba(227, 154, 45, 0.3)' : 'rgba(239, 68, 68, 0.3)')}`,
+                          border: `1px solid ${ab.accuracy >= 90 ? 'rgba(16, 185, 129, 0.3)' : (ab.accuracy >= 75 ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)')}`,
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '6px'
@@ -1953,7 +1953,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                             borderRadius: '6px',
                             fontSize: '12px',
                             fontWeight: 900,
-                            background: ab.accuracy >= 90 ? '#377D71' : (ab.accuracy >= 75 ? '#E39A2D' : '#EF4444'),
+                            background: ab.accuracy >= 90 ? '#10B981' : (ab.accuracy >= 75 ? '#F59E0B' : '#EF4444'),
                             color: 'white'
                           }}>
                             {ab.accuracy}%
@@ -2130,8 +2130,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                           borderRadius: '6px',
                           fontSize: '11px',
                           fontWeight: 700,
-                          background: item.type === 'voice' ? 'var(--primary-light)' : 'rgba(42, 111, 143, 0.1)',
-                          color: item.type === 'voice' ? 'var(--primary, #377D71)' : '#1F5F7A'
+                          background: item.type === 'voice' ? 'var(--primary-light)' : 'rgba(59, 130, 246, 0.1)',
+                          color: item.type === 'voice' ? 'var(--primary, #10B981)' : '#2563EB'
                         }}>
                           {item.type === 'voice' ? '🎙️ صوتي' : '✍️ كتابي'}
                         </span>
@@ -2147,7 +2147,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                         borderRadius: '8px',
                         fontWeight: 900,
                         fontSize: '14px',
-                        background: item.accuracy >= 90 ? '#377D71' : (item.accuracy >= 75 ? '#E39A2D' : '#EF4444'),
+                        background: item.accuracy >= 90 ? '#10B981' : (item.accuracy >= 75 ? '#F59E0B' : '#EF4444'),
                         color: 'white'
                       }}>
                         {item.accuracy}%
@@ -2199,8 +2199,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                 gap: '8px',
                 padding: isMobile ? '8px 10px' : '10px 14px',
                 borderRadius: '12px',
-                background: 'rgba(55, 125, 113, 0.08)',
-                border: '1px solid rgba(55, 125, 113, 0.25)'
+                background: 'rgba(16, 185, 129, 0.08)',
+                border: '1px solid rgba(16, 185, 129, 0.25)'
               }}>
                 <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                   {isPlaying && <Sparkles size={13} />}
@@ -2212,8 +2212,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                     <span style={{
                       padding: '4px 10px',
                       borderRadius: '20px',
-                      background: ayahRecitationScores[activeAyahObj.number].accuracy >= 90 ? 'var(--primary-light)' : 'rgba(227, 154, 45, 0.15)',
-                      color: ayahRecitationScores[activeAyahObj.number].accuracy >= 90 ? 'var(--primary, #377D71)' : '#C27F17',
+                      background: ayahRecitationScores[activeAyahObj.number].accuracy >= 90 ? 'var(--primary-light)' : 'rgba(245, 158, 11, 0.15)',
+                      color: ayahRecitationScores[activeAyahObj.number].accuracy >= 90 ? 'var(--primary, #10B981)' : '#D97706',
                       fontSize: '12px',
                       fontWeight: 800,
                       display: 'flex',
@@ -2237,8 +2237,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                       }
                     }}
                     style={{
-                      background: 'rgba(55, 125, 113, 0.1)',
-                      border: '1px solid rgba(55, 125, 113, 0.3)',
+                      background: 'rgba(16, 185, 129, 0.1)',
+                      border: '1px solid rgba(16, 185, 129, 0.3)',
                       borderRadius: '8px',
                       cursor: 'pointer',
                       color: 'var(--primary)',
@@ -2262,11 +2262,11 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                       border: 'none',
                       cursor: 'pointer',
                       display: 'flex',
-                      color: recitedAyahs[activeAyahObj.number] ? '#377D71' : 'var(--text-secondary)'
+                      color: recitedAyahs[activeAyahObj.number] ? '#10B981' : 'var(--text-secondary)'
                     }}
                     title="تحديد كـ تم التسميع يدوياً"
                   >
-                    <CheckCircle2 size={22} fill={recitedAyahs[activeAyahObj.number] ? '#377D71' : 'none'} color={recitedAyahs[activeAyahObj.number] ? 'white' : 'currentColor'} />
+                    <CheckCircle2 size={22} fill={recitedAyahs[activeAyahObj.number] ? '#10B981' : 'none'} color={recitedAyahs[activeAyahObj.number] ? 'white' : 'currentColor'} />
                   </button>
                 </div>
               </div>
@@ -2312,7 +2312,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                               padding: '2px 18px',
                               borderRadius: '10px',
                               border: '2px solid var(--primary)',
-                              background: 'rgba(55, 125, 113, 0.08)',
+                              background: 'rgba(16, 185, 129, 0.08)',
                               color: 'var(--primary)',
                               fontWeight: 800,
                               fontSize: isMobile ? '19px' : '22px'
@@ -2335,10 +2335,10 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
                             cursor: 'pointer',
                             borderRadius: '6px',
                             padding: '2px 0',
-                            background: isActive ? 'rgba(55, 125, 113, 0.18)' : 'transparent',
+                            background: isActive ? 'rgba(16, 185, 129, 0.18)' : 'transparent',
                             color: isActive ? 'var(--primary)' : 'inherit',
                             textDecoration: isRecited ? 'underline' : 'none',
-                            textDecorationColor: '#377D71',
+                            textDecorationColor: '#10B981',
                             textUnderlineOffset: '8px',
                             boxDecorationBreak: 'clone',
                             WebkitBoxDecorationBreak: 'clone',
@@ -2449,8 +2449,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
         <div style={{
           padding: '24px 28px',
           borderRadius: '20px',
-          background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.1) 0%, rgba(47, 107, 97, 0.04) 100%)',
-          border: '1px solid rgba(55, 125, 113, 0.2)',
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.04) 100%)',
+          border: '1px solid rgba(16, 185, 129, 0.2)',
           boxShadow: 'var(--shadow-soft)',
           display: 'flex',
           flexDirection: 'column',
@@ -2483,7 +2483,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
           right: '12px',
           padding: '8px 12px',
           borderRadius: '20px',
-          background: 'rgba(31, 18, 32, 0.94)',
+          background: 'rgba(15, 23, 42, 0.94)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -2523,9 +2523,9 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
             style={{
               padding: '8px 12px',
               borderRadius: '12px',
-              background: isPlaying ? 'rgba(55, 125, 113, 0.25)' : 'rgba(255, 255, 255, 0.1)',
-              border: isPlaying ? '1px solid #377D71' : 'none',
-              color: isPlaying ? '#4FA899' : 'white',
+              background: isPlaying ? 'rgba(16, 185, 129, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+              border: isPlaying ? '1px solid #10B981' : 'none',
+              color: isPlaying ? '#34D399' : 'white',
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
@@ -2550,7 +2550,7 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
               width: '50px',
               height: '50px',
               borderRadius: '50%',
-              background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
+              background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
               border: '2.5px solid rgba(255, 255, 255, 0.35)',
               color: 'white',
               display: 'flex',
@@ -2568,8 +2568,8 @@ export const QuranInteractiveView = ({ initialPageNumber = 2, onPageChange }) =>
 
           {/* Current Page Indicator with Quick Jump */}
           <div style={{ textAlign: 'center' }}>
-            <span style={{ fontSize: '10.5px', color: '#9C8D98', display: 'block' }}>صفحة</span>
-            <strong style={{ fontSize: '13px', color: '#FAF7F9' }}>{pageNumber}</strong>
+            <span style={{ fontSize: '10.5px', color: '#94A3B8', display: 'block' }}>صفحة</span>
+            <strong style={{ fontSize: '13px', color: '#F8FAFC' }}>{pageNumber}</strong>
           </div>
 
           {/* Next Page Button */}

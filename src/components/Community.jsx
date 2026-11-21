@@ -304,7 +304,7 @@ export const Community = () => {
     // The viewer's own row when outside the top list (rank unknown, shown as "—").
     ...(leaderboard.me && !leaderboardRows.some(entry => entry.isMe) && leaderboardRows.length > 0 ? [leaderboard.me] : [])
   ];
-  const medalColors = ['#D4A017', '#9C8D98', '#B87333'];
+  const medalColors = ['#D4A017', '#94A3B8', '#B87333'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '860px', width: '100%', margin: '0 auto' }}>
@@ -655,7 +655,7 @@ export const Community = () => {
                     </div>
                     <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--primary)', marginTop: '2px' }}>{entry.xp.toLocaleString('en-US')} XP</div>
                     <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)', marginTop: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '3px' }}>
-                      <Flame size={12} color="#E39A2D" /> {entry.streak} يوم
+                      <Flame size={12} color="#F59E0B" /> {entry.streak} يوم
                     </div>
                   </div>
                 ))}
@@ -680,7 +680,7 @@ export const Community = () => {
                 <Avatar name={entry.name} photo={entry.photoURL} size={36} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.name}{entry.isMe && ' (أنت)'}</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px' }}><Flame size={12} color="#E39A2D" /> {entry.streak} يوم</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '3px' }}><Flame size={12} color="#F59E0B" /> {entry.streak} يوم</div>
                 </div>
                 <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--primary)', whiteSpace: 'nowrap' }}>{entry.xp.toLocaleString('en-US')} XP</span>
               </div>
