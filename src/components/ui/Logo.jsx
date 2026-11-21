@@ -21,12 +21,12 @@ export const Logo = ({ size = 32, className = '', showText = true }) => {
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
           <linearGradient id="primaryGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#10B981" />
-            <stop offset="100%" stopColor="#059669" />
+            <stop offset="0%" stopColor="#9C4F84" />
+            <stop offset="100%" stopColor="#7A4069" />
           </linearGradient>
           <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#F59E0B" />
-            <stop offset="100%" stopColor="#D97706" />
+            <stop offset="0%" stopColor="#E39A2D" />
+            <stop offset="100%" stopColor="#C27F17" />
           </linearGradient>
         </defs>
 
@@ -50,11 +50,11 @@ export const Logo = ({ size = 32, className = '', showText = true }) => {
           initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1 }}
         />
         <motion.circle 
-          cx="35" cy="55" r="3" fill="#10B981"
+          cx="35" cy="55" r="3" fill="#377D71"
           initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.2 }}
         />
         <motion.circle 
-          cx="65" cy="55" r="3" fill="#059669"
+          cx="65" cy="55" r="3" fill="#4FA899"
           initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 1.4 }}
         />
         

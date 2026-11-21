@@ -1,3 +1,4 @@
+import { DEFAULT_DAILY_TARGET, DEFAULT_OLD_REVIEW_TARGET } from '../lib/planDefaults';
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -29,7 +30,7 @@ export const MyPlanManager = () => {
   const preferences = user?.preferences || {};
 
   const [unitType, setUnitType] = useState(preferences.unitType || 'juzs'); // 'pages' | 'juzs' | 'surahs'
-  const [oldReviewDailyTarget, setOldReviewDailyTarget] = useState(preferences.oldReviewDailyTarget || 'نصف جزء يومياً (10 صفحات)');
+  const [oldReviewDailyTarget, setOldReviewDailyTarget] = useState(preferences.oldReviewDailyTarget || DEFAULT_OLD_REVIEW_TARGET);
   const [selectedSurahRange, setSelectedSurahRange] = useState(preferences.selectedSurahRange || 'سورة البقرة وآل عمران');
   
   // Array of selected individual Juz numbers (e.g. [1, 30])
@@ -47,7 +48,7 @@ export const MyPlanManager = () => {
   const juzLabel = list => list.length === 0 ? 'لا يوجد أجزاء مسبقة' : list.map(n => `الجزء ${n}`).join('، ');
   const [juzsMemorized, setJuzsMemorized] = useState(() => preferences.juzsMemorized || juzLabel(selectedJuzList));
   const [planCreatorMode, setPlanCreatorMode] = useState(preferences.planCreatorMode || 'ai'); // 'ai' | 'manual'
-  const [dailyTarget, setDailyTarget] = useState(preferences.dailyTarget || 'صفحة واحدة يومياً');
+  const [dailyTarget, setDailyTarget] = useState(preferences.dailyTarget || DEFAULT_DAILY_TARGET);
   const [manualNewTarget, setManualNewTarget] = useState(preferences.manualNewTarget || '1');
   const [manualOldReviewTarget, setManualOldReviewTarget] = useState(preferences.manualOldReviewTarget || '10');
 
@@ -110,7 +111,7 @@ export const MyPlanManager = () => {
       <div style={{
         padding: '24px',
         borderRadius: '20px',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(59, 130, 246, 0.1) 100%)',
+        background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.15) 0%, rgba(42, 111, 143, 0.1) 100%)',
         border: '1px solid var(--primary)',
         display: 'flex',
         alignItems: 'center',
@@ -148,7 +149,7 @@ export const MyPlanManager = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+            boxShadow: '0 4px 12px rgba(55, 125, 113, 0.3)'
           }}
         >
           {isSaved ? <CheckCircle size={18} /> : <Save size={18} />}
@@ -158,7 +159,7 @@ export const MyPlanManager = () => {
           }
         </button>
       </div>
-      {isSaved && <div role="status" data-testid="plan-save-success" style={{ color: '#047857', fontWeight: 700 }}>{lang === 'ar' ? 'تم حفظ الخطة.' : 'Plan saved.'}</div>}
+      {isSaved && <div role="status" data-testid="plan-save-success" style={{ color: '#285C53', fontWeight: 700 }}>{lang === 'ar' ? 'تم حفظ الخطة.' : 'Plan saved.'}</div>}
       {saveError && <div role="alert" data-testid="plan-save-error" style={{ color: '#B91C1C', fontWeight: 700 }}>{saveError}</div>}
 
       {/* 1. Unit Type Selector */}

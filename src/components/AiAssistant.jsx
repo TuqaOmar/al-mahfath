@@ -1,3 +1,4 @@
+import { DEFAULT_DAILY_TARGET } from '../lib/planDefaults';
 import { declaredPages, nextDeclaredPage } from '../lib/memorization';
 import { fetchWithAuth } from '../lib/api';
 import React, { useState, useRef, useEffect } from 'react';
@@ -23,6 +24,7 @@ import {
   ExternalLink 
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 import { getSurahNameForPage, getJuzForPage } from '../utils/quranData';
 
 
@@ -45,10 +47,20 @@ const WELCOME_MSG = {
   sender: 'ai',
 };
 
+const WELCOME_MSG_EN = {
+  id: 'welcome',
+  text: 'Peace be upon you! 🌿\n\nI am your **AI Quran tutor** in "Ma7fath AI". I know your exact place in the Mushaf and your learning style.\n\nI can help you with:\n\n**🏰 Today\'s Five Fortresses plan** — your daily portions and their timing\n**📖 Memorization and repetition** — the 20/40 rule to fix verses like al-Fatiha\n**🔗 Similar verses (mutashabihat)** — telling look-alike verses apart\n**🎧 Using your learning style** — tips for auditory or visual memory\n**📚 Tajweed and makharij** — reciting your portion quickly without dropping the rules\n\nPick a quick question below or ask me anything! (Answers are in Arabic.)',
+  sender: 'ai',
+};
+
 export const AiAssistant = ({ isFloating = false, onClose = null }) => {
   const { user } = useAuth();
+  const { lang } = useLanguage();
+  const ar = lang !== 'en';
+  const welcome = ar ? WELCOME_MSG : WELCOME_MSG_EN;
+  const [fallbackNotice, setFallbackNotice] = useState('');
   const userId = user?.uid || 'guest';
-  const [messages, setMessages] = useState([WELCOME_MSG]);
+  const [messages, setMessages] = useState(() => [lang === 'en' ? WELCOME_MSG_EN : WELCOME_MSG]);
   const [input, setInput] = useState('');
   const [chatError, setChatError] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -85,20 +97,20 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
     declaredPagesCount: declaredPages(user).length,
     learningStyle,
     fortressesToday: user?.preferences?.fortressesToday || {},
-    dailyTarget: user?.preferences?.dailyTarget || 'صفحة واحدة يومياً',
+    dailyTarget: user?.preferences?.dailyTarget || DEFAULT_DAILY_TARGET,
     apiKey
   };
 
   // The authenticated server is authoritative; never show another account's cache.
   useEffect(() => {
     let alive = true;
-    setMessages([WELCOME_MSG]);
+    setMessages([welcome]);
     setChatError('');
     fetchWithAuth('/api/ai/chat').then(async response => {
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر تحميل المحادثة');
+      if (!response.ok || !data.success) throw new Error(data.message || (ar ? 'تعذر تحميل المحادثة' : 'Could not load the chat'));
       if (alive) {
-        setMessages(data.history.length ? data.history : [WELCOME_MSG]);
+        setMessages(data.history.length ? data.history : [welcome]);
         localStorage.setItem('ma7fath_chat_history_' + userId, JSON.stringify(data.history));
       }
     }).catch(error => alive && setChatError(error.message));
@@ -118,10 +130,10 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
     setApiKey(trimmed);
     if (trimmed) {
       localStorage.setItem('ma7fath_gemini_api_key', trimmed);
-      setKeySaveMessage('تم حفظ وتفعيل مفتاح Gemini بنجاح! ✨');
+      setKeySaveMessage(ar ? 'تم حفظ وتفعيل مفتاح Gemini بنجاح! ✨' : 'Gemini key saved and enabled! ✨');
     } else {
       localStorage.removeItem('ma7fath_gemini_api_key');
-      setKeySaveMessage('تم إزالة المفتاح والاعتماد على محرك محفظ AI الداخلي.');
+      setKeySaveMessage(ar ? 'تم إزالة المفتاح والاعتماد على محرك محفظ AI الداخلي.' : 'Key removed; using the built-in Ma7fath engine.');
     }
     setTimeout(() => {
       setKeySaveMessage('');
@@ -163,10 +175,14 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
       clearTimeout(timeoutId);
 
       const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.message || 'تعذر حفظ المحادثة');
+      if (!res.ok || !data.success) throw new Error(data.message || (ar ? 'تعذر حفظ المحادثة' : 'Could not save the chat'));
       if (data.reply && data.reply.trim()) {
         aiReplyText = data.reply.trim();
       }
+      // The server says when no live model answered (bad/expired key, quota, outage).
+      setFallbackNotice(data.fallback ? (data.fallbackReason === 'no_api_key'
+        ? (ar ? 'هذا رد من المحرك الداخلي (بدون Gemini). لتفعيل الإجابات الذكية أضيفي مفتاح Gemini من زر الإعدادات.' : 'This answer is from the built-in engine (no Gemini). Add a Gemini key from settings for live AI answers.')
+        : (ar ? 'تعذر الوصول إلى Gemini (المفتاح غير صالح أو انتهى الرصيد أو انقطاع مؤقت)، فهذا رد من المحرك الداخلي.' : 'Could not reach Gemini (invalid key, quota or outage), so this answer is from the built-in engine.')) : '');
     } catch (fetchErr) {
       clearTimeout(timeoutId);
       setChatError(fetchErr.message);
@@ -187,36 +203,37 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
     try {
       const response = await fetchWithAuth('/api/ai/chat', { method: 'DELETE' });
       const data = await response.json();
-      if (!response.ok || !data.success) throw new Error(data.message || 'تعذر حذف المحادثة');
+      if (!response.ok || !data.success) throw new Error(data.message || (ar ? 'تعذر حذف المحادثة' : 'Could not clear the chat'));
       localStorage.removeItem('ma7fath_chat_history_' + userId);
-      setMessages([WELCOME_MSG]);
+      setMessages([welcome]);
       setChatError('');
+      setFallbackNotice('');
     } catch (error) { setChatError(error.message); }
   };
 
   const quickPrompts = [
     { 
-      label: '🏰 خطتي الدقيقة في الحصون الخمسة لليوم', 
+      label: ar ? '🏰 خطتي الدقيقة في الحصون الخمسة لليوم' : "🏰 Today's Five Fortresses plan", 
       query: `أعطني خطتي اليومية الدقيقة بنظام الحصون الخمسة بناءً على موقعي الحالي في الصفحة ${currentPage} من سورة ${currentSurah} ونمطي (${learningStyle})` 
     },
     { 
-      label: `🎧 كيف أستغل نمطي (${learningStyle}) في الحفظ؟`, 
+      label: ar ? `🎧 كيف أستغل نمطي (${learningStyle}) في الحفظ؟` : '🎧 How do I use my learning style?', 
       query: `بما أن نمط حفظي هو (${learningStyle})، كيف أستغله بأقصى فاعلية في تثبيت الصفحة ${currentPage} من سورة ${currentSurah}؟` 
     },
     { 
-      label: `🔍 ضوابط ومتشابهات سورة ${currentSurah}`, 
+      label: ar ? `🔍 ضوابط ومتشابهات سورة ${currentSurah}` : `🔍 Similar verses in Surah ${currentSurah}`, 
       query: `أعطني أهم ضوابط المتشابهات ومحاور سورة ${currentSurah} لتثبيتها وعدم الخلط بين آياتها.` 
     },
     { 
-      label: `🔁 سر التكرار الـ 20 والـ 40 لصفحة ${currentPage}`, 
+      label: ar ? `🔁 سر التكرار الـ 20 والـ 40 لصفحة ${currentPage}` : `🔁 The 20/40 repetition rule for page ${currentPage}`, 
       query: `اشرح لي بالتفصيل كيف أطبق قاعدة التكرار 20 مرة للآية و40 مرة للصفحة ${currentPage} لإتقانها كالفاتحة.` 
     },
     { 
-      label: '🌿 علاج النسيان وتفلت الحفظ', 
+      label: ar ? '🌿 علاج النسيان وتفلت الحفظ' : '🌿 Fixing forgetfulness', 
       query: `أعاني أحياناً من تفلت الحفظ ونسيان الآيات السابقة، ما هو العلاج العملي وفق منهجية الحصون الخمسة؟` 
     },
     { 
-      label: '✨ تنبيهات تجويدية لقراءة الحدر', 
+      label: ar ? '✨ تنبيهات تجويدية لقراءة الحدر' : '✨ Tajweed tips for fast recitation', 
       query: `كيف أقرأ ورد الاستماع والمراجعة بالحدر السريع في 20 دقيقة مع المحافظة التامة على أحكام التجويد ومخارج الحروف؟` 
     }
   ];
@@ -233,11 +250,16 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
     }}>
       
       {chatError && <div role="alert" data-testid="chat-error">{chatError}</div>}
+      {fallbackNotice && (
+        <div role="status" data-testid="ai-fallback-notice" style={{ padding: '10px 14px', borderRadius: '12px', background: 'rgba(227, 154, 45, 0.12)', border: '1px solid rgba(227, 154, 45, 0.4)', color: 'var(--text-primary)', fontSize: '13px' }}>
+          ⚠️ {fallbackNotice}
+        </div>
+      )}
       {/* Top Header Controls Bar */}
       <div style={{
         padding: '14px 18px',
         borderRadius: '16px',
-        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.05) 100%)',
+        background: 'linear-gradient(135deg, rgba(55, 125, 113, 0.12) 0%, rgba(47, 107, 97, 0.05) 100%)',
         border: '1px solid var(--primary-border)',
         display: 'flex',
         justifyContent: 'space-between',
@@ -250,7 +272,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <Compass size={18} color="var(--primary)" />
             <span style={{ fontSize: '13.5px', color: 'var(--text-primary)', fontWeight: 'bold' }}>
-              الصفحة {currentPage} • سورة {currentSurah} (الجزء {currentJuz})
+              {ar ? <>الصفحة {currentPage} • سورة {currentSurah} (الجزء {currentJuz})</> : <>Page {currentPage} • Surah {currentSurah} (Juz {currentJuz})</>}
             </span>
           </div>
 
@@ -266,7 +288,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
             color: 'var(--text-secondary)'
           }}>
             <Volume2 size={13} color="var(--primary)" />
-            <span>نمط الدماغ: <strong style={{ color: 'var(--primary)' }}>{learningStyle}</strong></span>
+            <span>{ar ? 'نمط الدماغ: ' : 'Learning style: '}<strong style={{ color: 'var(--primary)' }}>{learningStyle}</strong></span>
           </div>
         </div>
 
@@ -283,7 +305,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
               gap: '6px',
               padding: '6px 12px',
               borderRadius: '20px',
-              background: apiKey ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-surface)',
+              background: apiKey ? 'rgba(55, 125, 113, 0.15)' : 'var(--bg-surface)',
               border: `1px solid ${apiKey ? 'var(--primary)' : 'var(--glass-border)'}`,
               color: apiKey ? 'var(--primary)' : 'var(--text-secondary)',
               fontSize: '12px',
@@ -291,17 +313,17 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
               cursor: 'pointer',
               transition: 'all 0.2s ease'
             }}
-            title="إعدادات مفتاح Gemini AI الذكي"
+            title={ar ? "إعدادات مفتاح Gemini AI الذكي" : "Gemini AI key settings"}
           >
             <Key size={13} color={apiKey ? 'var(--primary)' : 'var(--text-secondary)'} />
-            <span>{apiKey ? '🟢 Gemini Live مفعل' : '⚡ محرك ذكي داخلي'}</span>
+            <span>{apiKey ? (ar ? '🟢 Gemini Live مفعل' : '🟢 Gemini Live on') : (ar ? '⚡ محرك ذكي داخلي' : '⚡ Built-in engine')}</span>
           </button>
 
           <button
             type="button"
             onClick={handleClearChat}
             data-testid="clear-chat"
-            title="مسح المحادثة بالكامل"
+            title={ar ? "مسح المحادثة بالكامل" : "Clear the whole chat"}
             style={{
               padding: '7px',
               borderRadius: '10px',
@@ -321,7 +343,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
             <button
               type="button"
               onClick={onClose}
-              title="إغلاق المعلم الذكي"
+              title={ar ? "إغلاق المعلم الذكي" : "Close the AI tutor"}
               style={{
                 width: '32px',
                 height: '32px',
@@ -372,13 +394,13 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 width: '38px',
                 height: '38px',
                 borderRadius: '12px',
-                background: isAi ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' : 'var(--primary-light)',
+                background: isAi ? 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)' : 'var(--primary-light)',
                 color: isAi ? 'white' : 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                boxShadow: isAi ? '0 4px 10px rgba(16, 185, 129, 0.35)' : 'none'
+                boxShadow: isAi ? '0 4px 10px rgba(55, 125, 113, 0.35)' : 'none'
               }}>
                 {isAi ? <Bot size={20} /> : <User size={20} />}
               </div>
@@ -392,7 +414,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 border: isAi ? '1px solid var(--glass-border)' : 'none',
                 lineHeight: 1.8,
                 fontSize: '14.5px',
-                boxShadow: isAi ? 'var(--shadow-soft)' : '0 4px 14px rgba(16, 185, 129, 0.25)',
+                boxShadow: isAi ? 'var(--shadow-soft)' : '0 4px 14px rgba(55, 125, 113, 0.25)',
                 wordBreak: 'break-word'
               }}>
                 {renderText(m.text)}
@@ -408,7 +430,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
             </div>
             <div style={{ padding: '12px 20px', borderRadius: '0 16px 16px 16px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <Loader2 size={16} className="animate-spin" color="var(--primary)" />
-              <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>المعلم القرآني الذكي يُفصّل إجابتك الآن...</span>
+              <span style={{ fontSize: '13.5px', color: 'var(--text-secondary)' }}>{ar ? 'المعلم القرآني الذكي يُفصّل إجابتك الآن...' : 'The AI tutor is writing your answer...'}</span>
             </div>
           </div>
         )}
@@ -461,7 +483,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
           onKeyDown={(e) => {
             if (e.key === 'Enter') handleSend();
           }}
-          placeholder={isMobile ? "اسأل المعلم الذكي عن الآيات، الخطة..." : "اسأل المعلم الذكي عن خطتك، المتشابهات، جدول التكرار، أو أي استفسار..."}
+          placeholder={ar ? (isMobile ? "اسأل المعلم الذكي عن الآيات، الخطة..." : "اسأل المعلم الذكي عن خطتك، المتشابهات، جدول التكرار، أو أي استفسار...") : (isMobile ? "Ask the AI tutor about verses, your plan..." : "Ask the AI tutor about your plan, similar verses, repetition, or anything...")}
           style={{
             flex: 1,
             padding: isMobile ? '12px 14px' : '14px 18px',
@@ -501,15 +523,15 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
             justifyContent: 'center',
             gap: '8px',
             opacity: isTyping || !input.trim() ? 0.6 : 1,
-            boxShadow: '0 4px 14px rgba(16, 185, 129, 0.25)',
+            boxShadow: '0 4px 14px rgba(55, 125, 113, 0.25)',
             transition: 'all 0.15s ease',
             flexShrink: 0,
             touchAction: 'manipulation'
           }}
-          title="إرسال السؤال"
+          title={ar ? "إرسال السؤال" : "Send question"}
         >
           <Send size={18} />
-          {!isMobile && <span>إرسال</span>}
+          {!isMobile && <span>{ar ? 'إرسال' : 'Send'}</span>}
         </button>
       </div>
 
@@ -560,7 +582,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 width: '44px',
                 height: '44px',
                 borderRadius: '14px',
-                background: 'rgba(16, 185, 129, 0.15)',
+                background: 'rgba(55, 125, 113, 0.15)',
                 color: 'var(--primary)',
                 display: 'flex',
                 alignItems: 'center',
@@ -570,16 +592,16 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
               </div>
               <div>
                 <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  إعدادات الذكاء الاصطناعي (Gemini AI)
+                  {ar ? 'إعدادات الذكاء الاصطناعي (Gemini AI)' : 'AI settings (Gemini AI)'}
                 </h3>
                 <span style={{ fontSize: '12.5px', color: 'var(--text-muted)' }}>
-                  احصل على إجابات غير محدودة ومتطورة مباشرة من Google AI
+                  {ar ? 'احصل على إجابات غير محدودة ومتطورة مباشرة من Google AI' : 'Get advanced answers directly from Google AI'}
                 </span>
               </div>
             </div>
 
             <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '16px' }}>
-              يتميز تطبيق "محفظ AI" بمحرك قرآني داخلي ذكي مدمج يعمل تلقائياً. إذا أردت تفعيل قدرات نموذج <strong>Gemini 2.5 Flash</strong> الكاملة والإجابات المباشرة، يمكنك إدخال مفتاحك المجاني من Google:
+              {ar ? <>يتميز تطبيق "محفظ AI" بمحرك قرآني داخلي ذكي مدمج يعمل تلقائياً. إذا أردت تفعيل قدرات نموذج <strong>Gemini</strong> الكاملة والإجابات المباشرة، يمكنك إدخال مفتاحك المجاني من Google:</> : <>Ma7fath AI has a built-in Quran engine that works automatically. To enable full <strong>Gemini</strong> answers, enter your free Google key:</>}
             </p>
 
             {/* Input with Show/Hide toggle */}
@@ -588,7 +610,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 type={showKeySecret ? 'text' : 'password'}
                 value={keyInput}
                 onChange={(e) => setKeyInput(e.target.value)}
-                placeholder="ألصق مفتاح Gemini هنا (AIzaSy...)"
+                placeholder={ar ? "ألصق مفتاح Gemini هنا (AIzaSy...)" : "Paste your Gemini key here (AIzaSy...)"}
                 style={{
                   width: '100%',
                   padding: '14px 44px 14px 16px',
@@ -637,7 +659,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                 }}
               >
                 <ExternalLink size={13} />
-                اضغط هنا للحصول على مفتاح Gemini مجاني فوراً من Google AI Studio
+                {ar ? 'اضغط هنا للحصول على مفتاح Gemini مجاني فوراً من Google AI Studio' : 'Get a free Gemini key from Google AI Studio'}
               </a>
             </div>
 
@@ -645,7 +667,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
               <div style={{
                 padding: '10px 14px',
                 borderRadius: '10px',
-                background: 'rgba(16, 185, 129, 0.15)',
+                background: 'rgba(55, 125, 113, 0.15)',
                 color: 'var(--primary)',
                 fontSize: '13px',
                 fontWeight: 700,
@@ -664,7 +686,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                   setKeyInput('');
                   localStorage.removeItem('ma7fath_gemini_api_key');
                   setApiKey('');
-                  setKeySaveMessage('تم مسح المفتاح بنجاح.');
+                  setKeySaveMessage(ar ? 'تم مسح المفتاح بنجاح.' : 'Key cleared.');
                   setTimeout(() => setKeySaveMessage(''), 1500);
                 }}
                 style={{
@@ -677,7 +699,7 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                   cursor: 'pointer'
                 }}
               >
-                مسح المفتاح
+                {ar ? 'مسح المفتاح' : 'Clear key'}
               </button>
 
               <button
@@ -695,11 +717,11 @@ export const AiAssistant = ({ isFloating = false, onClose = null }) => {
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px',
-                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+                  boxShadow: '0 4px 12px rgba(55, 125, 113, 0.3)'
                 }}
               >
                 <Check size={16} />
-                حفظ المفتاح وتفعيله
+                {ar ? 'حفظ المفتاح وتفعيله' : 'Save and enable key'}
               </button>
             </div>
           </div>

@@ -1,14 +1,14 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { auth, db, googleProvider } from '../lib/firebase';
+import { auth, db } from '../lib/firebase';
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
   signOut, 
   onAuthStateChanged,
   updateProfile,
-  signInAnonymously,
-  reauthenticateWithPopup
+  signInAnonymously
 } from 'firebase/auth';
+import { fetchWithAuth } from '../lib/api';
 import { doc, getDoc, getDocFromServer, setDoc, updateDoc } from 'firebase/firestore';
 
 const AuthContext = createContext();
@@ -26,6 +26,26 @@ const initialActiveRole = (profile) => {
   if (available.includes(saved)) return saved;
   return available.includes(profile?.role) ? profile.role : available[0];
 };
+
+// Auth error messages follow the saved UI language (AuthProvider sits outside hooks' reach here).
+const authText = (arText, enText) => (localStorage.getItem('ma7fath_lang') === 'en' ? enText : arText);
+
+// Single source for a new account's default profile fields (signup and first
+// sign-in both use it). Firestore rule isSafeInitialUser must accept exactly these.
+const defaultUserFields = () => ({
+  hasCompletedWizard: false,
+  role: 'user',
+  // Multi-role support: roles map allows a single account to be student+teacher+admin
+  roles: { user: true },
+  streak: 0,
+  xp: 100,
+  level: 1,
+  memorizedPagesCount: 0,
+  memoryScore: 100,
+  totalJuz: 0,
+  preferences: {},
+  createdAt: new Date().toISOString()
+});
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -52,20 +72,7 @@ export const AuthProvider = ({ children }) => {
         if (userDocSnap.exists()) {
           userData = { ...userData, ...userDocSnap.data() };
         } else if (!firebaseUser.isAnonymous) {
-          userData = {
-            ...userData,
-            hasCompletedWizard: false,
-            role: 'user',
-            roles: { user: true },
-            streak: 0,
-            xp: 100,
-            level: 1,
-            memorizedPagesCount: 0,
-            memoryScore: 100,
-            totalJuz: 0,
-            preferences: {},
-            createdAt: new Date().toISOString()
-          };
+          userData = { ...userData, ...defaultUserFields() };
           await setDoc(userDocRef, userData);
         }
 
@@ -137,18 +144,7 @@ export const AuthProvider = ({ children }) => {
         name: (name || '').trim() || 'حافظ جديد',
         email,
         photoURL: userCredential.user.photoURL,
-        hasCompletedWizard: false,
-        role: 'user',
-        // Multi-role support: roles map allows a single account to be student+teacher+admin
-        roles: { user: true },
-        streak: 0,
-        xp: 100,
-        level: 1,
-        memorizedPagesCount: 0,
-        memoryScore: 100,
-        totalJuz: 0,
-        preferences: {},
-        createdAt: new Date().toISOString()
+        ...defaultUserFields()
       };
 
       await setDoc(doc(db, 'users', userCredential.user.uid), newUser);
@@ -158,9 +154,9 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: newUser };
     } catch (error) {
       setLoading(false);
-      let message = 'فشل إنشاء الحساب';
-      if (error.code === 'auth/email-already-in-use') message = 'البريد الإلكتروني مسجل بالفعل';
-      if (error.code === 'auth/weak-password') message = 'كلمة المرور ضعيفة جداً';
+      let message = authText('فشل إنشاء الحساب', 'Could not create the account');
+      if (error.code === 'auth/email-already-in-use') message = authText('البريد الإلكتروني مسجل بالفعل', 'This email is already registered');
+      if (error.code === 'auth/weak-password') message = authText('كلمة المرور ضعيفة جداً', 'The password is too weak');
       return { success: false, message };
     }
   };
@@ -175,9 +171,9 @@ export const AuthProvider = ({ children }) => {
       return { success: true, user: confirmedUser };
     } catch (error) {
       setLoading(false);
-      let message = 'فشل تسجيل الدخول';
+      let message = authText('فشل تسجيل الدخول', 'Sign-in failed');
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        message = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+        message = authText('البريد الإلكتروني أو كلمة المرور غير صحيحة', 'Incorrect email or password');
       }
       return { success: false, message };
     }
@@ -213,18 +209,18 @@ export const AuthProvider = ({ children }) => {
     const current = auth.currentUser;
     if (!current) return { success: false, code: 'auth/no-current-user' };
     try {
-      try {
-        await current.delete();
-      } catch (error) {
-        // Firebase only deletes an account after a recent sign-in. Google users
-        // confirm in a popup; password users must sign out and back in first.
-        const isGoogle = current.providerData.some(p => p.providerId === 'google.com');
-        if (error?.code !== 'auth/requires-recent-login' || !isGoogle) throw error;
-        await reauthenticateWithPopup(current, googleProvider);
-        await current.delete();
+      // The server deletes the profile, every subcollection, community content,
+      // membership and avatars, then the Auth user (Admin SDK: no recent-login
+      // popup, so it works the same on mobile, web, Google and email accounts).
+      const response = await fetchWithAuth('/api/user/me', { method: 'DELETE' });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) {
+        return { success: false, code: `http/${response.status}`, message: data.message };
       }
+      try { await signOut(auth); } catch { /* the Auth user no longer exists */ }
       setUser(null);
       localStorage.removeItem('ma7fath_user');
+      Object.keys(localStorage).filter(key => key.startsWith('ma7fath_chat_history_')).forEach(key => localStorage.removeItem(key));
       return { success: true };
     } catch (error) {
       console.error("Error deleting account:", error);

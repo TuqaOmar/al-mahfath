@@ -9,6 +9,7 @@
     "build": "vite build",
     "lint": "vite build --mode development",
     "test:security": "node --test tests/security.test.js tests/api-security.test.js tests/emulator-safety.test.js",
+    "test:engine": "node --test tests/recitation-engine.test.js tests/account-deletion.test.js tests/rate-limit.test.js",
     "test:emulator": "node scripts/runFirebaseEmulatorTests.mjs",
     "test:emulator:browser": "node scripts/runFirebaseEmulatorTests.mjs --browser",
     "start": "node server/index.js",

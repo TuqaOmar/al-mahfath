@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Download, Smartphone, X } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
+import { useLanguage } from '../context/LanguageContext';
 
 const GUIDE_STEPS = {
   ios: {
@@ -21,9 +22,30 @@ const GUIDE_STEPS = {
   }
 };
 
+const GUIDE_STEPS_EN = {
+  ios: {
+    title: 'Install the app on iPhone / iPad',
+    intro: 'Open the site in Safari, then:',
+    steps: [
+      <>Tap the <strong>Share</strong> button at the bottom of Safari.</>,
+      <>Scroll down and choose <strong>Add to Home Screen</strong>.</>
+    ]
+  },
+  android: {
+    title: 'Install the app on Android',
+    intro: 'In Chrome:',
+    steps: [
+      <>Tap the <strong>browser menu ⋮</strong> at the top.</>,
+      <>Choose <strong>Install app</strong> or <strong>Add to Home screen</strong>.</>
+    ]
+  }
+};
+
 export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
   const { isInstallable, isInstalled, isIOS, isAndroid, install } = usePWAInstall();
   const [guide, setGuide] = useState(null);
+  const { lang } = useLanguage();
+  const ar = lang !== 'en';
 
   if (isInstalled) return null;
   // Desktop browser without an install prompt: nothing useful to offer.
@@ -38,15 +60,15 @@ export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
     setGuide(isIOS ? 'ios' : 'android');
   };
 
-  const content = guide && GUIDE_STEPS[guide];
+  const content = guide && (ar ? GUIDE_STEPS : GUIDE_STEPS_EN)[guide];
 
   return (
     <>
       <button
         type="button"
         onClick={handleClick}
-        title="تثبيت التطبيق على جهازك"
-        aria-label="تثبيت التطبيق"
+        title={ar ? "تثبيت التطبيق على جهازك" : "Install the app on your device"}
+        aria-label={ar ? "تثبيت التطبيق" : "Install app"}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -66,7 +88,7 @@ export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
         }}
       >
         {isInstallable ? <Download size={17} /> : <Smartphone size={17} />}
-        {!collapsed && <span>تثبيت التطبيق على جهازك</span>}
+        {!collapsed && <span>{ar ? 'تثبيت التطبيق على جهازك' : 'Install the app'}</span>}
       </button>
 
       {content && (
@@ -97,7 +119,7 @@ export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
               padding: '24px',
               color: 'var(--text-primary)',
               boxShadow: 'var(--shadow-lg)',
-              direction: 'rtl',
+              direction: ar ? 'rtl' : 'ltr',
               textAlign: 'right'
             }}
           >
@@ -105,7 +127,7 @@ export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
               <h3 id="pwa-guide-title" style={{ margin: 0, fontSize: '17px', fontWeight: 800 }}>{content.title}</h3>
               <button
                 type="button"
-                aria-label="إغلاق"
+                aria-label={ar ? "إغلاق" : "Close"}
                 onClick={() => setGuide(null)}
                 style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', width: '44px', height: '44px' }}
               >
@@ -131,7 +153,7 @@ export const PWAInstallButton = ({ collapsed = false, style = {} }) => {
               onClick={() => setGuide(null)}
               style={{ width: '100%', minHeight: '44px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', fontSize: '14px', fontWeight: 700, cursor: 'pointer' }}
             >
-              حسنًا، فهمت
+              {ar ? 'حسنًا، فهمت' : 'Got it'}
             </button>
           </div>
         </div>

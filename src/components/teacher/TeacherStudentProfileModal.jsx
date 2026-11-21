@@ -116,8 +116,8 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
   };
 
   const statusColor = student?.status === 'needs_attention' 
-    ? '#F59E0B' 
-    : (student?.status === 'inactive' ? '#EF4444' : '#64748B');
+    ? '#E39A2D' 
+    : (student?.status === 'inactive' ? '#EF4444' : '#6E626B');
     
   const statusLabel = student?.status === 'needs_attention'
     ? 'بحاجة لمتابعة'
@@ -127,7 +127,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+      backgroundColor: 'rgba(31, 18, 32, 0.75)',
       backdropFilter: 'blur(8px)',
       WebkitBackdropFilter: 'blur(8px)',
       zIndex: 100,
@@ -323,7 +323,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                     </div>
                     {/* Visual Progress Bar */}
                     <div style={{ width: '100%', height: '10px', borderRadius: '6px', background: 'var(--primary-light)', overflow: 'hidden' }}>
-                      <div style={{ width: `${Math.min(100, Math.max(0, Number(student.goalPercent) || 0))}%`, height: '100%', borderRadius: '6px', background: 'linear-gradient(90deg, #10B981 0%, #059669 100%)' }} />
+                      <div style={{ width: `${Math.min(100, Math.max(0, Number(student.goalPercent) || 0))}%`, height: '100%', borderRadius: '6px', background: 'linear-gradient(90deg, #377D71 0%, #2F6B61 100%)' }} />
                     </div>
                     <div style={{ marginTop: '10px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>
                       الهدف الحالي: <strong style={{ color: 'var(--text-primary)' }}>{student.currentTarget || 'غير محدد'}</strong>
@@ -442,7 +442,7 @@ export const TeacherStudentProfileModal = ({ studentId, isOpen, onClose }) => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                     <div style={{ padding: '14px', borderRadius: '14px', background: 'var(--bg-color)', textAlign: 'center' }}>
                       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', display: 'block' }}>سلسلة الأيام المتتالية</span>
-                      <strong style={{ fontSize: '20px', color: '#F59E0B', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <strong style={{ fontSize: '20px', color: '#E39A2D', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                         <Flame size={18} /> {numberLabel(student.streak)} يوماً
                       </strong>
                     </div>

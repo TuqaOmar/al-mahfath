@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, CheckCircle2, RotateCcw, Sparkles, Award, Volume2, VolumeX } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 const dhikrList = [
-  { id: 'istighfar', title: 'استغفار التلاوة', text: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ وَأَتُوبُ إِلَيْهِ', target: 33 },
-  { id: 'tasbeeh', title: 'التسبيح والتحميد', text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ ، سُبْحَانَ اللَّهِ الْعَظِيمِ', target: 33 },
-  { id: 'salawat', title: 'الصلاة على النبي ﷺ', text: 'اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ', target: 10 },
-  { id: 'dua', title: 'دعاء ختم الورد', text: 'اللَّهُمَّ ارْحَمْنِي بِالْقُرْآنِ وَاجْعَلْهُ لِي إِمَامًا وَنُورًا وَهُدًى وَرَحْمَةً', target: 1 }
+  { id: 'istighfar', title: 'استغفار التلاوة', titleEn: 'Seeking forgiveness', text: 'أَسْتَغْفِرُ اللَّهَ الْعَظِيمَ وَأَتُوبُ إِلَيْهِ', target: 33 },
+  { id: 'tasbeeh', title: 'التسبيح والتحميد', titleEn: 'Tasbeeh and praise', text: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ ، سُبْحَانَ اللَّهِ الْعَظِيمِ', target: 33 },
+  { id: 'salawat', title: 'الصلاة على النبي ﷺ', titleEn: 'Salawat on the Prophet ﷺ', text: 'اللَّهُمَّ صَلِّ وَسَلِّمْ وَبَارِكْ عَلَى نَبِيِّنَا مُحَمَّدٍ', target: 10 },
+  { id: 'dua', title: 'دعاء ختم الورد', titleEn: 'Closing dua', text: 'اللَّهُمَّ ارْحَمْنِي بِالْقُرْآنِ وَاجْعَلْهُ لِي إِمَامًا وَنُورًا وَهُدًى وَرَحْمَةً', target: 1 }
 ];
 
 export const PostSessionDhikr = () => {
+  const { lang } = useLanguage();
+  const ar = lang !== 'en';
   const [activeDhikrIdx, setActiveDhikrIdx] = useState(0);
   const [count, setCount] = useState(0);
   const [completedDhikrs, setCompletedDhikrs] = useState({});
@@ -50,11 +53,11 @@ export const PostSessionDhikr = () => {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginBottom: '8px' }}>
         <Sparkles size={22} color="var(--primary)" />
         <h3 style={{ margin: 0, fontSize: '22px', color: 'var(--text-primary)' }}>
-          مسبحة التدبر وأذكار ما بعد التلاوة
+          {ar ? 'مسبحة التدبر وأذكار ما بعد التلاوة' : 'Dhikr after recitation'}
         </h3>
       </div>
       <p style={{ color: 'var(--text-secondary)', fontSize: '14px', margin: '0 0 24px 0' }}>
-        اجعل خاتمة وردك معطرة بالاستغفار والذكر والصلاة على النبي ﷺ.
+        {ar ? 'اجعل خاتمة وردك معطرة بالاستغفار والذكر والصلاة على النبي ﷺ.' : 'Close your portion with istighfar, dhikr and salawat on the Prophet ﷺ.'}
       </p>
 
       {/* Tabs */}
@@ -80,8 +83,8 @@ export const PostSessionDhikr = () => {
                 gap: '6px'
               }}
             >
-              {isDone && <CheckCircle2 size={14} color="#10B981" />}
-              {item.title}
+              {isDone && <CheckCircle2 size={14} color="#377D71" />}
+              {ar ? item.title : item.titleEn}
             </button>
           );
         })}
@@ -115,8 +118,8 @@ export const PostSessionDhikr = () => {
             height: '130px',
             borderRadius: '50%',
             background: isCurrentCompleted 
-              ? 'linear-gradient(135deg, #10B981 0%, #059669 100%)' 
-              : 'linear-gradient(135deg, var(--primary) 0%, #064E3B 100%)',
+              ? 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)' 
+              : 'linear-gradient(135deg, var(--primary) 0%, #1A3F39 100%)',
             color: 'white',
             border: 'none',
             cursor: 'pointer',
@@ -133,13 +136,13 @@ export const PostSessionDhikr = () => {
             {count}
           </span>
           <span style={{ fontSize: '12px', opacity: 0.9, marginTop: '4px' }}>
-            من {currentDhikr.target}
+            {ar ? 'من' : 'of'} {currentDhikr.target}
           </span>
         </motion.button>
 
         {isCurrentCompleted && (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '16px', color: '#10B981', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-            <Award size={18} /> تم إتمام هذا الذكر بحمد الله!
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} style={{ marginTop: '16px', color: '#377D71', fontWeight: 'bold', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+            <Award size={18} /> {ar ? 'تم إتمام هذا الذكر بحمد الله!' : 'Completed, alhamdulillah!'}
           </motion.div>
         )}
       </div>
@@ -162,7 +165,7 @@ export const PostSessionDhikr = () => {
             gap: '6px'
           }}
         >
-          <RotateCcw size={14} /> إعادة العداد
+          <RotateCcw size={14} /> {ar ? 'إعادة العداد' : 'Reset counter'}
         </button>
       </div>
 

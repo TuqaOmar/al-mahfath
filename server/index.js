@@ -3,7 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import path from 'path';
 import { GoogleGenAI } from '@google/genai';
-import { analyzeRecitation, compareRecitation, comparePageRecitation } from './recitationEngine.js';
+import { analyzeRecitation, compareRecitation, comparePageRecitation, GEMINI_MODELS, WHISPER_MODELS } from './recitationEngine.js';
 import {
   RecitationError, preparePracticeRequest, findPracticeAttempt, savePracticeAttempt,
   confirmPracticeAttempt, readPracticeHistory, readPracticeStats, readPracticePageStats,
@@ -15,10 +15,15 @@ import groupsRouter from './routes/groups.js';
 import communityRouter from './routes/community.js';
 import { ownsRequestedIdentity, chatRef, planRef, appendChat } from './privateUserData.js';
 import { persistProfilePatch, persistFortressPlan } from './fortressPlanPersistence.js';
+import { deleteAccountData } from './accountDeletion.js';
+import { rateLimit } from './middleware/rateLimit.js';
 
 dotenv.config();
 
 const app = express();
+// Behind Vercel's proxy: use the client address from X-Forwarded-For (one hop) so the
+// per-IP rate limit for signed-out requests does not lump every visitor together.
+app.set('trust proxy', 1);
 const PORT = 3000;
 
 app.use(cors());
@@ -131,6 +136,18 @@ app.put('/api/user/:uid', requireAuth, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(error.status || 503).json({ success: false, message: 'حدث خطأ في تحديث البيانات' });
+  }
+});
+
+// Delete the caller's account and all of its data (profile + subcollections,
+// community content, membership, avatars, then the Auth user). Self only.
+app.delete('/api/user/me', requireAuth, async (req, res) => {
+  try {
+    const summary = await deleteAccountData(adminDb, req.user.uid);
+    res.json({ success: true, deleted: true, summary });
+  } catch (error) {
+    console.error('Account deletion failed:', error.message);
+    res.status(error.status || 503).json({ success: false, message: 'تعذر حذف الحساب، لم يكتمل الحذف. حاولي مرة أخرى.' });
   }
 });
 
@@ -272,7 +289,7 @@ function getSmartFallbackResponse(message, userContext = {}) {
   }
 }
 
-app.post('/api/ai/chat', requireAuth, async (req, res) => {
+app.post('/api/ai/chat', requireAuth, rateLimit({ name: 'ai-chat', max: 20 }), async (req, res) => {
   if (!ownsRequestedIdentity(req, res)) return;
   const { message, userContext } = req.body || {};
   const targetUser = req.user.uid;
@@ -300,7 +317,7 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
 
     if (apiKey && apiKey.trim() !== '' && !apiKey.includes('mock')) {
       // Valid modern Gemini models
-      const candidateModels = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.7-flash', 'gemini-3.1-flash-lite'];
+      const candidateModels = GEMINI_MODELS;
       const ai = new GoogleGenAI({
         apiKey,
         httpOptions: {
@@ -329,12 +346,15 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
       }
     }
 
-    if (!responseText || !responseText.trim()) {
+    // Tell the client when no live model answered, so the template reply is never
+    // presented as a real AI answer (wrong/expired key, quota, outage, no key).
+    const fallback = !responseText || !responseText.trim();
+    if (fallback) {
       responseText = getSmartFallbackResponse(message, uCtx);
     }
 
     const history = await appendChat(targetUser, message, responseText);
-    res.json({ success: true, reply: responseText, history });
+    res.json({ success: true, reply: responseText, history, fallback, fallbackReason: fallback ? (apiKey ? 'model_unavailable' : 'no_api_key') : null });
   } catch (error) {
     console.error('Chat persistence failed:', error.message);
     res.status(503).json({ success: false, message: 'Could not persist chat history' });
@@ -344,7 +364,7 @@ app.post('/api/ai/chat', requireAuth, async (req, res) => {
 // --- RECITATION VOICE AI & QURAN CHECK ENDPOINTS ---
 
 // Check recitation by recorded audio or transcribed text, with accuracy calculation
-app.post('/api/ai/recitation-check', optionalAuth, async (req, res) => {
+app.post('/api/ai/recitation-check', optionalAuth, rateLimit({ name: 'recitation-check', max: 15 }), async (req, res) => {
   const { 
     audioBase64, 
     spokenText, 
@@ -491,12 +511,8 @@ app.get('/api/ai/recitation-status', (req, res) => {
     success: true,
     hasToken,
     hasGemini,
-    models: [
-      'tarteel-ai/whisper-base-ar-quran',
-      'openai/whisper-large-v3-turbo',
-      'gemini-2.5-flash-asr'
-    ],
-    activeModel: 'Whisper Quran + Gemini 2.5 Flash + Web Speech Recognition'
+    models: [...GEMINI_MODELS, ...WHISPER_MODELS],
+    activeModel: hasGemini ? `Gemini (${GEMINI_MODELS.join(' → ')}) + Whisper fallback` : (hasToken ? 'Whisper (Hugging Face)' : 'Web Speech Recognition only')
   });
 });
 

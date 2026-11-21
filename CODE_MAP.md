@@ -1,38 +1,25 @@
 # CODE_MAP — خريطة كود محفظ AI
 
 > مولّدة آليًا (AST) + شرح يدوي. اقرأ هذا الملف **قبل** فتح الكود: يكفي غالبًا لمعرفة أين تعدّل.
-> الأسهم حقيقية من الكود (imports / re_exports / calls_api). آخر تحديث: 2026-10-06. إن تغيّر الكود كثيرًا أعد توليدها.
+> الأسهم حقيقية من الكود (imports / re_exports / calls_api). آخر تحديث: 2026-11-15. إن تغيّر الكود كثيرًا أعد توليدها.
 
 ## ملخص المعمارية
 - **العميل**: React 19 + Vite في `src/`. الدخول `src/main.jsx` → `App.jsx` → صفحات/تبويبات. الحالة عبر Contexts (`AuthContext`, `LanguageContext`, `ThemeContext`, `NotificationContext`).
 - **الخادم**: Express 5 في `server/index.js` (منفذ 3000؛ Vite middleware في التطوير؛ Vercel عبر `api/index.js`). كل `/api` محمي بـ `server/middleware/auth.js` (Firebase ID token).
-- **البيانات**: Firebase Auth/Firestore/Storage/FCM. مسارات `server/database.js` القديمة (JSON محلي) متوقفة بـ 410.
+- **البيانات**: Firebase Auth/Firestore/Storage/FCM. مسارات JSON القديمة متوقفة بـ 410 وحُذفت ملفاتها.
 - **الذكاء**: Gemini (`@google/genai`) + HuggingFace Whisper للتسميع.
 
 ## العيوب المكتشفة
 ### 🐞 خلل (0)
 
-### ⧉ تكرار (3)
-- `server/recitationEngine.js` — في المسار الأول (Gemini مباشر) الدقة يقررها النموذج نفسه لا الخوارزمية — النتيجة قد تختلف عن تلوين الكلمات المحسوب.
-- `src/components/MyPlanManager.jsx` — dailyTarget وoldReviewDailyTarget تُعدَّل هنا وفي 'تخصيص الخطة' داخل FiveFortressesPlan (عبر الخادم) — شاشتان لنفس الإعداد.
-- `src/context/AuthContext.jsx` — إنشاء مستند المستخدم الافتراضي مكرر مرتين (signup، loadAuthenticatedProfile) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser.
+### ⧉ تكرار (0)
+- أُغلقت في 2026-11-15: المستند الافتراضي للمستخدم صار `defaultUserFields()` واحدًا في AuthContext؛ قيم الهدف اليومي الافتراضية مشتركة في `src/lib/planDefaults.js` (الشاشتان تكتبان نفس حقول preferences)؛ درجة مسار Gemini المباشر صارت من الخوارزمية نفسها (درجة النموذج في `modelAccuracy`).
 
-### ☠ ميت (15)
-- `server/database.js` — صفر مستوردين بعد إيقاف مسارات db.json في index.js (scripts/auditLegacyMemberships.mjs يقرؤه كنص فقط).
-- `server/db.js` — صفر مستوردين في كل المشروع (بما فيه الاختبارات والسكربتات).
-- `server/safarEcosystem.js` — صفر مستوردين (يُذكر اسمه نصيًا فقط في DocumentationModal). 83KB يمكن حذفها مع safar_data*.json.
-- `src/components/AdminPanel.jsx` — Dashboard يستورده لكن case 'admin-panel' الذي يعرضه يأتي بعد case 'admin-panel' آخر في نفس switch — غير قابل للوصول.
-- `src/components/AudioWaveVisualizer.jsx` — النتيجة Math.random — يجب ألا يُعاد استخدامه كما هو.
-- `src/components/ErrorBoundary.jsx` — صفر مستوردين في الكود؛ SafeBoundary.jsx نفسه يصدّر ErrorBoundary أيضًا، فهذا الملف زائد مرتين.
-- `src/components/QuranAudioPlayer.jsx` — قائمة القراء وروابط الصوت منسوخة حرفيًا في QuranInteractiveView.
-- `src/components/admin/AdminBadgesView.jsx` — 
-- `src/components/fortress/FortressSetupWizard.jsx` — 
-- `src/components/quranMap/QuranMapSurahCard.jsx` — 
-- `src/components/quranMap/QuranSurahAyahsModal.jsx` — لو أعيد تفعيلها: تستدعي stopAndAnalyze بلا userId فلا تُحفظ المحاولة في الخادم، و'تحديد السورة كمحفوظة' يضع recitationScore=98 وتكرار 40 وهميين.
-- `src/counter.ts` — 
-- `src/main.ts` — يمكن حذفه مع counter.ts وstyle.css وassets/typescript.svg وvite.svg وhero.png.
-- `src/components/FloatingAiButton.jsx` — صفر مستوردين منذ تبسيط واجهة الجوال؛ المساعد متاح من 'المزيد' والقائمة الجانبية.
-- `src/utils/quranAiEngine.js` — صفر مستوردين؛ حل محله /api/ai/chat في الخادم.
+### ☠ ميت (0)
+- حُذفت في 2026-11-15 كل الملفات الميتة (16 ملفًا + AdminPanel + NotificationManager + `server/db.json` و`safar_data.json` وسكربت حصر العضويات القديم + `public/mock-google-login.html`).
+
+### 🌐 غير مترجم (معروف)
+- بوابتا المعلمة والمشرف (`src/components/admin/*`, `src/components/teacher/*`) عربية في معظمها؛ شاشات الطالب والصفحات العامة مترجمة.
 
 ## خريطة طلبات API (عميل → ملف الخادم)
 - `src/components/AiAssistant.jsx` → `server/index.js`
@@ -47,7 +34,6 @@
 - `src/components/admin/AdminPerformanceDashboard.jsx` → `server/routes/groups.js`
 - `src/components/admin/AdminPerformanceDashboard.jsx` → `server/index.js`
 - `src/components/onboarding/JoinGroupModal.jsx` → `server/routes/groups.js`
-- `src/components/quranMap/QuranSurahAyahsModal.jsx` → `server/index.js`
 - `src/components/teacher/TeacherGroupsView.jsx` → `server/routes/groups.js`
 - `src/components/teacher/TeacherReportsView.jsx` → `server/routes/groups.js`
 - `src/components/teacher/TeacherStudentProfileModal.jsx` → `server/routes/groups.js`
@@ -62,20 +48,13 @@
 ## طبقة: مشترك (Cross-cutting)
 _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يستخدمها الجميع_
 
-### `src/components/ErrorBoundary.jsx` **[☠ ميت]**
-- **يفعل:** سطر واحد يعيد تصدير SafeBoundary باسم ErrorBoundary.
-- **لماذا:** توافق مع اسم قديم.
-- **إن تعطّل:** لا شيء — لا أحد يستورده.
-- **انتبه:** صفر مستوردين في الكود؛ SafeBoundary.jsx نفسه يصدّر ErrorBoundary أيضًا، فهذا الملف زائد مرتين.
-- **يستخدم:** SafeBoundary.jsx
-
 ### `src/components/SafeBoundary.jsx`
 - **يفعل:** يلتقط أي خطأ عرض في الشجرة ويعرض بطاقة عربية مطمئنة مع نص الخطأ وزرين: استئناف (يصفّر الحالة) أو الذهاب إلى /dashboard.
 - **لماذا:** في React الخطأ غير الملتقط يفرّغ الشاشة كلها؛ هذا يمنع الشاشة البيضاء.
 - **متى:** يلف التطبيق كله في main.jsx، ويُستخدم أيضًا داخل Dashboard حول التبويبات.
 - **إن تعطّل:** أي خطأ عرض = شاشة بيضاء.
 - **انتبه:** زر الاستئناف يعيد عرض نفس الشجرة، فإن كان الخطأ ثابتًا سيظهر مجددًا فورًا.
-- **يستخدمه:** ErrorBoundary.jsx, main.jsx, Dashboard.jsx
+- **يستخدمه:** main.jsx, Dashboard.jsx
 
 ### `src/components/ThemeToggle.jsx`
 - **يفعل:** زر تبديل الثيم بحركة framer-motion، touchTarget يكبّره لـ 44px على الجوال.
@@ -89,13 +68,13 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **يفعل:** زر بأصناف btn-{variant} مع أيقونة اختيارية وحركة hover/tap.
 - **لماذا:** توحيد شكل الأزرار.
 - **إن تعطّل:** الأزرار التي تستخدمه تختفي.
-- **يستخدمه:** FortressSetupWizard.jsx, OnboardingWizard.jsx
+- **يستخدمه:** OnboardingWizard.jsx
 
 ### `src/components/ui/Card.jsx`
 - **يفعل:** div بصنف glass-card يرتفع 5px عند المرور (يمكن تعطيله بـ hover=false).
 - **لماذا:** بطاقة زجاجية موحدة.
 - **إن تعطّل:** البطاقات التي تستخدمه تختفي.
-- **يستخدمه:** AnalyticsView.jsx, MindMapsView.jsx, SimilaritiesView.jsx, VisualProgressTracker.jsx, FortressSetupWizard.jsx, Dashboard.jsx, OnboardingWizard.jsx
+- **يستخدمه:** AnalyticsView.jsx, MindMapsView.jsx, SimilaritiesView.jsx, VisualProgressTracker.jsx, Dashboard.jsx, OnboardingWizard.jsx
 
 ### `src/components/ui/Logo.jsx`
 - **يفعل:** شعار SVG (شكل كتاب/قلب بتدرج أخضر وذهبي) يُرسم بحركة framer-motion، مع نص اختياري.
@@ -104,14 +83,14 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **إن تعطّل:** يختفي الشعار.
 - **يستخدمه:** AuthModal.jsx, LandingFooter.jsx, LandingNavbar.jsx, OnboardingWizard.jsx
 
-### `src/context/AuthContext.jsx` **[⧉ تكرار]**
+### `src/context/AuthContext.jsx`
 - **يفعل:** يستمع لـ onAuthStateChanged ويحمّل users/{uid} من Firestore (أو ينشئ مستندًا افتراضيًا إن لم يوجد)، مع منع تحميلين متزامنين لنفس المستخدم. يوفر: user، activeRole/availableRoles/setActiveRole (الدور النشط محفوظ في localStorage لكل مستخدم)، login/signup (Firebase Auth بريد+كلمة مرور، رسائل خطأ عربية)، loginWithGoogle (ينتظر loadAuthenticatedProfile ويرجع الملف الكامل حتى يكون user في السياق قبل التنقل)، logout، deleteAccount، updateUserData (يسمح فقط بـ name/photoURL/preferences/favorites/fortressPlan/hasCompletedWizard ويرفض حقول الحفظ)، applyConfirmedUser (يقبل ملفًا فقط إن كان persisted ولنفس المستخدم)، refreshUserData (من الخادم مباشرة getDocFromServer، يرفض الكاش والكتابات المعلقة)، hasRole.
 - **لماذا:** قائمة الحقول المسموحة تطابق firestore.rules (isSafeProfileUpdate) حتى لا تُرفض الكتابة. الحماية من السباق (التحقق أن auth.currentUser لم يتغير قبل setUser) تمنع ظهور بيانات مستخدم سابق بعد تبديل الحساب.
 - **متى:** يغلف التطبيق كله؛ لا يعرض أي شيء حتى ينتهي loading الأول. كل شاشة تقرأ user منه.
 - **إن تعطّل:** التطبيق كله — 50+ ملفًا يستخدم useAuth.
-- **انتبه:** إنشاء مستند المستخدم الافتراضي مكرر مرتين (signup، loadAuthenticatedProfile) — أي تعديل على الحقول الافتراضية يجب تكراره، وإلا ترفضه قاعدة isSafeInitialUser. | hasRole('teacher') يرجع true للمشرف، لكن grantedRoles لا يعطيه دور المعلم في مبدّل الأدوار. | deleteAccount يحذف حساب Auth فقط — مستند users/{uid} وبياناته الفرعية تبقى يتيمة. عند auth/requires-recent-login يعيد التحقق بنافذة جوجل لمستخدمي Google ثم يحذف؛ مستخدم البريد يُطلب منه الخروج والدخول من جديد. Dashboard لا ينتقل لـ / إلا عند النجاح. | signup لا يضبط activeRole (يبقى من الحالة السابقة). | login يستدعي loadAuthenticatedProfile بينما onAuthStateChanged يستدعيها أيضًا — منع التكرار عبر profileLoadsRef. | logout يمسح مفاتيح ma7fath_active_tab:* من sessionStorage حتى يبدأ الدخول التالي من الرئيسية.
+- **انتبه:** الحقول الافتراضية لحساب جديد في `defaultUserFields()` (يستخدمها signup وloadAuthenticatedProfile) — أي تعديل عليها يجب أن تقبله قاعدة isSafeInitialUser. | hasRole('teacher') يرجع true للمشرف، لكن grantedRoles لا يعطيه دور المعلم في مبدّل الأدوار. | deleteAccount يستدعي DELETE /api/user/me (server/accountDeletion.js يحذف كل البيانات ثم حساب Auth بصلاحية Admin — لا حاجة لإعادة الدخول)، ثم signOut ومسح ma7fath_user وسجلات المحادثة المحلية. Dashboard لا ينتقل لـ / إلا عند النجاح. | signup لا يضبط activeRole (يبقى من الحالة السابقة). | login يستدعي loadAuthenticatedProfile بينما onAuthStateChanged يستدعيها أيضًا — منع التكرار عبر profileLoadsRef. | logout يمسح مفاتيح ma7fath_active_tab:* من sessionStorage حتى يبدأ الدخول التالي من الرئيسية.
 - **يستخدم:** firebase.js
-- **يستخدمه:** AiAssistant.jsx, AuthModal.jsx, BottomNavBar.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, LearningStyleProfiler.jsx, MindMapsView.jsx, MyPlanManager.jsx, ProtectedRoute.jsx, QuickSettingsMenu.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, RoleSwitcherMenu.jsx, Sidebar.jsx, SimplifiedFortressPlan.jsx, UserProfileModal.jsx, FortressSetupWizard.jsx, LandingFooter.jsx, LandingHero.jsx, LandingNavbar.jsx, JoinGroupModal.jsx, QuranSurahAyahsModal.jsx, TeacherDashboard.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, NotificationContext.jsx, useRecitationRecorder.js, main.jsx, Dashboard.jsx, LandingPage.jsx, OnboardingWizard.jsx
+- **يستخدمه:** AiAssistant.jsx, AuthModal.jsx, BottomNavBar.jsx, Community.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, LearningStyleProfiler.jsx, MindMapsView.jsx, MyPlanManager.jsx, ProtectedRoute.jsx, QuickSettingsMenu.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, RoleSwitcherMenu.jsx, Sidebar.jsx, SimplifiedFortressPlan.jsx, UserProfileModal.jsx, LandingFooter.jsx, LandingHero.jsx, LandingNavbar.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, NotificationContext.jsx, useRecitationRecorder.js, main.jsx, Dashboard.jsx, LandingPage.jsx, OnboardingWizard.jsx
 
 ### `src/context/LanguageContext.jsx`
 - **يفعل:** يحفظ اللغة (ar افتراضيًا) في localStorage مفتاح ma7fath_lang، ويضبط dir/lang على <html> (الخط من CSS: --font-body/--font-heading = IBM Plex Sans Arabic، و--font-quran = Noto Naskh Arabic للآيات والأحاديث)، ويوفر t(key) من قواميس i18n/ar وen.
@@ -120,7 +99,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **إن تعطّل:** useLanguage ترمي خطأ خارج المزوّد → تنهار أي شاشة تستخدمه.
 - **انتبه:** معظم المكوّنات تكتب نصوصها العربية مباشرة ولا تستخدم t()، فتغيير اللغة لا يترجم كل شيء.
 - **يستخدم:** ar.js, en.js
-- **يستخدمه:** AppUpdatePrompt.jsx, AudioWaveVisualizer.jsx, AuthModal.jsx, BottomNavBar.jsx, CelebrationOverlay.jsx, DocumentationModal.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, FloatingAiButton.jsx, JuzMultiSelector.jsx, LearningStyleProfiler.jsx, MindMapsView.jsx, MoreToolsModal.jsx, MyPlanManager.jsx, NotificationCenter.jsx, PresentationModal.jsx, PullToRefresh.jsx, QuickSettingsMenu.jsx, QuranAudioPlayer.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, RoleSwitcherMenu.jsx, Sidebar.jsx, ThemeToggle.jsx, UserProfileModal.jsx, AdminDashboard.jsx, AdminDistributionView.jsx, AdminPerformanceDashboard.jsx, LandingFAQ.jsx, LandingFeatures.jsx, LandingFooter.jsx, LandingHero.jsx, LandingNavbar.jsx, LandingScreens.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, main.jsx, Dashboard.jsx, OnboardingWizard.jsx
+- **يستخدمه:** AppUpdatePrompt.jsx, AuthModal.jsx, BottomNavBar.jsx, CelebrationOverlay.jsx, DocumentationModal.jsx, FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, JuzMultiSelector.jsx, LearningStyleProfiler.jsx, MindMapsView.jsx, MoreToolsModal.jsx, MyPlanManager.jsx, NotificationCenter.jsx, PresentationModal.jsx, PullToRefresh.jsx, QuickSettingsMenu.jsx, QuranInteractiveView.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, RoleSwitcherMenu.jsx, Sidebar.jsx, ThemeToggle.jsx, UserProfileModal.jsx, AdminDashboard.jsx, AdminDistributionView.jsx, AdminPerformanceDashboard.jsx, LandingFAQ.jsx, LandingFeatures.jsx, LandingFooter.jsx, LandingHero.jsx, LandingNavbar.jsx, LandingScreens.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, TeacherStudentProfileModal.jsx, TeacherStudentsView.jsx, main.jsx, Dashboard.jsx, OnboardingWizard.jsx
 
 ### `src/context/NotificationContext.jsx`
 - **يفعل:** يجمع ثلاثة أشياء: (1) إشعارات الخادم (/api/notifications: جلب، مقروء، حذف) مدموجة مع إشعارات محلية (تذكير/إنجاز) معلّمة بـ source، وتسجيل الجهاز لإشعارات الدفع (requestFcmToken) عند الدخول إن كان الإذن ممنوحًا وعند تفعيل إشعارات المتصفح. (2) تذكير المراجعة اليومي: إعدادات في localStorage (ma7fath_daily_reminder، الافتراضي 20:30)، فحص كل 20 ثانية، تأجيل، نغمة Web Audio، إشعار نظام عبر Service Worker، ونافذة تنبيه داخلية. (3) الاحتفالات والـ toast والصوت (notifyAndCelebrate، triggerCelebration بنغمة arpeggio).
@@ -129,7 +108,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **إن تعطّل:** NotificationCenter وReviewReminderAlert وCelebrationOverlay وDashboard وكل من يستدعي notifyAndCelebrate.
 - **انتبه:** التذكير يعمل فقط والتطبيق مفتوح (setInterval في المتصفح) — لا يوجد جدولة من الخادم. | lastTriggeredDate تاريخ محلي (localDateKey) مثل وقت التذكير — لا تستخدم toISOString (UTC). | markAllAsRead وclearAll يستدعيان الخادم فقط إن وُجدت إشعارات خادم متأثرة، فالمحلية تُعلَّم/تُمسح حتى دون اتصال. | الإشعارات المحلية تضيع عند تحديث الصفحة.
 - **يستخدم:** AuthContext.jsx, api.js, firebase.js, community.js
-- **يستخدمه:** CelebrationOverlay.jsx, FiveFortressesVisualMap.jsx, MindMapsView.jsx, NotificationCenter.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, SimplifiedFortressPlan.jsx, QuranSurahAyahsModal.jsx, main.jsx, Dashboard.jsx, OnboardingWizard.jsx
+- **يستخدمه:** CelebrationOverlay.jsx, FiveFortressesVisualMap.jsx, MindMapsView.jsx, NotificationCenter.jsx, QuranMapPage.jsx, ReviewReminderAlert.jsx, SimplifiedFortressPlan.jsx, main.jsx, Dashboard.jsx, OnboardingWizard.jsx
 
 ### `src/context/ThemeContext.jsx`
 - **يفعل:** isDark من localStorage('theme') أو تفضيل النظام، ويضيف/يزيل class 'dark' على body.
@@ -167,7 +146,7 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **إن تعطّل:** AuthContext وكل من يقرأ Firestore مباشرة (لوحات المعلم والمشرف، الخدمات) ينكسرون.
 - **انتبه:** requestFcmToken تستدعي Notification.requestPermission — لا تستدعها تلقائيًا إلا إن كان الإذن granted مسبقًا وإلا ظهرت نافذة الإذن فجأة. | FCM للويب لا يعمل داخل WebView تطبيق Capacitor (أندرويد/iOS) — الإشعارات الأصلية تحتاج @capacitor/push-notifications. | مفتاح VAPID مكتوب داخل الكود. | مهلة إعادة محاولة Storage مضبوطة على 30 ثانية (الافتراضي 10 دقائق كان يعلّق نافذة رفع الصورة). | كل نطاق في SAME_SITE_AUTH_HOSTS يجب إضافة https://<host>/__/auth/handler له في Authorized redirect URIs لعميل Google OAuth، وإلا يفشل الدخول بجوجل بخطأ redirect_uri_mismatch.
 - **يستخدم:** firebaseEmulatorConfig.js, community.js
-- **يستخدمه:** AuthModal.jsx, FiveFortressesPlan.jsx, UserProfileModal.jsx, AdminDashboard.jsx, AuthContext.jsx, api.js, fortressService.js, learningProfileService.js, portfolioService.js, uiConfiguration.js, OnboardingWizard.jsx, NotificationManager.js, NotificationContext.jsx
+- **يستخدمه:** AuthModal.jsx, FiveFortressesPlan.jsx, UserProfileModal.jsx, AdminDashboard.jsx, AuthContext.jsx, api.js, fortressService.js, learningProfileService.js, portfolioService.js, uiConfiguration.js, OnboardingWizard.jsx, NotificationContext.jsx
 
 ### `src/lib/firebaseEmulatorConfig.js`
 - **يفعل:** resolveFirebaseTarget: ترجع إعدادات الإنتاج دائمًا ما لم يكن VITE_MA7FATH_EMULATOR=1، وعندها تشترط وضع emulator + DEV + مضيف محلي وإلا ترمي خطأ، وترجع إعدادات مشروع demo.
@@ -175,6 +154,11 @@ _سياقات، Firebase، api، ترجمة، عناصر UI عامة — يست�
 - **متى:** مرة واحدة عند تحميل firebase.js.
 - **إن تعطّل:** إما أن يتصل الإنتاج بمحاكي غير موجود، أو تكتب الاختبارات في بيانات حقيقية.
 - **يستخدمه:** firebase.js
+
+### `src/lib/planDefaults.js`
+- **يفعل:** DEFAULT_DAILY_TARGET وDEFAULT_OLD_REVIEW_TARGET.
+- **لماذا:** MyPlanManager وFiveFortressesPlan وAiAssistant تقرأ نفس حقول preferences؛ قيمة افتراضية واحدة تمنع اختلاف الشاشتين.
+- **يستخدمه:** MyPlanManager.jsx, FiveFortressesPlan.jsx, AiAssistant.jsx
 
 ### `src/lib/navigation.js`
 - **يفعل:** getNavigation(role, lang, configuration) يرجع { sections, primary }: أقسام القائمة حسب الدور (admin/teacher/طالب) بعناوين عربية/إنجليزية وأيقونات lucide، وprimary = المعرّفات الأربعة المثبتة في الشريط السفلي. للطالب يطبّق ظهور وترتيب المجتمع والأوسمة من uiConfiguration. isNavItemActive يعامل admin-panel كـ admin-dashboard وmushaf كـ daily-session.
@@ -238,14 +222,6 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **انتبه:** المحتوى التقني قديم: يذكر SQLite3 (database.sqlite) وsafarEcosystem و/api/quran/pages كمسارات أساسية، بينما البيانات الحقيقية الآن في Firestore — لا تعتمد عليه كمرجع للمعمارية.
 - **يستخدم:** LanguageContext.jsx
 - **يستخدمه:** Dashboard.jsx, LandingPage.jsx
-
-### `src/components/FloatingAiButton.jsx` **[☠ ميت]**
-- **يفعل:** زر 'المعلم الذكي' فوق الشريط السفلي (أعلى في صفحة التسميع)، يفتح AiAssistant في ورقة سفلية ويقفل تمرير الصفحة. يستمع لحدث window 'open-ai-teacher' لفتحه من أي مكان.
-- **لماذا:** الوصول للمساعد من أي تبويب بنقرة.
-- **متى:** على الجوال، ما عدا تبويب ai-assistant.
-- **إن تعطّل:** لا مساعد عائم.
-- **انتبه:** لم يعد Dashboard يعرضه (أُزيل لتخفيف الواجهة؛ المساعد في 'المزيد' والقائمة الجانبية) — صفر مستوردين. المستمع لحدث 'open-ai-teacher' لا يُطلقه أي ملف.
-- **يستخدم:** LanguageContext.jsx, AiAssistant.jsx
 
 ### `src/components/MoreToolsModal.jsx`
 - **يفعل:** يعرض أقسام getNavigation للدور النشط بعد حذف التبويبات الأربعة الموجودة في الشريط السفلي؛ النقر يضبط activeTab ويُغلق.
@@ -331,12 +307,6 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **يستخدم:** AuthContext.jsx, api.js, LanguageContext.jsx, groups.js
 - **يستخدمه:** Dashboard.jsx
 
-### `src/counter.ts` **[☠ ميت]**
-- **يفعل:** setupCounter لعداد نقرات — يستخدمه main.ts فقط.
-- **لماذا:** لا سبب حالي.
-- **إن تعطّل:** لا شيء.
-- **يستخدمه:** main.ts
-
 ### `src/hooks/usePWAInstall.js`
 - **يفعل:** يلتقط beforeinstallprompt وappinstalled على مستوى الوحدة (عند الإقلاع، لأن main.jsx يستورده) ويشاركه بين كل الأزرار عبر مشتركين. يوفر isInstallable وisInstalled (standalone) وisIOS وisAndroid وinstall().
 - **لماذا:** Chrome يطلق الحدث مرة واحدة مبكرًا — غالبًا في الصفحة التعريفية قبل تركيب أي زر — فالمستمع داخل المكوّن كان يضيّعه على الجوال.
@@ -379,13 +349,6 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **انتبه:** AuthProvider خارج LanguageProvider، فلا يستطيع استخدام الترجمة.
 - **يستخدم:** App.jsx, ThemeContext.jsx, AuthContext.jsx, LanguageContext.jsx, NotificationContext.jsx, SafeBoundary.jsx
 
-### `src/main.ts` **[☠ ميت]**
-- **يفعل:** صفحة 'Get started' من قالب Vite+TypeScript الافتراضي تكتب في #app.
-- **لماذا:** لا سبب حالي — من إنشاء المشروع.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** يمكن حذفه مع counter.ts وstyle.css وassets/typescript.svg وvite.svg وhero.png.
-- **يستخدم:** counter.ts
-
 ### `src/components/RoleSwitcherMenu.jsx`
 - **يفعل:** زر في الشريط العلوي (#active-role-switcher، data-active-role = الدور النشط) يعرض الدور الحالي بأيقونة، ويفتح قائمة (#active-role-menu) بالأدوار الممنوحة (#role-option-user/teacher/admin، menuitemradio مع وصف قصير و✓ للنشط). الاختيار يستدعي setActiveRole من AuthContext. يغلق بالنقر خارجه أو Escape أو زر الرجوع.
 - **لماذا:** الحساب متعدد الأدوار يختار دورًا واحدًا فتظهر أقسامه فقط، بدل عرض أقسام كل الأدوار معًا.
@@ -400,8 +363,8 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 - **لماذا:** تبديل التبويب الافتراضي حسب الدور النشط عند تغيّر المستخدم أو الدور. تعليم الحصن من الرئيسية يقرأ الخطة المحفوظة أولًا ثم يعدّل علامة واحدة (لا يستبدل الخطة).
 - **متى:** طوال جلسة المستخدم بعد المعالج.
 - **إن تعطّل:** كل شيء بعد تسجيل الدخول.
-- **انتبه:** كل تبويب داخلي في AdminDashboard يستدعي onNavigateTab ← setActiveTab('admin-' + id)، فأي تبويب جديد هناك يحتاج case 'admin-<id>' هنا وإلا يظهر 'قسم … قيد التفعيل' (community وbadges كانا ناقصين). | case 'admin-panel' مكرر في switch؛ الثاني (AdminPanel) لا يُصل إليه أبدًا. | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
-- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, AchievementsView.jsx, RoleSwitcherMenu.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, AdminPanel.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, TajweedLab.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
+- **انتبه:** كل تبويب داخلي في AdminDashboard يستدعي onNavigateTab ← setActiveTab('admin-' + id)، فأي تبويب جديد هناك يحتاج case 'admin-<id>' هنا وإلا يظهر 'قسم … قيد التفعيل' (community وbadges كانا ناقصين). | التبويبات ليست في الـ URL — لا يمكن مشاركة رابط لتبويب (التحديث يسترجع التبويب من sessionStorage في نفس النافذة فقط). | لا تضف transform لحركة التبويب — يكسر العناصر fixed داخل التبويبات. | بعض الواردات غير مستخدمة (ThemeProvider، VisualProgressTracker). | ~1200 سطر بأنماط inline — أكبر ملف في الهيكل.
+- **يستخدم:** memorization.js, Card.jsx, Sidebar.jsx, AchievementsView.jsx, RoleSwitcherMenu.jsx, ThemeContext.jsx, AuthContext.jsx, PullToRefresh.jsx, LanguageContext.jsx, AiAssistant.jsx, Community.jsx, QuranMapPage.jsx, PostSessionDhikr.jsx, AnalyticsView.jsx, VisualProgressTracker.jsx, QuranInteractiveView.jsx, SafeBoundary.jsx, LearningStyleProfiler.jsx, MyPlanManager.jsx, FiveFortressesPlan.jsx, quranData.js, NotificationCenter.jsx, NotificationContext.jsx, ReviewReminderAlert.jsx, CelebrationOverlay.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, UserProfileModal.jsx, PresentationModal.jsx, DocumentationModal.jsx, QuickSettingsMenu.jsx, SimilaritiesView.jsx, MindMapsView.jsx, JoinGroupModal.jsx, TeacherDashboard.jsx, TeacherStudentsView.jsx, TeacherStudentProfileModal.jsx, TeacherGroupsView.jsx, TeacherReportsView.jsx, AdminDashboard.jsx, TajweedLab.jsx, uiConfiguration.js, fortressService.js, navigation.js, useBackHandler.js, useSoftKeyboard.js
 - **يستخدمه:** App.jsx
 
 ### `src/pages/LandingPage.jsx`
@@ -423,6 +386,8 @@ _نقطة الدخول، التوجيه، الصفحات، التنقل، الن
 
 ## طبقة: الصفحة التعريفية
 _أقسام Landing للزوار — صفحة واحدة بسيطة: Navbar ← Hero ← المميزات ← جولة بالصور ← الحصون ← الأسئلة ← CTA وتذييل. التنسيق في أصناف lp-* داخل index.css._
+
+> **الهوية البصرية (2026-11-21):** ألوان الموقع من دليل الشعار — بنفسجي `--primary`، تركوازي `--success`، أزرق بحري/سماوي `--accent`، ذهبي `--secondary`. كلها في `:root` و`.dark` داخل `src/index.css`، والقواعد في `design-system/BRAND.md`. المكونات ما زالت تحتوي hex مباشرًا (حُوِّل آليًا للهوية الجديدة)؛ أي لون جديد يُضاف كمتغير أولًا.
 
 ### `src/components/landing/LandingFAQ.jsx`
 - **يفعل:** خمسة أسئلة (مجاني؟ كيف يعمل التسميع؟ هل أحتاج حلقة؟ هل يُحفظ تقدمي؟ الأجهزة) بعناصر <details> الأصلية، الأول مفتوح.
@@ -493,9 +458,9 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **لماذا:** الخادم هو المرجع للسجل (تعليق: لا يُعرض كاش حساب آخر). المفتاح الشخصي يسمح بـ Gemini حقيقي إن لم يكن للخادم مفتاح؛ وإلا يرد الخادم بقوالب جاهزة.
 - **متى:** عند فتح تبويب المساعد أو الزر العائم.
 - **إن تعطّل:** لا مساعد.
-- **انتبه:** مفتاح Gemini الشخصي يُرسل للخادم في جسم كل طلب ويبقى في localStorage نصًا صريحًا. | عند فشل الإرسال تُستعاد الرسائل السابقة ويعود النص لمربع الإدخال.
+- **انتبه:** مفتاح Gemini الشخصي يُرسل للخادم في جسم كل طلب ويبقى في localStorage نصًا صريحًا. | إذا رجع الخادم fallback:true يظهر تنبيه ai-fallback-notice (لا مفتاح / تعذر الوصول لـ Gemini) حتى لا يُعرض رد المحرك الداخلي كأنه ذكاء اصطناعي. | الأسئلة السريعة تُرسل بالعربية دائمًا؛ العناوين فقط مترجمة. | عند فشل الإرسال تُستعاد الرسائل السابقة ويعود النص لمربع الإدخال.
 - **يستخدم:** memorization.js, api.js, AuthContext.jsx, quranData.js, server/index.js
-- **يستخدمه:** Dashboard.jsx, FloatingAiButton.jsx (ميت)
+- **يستخدمه:** Dashboard.jsx
 
 ### `src/components/AnalyticsView.jsx`
 - **يفعل:** تجلب /api/student/analytics وتعرض 6 مؤشرات (آيات مسجلة ذاتيًا، محاولات آخر 7 أيام، متوسط الدقة، 'صفحات معتمدة: غير متاح'، الـ streak، بانتظار مراجعة المعلم) ثم VisualProgressTracker.
@@ -504,13 +469,6 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **إن تعطّل:** التبويب يعرض خطأ.
 - **يستخدم:** api.js, Card.jsx, VisualProgressTracker.jsx, groups.js
 - **يستخدمه:** Dashboard.jsx
-
-### `src/components/AudioWaveVisualizer.jsx` **[☠ ميت]**
-- **يفعل:** يرسم موجة الصوت من الميكروفون (Web Audio) أو موجة متحركة مزيفة إن رُفض الإذن، ثم بعد 1.8 ثانية يعرض 'نتيجة' عشوائية بين 88% و98% مع نصوص تجويد ثابتة.
-- **لماذا:** نموذج عرض أولي قبل وجود محرك تسميع حقيقي.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** النتيجة Math.random — يجب ألا يُعاد استخدامه كما هو.
-- **يستخدم:** LanguageContext.jsx
 
 ### `src/components/CelebrationOverlay.jsx`
 - **يفعل:** تظهر عندما يضبط NotificationContext قيمة activeCelebration: قصاصات ملونة متحركة (canvas)، أيقونة حسب النوع (ورد/خريطة ذهنية/شارة)، العنوان والرسالة، 'مكافأة الخبرة' (+XP)، آية ﴿وفي ذلك فليتنافس المتنافسون﴾، وزر مشاركة ينسخ نصًا للحافظة.
@@ -575,12 +533,12 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **يستخدم:** Card.jsx, AuthContext.jsx, NotificationContext.jsx, LanguageContext.jsx, quranMindMapsData.js
 - **يستخدمه:** Dashboard.jsx
 
-### `src/components/MyPlanManager.jsx` **[⧉ تكرار]**
+### `src/components/MyPlanManager.jsx`
 - **يفعل:** تعديل إعدادات الخطة المحفوظة في preferences: وحدة التتبع (صفحات/أجزاء/سور)، الأجزاء المحفوظة سابقًا (JuzMultiSelector) أو نص السور، معدل المراجعة القديمة، وضع الخطة (آلي بمعدل يومي أو يدوي بمستهدفين نصيين)، ثم LearningStyleProfiler أسفلها. الحفظ عبر updateUserData (Firestore مباشرة). مع وحدة الأجزاء/الصفحات يطبّق فرق الأجزاء فقط على studentDeclaredPages (جزء مضاف ← تُضاف صفحاته، جزء محذوف ← تُحذف صفحاته وحالاتها) فتبقى الصفحات المصرّح بها منفردة من خريطة المصحف.
 - **لماذا:** تعديل ما اختير في المعالج لاحقًا.
 - **متى:** تبويب my-plan ('تعديل الخطة' من الرئيسية).
 - **إن تعطّل:** لا تعديل للخطة بعد المعالج.
-- **انتبه:** إن لم يكن selectedJuzList محفوظًا تبدأ القائمة بالأجزاء المصرّح بكل صفحاتها (لا افتراضي [1، 30]). | dailyTarget وoldReviewDailyTarget تُعدَّل أيضًا من 'تخصيص الخطة' داخل FiveFortressesPlan (عبر الخادم) — شاشتان لنفس الإعداد. | وضع 'الذكاء الاصطناعي' مجرد تسمية — لا يستدعي أي ذكاء اصطناعي.
+- **انتبه:** إن لم يكن selectedJuzList محفوظًا تبدأ القائمة بالأجزاء المصرّح بكل صفحاتها (لا افتراضي [1، 30]). | dailyTarget وoldReviewDailyTarget تُعدَّل أيضًا من 'تخصيص الخطة' داخل FiveFortressesPlan — الشاشتان تكتبان نفس حقول preferences (الخادم يدمج)، والقيم الافتراضية من src/lib/planDefaults.js. | وضع 'الذكاء الاصطناعي' مجرد تسمية — لا يستدعي أي ذكاء اصطناعي.
 - **يستخدم:** AuthContext.jsx, LanguageContext.jsx, LearningStyleProfiler.jsx, JuzMultiSelector.jsx, memorization.js, quranData.js
 - **يستخدمه:** Dashboard.jsx
 
@@ -600,13 +558,6 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **إن تعطّل:** تختفي المسبحة.
 - **انتبه:** العدّاد لا يُحفظ ويُصفّر بتغيير الصفحة.
 - **يستخدمه:** Dashboard.jsx
-
-### `src/components/QuranAudioPlayer.jsx` **[☠ ميت]**
-- **يفعل:** مشغّل آيات لسورة بين startAyah وendAyah، 7 قراء، تكرار 1/3/5/10/∞.
-- **لماذا:** سبق دمج المشغّل داخل QuranInteractiveView.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** قائمة القراء وروابط الصوت منسوخة حرفيًا في QuranInteractiveView. | يبني رابط cdn.islamic.network برقم الآية داخل السورة بدل الرقم العام — كان سيشغّل آية خاطئة لغير الفاتحة.
-- **يستخدم:** LanguageContext.jsx
 
 ### `src/components/MushafPage.jsx`
 - **يفعل:** يرسم صفحة مصحف المدينة سطرًا سطرًا بخط صفحة مجمع الملك فهد (QPC V2) من mushafLayout: رأس (السورة والجزء)، أشرطة أسماء السور والبسملة، كلمات كل سطر موزعة على العرض (الأسطر القصيرة < 80% من أعرض سطر تُوسَّط، وصفحتا 1-2 موسطتان)، ورقم الصفحة. حجم الخط يُحسب بقياس أعرض سطر عبر canvas ليملأ الإطار (حد أقصى 34px) ويُعاد عند تغيّر العرض. النقر على أي كلمة يستدعي onAyahClick برقم الآية العام، وكلمات الآية النشطة تُظلَّل. يحمّل الصفحتين المجاورتين مسبقًا.
@@ -669,25 +620,6 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **يستخدم:** Card.jsx
 - **يستخدمه:** AnalyticsView.jsx, Dashboard.jsx
 
-### `src/components/fortress/FortressSetupWizard.jsx` **[☠ ميت]**
-- **يفعل:** إعداد خطة الحصون نصيًا (سورة البداية، المراجعة القريبة والبعيدة، الختمة، أوقات التذكير) ثم saveFortressPlanToFirestore وإشعار تجريبي محلي بعد 5 ثوانٍ.
-- **لماذا:** بديل قديم لإعداد الخطة؛ حل محله OnboardingWizard وMyPlanManager وFiveFortressesPlan.
-- **إن تعطّل:** لا شيء.
-- **يستخدم:** Card.jsx, Button.jsx, AuthContext.jsx, NotificationManager.js, fortressService.js
-
-### `src/components/quranMap/QuranMapSurahCard.jsx` **[☠ ميت]**
-- **يفعل:** بطاقة سورة: الرقم والاسم ونوعها والجزء، نسبة الآيات المحفوظة من المحفظة عبر getSurahMemorizationStats، حالة ملونة، وتكرارات ودرجة.
-- **لماذا:** جزء من خريطة السور القديمة مع QuranSurahAyahsModal.
-- **إن تعطّل:** لا شيء.
-- **يستخدم:** portfolioService.js
-
-### `src/components/quranMap/QuranSurahAyahsModal.jsx` **[☠ ميت]**
-- **يفعل:** تعرض آيات سورة من /api/quran/reference/surah/:n مع حالة كل آية من المحفظة (محفوظة/قيد الحفظ/مراجعة/غير محفوظة)، عدّاد تكرار 40×، ملاحظات، تفسير ميسر، استماع للعفاسي، تسميع آية بالصوت يحدّث حالة الآية حسب الدقة (≥85 محفوظة، ≥65 قيد الحفظ)، وزر 'تحديد كامل السورة كمحفوظة'. تعتمد على onUpdateAyah/onBulkUpdateSurah من الأب.
-- **لماذا:** نسخة سابقة من خريطة المصحف كانت مبنية على السور والآيات (محفظة الآيات) قبل أن تصبح QuranMapPage شبكة 604 صفحة.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** لو أعيد تفعيلها: تستدعي stopAndAnalyze بلا userId فلا تُحفظ المحاولة في الخادم، و'تحديد السورة كمحفوظة' يضع recitationScore=98 وتكرار 40 وهميين.
-- **يستخدم:** useRecitationRecorder.js, portfolioService.js, AuthContext.jsx, NotificationContext.jsx, server/index.js
-
 ### `src/hooks/useRecitationRecorder.js`
 - **يفعل:** startRecording: يولّد sessionId (UUID)، يشغّل Web Speech Recognition بالعربية (ar-SA) للنص الحي، ويسجّل الصوت بـ MediaRecorder (webm/opus أو mp4). stopAndAnalyze: يوقف، يحوّل الصوت إلى base64، ويرسل لـ /api/ai/recitation-check (مع fetchWithAuth وautoSave إن مُرّر userId، وإلا fetch عادي بلا حفظ). evaluateTextRecitation: نفس الشيء لنص مكتوب، ويعيد استخدام نفس sessionId لنفس المدخل (لمنع التكرار). submitCurrentResultForReview → /api/recitation/sessions/:id/submit. saveCurrentResult → /api/recitation/save (تأكيد فقط). بعد كل حفظ: refreshUserData (لتحديث الـ streak).
 - **لماذا:** الصوت + النص الحي معًا: إن فشل رفع الصوت أو كان قصيرًا (< 200 بايت) يُستخدم نص التعرف الصوتي بديلًا. sessionId الثابت يجعل إعادة الإرسال آمنة.
@@ -695,23 +627,10 @@ _المصحف والتسميع، الحصون الخمسة، الخريطة، ا
 - **إن تعطّل:** التسميع في المصحف (ونافذة السورة الميتة).
 - **انتبه:** يكتب كاش ma7fath_{uid}_quran_page_reviews في localStorage بعد كل حفظ، لكن لا يوجد أي ملف يقرأه (كتابة ميتة) — خريطة المصحف لا تعكس نتائج التسميع. | saveCurrentResult لا يستخدمه أي مكوّن. | منطق تحديث الكاش مكرر 3 مرات داخل الملف. | Web Speech Recognition غير مدعوم في Firefox وبعض متصفحات iOS — يعتمد حينها على الصوت فقط.
 - **يستخدم:** api.js, AuthContext.jsx, server/index.js
-- **يستخدمه:** QuranInteractiveView.jsx, QuranSurahAyahsModal.jsx
+- **يستخدمه:** QuranInteractiveView.jsx
 
 ## طبقة: المعلم والمشرف
 _لوحات المعلم والإدارة_
-
-### `src/components/AdminPanel.jsx` **[☠ ميت]**
-- **يفعل:** يعرض AdminDashboard ويمرر onSwitchToHome كـ onNavigateTab.
-- **لماذا:** اسم قديم للوحة المشرف.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** Dashboard يستورده لكن case 'admin-panel' الذي يعرضه يأتي بعد case 'admin-panel' آخر في نفس switch — غير قابل للوصول.
-- **يستخدم:** AdminDashboard.jsx
-- **يستخدمه:** Dashboard.jsx
-
-### `src/components/admin/AdminBadgesView.jsx` **[☠ ميت]**
-- **يفعل:** قائمة أوسمة مع أزرار 'إنشاء وسام' و'تعديل الشروط' و'منح لطالب' بلا أي معالجات.
-- **لماذا:** واجهة أولية حل محلها AdminExperienceSettings.
-- **إن تعطّل:** لا شيء.
 
 ### `src/components/admin/AdminCommunityView.jsx`
 - **يفعل:** تبويب 'إدارة المنتدى': يجلب منشورات المجتمع (/api/community/posts) ويعرض 4 بطاقات إحصاء (المنشورات، هذا الأسبوع، التعليقات، الإعجابات)، بحثًا محليًا في النص/الكاتب/التعليقات، فلتر تصنيفات، وترتيبًا (الأحدث/الأكثر تفاعلًا). التعليقات مطوية خلف 'عرض التعليقات (n)'. حذف منشور أو تعليق بخطوتين داخل الصفحة (حذف ← تأكيد الحذف، بلا window.confirm) عبر DELETE /api/community/posts/:id و/comments/:commentId.
@@ -729,7 +648,7 @@ _لوحات المعلم والإدارة_
 - **إن تعطّل:** لا إدارة.
 - **انتبه:** إنشاء الحلقة موجود في تبويب التوزيع (AdminDistributionView) فقط؛ تبويب المجموعات فيه زر 'إنشاء حلقة جديدة' (admin-groups-create) ينقل إليه. | تبويب 'التحليلات والنمو' نص فقط بلا بيانات. | حالة المستخدم 'نشط' = تدريب مؤكد خلال آخر 7 أيام بتوقيت عمّان (status من /api/admin/users، نفس تعريف 'النشطون هذا الأسبوع')، وعليها يعمل فلترا 'نشطون/غير نشطين'. | الإحصاءات والحلقات تُجلب عند تغيير التبويب؛ قائمة المستخدمين تُجلب صفحة صفحة من /api/admin/users?page&search&filter (البحث بعد 300ms، وأي بحث/فلتر/تبويب جديد يعود للصفحة 1، ورد الطلب الأقدم يُهمل). تبويب المعلمات يفرض filter=teacher. فحص 'آخر مشرف' يعتمد adminCount من الخادم لا الصفحة المعروضة. | لا يمكن إلغاء صلاحية الإدارة عن الحساب نفسه أو عن آخر مشرف (فحص في الواجهة فقط — قواعد Firestore تسمح للمشرف).
 - **يستخدم:** memorization.js, LanguageContext.jsx, AdminPerformanceDashboard.jsx, AdminDistributionView.jsx, firebase.js, api.js, AdminExperienceSettings.jsx, AdminCommunityView.jsx, groups.js
-- **يستخدمه:** AdminPanel.jsx, Dashboard.jsx
+- **يستخدمه:** Dashboard.jsx
 
 ### `src/components/admin/AdminDistributionView.jsx`
 - **يفعل:** إنشاء حلقة (/api/admin/groups/create)، قائمة طلبات الانتساب مع 'توزيع' (/api/admin/enrollment-requests/approve)، وقائمة كل المستخدمين غير المشرفين مع 'نقل' لحلقة (/api/admin/distribute-student) في نافذة اختيار الحلقة والمعلمة.
@@ -846,10 +765,10 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **يفعل:** generateFiveFortressesPlan(juz, page, target): يبني محليًا خطة الحصون الخمسة (الختمة = قراءة الجزء، التحضير الثلاثي لصفحة اليوم والغد، الحفظ الجديد 20×/40×، المراجعة القريبة = آخر 20 صفحة، البعيدة = الأجزاء السابقة بالتدوير). أدوات الإنجاز اليومي (fortressDay بتوقيت عمّان، تطبيع المفاتيح النصية↔الرقمية 1..5). saveFortressPlanToFirestore وgetFortressPlanFromFirestore عبر /api/user/fortress-plan (404 ← مسودة مولّدة محليًا). subscribeToFortressPlan يستمع لـ users/{uid}/five_fortresses_plans/current متجاهلًا الكاش والكتابات المعلقة.
 - **لماذا:** قواعد Firestore تمنع العميل من كتابة الخطة مباشرة (write: false) لأن الخطة وحالة اللوحة يجب أن تُحفظا معًا في الخادم؛ القراءة الحية مسموحة للمالك. كل دالة تتحقق أن المستخدم لم يتغير أثناء الطلب.
 - **متى:** عند فتح خطة الحصون أو لوحة اليوم، وعند تعليم حصن كمنجز.
-- **إن تعطّل:** FiveFortressesPlan وSimplifiedFortressPlan وFortressSetupWizard وDashboard وMyPlanManager.
+- **إن تعطّل:** FiveFortressesPlan وSimplifiedFortressPlan وDashboard وMyPlanManager.
 - **انتبه:** المفاتيح النصية (khatmah...) والرقمية (1..5) كلاهما مستخدم؛ normalizeFortressCompletion يقبل الاثنين — لا تضف شكلًا ثالثًا. | منطق 'يوم عمّان' مكرر هنا وفي server/quranActivityStreak.js.
 - **يستخدم:** firebase.js, api.js, quranData.js, server/index.js
-- **يستخدمه:** FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, SimplifiedFortressPlan.jsx, FortressSetupWizard.jsx, Dashboard.jsx
+- **يستخدمه:** FiveFortressesPlan.jsx, FiveFortressesVisualMap.jsx, SimplifiedFortressPlan.jsx, Dashboard.jsx
 
 ### `src/lib/learningProfileService.js`
 - **يفعل:** saveLearningProfile: يرسل PUT /api/user/{uid} بـ preferences.learningProfile وlearningStyle كـ patch، ثم يتحقق أن الرد يحتوي نفس القيم بالضبط (مقارنة JSON مرتبة المفاتيح).
@@ -870,10 +789,10 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **يفعل:** محفظة الآيات: كل آية مستند users/{uid}/ayah_progress/{سورة_آية} بحالة (unmemorized/learning/review/memorized) وتكرار ودرجة. fetchUserPortfolio (Firestore ثم كاش ma7fath_portfolio_{uid} عند الفشل)، saveAyahToPortfolio، saveBulkPortfolio (دفعات 300)، subscribeToUserPortfolio، getSurahMemorizationStats وgetGlobalPortfolioStats (نسبة من 6236 آية، صفحات ≈ آيات/10.3).
 - **لماذا:** الكتابة المباشرة من العميل مسموحة هنا بقواعد Firestore صارمة على الحقول، لأنها تصريح ذاتي لا يحتاج تحققًا من الخادم.
 - **متى:** عند فتح خريطة المصحف ونافذة السورة وتعليم آيات/سور كمحفوظة.
-- **إن تعطّل:** QuranMapPage وQuranSurahAyahsModal وQuranMapSurahCard.
+- **إن تعطّل:** QuranMapPage.
 - **انتبه:** subscribeToUserPortfolio لا يستدعي onUpdate إذا كانت المحفظة فارغة — حذف آخر آية لا يظهر حتى إعادة التحميل. | generateInitialPortfolioFromPages ترجع {} دائمًا (محفوظة للتوافق فقط). | الخادم ما زال فيه مسارات /api/user/:uid/portfolio على ملف JSON — مسار مختلف تمامًا لا تستخدمه الواجهة. | يستورد utils/quranSurahsList.json (غير ممثل في الخريطة لأنه JSON).
 - **يستخدم:** firebase.js
-- **يستخدمه:** QuranMapPage.jsx, QuranMapSurahCard.jsx, QuranSurahAyahsModal.jsx
+- **يستخدمه:** QuranMapPage.jsx
 
 ### `src/lib/badgeRules.js`
 - **يفعل:** BUILT_IN_BADGE_RULES (أيقونة ومقياس وهدف لكل من الأوسمة الست؛ baqarah وstability_95 بلا مقياس = تُمنح فقط من earnedBadges)، badgeRule(badge) لأي وسام (المخصص من criterion)، badgeRuleText للعرض للمشرف.
@@ -900,27 +819,12 @@ _lib/*Service، محرك الذكاء، بيانات القرآن_
 - **يستخدم:** firebase.js
 - **يستخدمه:** Sidebar.jsx, BottomNavBar.jsx, MoreToolsModal.jsx, AdminExperienceSettings.jsx, Dashboard.jsx, badgeRules.js
 
-### `src/utils/NotificationManager.js`
-- **يفعل:** طلب إذن الإشعارات ثم requestFcmToken، إرسال إشعار محلي عبر Service Worker أو Notification، scheduleNotification بـ setTimeout، والاستماع لرسائل FCM أثناء فتح التطبيق.
-- **لماذا:** واجهة موحدة للإشعارات في المتصفح/PWA.
-- **متى:** عند تفعيل الإشعارات من الإعدادات، وعند تذكيرات المراجعة.
-- **إن تعطّل:** لا إشعارات نظام.
-- **انتبه:** scheduleNotification يعمل فقط ما دام التبويب مفتوحًا (تعليق المؤلف). | أيقونة الإشعار /vite.svg — أيقونة قالب Vite لا شعار التطبيق. | يُنشأ عند الاستيراد ويقرأ window مباشرة.
-- **يستخدم:** firebase.js
-- **يستخدمه:** FortressSetupWizard.jsx
-
 ### `src/utils/learningQuizData.js`
 - **يفعل:** أسئلة اختبار النمط التعليمي (عربي/إنجليزي) بأوزان لأربعة أنماط (سمعي، بصري، حركي، تحليلي)، وcalculateLearningProfile: يجمع الأوزان ويحسب النسب والنمط الغالب (فرق ≤1 بين الأول والثاني = مختلط) مع توصية.
 - **لماذا:** تخصيص النصائح حسب طريقة الحافظ في التذكر.
 - **متى:** عند إنهاء الاختبار.
 - **إن تعطّل:** LearningStyleProfiler والمعالج.
 - **يستخدمه:** LearningStyleProfiler.jsx, OnboardingWizard.jsx
-
-### `src/utils/quranAiEngine.js` **[☠ ميت]**
-- **يفعل:** generateQuranAiResponse: إن وُجد مفتاح (من context أو localStorage ma7fath_gemini_api_key أو VITE_GEMINI_API_KEY) يستدعي Gemini مباشرة من المتصفح، وإلا يرد بقوالب حسب الكلمات (تحية، سورة من 8 سور، خطة، تكرار، متشابهات، تجويد، نسيان، صلاة، نمط).
-- **لماذا:** كان محرك المساعد في الواجهة قبل نقل الدردشة إلى /api/ai/chat.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** القوالب نفسها تقريبًا موجودة في getSmartFallbackResponse داخل server/index.js.
 
 ### `src/utils/quranData.js`
 - **يفعل:** surahs (اسم وصفحة بداية لـ114 سورة بمصحف المدينة)، juzStarts، getSurahNameForPage (يدمج الأسماء إن بدأت أكثر من سورة في الصفحة)، getJuzForPage، getPageRangeForJuz، getJuzStartPage.
@@ -961,9 +865,17 @@ _Express index، routes، middleware، صلاحيات_
 - **لماذا:** خادم واحد يخدم الواجهة والـ API معًا. كل ما يتطلب ثقة (حساب دقة التسميع، نص المصحف المرجعي، الكتابة في Firestore بصلاحيات Admin) يحدث هنا لا في المتصفح.
 - **متى:** يعمل طوال الوقت؛ كل طلب /api يمر عبر logger ثم requireAuth حسب المسار.
 - **إن تعطّل:** كل حواف calls_api (22 حافة) تنقطع.
-- **انتبه:** مسارات المحفظة تتحقق من الملكية (403) قبل 410؛ المحفظة الحقيقية في Firestore users/{uid}/ayah_progress عبر portfolioService. | POST /api/ai/chat يقبل apiKey من جسم الطلب ويفضّله على مفتاح الخادم. | /api/ai/recitation-check يقبل token لـ HuggingFace من العميل. | قائمة نماذج Gemini مكررة هنا وفي recitationEngine.js. | review القديم (/api/quran/pages/:n/review) يرجع 410 عمدًا. | Vite يُحمَّل بـ import() داخل startServer فقط (devDependency) — استيراده في أعلى الملف أسقط دالة Vercel كلها (FUNCTION_INVOCATION_FAILED لكل /api). | package.json يثبّت jwks-rsa على ^3 عبر overrides: الإصدار 4 (اعتماد firebase-admin) يعمل require() لـ jose 6 (ESM فقط) ومحمّل Vercel لا يدعمه فيسقط الخادم بـ ERR_REQUIRE_ESM — لا تحذف الـ override. | على Vercel يجب ضبط FIREBASE_SERVICE_ACCOUNT_JSON، وإلا تفشل كل قراءات Firestore في الخادم (503).
-- **يستخدم:** recitationEngine.js, firestoreRecitation.js, quranReference.js, auth.js, groups.js, community.js, privateUserData.js, fortressPlanPersistence.js
-- **يستخدمه:** api/index.js, AiAssistant.jsx, FiveFortressesPlan.jsx, QuranInteractiveView.jsx, SimilaritiesView.jsx, AdminPerformanceDashboard.jsx, QuranSurahAyahsModal.jsx, useRecitationRecorder.js, fortressService.js, learningProfileService.js
+- **انتبه:** مسارات المحفظة تتحقق من الملكية (403) قبل 410؛ المحفظة الحقيقية في Firestore users/{uid}/ayah_progress عبر portfolioService. | POST /api/ai/chat يقبل apiKey من جسم الطلب ويفضّله على مفتاح الخادم. | /api/ai/recitation-check يقبل token لـ HuggingFace من العميل. | قائمة نماذج Gemini من GEMINI_MODELS في recitationEngine.js. | /api/ai/chat و/api/ai/recitation-check عليهما rateLimit (20 و15 طلبًا/دقيقة لكل مستخدم أو IP). | /api/ai/chat يرجع fallback وfallbackReason عندما لم يجب أي نموذج. | DELETE /api/user/me يحذف حساب المتصل بالكامل (accountDeletion.js). | review القديم (/api/quran/pages/:n/review) يرجع 410 عمدًا. | Vite يُحمَّل بـ import() داخل startServer فقط (devDependency) — استيراده في أعلى الملف أسقط دالة Vercel كلها (FUNCTION_INVOCATION_FAILED لكل /api). | package.json يثبّت jwks-rsa على ^3 عبر overrides: الإصدار 4 (اعتماد firebase-admin) يعمل require() لـ jose 6 (ESM فقط) ومحمّل Vercel لا يدعمه فيسقط الخادم بـ ERR_REQUIRE_ESM — لا تحذف الـ override. | على Vercel يجب ضبط FIREBASE_SERVICE_ACCOUNT_JSON، وإلا تفشل كل قراءات Firestore في الخادم (503).
+- **يستخدم:** recitationEngine.js, firestoreRecitation.js, quranReference.js, auth.js, rateLimit.js, accountDeletion.js, groups.js, community.js, privateUserData.js, fortressPlanPersistence.js
+- **يستخدمه:** api/index.js, AiAssistant.jsx, FiveFortressesPlan.jsx, QuranInteractiveView.jsx, SimilaritiesView.jsx, AdminPerformanceDashboard.jsx, useRecitationRecorder.js, fortressService.js, learningProfileService.js
+
+### `server/middleware/rateLimit.js`
+- **يفعل:** rateLimit({ windowMs, max, name }): عدّاد في الذاكرة لكل uid (أو IP) يرجع 429 مع Retry-After عند تجاوز الحد.
+- **لماذا:** يمنع استهلاك مفتاح GEMINI_API_KEY الخاص بالخادم بلا حد من أي حساب.
+- **متى:** على /api/ai/chat و/api/ai/recitation-check.
+- **إن تعطّل:** الطلبات تمر بلا حد (لا يكسر الميزة).
+- **انتبه:** على Vercel لكل نسخة دافئة عدادها — يحد الدفعات لا حصة عالمية دقيقة. | للزائر غير المسجل المفتاح هو req.ip، ويعتمد على app.set('trust proxy', 1) في index.js وإلا يتشارك كل الزوار عدادًا واحدًا. | اختبار: tests/rate-limit.test.js.
+- **يستخدمه:** server/index.js
 
 ### `server/middleware/auth.js`
 - **يفعل:** يهيئ firebase-admin (حساب خدمة من FIREBASE_SERVICE_ACCOUNT_JSON أو GOOGLE_APPLICATION_CREDENTIALS أو المحاكي) ويصدّر db (Firestore Admin). requireAuth: يتحقق من Bearer ID token، ثم يقرأ users/{uid} ويضع req.user = التوكن + role/roles/profile (403 إن لم يوجد ملف، 503 إن فشلت القراءة). optionalAuth، requireAdmin (يستخدم accessControl.isAdmin).
@@ -1020,20 +932,6 @@ _Express index، routes، middleware، صلاحيات_
 ## طبقة: الخادم: المنطق والتخزين
 _safarEcosystem، database، Firestore، محرك التسميع_
 
-### `server/database.js` **[☠ ميت]**
-- **يفعل:** يحمّل db.json ويزرع بيانات (مستخدم admin_123/admin123 وdemo_user_123/demo123 بكلمات مرور PBKDF2، 49 صفحة وهمية لخريطة المصحف، منشور مجتمع ثابت) ثم يحفظ. runQuery/getRow/allRows تطابق نص SQL بالـ includes/startsWith وتنفذ على مصفوفات. ويوفر محفظة الآيات (getUserPortfolio/saveAyahToPortfolio/bulkSaveSurahToPortfolio) وsaveRecitationSession القديمة (تمنح XP).
-- **لماذا:** بقايا مرحلة ما قبل Firestore (كانت SQLite ثم JSON). لم يعد أي ملف يستورده — index.js أوقف مساراته بـ 410. يمكن حذفه مع db.json.
-- **متى:** لا يُحمَّل (كان seedDb يكتب db.json عند كل إقلاع للخادم).
-- **إن تعطّل:** لا شيء.
-- **انتبه:** يعيد كتابة community_posts في الذاكرة في كل إقلاع (لكن المجتمع الحقيقي صار في Firestore). | حسابات بكلمات مرور ثابتة مزروعة (المصادقة القديمة معطلة بـ 410، فلا يمكن استخدامها حاليًا). | على Vercel الكتابة على القرص لا تدوم. | saveRecitationSession/getRecitationHistory/getPageRecitationStats لا يستوردها أحد (حل محلها firestoreRecitation).
-- **يستخدم:** recitationStats.js
-
-### `server/db.js` **[☠ ميت]**
-- **يفعل:** getDb/saveDb لقراءة وكتابة server/db.json.
-- **لماذا:** نسخة أقدم من database.js.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** صفر مستوردين في كل المشروع (بما فيه الاختبارات والسكربتات).
-
 ### `server/firestoreGroups.js`
 - **يفعل:** GroupError، publicUser (يحذف كلمات المرور ويُصفّر حقول الحفظ المعتمد)، listUsers، listGroups (عدد الطلاب يُحسب من العضويات لا من العدّاد المخزن)، findGroup بالرمز، createFirestoreGroup (رمز عشوائي + groupInvites)، setMembership (العملية المركزية: عضوية واحدة نشطة لكل طالب، joinedAt يُضبط عند دخول حلقة جديدة ويُحفظ عند إعادة الكتابة لنفس الحلقة، تحدّث مؤشرات المستخدم وعدّادات الحلقتين وحالة الطلب في transaction واحدة، مع فحص السعة وصلاحية الفاعل)، submitRequest، listRequests، changeTeacherRole (يمنع إزالة الدور إن كان يملك حلقات)، teacherStudents (بحث/فلترة/ترتيب؛ status مشتق بـ studentActivityStatus وlastRecitationDate = lastQuranActivityDate، لا يُخزَّنان).
 - **لماذا:** يضمن الاتساق: لا يمكن أن يكون الطالب في حلقتين، ولا أن يختلف العدّاد عن الواقع بعد نقل.
@@ -1074,27 +972,30 @@ _safarEcosystem، database، Firestore، محرك التسميع_
 - **إن تعطّل:** الخادم لا يقلع أصلًا إن كان الملف ناقصًا؛ لا عرض للآيات ولا تسميع.
 - **يستخدمه:** firestoreRecitation.js, server/index.js
 
-### `server/recitationEngine.js` **[⧉ تكرار]**
+### `server/accountDeletion.js`
+- **يفعل:** deleteAccountData(db, uid): يحذف منشورات المستخدم في المجتمع (recursiveDelete)، تعليقاته وإعجاباته على منشورات الآخرين (مع إنقاص العدادات)، يعطّل حلقاته كمعلمة (active=false)، يحذف memberships/{uid} وenrollmentRequests/{uid} وusers/{uid} بكل مجموعاته الفرعية، صور avatars/{uid}/ من Storage، ثم حساب Auth.
+- **لماذا:** قواعد Firestore تمنع المستخدم من حذف مستنده، وحذف Auth وحده كان يترك البيانات الشخصية؛ متاجر التطبيقات تشترط حذف البيانات فعليًا.
+- **متى:** DELETE /api/user/me.
+- **إن تعطّل:** حذف الحساب يفشل برسالة ولا يُحذف حساب الدخول (البيانات أولًا ثم Auth، فيمكن إعادة المحاولة).
+- **انتبه:** التعليقات والإعجابات تُمسح بالمرور على كل community_posts (بدون فهرس collectionGroup) — إن كبر المجتمع كثيرًا استبدله باستعلام collectionGroup مع فهرس. | طلاب حلقات المعلمة المحذوفة يبقون بعضوية لحلقة معطلة حتى يعيد المشرف توزيعهم. | firebase-admin/storage يُحمَّل داخل الدالة (اعتماده @google-cloud/storage اختياري)، وفي اختبارات المحاكي لا يُلمس Storage إلا مع FIREBASE_STORAGE_EMULATOR_HOST. | اختبار: tests/account-deletion.test.js.
+- **يستخدم:** firebase-admin (auth, storage), firebase-applet-config.json
+- **يستخدمه:** server/index.js
+
+### `server/recitationEngine.js`
 - **يفعل:** تنظيف وتطبيع النص القرآني (إزالة التشكيل، توحيد الألف، ٱ، ألف خنجرية، الحروف المقطعة المنطوقة 'ألف لام ميم'←'الم'). compareRecitation وcomparePageRecitation: محاذاة كلمات بخوارزمية LCS ثم تصنيف كل كلمة (صحيح، لحن جلي ون/ين وان/ين، ال التعريف، الضمائر، حروف العطف، تشكيل، ناقصة، زائدة) ودقة = (الكلمات − العقوبات)/الكلمات. analyzeRecitation للصوت: (1) Gemini يستمع ويقيّم مباشرة، (2) وإلا Gemini يفرّغ، (3) وإلا ffmpeg→WAV ثم HuggingFace Whisper (tarteel-ai أولًا)، ثم المقارنة.
 - **لماذا:** قلب ميزة التسميع: كشف اللحن الجلي (المؤمنون/المؤمنين) لا مجرد تطابق نصي. البسملة لا تُحتسب ناقصة إن لم يقرأها. العقوبات: كلمة خاطئة/ناقصة/لحن = 1، تشكيل = 0.4، زيادة = 0.3.
 - **متى:** عند كل طلب /api/ai/recitation-check (صوت أو نص).
 - **إن تعطّل:** التسميع كله.
-- **انتبه:** في المسار الأول (Gemini مباشر) الدقة يقررها النموذج نفسه لا الخوارزمية — النتيجة قد تختلف عن تلوين الكلمات المحسوب. | عتبات التقييم (95/85/70) مكررة 3 مرات: getRatingColor وcompareRecitation وcomparePageRecitation. | convertTo16kHzWav يحتاج ffmpeg مثبتًا؛ إن غاب يُرسل الصوت الخام. | مهلة HuggingFace 6 ثوانٍ لكل نموذج.
+- **انتبه:** في المسار الأول (Gemini مباشر) الدرجة المعروضة من الخوارزمية نفسها التي تلوّن الكلمات؛ تقدير النموذج في modelAccuracy للمرجع فقط. | البسملة تُتجاوز إن لم تُقرأ إلا في الفاتحة (هي الآية 1) — compareRecitation وcomparePageRecitation. | قوائم النماذج GEMINI_MODELS وWHISPER_MODELS مصدر واحد يستخدمه index.js أيضًا. | اختبارات: tests/recitation-engine.test.js (npm run test:engine). | عتبات التقييم (95/85/70) مكررة 3 مرات: getRatingColor وcompareRecitation وcomparePageRecitation. | convertTo16kHzWav يحتاج ffmpeg؛ إن غاب يرفض الـ Promise (معالجات error على العملية وstdin) ويُرسل الصوت الخام — قبل 2026-11-15 كان غيابه يُسقط الخادم كله. | مهلة HuggingFace 6 ثوانٍ لكل نموذج.
 - **يستخدمه:** server/index.js
 
 ### `server/recitationStats.js`
 - **يفعل:** calculatePageRecitationStats: من قائمة جلسات، يحسب لمستخدم وصفحة: عدد المحاولات، المتوسط، الأفضل، آخر وقت، آخر 10.
-- **لماذا:** منطق مشترك بين database.js القديم وfirestoreRecitation.
+- **لماذا:** منطق إحصاءات الصفحة يستخدمه firestoreRecitation (واختبارات الأمان).
 - **متى:** عند قراءة إحصاءات صفحة.
 - **إن تعطّل:** إحصاءات الصفحة.
 - **انتبه:** lastRecitedAt = أول عنصر؛ يفترض أن القائمة مرتبة تنازليًا مسبقًا.
-- **يستخدمه:** database.js, firestoreRecitation.js
-
-### `server/safarEcosystem.js` **[☠ ميت]**
-- **يفعل:** ~1200 سطر بيانات بذرية وهمية (3 حلقات 'سفر'، معلمات، عشرات الطلاب بإحصاءات مختلقة، طلبات انضمام) تُحفظ في safar_data.json، ودوال للحلقات والمعلم والمشرف (getGroups، joinGroupByCode، getTeacherDashboard، assignTeacherRole، ...). قرأت المحمّل والدوال الرئيسية؛ الباقي بيانات.
-- **لماذا:** النسخة الأولى من نظام الحلقات قبل نقله إلى Firestore. استُبدل بالكامل بـ firestoreGroups.js + routes/groups.js.
-- **إن تعطّل:** لا شيء.
-- **انتبه:** صفر مستوردين (يُذكر اسمه نصيًا فقط في DocumentationModal). 83KB يمكن حذفها مع safar_data*.json.
+- **يستخدمه:** firestoreRecitation.js
 
 ## طبقة: النشر و Service Workers
 _Vercel، PWA، إشعارات الخلفية_
@@ -1104,7 +1005,7 @@ _Vercel، PWA، إشعارات الخلفية_
 - **لماذا:** Vercel يشغّل الخادم كدالة من مجلد api/ (انظر vercel.json).
 - **متى:** عند كل طلب /api على Vercel.
 - **إن تعطّل:** كل الخادم على Vercel يتوقف.
-- **انتبه:** server/index.js يحفظ بيانات في ملفات JSON محلية (db.json، safar_data.json)؛ نظام ملفات Vercel مؤقت/للقراءة، فهذه البيانات لا تبقى هناك.
+- **انتبه:** لا تخزين محلي في الخادم بعد حذف db.json وsafar_data.json؛ كل البيانات في Firestore. | ffmpeg غير موجود على Vercel افتراضيًا — تحويل الصوت لـ Whisper يُتجاوز بأمان.
 - **يستخدم:** server/index.js
 
 ### `public/firebase-messaging-sw.js`

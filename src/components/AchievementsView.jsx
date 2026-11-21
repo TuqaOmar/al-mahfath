@@ -70,7 +70,7 @@ export const AchievementsView = ({ user, badges, fortressesToday = {} }) => {
             background: item.unlocked ? 'var(--primary)' : 'var(--bg-surface)',
             color: item.unlocked ? 'white' : 'var(--text-secondary)',
             border: item.unlocked ? 'none' : '1.5px dashed var(--glass-border)',
-            boxShadow: item.unlocked ? '0 6px 16px rgba(16, 185, 129, 0.3)' : 'none',
+            boxShadow: item.unlocked ? '0 6px 16px rgba(55, 125, 113, 0.3)' : 'none',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             opacity: item.unlocked ? 1 : 0.7
           }}>
@@ -79,7 +79,7 @@ export const AchievementsView = ({ user, badges, fortressesToday = {} }) => {
           <span style={{
             position: 'absolute', bottom: '-2px', insetInlineEnd: '-4px',
             width: '22px', height: '22px', borderRadius: '50%',
-            background: item.unlocked ? '#F59E0B' : 'var(--text-secondary)', color: 'white',
+            background: item.unlocked ? '#E39A2D' : 'var(--text-secondary)', color: 'white',
             border: '2px solid var(--bg-surface)',
             display: 'flex', alignItems: 'center', justifyContent: 'center'
           }}>
@@ -112,7 +112,7 @@ export const AchievementsView = ({ user, badges, fortressesToday = {} }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '18px', maxWidth: '960px', width: '100%', margin: '0 auto' }}>
       {/* Summary */}
       <div style={{ padding: '20px', borderRadius: '18px', background: 'var(--bg-surface)', border: '1px solid var(--glass-border)', boxShadow: 'var(--shadow-soft)', display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-        <div style={{ width: '54px', height: '54px', borderRadius: '16px', background: 'rgba(245, 158, 11, 0.15)', color: '#D97706', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <div style={{ width: '54px', height: '54px', borderRadius: '16px', background: 'rgba(227, 154, 45, 0.15)', color: '#C27F17', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Trophy size={28} />
         </div>
         <div style={{ flex: 1, minWidth: '200px' }}>

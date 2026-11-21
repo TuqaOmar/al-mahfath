@@ -198,10 +198,10 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'excellent': return '#10B981'; // Green
-      case 'review': return '#F59E0B'; // Yellow
+      case 'excellent': return '#377D71'; // Green
+      case 'review': return '#E39A2D'; // Yellow
       case 'critical': return '#EF4444'; // Red
-      default: return '#334155'; // Dark Slate Gray (unmemorized)
+      default: return '#3D2F3A'; // Dark Slate Gray (unmemorized)
     }
   };
 
@@ -240,9 +240,9 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
-                border: selectedPage.status === 'excellent' ? '2px solid #10B981' : '1px solid var(--glass-border)',
-                background: selectedPage.status === 'excellent' ? 'rgba(16, 185, 129, 0.15)' : 'var(--bg-color)',
-                color: '#10B981',
+                border: selectedPage.status === 'excellent' ? '2px solid #377D71' : '1px solid var(--glass-border)',
+                background: selectedPage.status === 'excellent' ? 'rgba(55, 125, 113, 0.15)' : 'var(--bg-color)',
+                color: '#377D71',
                 fontWeight: 'bold',
                 fontSize: '12px',
                 cursor: 'pointer'
@@ -256,9 +256,9 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
-                border: selectedPage.status === 'review' ? '2px solid #F59E0B' : '1px solid var(--glass-border)',
-                background: selectedPage.status === 'review' ? 'rgba(245, 158, 11, 0.15)' : 'var(--bg-color)',
-                color: '#F59E0B',
+                border: selectedPage.status === 'review' ? '2px solid #E39A2D' : '1px solid var(--glass-border)',
+                background: selectedPage.status === 'review' ? 'rgba(227, 154, 45, 0.15)' : 'var(--bg-color)',
+                color: '#E39A2D',
                 fontWeight: 'bold',
                 fontSize: '12px',
                 cursor: 'pointer'
@@ -288,8 +288,8 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
               style={{
                 padding: '8px 10px',
                 borderRadius: '8px',
-                border: selectedPage.status === 'unmemorized' ? '2px solid #94A3B8' : '1px solid var(--glass-border)',
-                background: selectedPage.status === 'unmemorized' ? 'rgba(148, 163, 184, 0.15)' : 'var(--bg-color)',
+                border: selectedPage.status === 'unmemorized' ? '2px solid #9C8D98' : '1px solid var(--glass-border)',
+                background: selectedPage.status === 'unmemorized' ? 'rgba(156, 141, 152, 0.15)' : 'var(--bg-color)',
                 color: 'var(--text-secondary)',
                 fontWeight: 'bold',
                 fontSize: '12px',
@@ -344,7 +344,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 padding: '12px',
                 borderRadius: '12px',
                 border: 'none',
-                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)',
                 color: 'white',
                 fontWeight: 700,
                 fontSize: '14px',
@@ -353,7 +353,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.35)'
+                boxShadow: '0 4px 12px rgba(55, 125, 113, 0.35)'
               }}
             >
               <BookOpen size={18} />
@@ -410,13 +410,13 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
           bottom: '24px',
           right: '24px',
           zIndex: 9999,
-          background: statusMessage.startsWith('تعذر') ? '#DC2626' : '#10B981',
+          background: statusMessage.startsWith('تعذر') ? '#DC2626' : '#377D71',
           color: 'white',
           padding: '12px 20px',
           borderRadius: '12px',
           fontWeight: 'bold',
           fontSize: '14px',
-          boxShadow: '0 10px 25px rgba(16, 185, 129, 0.4)',
+          boxShadow: '0 10px 25px rgba(55, 125, 113, 0.4)',
           display: 'flex',
           alignItems: 'center',
           gap: '8px'
@@ -573,17 +573,17 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
 
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>📚 أجزاء مصرّح بها كاملة</span>
-              <strong style={{ fontSize: '18px', color: '#10B981' }}>{completedJuzs.length} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>من 30</span></strong>
+              <strong style={{ fontSize: '18px', color: '#377D71' }}>{completedJuzs.length} <span style={{ fontSize: '12px', fontWeight: 'normal' }}>من 30</span></strong>
             </div>
 
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>🟢 مصرّح بحفظها ذاتيًا</span>
-              <strong style={{ fontSize: '18px', color: '#10B981' }}>{excellentCount}</strong>
+              <strong style={{ fontSize: '18px', color: '#377D71' }}>{excellentCount}</strong>
             </div>
 
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
               <span style={{ fontSize: '11.5px', color: 'var(--text-secondary)', display: 'block' }}>🟡 يحتاج مراجعة</span>
-              <strong style={{ fontSize: '18px', color: '#F59E0B' }}>{reviewCount}</strong>
+              <strong style={{ fontSize: '18px', color: '#E39A2D' }}>{reviewCount}</strong>
             </div>
 
             <div style={{ padding: '12px 14px', borderRadius: '12px', background: 'var(--bg-color)', border: '1px solid var(--glass-border)' }}>
@@ -688,9 +688,9 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
               const isPartial = memInJuz > 0 && !isFull;
               const isActive = activeJuzTab === jNum.toString();
 
-              let badgeColor = '#94A3B8';
-              if (isFull) badgeColor = '#10B981';
-              else if (isPartial) badgeColor = '#F59E0B';
+              let badgeColor = '#9C8D98';
+              if (isFull) badgeColor = '#377D71';
+              else if (isPartial) badgeColor = '#E39A2D';
 
               return (
                 <button
@@ -718,7 +718,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                     fontSize: '10px',
                     padding: '2px 6px',
                     borderRadius: '6px',
-                    background: isFull ? 'rgba(16, 185, 129, 0.15)' : (isPartial ? 'rgba(245, 158, 11, 0.15)' : 'rgba(148, 163, 184, 0.15)'),
+                    background: isFull ? 'rgba(55, 125, 113, 0.15)' : (isPartial ? 'rgba(227, 154, 45, 0.15)' : 'rgba(156, 141, 152, 0.15)'),
                     color: badgeColor,
                     fontWeight: 'bold'
                   }}>
@@ -759,7 +759,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                     padding: '6px 14px',
                     borderRadius: '8px',
                     border: 'none',
-                    background: '#10B981',
+                    background: '#377D71',
                     color: 'white',
                     fontWeight: 'bold',
                     fontSize: '12px',
@@ -828,7 +828,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                     borderRadius: '8px',
                     border: isSelected ? '2px solid #FFFFFF' : 'none',
                     backgroundColor: bg,
-                    color: page.status === 'unmemorized' ? '#94A3B8' : '#FFFFFF',
+                    color: page.status === 'unmemorized' ? '#9C8D98' : '#FFFFFF',
                     fontWeight: 'bold',
                     fontSize: isMobile ? '11px' : '12px',
                     cursor: 'pointer',
@@ -836,7 +836,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
                     alignItems: 'center',
                     justifyContent: 'center',
                     transition: 'transform 0.1s ease',
-                    boxShadow: isSelected ? '0 0 12px rgba(16, 185, 129, 0.7)' : 'none',
+                    boxShadow: isSelected ? '0 0 12px rgba(55, 125, 113, 0.7)' : 'none',
                     transform: isSelected ? 'scale(1.12)' : 'scale(1)'
                   }}
                 >
@@ -858,7 +858,7 @@ export const QuranMapPage = ({ onSelectPageForRecitation }) => {
             <button type="button" data-testid="save-ayah-progress" disabled={ayahSaving} onClick={saveRecordedAyahProgress} style={{ padding: '10px 18px', borderRadius: '10px', border: 'none', background: 'var(--primary)', color: '#FFFFFF', fontWeight: 700, fontSize: '13.5px', cursor: ayahSaving ? 'wait' : 'pointer', opacity: ayahSaving ? 0.7 : 1 }}>{ayahSaving ? 'جاري الحفظ...' : 'حفظ تقدم الآية'}</button>
           </div>
           <div data-testid="ayah-progress-count" style={{ marginTop: '12px', fontSize: '12.5px', color: 'var(--text-secondary)' }}>الآيات ذات السجل: {Object.keys(ayahPortfolio).length}</div>
-          {ayahFeedback && <div role={ayahFeedback.startsWith('تعذر') ? 'alert' : 'status'} data-testid="ayah-progress-feedback" style={{ marginTop: '10px', fontSize: '13px', color: ayahFeedback.startsWith('تعذر') ? '#B91C1C' : '#047857' }}>{ayahFeedback}</div>}
+          {ayahFeedback && <div role={ayahFeedback.startsWith('تعذر') ? 'alert' : 'status'} data-testid="ayah-progress-feedback" style={{ marginTop: '10px', fontSize: '13px', color: ayahFeedback.startsWith('تعذر') ? '#B91C1C' : '#285C53' }}>{ayahFeedback}</div>}
         </div>
 
       </div>

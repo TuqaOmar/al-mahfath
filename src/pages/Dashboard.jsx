@@ -59,7 +59,6 @@ import { NotificationCenter } from '../components/NotificationCenter';
 import { useNotifications } from '../context/NotificationContext';
 import { ReviewReminderAlert } from '../components/ReviewReminderAlert';
 import { CelebrationOverlay } from '../components/CelebrationOverlay';
-import { AdminPanel } from '../components/AdminPanel';
 import { BottomNavBar } from '../components/BottomNavBar';
 import { MoreToolsModal } from '../components/MoreToolsModal';
 import { UserProfileModal } from '../components/UserProfileModal';
@@ -398,7 +397,7 @@ const Dashboard = () => {
                 padding: '12px 18px',
                 borderRadius: '16px',
                 background: 'var(--bg-surface)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
+                border: '1px solid rgba(55, 125, 113, 0.3)',
                 boxShadow: 'var(--shadow-soft)',
                 display: 'flex',
                 alignItems: 'center',
@@ -407,7 +406,7 @@ const Dashboard = () => {
                 gap: '10px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(55, 125, 113, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Layers size={18} />
                   </div>
                   <div>
@@ -438,7 +437,7 @@ const Dashboard = () => {
                 gap: '12px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'rgba(55, 125, 113, 0.12)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Users size={18} />
                   </div>
                   <div>
@@ -478,10 +477,10 @@ const Dashboard = () => {
             <div style={{
               borderRadius: isMobile ? '20px' : '24px',
               padding: isMobile ? '20px 16px' : '32px 36px',
-              background: 'linear-gradient(135deg, #0F172A 0%, #064E3B 55%, #022C22 100%)',
+              background: 'linear-gradient(135deg, #1F1220 0%, #1A3F39 55%, #022C22 100%)',
               color: 'white',
-              boxShadow: '0 8px 24px rgba(6, 78, 59, 0.25)',
-              border: '1px solid rgba(16, 185, 129, 0.3)',
+              boxShadow: '0 8px 24px rgba(26, 63, 57, 0.25)',
+              border: '1px solid rgba(55, 125, 113, 0.3)',
               display: 'flex',
               flexDirection: 'column',
               gap: isMobile ? '14px' : '20px',
@@ -496,7 +495,7 @@ const Dashboard = () => {
                 width: '160px',
                 height: '160px',
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, transparent 70%)',
+                background: 'radial-gradient(circle, rgba(55, 125, 113, 0.25) 0%, transparent 70%)',
                 pointerEvents: 'none'
               }} />
 
@@ -504,8 +503,8 @@ const Dashboard = () => {
                 <span style={{ 
                   padding: '4px 12px', 
                   borderRadius: '20px', 
-                  background: 'rgba(16, 185, 129, 0.2)', 
-                  color: '#34D399', 
+                  background: 'rgba(55, 125, 113, 0.2)', 
+                  color: '#4FA899', 
                   fontSize: '12px', 
                   fontWeight: 'bold', 
                   display: 'inline-flex', 
@@ -514,7 +513,7 @@ const Dashboard = () => {
                 }}>
                   <BookOpen size={14} /> ورد اليوم المبارك
                 </span>
-                <span style={{ fontSize: '11px', color: '#94A3B8' }}>
+                <span style={{ fontSize: '11px', color: '#9C8D98' }}>
                   يتجدد يومياً مع تقدمك
                 </span>
               </div>
@@ -523,7 +522,7 @@ const Dashboard = () => {
                 <h1 style={{ fontSize: isMobile ? '20px' : '28px', fontWeight: 'bold', margin: '0 0 6px 0', lineHeight: 1.3 }}>
                   جاهز لوردك اليومي؟ 🌿
                 </h1>
-                <p style={{ margin: 0, fontSize: isMobile ? '13.5px' : '15px', color: '#CBD5E1', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: isMobile ? '13.5px' : '15px', color: '#DCCFD7', lineHeight: 1.5 }}>
                   استمر على عهدك مع كتاب الله، ورتّل آياتك بخشوع وثبات.
                 </p>
               </div>
@@ -539,24 +538,24 @@ const Dashboard = () => {
                 border: '1px solid rgba(255, 255, 255, 0.12)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(16, 185, 129, 0.2)', color: '#34D399', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(55, 125, 113, 0.2)', color: '#4FA899', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <BookOpen size={16} />
                   </div>
                   <div>
-                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>الحفظ الجديد اليوم:</span>
-                    <strong style={{ fontSize: '13px', color: '#F8FAFC' }}>
+                    <span style={{ fontSize: '11px', color: '#9C8D98', display: 'block' }}>الحفظ الجديد اليوم:</span>
+                    <strong style={{ fontSize: '13px', color: '#FAF7F9' }}>
                       {user?.preferences?.dailyTarget || 'صفحة واحدة (سورة البقرة)'}
                     </strong>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.2)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'rgba(42, 111, 143, 0.2)', color: '#60A5FA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Layers size={16} />
                   </div>
                   <div>
-                    <span style={{ fontSize: '11px', color: '#94A3B8', display: 'block' }}>المراجعة والتثبيت:</span>
-                    <strong style={{ fontSize: '13px', color: '#F8FAFC' }}>
+                    <span style={{ fontSize: '11px', color: '#9C8D98', display: 'block' }}>المراجعة والتثبيت:</span>
+                    <strong style={{ fontSize: '13px', color: '#FAF7F9' }}>
                       {user?.preferences?.oldReviewDailyTarget || 'نصف جزء يومياً'}
                     </strong>
                   </div>
@@ -571,7 +570,7 @@ const Dashboard = () => {
                     flex: isMobile ? 1 : 'none',
                     padding: isMobile ? '13px 20px' : '14px 28px', 
                     borderRadius: '14px', 
-                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', 
+                    background: 'linear-gradient(135deg, #377D71 0%, #2F6B61 100%)', 
                     color: 'white', 
                     border: 'none', 
                     fontWeight: 'bold', 
@@ -581,7 +580,7 @@ const Dashboard = () => {
                     alignItems: 'center', 
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(16, 185, 129, 0.4)',
+                    boxShadow: '0 4px 14px rgba(55, 125, 113, 0.4)',
                     transition: 'all 0.15s ease',
                     touchAction: 'manipulation'
                   }}
@@ -595,7 +594,7 @@ const Dashboard = () => {
                     padding: isMobile ? '13px 16px' : '14px 20px', 
                     borderRadius: '14px', 
                     background: 'rgba(255, 255, 255, 0.1)', 
-                    color: '#E2E8F0', 
+                    color: '#EDE6EA', 
                     border: '1px solid rgba(255, 255, 255, 0.2)', 
                     fontWeight: 'bold', 
                     fontSize: isMobile ? '13px' : '14px', 
@@ -636,14 +635,14 @@ const Dashboard = () => {
               <Card style={{ padding: isMobile ? '12px 10px' : '20px', textAlign: isMobile ? 'center' : 'right' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: isMobile ? 'center' : 'space-between', marginBottom: '8px' }}>
                   {!isMobile && <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>صحبة القرآن</span>}
-                  <div style={{ width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '8px', background: 'rgba(245, 158, 11, 0.1)', color: '#F59E0B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: isMobile ? '28px' : '36px', height: isMobile ? '28px' : '36px', borderRadius: '8px', background: 'rgba(227, 154, 45, 0.1)', color: '#E39A2D', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Flame size={isMobile ? 15 : 18} />
                   </div>
                 </div>
                 <div data-testid="quran-companion-streak" style={{ fontSize: isMobile ? '18px' : '26px', fontWeight: 'bold', color: 'var(--text-primary)', marginBottom: '2px' }}>
                   {user?.streak ?? 0} {!isMobile && <span style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-secondary)' }}>يوم</span>}
                 </div>
-                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: '#F59E0B', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                <span style={{ fontSize: isMobile ? '10.5px' : '12px', color: '#E39A2D', fontWeight: 600, whiteSpace: 'nowrap' }}>
                   {isMobile ? 'أيام صحبة القرآن' : 'أيام صحبة القرآن'}
                 </span>
               </Card>
@@ -695,7 +694,7 @@ const Dashboard = () => {
                 <div style={{
                   width: `${(Object.values(fortressesToday).filter(Boolean).length / 5) * 100}%`,
                   height: '100%',
-                  background: 'linear-gradient(90deg, #10B981, #059669)',
+                  background: 'linear-gradient(90deg, #377D71, #2F6B61)',
                   borderRadius: '4px',
                   transition: 'width 0.3s ease'
                 }} />
@@ -883,9 +882,6 @@ const Dashboard = () => {
       case 'analytics':
         return <AnalyticsView />;
 
-      case 'admin-panel':
-        return <AdminPanel />;
-
       case 'mind-maps':
         return (
           <MindMapsView 
@@ -1003,7 +999,7 @@ const Dashboard = () => {
               }}>
                 {isMobile ? (user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')) : `${isRTL ? 'مرحباً،' : 'Welcome,'} ${user?.name || (isRTL ? 'يا حافظ القرآن' : 'Learner')}`}
               </span>
-              <span className="mobile-profile-streak" style={{ fontSize: '12px', color: '#D97706', fontWeight: 600, whiteSpace: 'nowrap' }}>
+              <span className="mobile-profile-streak" style={{ fontSize: '12px', color: '#C27F17', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 🔥 {user?.streak ?? 0} {isRTL ? 'أيام صحبة القرآن' : 'day streak'}
               </span>
             </span>
@@ -1086,9 +1082,7 @@ const Dashboard = () => {
                     }
                     // Without this the landing page saw the still-signed-in user and bounced back here.
                     const code = result?.code ? ` (${result.code})` : '';
-                    window.alert(result?.code === 'auth/requires-recent-login'
-                      ? 'لحماية حسابك، سجّلي الخروج ثم ادخلي مرة أخرى، واحذفي الحساب مباشرة بعد الدخول.'
-                      : 'تعذر حذف الحساب، ولم يُحذف شيء. حاولي مرة أخرى.' + code);
+                    window.alert((result?.message || 'تعذر حذف الحساب، لم يكتمل الحذف. حاولي مرة أخرى.') + code);
                   }}
                   style={{
                     flex: 1,
@@ -1133,11 +1127,11 @@ const Dashboard = () => {
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 9999,
-                background: 'rgba(15, 23, 42, 0.94)',
-                color: syncFailed ? '#FCA5A5' : '#34D399',
+                background: 'rgba(31, 18, 32, 0.94)',
+                color: syncFailed ? '#FCA5A5' : '#4FA899',
                 padding: '10px 20px',
                 borderRadius: '24px',
-                border: '1px solid rgba(16, 185, 129, 0.35)',
+                border: '1px solid rgba(55, 125, 113, 0.35)',
                 boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
                 fontSize: '13px',
                 fontWeight: 700,
